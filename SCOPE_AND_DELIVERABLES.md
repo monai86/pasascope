@@ -1,48 +1,58 @@
 # Scope and Deliverables
 
+Term paper: "การประยุกต์ใช้ปัญญาประดิษฐ์เพื่อสนับสนุนการประเมินทางคลินิกสำหรับเด็กออทิสติก
+(AI-Assisted Program for Clinical Assessment of Autism)".
+
 ## Primary Deliverable
 
-The Therapist / Clinician App is the primary project deliverable. It demonstrates a human-reviewed clinical decision-support workflow for anonymized child cases, session artifacts, transcript review, feature summaries, and Progress Report generation.
+The therapist web app (`apps/lingualens-app` + `apps/api`, `/api/v1`) is the
+primary deliverable. It demonstrates one human-reviewed workflow:
 
-The advisor-facing v1.6.0 scope should present one main workflow only:
-
-1. Open case
+1. Open case and record consent
 2. Add session
-3. Upload file
-4. Review transcript
-5. Generate Progress Report
+3. Record or upload audio; on-device Whisper produces a draft transcript
+4. Therapist corrects and attests the transcript
+5. Extract language-sample features and review cues
+6. Generate, sign off, and export the Progress Report
 
-The public screening app and presentation dashboard remain useful supporting artifacts, but they should not be introduced as equal primary products for the term-paper deliverable.
+The AI contribution is the draft transcript with child/adult speaker
+separation and the transcript-derived features and review cues. Every
+automated output is a draft that the therapist reviews before it is used.
 
-## Supplementary Surfaces
+## Supporting Deliverable
 
-The Public Screening App is supplementary and educational only. It should not be presented as the main clinical workflow or as a diagnostic product.
-
-The Presentation Dashboard is supplementary and supports advisor explanation of model performance, dataset limits, feature importance, and Thai validation gaps. It should not duplicate the therapist workflow.
+The desktop GUI (`packages/gui`, `./run_gui.sh --mock`) is an offline research
+tool. It runs the same audio pipeline and Thai language-sample analysis on one
+machine with no server, for settings where recordings must not leave the
+device. It is not a second product.
 
 ## Research Output
 
-The ML model result is a research result. Model performance metrics may support the term paper discussion, but they are separate from therapist-facing clinical decision support and must not be described as clinical validation.
+- `reports/metrics/thai_asr_evaluation.*`: draft-versus-gold transcript
+  accuracy and feature drift on local Thai recordings
+  (`scripts/evaluate_thai_asr.py`).
+- `reports/metrics/transcript_review_time.csv`: time from draft to attestation
+  (`scripts/report_transcript_review_time.py`).
+- `reports/ml/`: the classifier study on public English corpora. It separates
+  groups within one corpus but not across corpora, and site, task and age
+  explain most of the pooled accuracy. This is the reason the product is
+  decision support with review cues, not a classifier. No model output is shown
+  to therapists.
 
 ## Clinical Boundary
 
-This project is suitable as a clinical decision-support prototype and research demonstration. It is not a deployed clinical system, not a diagnostic device, and not clinically validated for Thai children.
+This is a clinical decision-support prototype and research demonstration. It is
+not a deployed clinical system, not a diagnostic device, and not clinically
+validated for Thai children. It does not diagnose ASD, and it applies no Thai
+norms or cutoffs because none are verified.
 
-The current audio-to-CHAT workflow is experimental. Automated transcript or audio-derived outputs require therapist review before feature interpretation or exportable reporting.
+## Out of Scope for the Term Paper
 
-## In Scope for v1.6.0
+These exist in the repository as groundwork and are not part of the presented
+system or its evaluation:
 
-- Simplify the therapist-facing workflow and labels.
-- Keep advanced metrics available behind details or advanced sections.
-- Strengthen Progress Reports with transcript review status, guideline-linked findings, and clinical caution.
-- Keep guideline mappings traceable without inventing citations or norms.
-- Clarify documentation for advisor review.
-- Frame ML accuracy and classification results as Chapter 4 research results, separate from therapist-facing Progress Report behavior.
-
-## Out of Scope for v1.6.0
-
-- Clinical diagnosis.
-- Production deployment.
-- Thai clinical validation claims.
-- New large AI features.
-- Rebuilding the public screening app or dashboard as primary products.
+- Production deployment: multi-tenant isolation, Supabase Auth/MFA, RLS,
+  managed storage, invitation and break-glass flows, staging evidence scripts.
+- The Assessment v2 workflow (`/api/v2`, `/assessments/...`).
+- The terminal TUI.
+- Clinical diagnosis, risk scores, and Thai clinical validation claims.

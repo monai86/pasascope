@@ -191,6 +191,19 @@ persistence layer หลักของ lingualens.
     FastAPI, database, auth, storage, queue, or product-workflow ownership and is
     not wired into a product API or production jobs yet.
 
+32. ASR ใน v1 workflow: provider ที่ใช้ชื่อ engine ต้องรัน engine นั้นจริง ห้าม
+    register provider ที่ติดป้ายข้อความจาก client เป็นผล ASR. `local_whisper`
+    เป็น opt-in (`LINGUALENS_ASR_LOCAL_WHISPER_ENABLED`) รันบนเครื่อง API เท่านั้น
+    และต้องปฏิเสธ strategy ที่ส่งเสียงออกนอกเครื่อง. เมื่อถอดเสียงไม่สำเร็จต้องรายงาน
+    failed โดยไม่มีข้อความทดแทน ทั้งใน API และใน offline adapter ของ GUI/TUI.
+    Web app ต้องไม่เลือก mock provider แทนผู้ใช้
+33. ค่า feature ภาษาไทย (MLU-w, TTR, echolalia cue, pronoun cue) ต้องมาจากกฎชุด
+    เดียวใน `src/clinical_speech/thai_lsa.py` ทั้งใน `apps/api` และ GUI; ห้ามมีสูตร
+    สำรองหรือค่าคงที่แทนค่าที่คำนวณไม่ได้ ให้ส่งเป็นค่าว่างแทน. สถานะของ guideline
+    link ต้องเป็นคำบรรยายสิ่งที่นับได้ ไม่ใช่คำตัดสินเทียบเกณฑ์
+34. ขอบเขต term paper อยู่ใน `SCOPE_AND_DELIVERABLES.md` และการจับคู่หัวข้อกับหลักฐาน
+    อยู่ใน `docs/TERM_PAPER_MAPPING.md`
+
 ## ML status
 
 Current ML runtime surface คือ **Reference evidence review** ใน `packages/ml/`,

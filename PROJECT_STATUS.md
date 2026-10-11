@@ -19,6 +19,13 @@ This project is an AI-assisted speech-language clinical decision-support prototy
 ## Current Strengths
 
 - Human-in-the-loop transcript review and sign-off workflow.
+- On-device Whisper transcription with child/adult speaker separation for
+  uploaded recordings in the web app (opt-in), producing a draft the therapist
+  must correct and attest.
+- Thai language-sample features, echolalia cues and pronoun cues are computed
+  by one shared rule set in the web app and the desktop GUI.
+- `scripts/evaluate_thai_asr.py` scores ASR drafts against hand-corrected Thai
+  transcripts and reports feature drift.
 - Mock/demo mode with seeded therapist cases and sessions.
 - Reviewed-only report eligibility boundary for decision-support outputs.
 - Shared Guideline Mapping Catalog for feature-to-construct mapping.
@@ -68,6 +75,8 @@ This project is an AI-assisted speech-language clinical decision-support prototy
 - The system does not diagnose ASD and cannot confirm or rule out ASD.
 - The model was evaluated on public English-language datasets, not validated as a clinical model for Thai children.
 - The audio-to-CHAT pipeline is experimental and requires therapist transcript review.
+- ASR accuracy on Thai child speech is unmeasured beyond a small local sample
+  set; no recordings of real children are part of the repository.
 - The extracted transcript analysis contract has a synchronous research
   execution seam but is not yet connected to a product API, production job
   runner, or therapist workflow.

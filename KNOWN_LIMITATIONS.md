@@ -1,7 +1,10 @@
 # Known Limitations
 
 - **Decision-support only, not diagnostic**: This is a research and education prototype, not a clinical diagnostic product or validated clinical tool. It does not provide automated diagnoses.
-- **ASR is experimental**: Browser recording and automated speech recognition (ASR) are experimental. The transcription job uses a local mock processing API and does not claim accurate speech recognition.
+- **ASR is experimental**: Browser recording and automated speech recognition (ASR) are experimental. Uploaded recordings are transcribed by on-device Whisper only when `LINGUALENS_ASR_LOCAL_WHISPER_ENABLED=true`; otherwise transcription is unavailable and the therapist pastes or imports the transcript. The synthetic mock provider is never selected by the web app.
+- **Whisper is not trained for young children's Thai**: expect wrong words, merged turns, and wrong speaker labels, especially with quiet, overlapping, or unclear speech. Speaker separation relies on voice differences and fails when speakers sound alike. Accuracy has only been checked on the small local sample set described in `data/evaluation/README.md`.
+- **Echolalia and pronoun cues are heuristics**: a natural answer that reuses the adult's words can be flagged as an echo, and only immediate echoes are detected. Thai pronoun cues cover second-person pronouns followed by a desire or state verb only.
+- **Desktop GUI radar chart uses placeholder age benchmarks**: the "TD norm" values in `packages/gui/radar_renderer.py` have no cited source and are not Thai norms. Do not present the chart as a normative comparison.
 - **Basic CHAT import/export only**: Import and export support basic CHAT file structure (metadata headers, speaker tiers, timestamps) and skip unsupported tiers with warnings.
 - **Not full TalkBank/CLAN-grade compatibility yet**: The parser does not validate full TalkBank/CLAN compatibility or enforce all syntactic conventions of the CLAN utility suite.
 - Audio remains memory-only in the browser and is lost on page refresh.

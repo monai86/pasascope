@@ -1,5 +1,5 @@
 #!/bin/bash
-# LinguaLens Terminal TUI Launcher shortcut
+# PasaScope Terminal TUI Launcher shortcut
 ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 cd "$ROOT_DIR"
 
@@ -11,4 +11,4 @@ else
     PYTHON_BIN="python3"
 fi
 
-"$PYTHON_BIN" scripts/lingualens_tui.py "$@"
+"$PYTHON_BIN" scripts/pasascope_tui.py "$@"

@@ -20,7 +20,7 @@ Research prototype for extracting speech-language features from Thai language sa
 
 ## ⚠️ Clinical Safety Boundary & Prototype Status
 
-This project is a **research prototype and educational demo**. It supports screening support, concern level estimation, and progress tracking only. It does not diagnose ASD and does not replace clinician judgment. The model was trained on English-speaking public corpora and is **not validated for Thai children**.
+This project is a **research prototype and educational demo**. It supports transcript drafting, descriptive language-sample measures, review cues, and progress reporting only. It does not diagnose ASD and does not replace clinician judgment. The model was trained on English-speaking public corpora and is **not validated for Thai children**.
 
 ### Prototype Status & Limitations
 - **Persistent Therapist Workflow**: PasaScope persists case, session,
@@ -499,9 +499,27 @@ End-to-end `.wav` → `.cha` pipeline using Whisper ASR + speaker diarization.
 
 ```bash
 python -m src.audio_pipeline.pipeline recording.wav \
-    --model small --age-months 48 --sex male --group ASD
+    --model small --strategy thai --age-months 48
 # → writes recording.cha next to recording.wav
 ```
+
+The therapist web app uses the same pipeline for uploaded recordings when
+on-device transcription is enabled:
+
+```bash
+LINGUALENS_ASR_LOCAL_WHISPER_ENABLED=true bash scripts/start_local.sh
+```
+
+Recordings stay on the machine running the API. With the flag off, the app
+reports that transcription is unavailable and offers paste or `.cha` import; it
+never substitutes synthetic text. `LINGUALENS_ASR_WHISPER_MODEL_SIZE` (default
+`small`) and `LINGUALENS_ASR_LANGUAGE_STRATEGY` (default `thai`) tune it.
+
+**Evaluating it on Thai recordings:** follow
+[`data/evaluation/README.md`](./data/evaluation/README.md), then run
+`python scripts/evaluate_thai_asr.py` for word/character error rates, speaker
+attribution, and feature drift, and
+`python scripts/report_transcript_review_time.py` for review time.
 
 **Diarization backends:**
 - `EmbeddingDiarizer` (default) — ECAPA-TDNN embeddings, no HF token needed
@@ -623,5 +641,7 @@ deployment path and maintained ML artifact workflow.
 | [`docs/PROJECT_SOURCE_OF_TRUTH.md`](./docs/PROJECT_SOURCE_OF_TRUTH.md) | Active/legacy/generated architecture map |
 | [`docs/CURRENT_HANDOFF.md`](./docs/CURRENT_HANDOFF.md) | Latest verified state, deferred work, and continuation brief |
 | [`CHANGELOG.md`](./CHANGELOG.md) | Version history |
+| [`SCOPE_AND_DELIVERABLES.md`](./SCOPE_AND_DELIVERABLES.md) | What the term paper presents and what is out of scope |
+| [`docs/TERM_PAPER_MAPPING.md`](./docs/TERM_PAPER_MAPPING.md) | Term-paper sections mapped to system parts and evidence |
 | [`docs/ML_DECISION_SUPPORT_MODEL_CARD.md`](./docs/ML_DECISION_SUPPORT_MODEL_CARD.md) | ML and reference-evidence scope, gates, and limitations |
 | [`docs/ML_REFERENCE_EVIDENCE_OPERATIONS.md`](./docs/ML_REFERENCE_EVIDENCE_OPERATIONS.md) | Artifact approval, promotion, rollback, and incident runbook |

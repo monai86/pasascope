@@ -3,6 +3,22 @@
 ## [v1.7.1] - 2026-10-10
 
 ### Added
+- **On-device transcription in the therapist app** (`apps/api/`, `apps/lingualens-app/`):
+  - `local_whisper` now runs the Whisper + speaker-separation pipeline on the stored recording instead of being a stub. Opt-in with `LINGUALENS_ASR_LOCAL_WHISPER_ENABLED=true`; the remote `api_openai` strategy is refused.
+  - The web app selects `local_whisper` when available, verifies the upload before transcription, and waits in proportion to clip length. It no longer requests the synthetic mock provider.
+  - Browser recording types (`audio/webm`, `audio/ogg`) are accepted at upload.
+- **Thai ASR evaluation** (`scripts/evaluate_thai_asr.py`, `scripts/report_transcript_review_time.py`): draft-versus-gold error rates, child-speech attribution, feature drift, processing time, and draft-to-attestation review time. See `data/evaluation/README.md`.
+
+### Fixed
+- **Fabricated results removed** (`packages/tui/`, `packages/gui/`, `src/`):
+  - The offline adapter no longer returns a canned transcript and fixed pitch values when audio processing fails; it raises instead.
+  - Intelligibility is computed from transcript markers instead of fixed values; the MLU-morpheme estimate (MLU-words × 1.18) is removed.
+  - Guideline statuses such as "Age Expected" are replaced with descriptive statuses; no Thai norm backs them.
+  - CHAT headers no longer default the group to ASD or hard-code age and sex.
+  - Engine-named placeholder ASR providers (`whisper`, `faster_whisper`, `whisperx`, `batchalign`) are unregistered.
+- **Thai cue parity** (`apps/api/`): echolalia and pronoun cues for Thai utterances use the same rules as the desktop GUI; the pronoun cue is reported as not computed, rather than 0, when it cannot be assessed.
+
+### Added
 - **Desktop Backend Management** (`packages/gui/`):
   - Added `BackendServerManager` to manage local `uvicorn` backend process lifecycle (spawn, health-check, terminate) directly from the Tk desktop GUI.
   - Wired into TUI client's live/mock adapter switch and isolated Tk tests into dedicated pytest processes.
