@@ -10,7 +10,6 @@ import { SessionGuide, type SessionGuideAction } from "@/features/sessions/compo
 import { resolveSessionHref } from "@/features/sessions/state/session-view";
 import { EvidenceReviewSection } from "@/features/sessions/findings/evidence-review-section";
 import { FeatureDecisionGrid } from "@/features/sessions/findings/feature-decision-grid";
-import { InteractiveRadarChart } from "@/features/sessions/findings/interactive-radar-chart";
 import { ProgressSummaryCard } from "@/features/sessions/findings/progress-summary-card";
 import {
   ProvenanceItem,
@@ -204,10 +203,7 @@ export function SessionFindingsView({
             ) : null}
           </div>
           {currentFindingsState.featuresExtracted ? (
-            <div className="space-y-4">
-              <InteractiveRadarChart />
-              <FeatureDecisionGrid signals={signalCards} />
-            </div>
+            <FeatureDecisionGrid signals={signalCards} />
           ) : null}
         </section>
 

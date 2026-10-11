@@ -21,6 +21,9 @@ export interface AudioReviewWorkbenchProps {
   className?: string;
 }
 
+// Speaker codes the transcription pipeline uses for adults.
+const ADULT_SPEAKERS = new Set(["INV", "MOT", "FAT", "THER"]);
+
 export function AudioReviewWorkbench({
   lines,
   onLinesChange,
@@ -72,7 +75,7 @@ export function AudioReviewWorkbench({
     if (lines.length > 0) {
       const maxEnd = Math.max(...lines.map((l) => l.endMs || 0));
       if (maxEnd > 0) {
-        setDurationMs((prev) => Math.max(prev, maxEnd));
+        setDurationMs(maxEnd);
       }
     }
   }, [lines]);
@@ -209,14 +212,14 @@ export function AudioReviewWorkbench({
       const spk = line.speaker.toUpperCase().replace("*", "");
 
       if (spk === "CHI") chiMs += dur;
-      else if (spk === "INV") invMs += dur;
+      else if (ADULT_SPEAKERS.has(spk)) invMs += dur;
 
       if (i > 0) {
         const prev = lines[i - 1];
         const prevSpk = prev.speaker.toUpperCase().replace("*", "");
         if (spk !== prevSpk) turns++;
 
-        if (prevSpk === "INV" && spk === "CHI" && typeof line.startMs === "number" && typeof prev.endMs === "number") {
+        if (ADULT_SPEAKERS.has(prevSpk) && spk === "CHI" && typeof line.startMs === "number" && typeof prev.endMs === "number") {
           const gap = line.startMs - prev.endMs;
           if (gap >= 0 && gap <= 5000) {
             latencies.push(gap);
@@ -226,8 +229,9 @@ export function AudioReviewWorkbench({
     }
 
     const totalMs = chiMs + invMs;
-    const ratio = totalMs > 0 ? (chiMs / totalMs) * 100 : 35;
-    const avgLat = latencies.length > 0 ? latencies.reduce((a, b) => a + b, 0) / latencies.length : 450;
+    // No timed speech or no adult-to-child turn means "not measured", not a default.
+    const ratio = totalMs > 0 ? (chiMs / totalMs) * 100 : null;
+    const avgLat = latencies.length > 0 ? latencies.reduce((a, b) => a + b, 0) / latencies.length : null;
 
     return { childTalkRatio: ratio, avgLatencyMs: avgLat, turnsCount: turns };
   }, [lines]);
@@ -322,7 +326,7 @@ export function AudioReviewWorkbench({
         durationMs={durationMs}
         segments={segments}
         peaks={peaks}
-        responseLatencyMs={avgLatencyMs}
+        responseLatencyMs={avgLatencyMs ?? undefined}
         showPitch={showPitch}
         onSeek={handleSeek}
         onSegmentBoundaryChange={handleSegmentBoundaryChange}
@@ -333,7 +337,7 @@ export function AudioReviewWorkbench({
         <div className="flex items-center gap-4">
           <span>
             <strong className="text-slate-900 dark:text-slate-100">Child Talk Time:</strong>{" "}
-            {childTalkRatio.toFixed(1)}%
+            {childTalkRatio === null ? "–" : `${childTalkRatio.toFixed(1)}%`}
           </span>
           <span>
             <strong className="text-slate-900 dark:text-slate-100">Conversational Turns:</strong>{" "}
@@ -341,7 +345,7 @@ export function AudioReviewWorkbench({
           </span>
           <span>
             <strong className="text-slate-900 dark:text-slate-100">Mean Turn Latency:</strong>{" "}
-            {Math.round(avgLatencyMs)} ms
+            {avgLatencyMs === null ? "–" : `${Math.round(avgLatencyMs)} ms`}
           </span>
         </div>
 

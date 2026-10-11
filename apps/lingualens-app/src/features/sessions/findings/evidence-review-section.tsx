@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 
 import type { WorkflowState } from "@/lib/workflow";
 import {
@@ -32,10 +32,18 @@ export function EvidenceReviewSection({
   const [disagreementProfile, setDisagreementProfile] = useState<string>();
   const [disagreementNote, setDisagreementNote] = useState("");
 
+  // Open the panel when a review has been generated, so its result is not
+  // hidden behind a collapsed summary. The therapist can still close it.
+  const detailsRef = useRef<HTMLDetailsElement>(null);
+  const reviewResultId = mlDecisionSupport?.resultId;
+  useEffect(() => {
+    if (reviewResultId && detailsRef.current) detailsRef.current.open = true;
+  }, [reviewResultId]);
+
   let initialEvidenceCueCount = 0;
 
   return (
-    <details className="responsive-details self-start rounded-[var(--radius-shell)] border border-[color:var(--color-border)] bg-[color:var(--color-surface-reading)]">
+    <details ref={detailsRef} className="responsive-details self-start rounded-[var(--radius-shell)] border border-[color:var(--color-border)] bg-[color:var(--color-surface-reading)]">
       <summary className="flex min-h-14 cursor-pointer items-center justify-between gap-3 px-5 py-3">
         <span className="font-semibold text-[color:var(--color-text-strong)]">Review guidance and evidence</span>
         <span className="text-xs font-medium text-[color:var(--color-text-muted)]">{recommendedReviewPoints.length} review point{recommendedReviewPoints.length === 1 ? "" : "s"}</span>
@@ -58,6 +66,23 @@ export function EvidenceReviewSection({
           <p className="text-sm text-[color:var(--color-text-muted)]">
             {mlDecisionSupport.providerName} v{mlDecisionSupport.providerVersion} · schema {mlDecisionSupport.featureSchemaVersion}
           </p>
+          {(mlDecisionSupport.cues ?? []).length > 0 ? (
+            <ul className="space-y-3" data-testid="review-cue-list">
+              {(mlDecisionSupport.cues ?? []).map((cue) => (
+                <li key={cue.cueCode} className="rounded-[var(--radius-panel)] border border-[color:var(--color-border)] bg-[color:var(--color-surface-strong)] p-4">
+                  <p className="font-semibold text-[color:var(--color-text-strong)]">{cue.title}</p>
+                  <p className="mt-1 text-sm text-[color:var(--color-text-muted)]">{cue.explanation}</p>
+                  <p className="mt-2 text-sm text-[color:var(--color-text-muted)]">
+                    {Object.entries(cue.supportingFeatures).map(([name, value]) => `${name.replace(/_/g, " ")}: ${value ?? "not computed"}`).join(" · ")}
+                  </p>
+                  <p className="mt-2 text-sm font-medium text-[color:var(--color-text-strong)]">Next: {cue.recommendedNextReviewStep}</p>
+                  {cue.limitations.length > 0 ? (
+                    <p className="mt-1 text-xs text-[color:var(--color-text-muted)]">{cue.limitations.join(" ")}</p>
+                  ) : null}
+                </li>
+              ))}
+            </ul>
+          ) : null}
           {mlDecisionSupport.patternEvidence ? (
             <div className="rounded-[var(--radius-panel)] border border-[color:var(--color-border)] bg-[color:var(--color-surface-strong)] p-4">
               <p className="font-semibold text-[color:var(--color-text-strong)]">{patternEvidenceTitle(mlDecisionSupport.patternEvidence.status)}</p>

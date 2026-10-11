@@ -800,3 +800,35 @@ def test_chat_output_joins_thai_word_pieces_before_segmenting():
     main_tier = next(line for line in utterances_to_chat([utterance]).splitlines() if line.startswith("*CHI:"))
 
     assert main_tier == "*CHI:\tวันนี้ เล่น รถ xxx ."
+
+
+def test_non_wav_input_is_decoded_to_wav_before_the_pipeline(tmp_path, monkeypatch):
+    """Browser recordings (WebM) must reach diarization as WAV; librosa cannot read them."""
+    from src.audio_pipeline import pipeline
+
+    seen = {}
+
+    def fake_decode(source, destination):
+        seen["decoded_from"] = source
+        destination.write_bytes(b"RIFF")
+
+    @pipeline._decoded_to_wav_first
+    def fake_pipeline(audio_path, **kwargs):
+        seen["ran_on"] = audio_path
+        seen["existed"] = audio_path.exists()
+        return kwargs
+
+    monkeypatch.setattr(pipeline, "decode_to_wav", fake_decode)
+    recording = tmp_path / "recording.webm"
+    recording.write_bytes(b"webm")
+
+    assert fake_pipeline(recording, model_size="tiny") == {"model_size": "tiny"}
+    assert seen["decoded_from"] == recording
+    assert seen["ran_on"].name == "recording.wav" and seen["existed"]
+    assert not seen["ran_on"].exists()  # temporary copy is removed
+
+    seen.clear()
+    wav = tmp_path / "clip.wav"
+    wav.write_bytes(b"RIFF")
+    fake_pipeline(wav)
+    assert seen == {"ran_on": wav, "existed": True}

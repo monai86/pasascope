@@ -451,6 +451,15 @@ def run_audio_processing_job(repo: MockRepository, job_id: str, *, actor_id: str
     repo.add_audit("audio.process", job.job_id, "Experimental audio-to-draft-CHA processing completed.", actor_id=actor_id)
     return repo.clone(job)
 
+_CHAT_LANGUAGE_CODES = {"th": "tha", "en": "eng"}
+
+
+def _chat_languages(detected: str) -> list[str]:
+    """CHAT @Languages codes for the languages a provider reported hearing."""
+    codes = [_CHAT_LANGUAGE_CODES.get(part.strip().lower()) for part in (detected or "").split(",")]
+    return [code for code in dict.fromkeys(codes) if code]
+
+
 def create_draft_transcript_from_result(
     repo: MockRepository,
     session_id: str,
@@ -513,7 +522,12 @@ def create_draft_transcript_from_result(
             source="asr_pipeline",
         ))
 
-    raw_text = build_cha_text(utterances, media_name=f"{session_id}_audio")
+    chat_languages = _chat_languages(result.language)
+    raw_text = build_cha_text(
+        utterances,
+        media_name=f"{session_id}_audio",
+        **({"language": ", ".join(chat_languages)} if chat_languages else {}),
+    )
     transcript = Transcript(
         transcript_id=new_id("tr"),
         session_id=session_id,
@@ -531,6 +545,7 @@ def create_draft_transcript_from_result(
             "is_mock": is_mock,
             "audio_file_id": audio_file_id,
             "word_timestamps_available": result.word_timestamps_available,
+            **({"languages": chat_languages} if chat_languages else {}),
         },
     )
     repo.transcripts[transcript.transcript_id] = transcript

@@ -46,3 +46,46 @@ describe("transcription provider selection", () => {
     expect(transcriptionWaitBudgetMs(Number.NaN)).toBe(180_000);
   });
 });
+
+describe("review provider selection", () => {
+  afterEach(() => {
+    vi.unstubAllGlobals();
+  });
+
+  function stubReadiness(byProvider: Record<string, { ready: boolean; reason_codes: string[] }>) {
+    const requested: string[] = [];
+    vi.stubGlobal(
+      "fetch",
+      vi.fn(async (input: RequestInfo | URL) => {
+        const url = String(input);
+        requested.push(url);
+        const provider = new URL(url).searchParams.get("provider_id") ?? "rule_based_review_cue";
+        return new Response(
+          JSON.stringify({ provider_id: provider, reasons: [], ...byProvider[provider] }),
+          { status: 200, headers: { "content-type": "application/json" } }
+        );
+      })
+    );
+    return requested;
+  }
+
+  it("uses rule-based review cues when reference evidence is not installed", async () => {
+    const { getMlReadiness } = await import("@/services/adapters/analysis-adapter");
+    stubReadiness({
+      reference_evidence_review: { ready: false, reason_codes: ["ml_provider_unavailable"] },
+      rule_based_review_cue: { ready: true, reason_codes: [] },
+    });
+
+    await expect(getMlReadiness("TR-1")).resolves.toMatchObject({ ready: true, providerId: "rule_based_review_cue" });
+  });
+
+  it("keeps a reference-evidence block that the therapist can resolve", async () => {
+    const { getMlReadiness } = await import("@/services/adapters/analysis-adapter");
+    const requested = stubReadiness({
+      reference_evidence_review: { ready: false, reason_codes: ["features_not_completed"] },
+    });
+
+    await expect(getMlReadiness("TR-1")).resolves.toMatchObject({ ready: false, providerId: "reference_evidence_review" });
+    expect(requested).toHaveLength(1);
+  });
+});

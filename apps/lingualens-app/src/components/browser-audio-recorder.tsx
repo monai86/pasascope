@@ -383,7 +383,7 @@ export function BrowserAudioRecorder({
 
       {privacyNotice ? <p className="mt-4 rounded-xl border border-amber-200 bg-amber-50 p-3 text-sm font-semibold text-amber-900">Unsaved recording was cleared for privacy. Please record again.</p> : null}
       {error ? <p className="mt-4 rounded-xl border border-red-200 bg-red-50 p-3 text-sm font-semibold text-red-800" role="alert">{error}</p> : null}
-      <p className="mt-3 text-sm font-semibold text-clinical">ASR/transcription is experimental and uses a local mock processing API after explicit upload.</p>
+      <p className="mt-3 text-sm font-semibold text-clinical">Transcription is experimental. After you upload, the recording is transcribed on this server and the draft must be reviewed.</p>
       <p className="mt-1 text-xs text-slate-600">Audio stays in memory only while this page is open. It is not uploaded automatically.</p>
     </div>
   );

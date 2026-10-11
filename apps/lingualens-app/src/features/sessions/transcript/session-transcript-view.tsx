@@ -130,17 +130,35 @@ export function SessionTranscriptView({
           )}
 
           {audioUrl && reviewMode === "audio" ? (
-            <AudioReviewWorkbench
-              lines={lines}
-              onLinesChange={onLinesChange}
-              audioUrl={audioUrl}
-              sessionId={sessionContext.sessionId}
-              isAttested={state.transcriptAttested}
-              onAttest={onAttest}
-              onSaveDraft={onSaveDraft}
-              isBusy={busy}
-              findingsStale={Boolean(state.featuresExtracted && state.transcriptSaveStatus === "unsaved")}
-            />
+            <>
+              <AudioReviewWorkbench
+                lines={lines}
+                onLinesChange={onLinesChange}
+                audioUrl={audioUrl}
+                sessionId={sessionContext.sessionId}
+                isAttested={state.transcriptAttested}
+                onAttest={onAttest}
+                onSaveDraft={onSaveDraft}
+                isBusy={busy}
+                findingsStale={Boolean(state.featuresExtracted && state.transcriptSaveStatus === "unsaved")}
+              />
+              {/* Saving, QA and attestation live in the text editor; point to them from here. */}
+              <div className="flex flex-col gap-3 rounded-[var(--radius-panel)] border border-line bg-[color:var(--color-surface-reading)] p-4 sm:flex-row sm:items-center sm:justify-between">
+                <p className="text-sm text-slate-700">
+                  {state.transcriptAttested
+                    ? "This transcript is attested."
+                    : "When the speakers and wording are correct, save the transcript, run QA and attest it."}
+                </p>
+                <button
+                  type="button"
+                  data-testid="continue-to-attestation-button"
+                  onClick={() => setReviewMode("classic")}
+                  className="inline-flex min-h-11 shrink-0 items-center justify-center rounded-[var(--radius-card)] bg-clinical px-4 py-2 text-sm font-semibold text-white"
+                >
+                  Continue to save, QA and attestation
+                </button>
+              </div>
+            </>
           ) : (
             <TranscriptEditorPanel
               lines={lines}

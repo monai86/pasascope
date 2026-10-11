@@ -445,7 +445,7 @@ export function useSessionWorkspace({ sessionId, caseId, transcriptId, reportId,
               ? "Recording paused. Audio remains in memory only."
               : metadata.recordingStatus === "idle"
                 ? "In-memory recording cleared."
-                : "ASR/transcription remains experimental and is not connected.",
+                : "Transcription is experimental; upload the recording to request a draft.",
         error: metadata.error
       }));
     });
@@ -729,7 +729,13 @@ export function useSessionWorkspace({ sessionId, caseId, transcriptId, reportId,
       if (!targetSession || !analyzingState.backendTranscriptId) throw new Error("Persistent transcript unavailable.");
       const backendAnalysis = await sessionWorkflowService.extractFindings(targetSession, analyzingState.backendTranscriptId);
       if (!canSettleWorkflowRequest(requestIdentity, currentWorkflowRequestIdentity(), "fulfilled")) return;
-      persist(sessionWorkflowReducer(analyzingState, { type: "findings-succeeded", findings: backendAnalysis }));
+      // Readiness was last checked before features existed; refresh it so the
+      // findings page does not show a stale "features not extracted" block.
+      const mlReadiness = await getMlReadiness(analyzingState.backendTranscriptId).catch(() => undefined);
+      persist({
+        ...sessionWorkflowReducer(analyzingState, { type: "findings-succeeded", findings: backendAnalysis }),
+        mlReadiness,
+      });
       router.push(workflowSessionHref("findings", analyzingState));
     } catch {
       if (!canSettleWorkflowRequest(requestIdentity, currentWorkflowRequestIdentity(), "rejected")) return;
@@ -863,7 +869,10 @@ export function useSessionWorkspace({ sessionId, caseId, transcriptId, reportId,
     };
     try {
       if (!mlState.backendTranscriptId) throw new Error("Persistent transcript unavailable.");
-      const mlDecisionSupport = await generateMlDecisionSupport(mlState.backendTranscriptId);
+      const mlDecisionSupport = await generateMlDecisionSupport(
+        mlState.backendTranscriptId,
+        mlState.mlReadiness?.providerId,
+      );
       if (!canApplyMlDecisionSupportSettlement(requestIdentity, currentWorkflowRequestIdentity(), "fulfilled")) return;
       persist({
         ...mlState,

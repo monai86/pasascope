@@ -131,10 +131,16 @@ type BackendAiReview = {
 
 const REFERENCE_EVIDENCE_PROVIDER = "reference_evidence_review";
 
-export async function generateMlDecisionSupport(transcriptId: string): Promise<MlDecisionSupport> {
+const PROVIDER_UNAVAILABLE_REASON = "ml_provider_unavailable";
+
+/** `providerId` is the provider the readiness check settled on. */
+export async function generateMlDecisionSupport(
+  transcriptId: string,
+  providerId: string = REFERENCE_EVIDENCE_PROVIDER
+): Promise<MlDecisionSupport> {
   const result = await apiRequest<BackendMlDecisionSupport>(`/transcripts/${transcriptId}/ml-review`, {
     method: "POST",
-    body: JSON.stringify({ provider_id: REFERENCE_EVIDENCE_PROVIDER })
+    body: JSON.stringify({ provider_id: providerId || REFERENCE_EVIDENCE_PROVIDER })
   });
   return normalizeMlResult(result);
 }
@@ -264,19 +270,31 @@ function normalizeAiReview(result: BackendAiReview): AiReview {
   };
 }
 
-export async function getMlReadiness(transcriptId: string): Promise<MlReadiness> {
+async function fetchMlReadiness(transcriptId: string, providerId?: string): Promise<MlReadiness> {
+  const query = providerId ? `?provider_id=${providerId}` : "";
   const result = await apiGet<{
     ready: boolean;
     provider_id: string;
     reason_codes: string[];
     reasons: string[];
-  }>(`/transcripts/${transcriptId}/ml-readiness?provider_id=${REFERENCE_EVIDENCE_PROVIDER}`);
+  }>(`/transcripts/${transcriptId}/ml-readiness${query}`);
   return {
     ready: result.ready,
     providerId: result.provider_id,
     reasonCodes: result.reason_codes,
     reasons: result.reasons
   };
+}
+
+/**
+ * Readiness of the review step. Reference-cohort evidence is preferred; when
+ * its data is not installed on the server, the backend's default rule-based
+ * review cues are used instead of leaving the step permanently blocked.
+ */
+export async function getMlReadiness(transcriptId: string): Promise<MlReadiness> {
+  const reference = await fetchMlReadiness(transcriptId, REFERENCE_EVIDENCE_PROVIDER);
+  if (!(reference.reasonCodes ?? []).includes(PROVIDER_UNAVAILABLE_REASON)) return reference;
+  return fetchMlReadiness(transcriptId);
 }
 
 function normalizeMlResult(result: BackendMlDecisionSupport): MlDecisionSupport {

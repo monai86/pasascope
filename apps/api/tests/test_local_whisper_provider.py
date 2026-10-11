@@ -200,6 +200,9 @@ def test_job_runs_local_whisper_on_the_stored_recording(whisper_enabled, monkeyp
         ("CHI", "เล่นรถ"),
     ]
     assert all(issue.code != "MOCK_ASR_OUTPUT" for issue in transcript.qa_issues)
+    # The draft is declared Thai, so QA does not warn about undeclared Thai text.
+    assert "@Languages:\ttha" in transcript.raw_text
+    assert transcript.chat_metadata["languages"] == ["tha"]
 
 
 def test_job_fails_without_a_transcript_when_whisper_fails(whisper_enabled, monkeypatch, tmp_path):

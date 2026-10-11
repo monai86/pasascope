@@ -17,9 +17,11 @@ dashboard + CLI can call.
 
 from __future__ import annotations
 
+import tempfile
 from dataclasses import dataclass
+from functools import wraps
 from pathlib import Path
-from typing import Optional
+from typing import Any, Optional
 
 from .acoustic_profile import AcousticProfile, compute_acoustic_profile
 from .chat_formatter import utterances_to_chat, write_chat
@@ -42,6 +44,41 @@ class PipelineResult:
     acoustic_profile: Optional[AcousticProfile] = None
 
 
+PIPELINE_SAMPLE_RATE = 16000
+
+
+def decode_to_wav(source: Path, destination: Path) -> None:
+    """Decode any container faster-whisper can read into 16 kHz mono WAV."""
+    import soundfile
+    from faster_whisper.audio import decode_audio
+
+    soundfile.write(str(destination), decode_audio(str(source), sampling_rate=PIPELINE_SAMPLE_RATE), PIPELINE_SAMPLE_RATE)
+
+
+def _decoded_to_wav_first(pipeline):
+    """Run the pipeline on a WAV copy when the input is another format.
+
+    Whisper decodes most containers itself, but speaker separation and the
+    acoustic profile load audio through librosa, which cannot read browser
+    recordings (WebM/Opus) or M4A without a system ffmpeg.
+    """
+
+    @wraps(pipeline)
+    def wrapper(audio_path: str | Path, **kwargs):
+        audio_path = Path(audio_path)
+        if not audio_path.exists():
+            raise FileNotFoundError(audio_path)
+        if audio_path.suffix.lower() == ".wav":
+            return pipeline(audio_path, **kwargs)
+        with tempfile.TemporaryDirectory() as workdir:
+            wav_path = Path(workdir) / f"{audio_path.stem}.wav"
+            decode_to_wav(audio_path, wav_path)
+            return pipeline(wav_path, **kwargs)
+
+    return wrapper
+
+
+@_decoded_to_wav_first
 def audio_to_cha(
     audio_path: str | Path,
     *,

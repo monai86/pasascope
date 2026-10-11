@@ -23,6 +23,13 @@
   - Engine-named placeholder ASR providers (`whisper`, `faster_whisper`, `whisperx`, `batchalign`) are unregistered.
 - **Thai transcript text** (`src/audio_pipeline/`): multi-utterance Thai drafts no longer have spaces inserted between characters, and exported CHAT no longer splits Thai words into fragments.
 - **Feature word counts** (`apps/api/`): CHAT annotation codes are no longer counted as words.
+- **Browser recordings could not be transcribed** (`src/audio_pipeline/`): WebM/Opus and other non-WAV recordings are decoded to WAV before speaker separation, which previously failed without a system ffmpeg.
+- **Web findings and transcript review** (`apps/lingualens-app/`):
+  - Removed the findings radar chart, which showed fixed sample values and "age-appropriate" labels for every session.
+  - The audio workbench no longer shows 35% child talk time and 450 ms latency when nothing was measured, counts every adult speaker code, and takes its duration from the transcript.
+  - Review cues are generated with the rule-based provider when reference evidence is not installed, are listed in the evidence panel, and readiness is refreshed after feature extraction; the step was permanently blocked before.
+  - The audio workbench links to save, QA and attestation, which were reachable only from the text editor tab.
+  - ASR drafts declare their detected language, so Thai drafts no longer trigger an undeclared-language QA warning.
 - **Thai cue parity** (`apps/api/`): echolalia and pronoun cues for Thai utterances use the same rules as the desktop GUI; the pronoun cue is reported as not computed, rather than 0, when it cannot be assessed.
 
 ### Added
