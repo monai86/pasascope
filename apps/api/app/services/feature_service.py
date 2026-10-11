@@ -33,6 +33,8 @@ def extract_features(
     repo: MockRepository,
     transcript_id: str,
     payload: FeatureExtractionRequest,
+    *,
+    actor_id: str = "system",
 ) -> FeatureSet:
     """
     Orchestrate feature extraction for a transcript.
@@ -150,7 +152,7 @@ def extract_features(
     )
     return repo.create_feature_set(
         feature_set,
-        actor_id="system",
+        actor_id=actor_id,
         audit_action="features.extract",
         audit_message=(
             f"Language sample features extracted by {result.provider_name} "

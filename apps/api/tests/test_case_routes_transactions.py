@@ -39,7 +39,7 @@ def test_create_case_route_uses_transactional_sql_repository_without_snapshot_sa
     assert row.consent_status == "pending"
     assert response.json()["consent_status"] == "pending"
     assert row.version == 1
-    assert audit.actor_id == "system"
+    assert audit.actor_id == "therapist-demo"
 
 
 def test_create_case_route_rejects_blank_case_code():

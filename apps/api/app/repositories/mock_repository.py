@@ -193,7 +193,14 @@ class MockRepository:
             return self.privacy_operations[target_id].organization_id
         return "pilot_org_001"
 
-    def create_case(self, payload: ChildCaseCreate, *, actor_id: str) -> ChildCase:
+    def create_case(
+        self,
+        payload: ChildCaseCreate,
+        *,
+        actor_id: str,
+        audit_actor_id: str | None = None,
+    ) -> ChildCase:
+        """``actor_id`` drives care-team defaults; ``audit_actor_id`` is who made the request."""
         case = ChildCase(case_id=new_id("case"), **payload.model_dump())
         if actor_id not in case.care_team_user_ids and actor_id != "system":
             case.care_team_user_ids = [*case.care_team_user_ids, actor_id]
@@ -202,7 +209,7 @@ class MockRepository:
         if case.primary_therapist_user_id and case.primary_therapist_user_id not in case.care_team_user_ids:
             case.care_team_user_ids = [*case.care_team_user_ids, case.primary_therapist_user_id]
         self.cases[case.case_id] = case
-        self.add_audit("case.create", case.case_id, "Case created.", actor_id=actor_id)
+        self.add_audit("case.create", case.case_id, "Case created.", actor_id=audit_actor_id or actor_id)
         return self.clone(case)
 
     def update_case(

@@ -13,7 +13,7 @@ def list_goals(repo: MockRepository, case_id: str) -> list[TherapyGoal]:
     return [repo.clone(goal) for goal in repo.therapy_goals.values() if goal.case_id == case_id]
 
 
-def create_goal(repo: MockRepository, case_id: str, payload: TherapyGoalCreate) -> TherapyGoal:
+def create_goal(repo: MockRepository, case_id: str, payload: TherapyGoalCreate, *, actor_id: str = "system") -> TherapyGoal:
     status = _validate_status(payload.status)
     goal = TherapyGoal(
         goal_id=new_id("goal"),
@@ -27,13 +27,13 @@ def create_goal(repo: MockRepository, case_id: str, payload: TherapyGoalCreate) 
         raise ValueError("Therapy goal title is required.")
     return repo.create_therapy_goal(
         goal,
-        actor_id="system",
+        actor_id=actor_id,
         audit_action="therapy_goal.create",
         audit_message="Therapy goal created for case.",
     )
 
 
-def update_goal(repo: MockRepository, goal_id: str, payload: TherapyGoalUpdate) -> TherapyGoal:
+def update_goal(repo: MockRepository, goal_id: str, payload: TherapyGoalUpdate, *, actor_id: str = "system") -> TherapyGoal:
     goal = repo.therapy_goals[goal_id]
     updates = payload.model_dump(exclude_unset=True)
     if "status" in updates and updates["status"] is not None:
@@ -47,7 +47,7 @@ def update_goal(repo: MockRepository, goal_id: str, payload: TherapyGoalUpdate) 
     goal.updated_at = datetime.now(timezone.utc)
     return repo.update_therapy_goal(
         goal,
-        actor_id="system",
+        actor_id=actor_id,
         audit_action="therapy_goal.patch",
         audit_message="Therapy goal updated.",
     )

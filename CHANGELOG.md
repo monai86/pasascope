@@ -24,6 +24,7 @@
   - `PATCH /api/v1/cases/{case_id}` no longer accepts `care_team_user_ids`, `primary_therapist_user_id` or `consent_status` (422). Care-team changes stay on the organization-admin care-team route; the route now also requires a clinical role and active consent, and audits the acting user.
   - Added `POST /api/v1/cases/{case_id}/grant-consent` for the audited `pending -> granted` transition. Withdrawn consent is final for a case (409); the frontend consent forms use this endpoint.
   - `PATCH /api/v1/sessions/{session_id}` no longer accepts `status` or cue-acknowledgement fields (422).
+  - Audit events for case, session, transcript, feature, review, report, goal, privacy, audio and consent actions triggered through the v1 routes now record the authenticated user instead of `system`; worker-run audio jobs record `worker`.
   - Evaluation helper routes now require an authenticated user and are closed whenever auth mode is not `mock`, including staging deployments that keep mock mode on.
 
 ### Fixed

@@ -67,7 +67,7 @@ def grant_consent(repo: MockRepository, case_id: str, payload: ConsentGrantReque
     return updated
 
 
-def withdraw_consent(repo: MockRepository, case_id: str, reason: str, redact_notes: bool = True) -> ConsentWithdrawalResult:
+def withdraw_consent(repo: MockRepository, case_id: str, reason: str, redact_notes: bool = True, *, actor_id: str = "system") -> ConsentWithdrawalResult:
     case = repo.cases[case_id]
     affected = {"sessions": 0, "therapy_goals": 0, "audio_metadata": 0, "transcripts": 0, "features": 0, "ml_results": 0, "ai_reviews": 0, "reports": 0, "jobs": 0}
     case.consent_status = "withdrawn"
@@ -138,8 +138,7 @@ def withdraw_consent(repo: MockRepository, case_id: str, reason: str, redact_not
     repo.add_audit(
         "consent.withdraw",
         case_id,
-        "Consent withdrawn by authorized request; linked workflow outputs were removed or unlinked.",
-    )
+        "Consent withdrawn by authorized request; linked workflow outputs were removed or unlinked.", actor_id=actor_id)
     return ConsentWithdrawalResult(
         case_id=case_id,
         affected_records=affected,

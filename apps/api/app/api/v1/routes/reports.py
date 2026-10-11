@@ -37,7 +37,7 @@ def create_draft(
     try:
         ensure_session_consent_active(repo, session_id)
         request = payload or ReportGenerationRequest()
-        return draft_report(repo, session_id, request)
+        return draft_report(repo, session_id, request, actor_id=user.user_id)
     except ValueError as exc:
         raise bad_request(str(exc)) from exc
 
@@ -66,8 +66,8 @@ def update_report(
     try:
         ensure_report_consent_active(repo, report_id)
         if repo.reports[report_id].status.value == "Signed Off":
-            return revise_finalized_report(repo, report_id, payload)
-        return patch_report(repo, report_id, payload)
+            return revise_finalized_report(repo, report_id, payload, actor_id=user.user_id)
+        return patch_report(repo, report_id, payload, actor_id=user.user_id)
     except ValueError as exc:
         raise bad_request(str(exc)) from exc
 

@@ -59,7 +59,7 @@ def generate(
     assert_clinical_mutation_allowed(user)
     ensure_transcript_consent_active(repo, transcript_id)
     try:
-        return create_ml_review(repo, transcript_id, payload or MLReviewRequest())
+        return create_ml_review(repo, transcript_id, payload or MLReviewRequest(), actor_id=user.user_id)
     except MLReadinessError as exc:
         raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail=exc.readiness.model_dump(mode="json")) from exc
     except ValueError as exc:
@@ -84,7 +84,7 @@ def compatibility_generate(
         raise not_found("Transcript not found.")
     response.headers["Deprecation"] = "true"
     try:
-        return create_ml_review(repo, transcript_id, payload or MLReviewRequest())
+        return create_ml_review(repo, transcript_id, payload or MLReviewRequest(), actor_id=user.user_id)
     except MLReadinessError as exc:
         raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail=exc.readiness.model_dump(mode="json")) from exc
     except ValueError as exc:

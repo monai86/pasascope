@@ -45,7 +45,7 @@ def upload_audio(
     assert_clinical_mutation_allowed(user)
     try:
         ensure_session_consent_active(repo, session_id)
-        return _public_processing_job(create_audio_upload_job(repo, session_id, payload))
+        return _public_processing_job(create_audio_upload_job(repo, session_id, payload, actor_id=user.user_id))
     except ValueError as exc:
         raise bad_request(str(exc)) from exc
 
@@ -76,7 +76,7 @@ def complete_upload(
     assert_clinical_mutation_allowed(user)
     try:
         ensure_audio_file_consent_active(repo, audio_file_id)
-        return _public_audio_metadata(complete_audio_upload(repo, audio_file_id, payload))
+        return _public_audio_metadata(complete_audio_upload(repo, audio_file_id, payload, actor_id=user.user_id))
     except ValueError as exc:
         if "not found" in str(exc).lower():
             raise not_found(str(exc)) from exc
@@ -94,7 +94,7 @@ def process_audio(
     assert_clinical_mutation_allowed(user)
     try:
         ensure_session_consent_active(repo, session_id)
-        job = process_audio_job(repo, session_id, payload or AudioProcessRequest())
+        job = process_audio_job(repo, session_id, payload or AudioProcessRequest(), actor_id=user.user_id)
         get_job_queue().enqueue(job.job_id)
         return job
     except ValueError as exc:
@@ -123,7 +123,7 @@ def cancel_job(job_id: str, repo: MockRepository = Depends(get_repository), user
     job.message = "Job cancelled by therapist."
     from app.services.audio_job_service import append_job_status
     append_job_status(job, JobStatus.cancelled)
-    repo.add_audit("job.cancel", job_id, "Transcription job cancelled by therapist.")
+    repo.add_audit("job.cancel", job_id, "Transcription job cancelled by therapist.", actor_id=user.user_id)
     return _public_processing_job(repo.clone(job))
 
 

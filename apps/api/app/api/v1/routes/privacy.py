@@ -82,7 +82,7 @@ def update_privacy_operation(
         raise not_found("Privacy operation not found.")
     require_org_case(repo, repo.privacy_operations[privacy_operation_id].case_id, user)
     try:
-        operation = patch_privacy_operation(repo, privacy_operation_id, payload)
+        operation = patch_privacy_operation(repo, privacy_operation_id, payload, actor_id=user.user_id)
         return PrivacyOperationAdminView.model_validate(operation.model_dump(mode="python"))
     except ValueError as exc:
         raise bad_request(str(exc)) from exc

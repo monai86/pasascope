@@ -41,7 +41,7 @@ def list_privacy_operations(repo: MockRepository) -> list[PrivacyOperation]:
     return [repo.clone(operation) for operation in operations]
 
 
-def patch_privacy_operation(repo: MockRepository, privacy_operation_id: str, payload: PrivacyOperationPatch) -> PrivacyOperation:
+def patch_privacy_operation(repo: MockRepository, privacy_operation_id: str, payload: PrivacyOperationPatch, *, actor_id: str = "system") -> PrivacyOperation:
     operation = repo.privacy_operations[privacy_operation_id]
     updates = payload.model_dump(exclude_unset=True)
     next_status = updates.get("status", operation.status)
@@ -58,7 +58,7 @@ def patch_privacy_operation(repo: MockRepository, privacy_operation_id: str, pay
     operation.updated_at = utc_now()
     return repo.update_privacy_operation(
         operation,
-        actor_id="system",
+        actor_id=actor_id,
         audit_action="privacy_operation.patch",
         audit_message=f"Privacy operation status is {operation.status}.",
     )

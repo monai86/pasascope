@@ -31,7 +31,7 @@ from app.services.cha_service import (
 SUPPORTED_LANGUAGE_CODES = {"eng", "tha"}
 
 
-def create_from_cha(repo: MockRepository, session_id: str, payload: TranscriptUploadCha) -> Transcript:
+def create_from_cha(repo: MockRepository, session_id: str, payload: TranscriptUploadCha, *, actor_id: str = "system") -> Transcript:
     session = repo.sessions[session_id]
     if session.transcript_id and not payload.replace_existing:
         return repo.clone(repo.transcripts[session.transcript_id])
@@ -51,13 +51,13 @@ def create_from_cha(repo: MockRepository, session_id: str, payload: TranscriptUp
     return repo.create_transcript(
         transcript,
         session_status=ReviewStatus.needs_review,
-        actor_id="system",
+        actor_id=actor_id,
         audit_action="transcript.upload_cha",
         audit_message="CHA transcript uploaded for therapist review.",
     )
 
 
-def create_from_manual(repo: MockRepository, session_id: str, payload: TranscriptManualCreate) -> Transcript:
+def create_from_manual(repo: MockRepository, session_id: str, payload: TranscriptManualCreate, *, actor_id: str = "system") -> Transcript:
     session = repo.sessions[session_id]
     if session.transcript_id and not payload.replace_existing:
         return repo.clone(repo.transcripts[session.transcript_id])
@@ -75,13 +75,13 @@ def create_from_manual(repo: MockRepository, session_id: str, payload: Transcrip
     return repo.create_transcript(
         transcript,
         session_status=ReviewStatus.needs_review,
-        actor_id="system",
+        actor_id=actor_id,
         audit_action="transcript.manual",
         audit_message="Manual transcript converted to reviewable CHAT draft.",
     )
 
 
-def patch_transcript(repo: MockRepository, transcript_id: str, payload: TranscriptPatch) -> Transcript:
+def patch_transcript(repo: MockRepository, transcript_id: str, payload: TranscriptPatch, *, actor_id: str = "system") -> Transcript:
     transcript = repo.transcripts[transcript_id]
     expected_version = transcript.version
     if payload.utterances is not None:
@@ -101,13 +101,13 @@ def patch_transcript(repo: MockRepository, transcript_id: str, payload: Transcri
         transcript,
         session_status=ReviewStatus.needs_review,
         expected_version=expected_version,
-        actor_id="system",
+        actor_id=actor_id,
         audit_action="transcript.patch",
         audit_message="Transcript edited; prior attestation and outputs are stale.",
     )
 
 
-def split_utterance(repo: MockRepository, transcript_id: str, payload: TranscriptSplitRequest) -> Transcript:
+def split_utterance(repo: MockRepository, transcript_id: str, payload: TranscriptSplitRequest, *, actor_id: str = "system") -> Transcript:
     transcript = repo.transcripts[transcript_id]
     utterances = list(transcript.utterances)
     index = next((idx for idx, item in enumerate(utterances) if item.utterance_id == payload.utterance_id), None)
@@ -133,10 +133,10 @@ def split_utterance(repo: MockRepository, transcript_id: str, payload: Transcrip
             confidence=original.confidence,
         ),
     ]
-    return patch_transcript(repo, transcript_id, TranscriptPatch(utterances=utterances, reviewer_note="Split utterance."))
+    return patch_transcript(repo, transcript_id, TranscriptPatch(utterances=utterances, reviewer_note="Split utterance."), actor_id=actor_id)
 
 
-def merge_utterances(repo: MockRepository, transcript_id: str, payload: TranscriptMergeRequest) -> Transcript:
+def merge_utterances(repo: MockRepository, transcript_id: str, payload: TranscriptMergeRequest, *, actor_id: str = "system") -> Transcript:
     transcript = repo.transcripts[transcript_id]
     utterances = list(transcript.utterances)
     first_index = next((idx for idx, item in enumerate(utterances) if item.utterance_id == payload.first_utterance_id), None)
@@ -158,7 +158,7 @@ def merge_utterances(repo: MockRepository, transcript_id: str, payload: Transcri
         }
     )
     utterances[first_index : second_index + 1] = [merged]
-    return patch_transcript(repo, transcript_id, TranscriptPatch(utterances=utterances, reviewer_note="Merged utterances."))
+    return patch_transcript(repo, transcript_id, TranscriptPatch(utterances=utterances, reviewer_note="Merged utterances."), actor_id=actor_id)
 
 
 def export_cha(repo: MockRepository, transcript_id: str) -> TranscriptExport:
@@ -199,7 +199,7 @@ def chat_build_options(raw_text: str) -> dict:
     }
 
 
-def run_qa(repo: MockRepository, transcript_id: str) -> QaReport:
+def run_qa(repo: MockRepository, transcript_id: str, *, actor_id: str = "system") -> QaReport:
     transcript = repo.transcripts[transcript_id]
     expected_version = transcript.version
     linked_audio = [audio_file for audio_file in repo.audio_files.values() if audio_file.session_id == transcript.session_id and audio_file.retained]
@@ -213,7 +213,7 @@ def run_qa(repo: MockRepository, transcript_id: str) -> QaReport:
         transcript,
         session_status=repo.sessions[transcript.session_id].status,
         expected_version=expected_version,
-        actor_id="system",
+        actor_id=actor_id,
         audit_action="transcript.qa",
         audit_message=f"Transcript QA completed with status {status.value}.",
         invalidate_downstream=False,
@@ -439,7 +439,7 @@ def unsupported_language_codes(language_headers: list[str]) -> list[str]:
     return sorted({code for code in codes if code not in SUPPORTED_LANGUAGE_CODES})
 
 
-def update_reviewed_transcript(repo: MockRepository, session_id: str, payload: any) -> Transcript:
+def update_reviewed_transcript(repo: MockRepository, session_id: str, payload: any, *, actor_id: str = "therapist") -> Transcript:
     session = repo.sessions[session_id]
     if not session.transcript_id or session.transcript_id not in repo.transcripts:
         from app.core.errors import not_found
@@ -480,7 +480,7 @@ def update_reviewed_transcript(repo: MockRepository, session_id: str, payload: a
         transcript,
         session_status=ReviewStatus.needs_review,
         expected_version=payload.base_version,
-        actor_id="therapist",
+        actor_id=actor_id,
         audit_action="transcript.review_update",
         audit_message="Transcript reviewed and updated with optimistic locking.",
         invalidate_downstream=True,

@@ -37,7 +37,7 @@ def create_case_goal(
     assert_clinical_mutation_allowed(user)
     try:
         ensure_case_consent_active(repo, case_id)
-        return create_goal(repo, case_id, payload)
+        return create_goal(repo, case_id, payload, actor_id=user.user_id)
     except ValueError as exc:
         raise bad_request(str(exc)) from exc
 
@@ -55,6 +55,6 @@ def patch_goal(
         require_case(repo, repo.therapy_goals[goal_id].case_id, user)
         assert_clinical_mutation_allowed(user)
         ensure_case_consent_active(repo, repo.therapy_goals[goal_id].case_id)
-        return update_goal(repo, goal_id, payload)
+        return update_goal(repo, goal_id, payload, actor_id=user.user_id)
     except ValueError as exc:
         raise bad_request(str(exc)) from exc

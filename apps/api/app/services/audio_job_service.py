@@ -64,7 +64,7 @@ def build_opaque_audio_object_key(filename: str) -> str:
     return f"audio/{new_id('obj')}{safe_suffix}"
 
 
-def create_audio_upload_job(repo: MockRepository, session_id: str, payload: AudioUploadRequest) -> ProcessingJob:
+def create_audio_upload_job(repo: MockRepository, session_id: str, payload: AudioUploadRequest, *, actor_id: str = "system") -> ProcessingJob:
     validate_audio_upload(payload)
     session = repo.sessions[session_id]
     storage_adapter = get_storage_adapter()
@@ -107,11 +107,11 @@ def create_audio_upload_job(repo: MockRepository, session_id: str, payload: Audi
         },
     )
     repo.jobs[job.job_id] = job
-    repo.add_audit("audio.upload", job.job_id, "Experimental audio processing job queued.")
+    repo.add_audit("audio.upload", job.job_id, "Experimental audio processing job queued.", actor_id=actor_id)
     return repo.clone(job)
 
 
-def complete_audio_upload(repo: MockRepository, audio_file_id: str, payload: AudioUploadCompleteRequest) -> AudioFileMetadata:
+def complete_audio_upload(repo: MockRepository, audio_file_id: str, payload: AudioUploadCompleteRequest, *, actor_id: str = "system") -> AudioFileMetadata:
     if audio_file_id not in repo.audio_files:
         raise ValueError("Audio file not found.")
     audio_file = repo.audio_files[audio_file_id]
@@ -131,12 +131,12 @@ def complete_audio_upload(repo: MockRepository, audio_file_id: str, payload: Aud
     audio_file.checksum_sha256 = payload.checksum_sha256
     audio_file.uploaded_at = utc_now()
     audio_file.upload_status = "uploaded"
-    repo.add_audit("audio.upload_complete", audio_file.audio_file_id, "Audio upload metadata marked complete.")
+    repo.add_audit("audio.upload_complete", audio_file.audio_file_id, "Audio upload metadata marked complete.", actor_id=actor_id)
     return repo.clone(audio_file)
 
 
-def process_audio(repo: MockRepository, session_id: str, payload: AudioProcessRequest | TranscriptionJobRequest) -> ProcessingJob:
-    job = create_audio_processing_job(repo, session_id, payload)
+def process_audio(repo: MockRepository, session_id: str, payload: AudioProcessRequest | TranscriptionJobRequest, *, actor_id: str = "system") -> ProcessingJob:
+    job = create_audio_processing_job(repo, session_id, payload, actor_id=actor_id)
     return repo.clone(job)
 
 
@@ -190,7 +190,7 @@ def _ensure_no_active_job_for_audio_artifact(
             raise ValueError("Only one active processing job is allowed per audio artifact.")
 
 
-def create_audio_processing_job(repo: MockRepository, session_id: str, payload: AudioProcessRequest | TranscriptionJobRequest) -> ProcessingJob:
+def create_audio_processing_job(repo: MockRepository, session_id: str, payload: AudioProcessRequest | TranscriptionJobRequest, *, actor_id: str = "system") -> ProcessingJob:
     session = repo.sessions[session_id]
     audio_file_id = _resolve_audio_file_id_for_job(repo, session_id, payload)
     _ensure_no_active_job_for_audio_artifact(
@@ -238,7 +238,7 @@ def create_audio_processing_job(repo: MockRepository, session_id: str, payload: 
             )
             repo.jobs[job.job_id] = job
             repo.add_audit("transcription.provider_unavailable", job.job_id,
-                           f"Provider '{payload.provider}' unavailable; job failed immediately.")
+                           f"Provider '{payload.provider}' unavailable; job failed immediately.", actor_id=actor_id)
             return job
 
     job = ProcessingJob(
@@ -257,11 +257,11 @@ def create_audio_processing_job(repo: MockRepository, session_id: str, payload: 
         },
     )
     repo.jobs[job.job_id] = job
-    repo.add_audit("audio.process_queued", job.job_id, "Experimental audio processing job queued.")
+    repo.add_audit("audio.process_queued", job.job_id, "Experimental audio processing job queued.", actor_id=actor_id)
     return job
 
 
-def run_audio_processing_job(repo: MockRepository, job_id: str) -> ProcessingJob:
+def run_audio_processing_job(repo: MockRepository, job_id: str, *, actor_id: str = "worker") -> ProcessingJob:
     if job_id not in repo.jobs:
         raise ValueError("Job not found.")
     job = repo.jobs[job_id]
@@ -278,7 +278,7 @@ def run_audio_processing_job(repo: MockRepository, job_id: str) -> ProcessingJob
         job.message = "Audio processing cancelled because case consent was withdrawn."
         job.error_code = "consent_withdrawn"
         append_job_status(job, JobStatus.cancelled)
-        repo.add_audit("audio.process_cancelled", job.job_id, "Audio processing cancelled after consent withdrawal.")
+        repo.add_audit("audio.process_cancelled", job.job_id, "Audio processing cancelled after consent withdrawal.", actor_id=actor_id)
         return repo.clone(job)
         
     try:
@@ -289,7 +289,7 @@ def run_audio_processing_job(repo: MockRepository, job_id: str) -> ProcessingJob
         job.error_code = "consent_withdrawn"
         job.details = {**job.details, "consent_withdrawn": True}
         append_job_status(job, JobStatus.cancelled)
-        repo.add_audit("audio.process_cancelled", job.job_id, "Audio processing cancelled after consent withdrawal.")
+        repo.add_audit("audio.process_cancelled", job.job_id, "Audio processing cancelled after consent withdrawal.", actor_id=actor_id)
         return repo.clone(job)
         
     actual_provider_id = job.details.get("actual_provider") or payload.provider
@@ -302,7 +302,7 @@ def run_audio_processing_job(repo: MockRepository, job_id: str) -> ProcessingJob
     job.status = JobStatus.processing
     job.message = "Audio processing job is running."
     append_job_status(job, JobStatus.processing)
-    repo.add_audit("audio.process_started", job.job_id, "Experimental audio processing job started.")
+    repo.add_audit("audio.process_started", job.job_id, "Experimental audio processing job started.", actor_id=actor_id)
     
     audio_file_id = job.details.get("audio_file_id") or (payload.audio_id if hasattr(payload, "audio_id") else None)
     audio_file = None
@@ -336,7 +336,7 @@ def run_audio_processing_job(repo: MockRepository, job_id: str) -> ProcessingJob
         job.error_code = "audio_quality_failed"
         job.details = {**job.details, "quality": quality.model_dump(mode="json")}
         append_job_status(job, JobStatus.failed)
-        repo.add_audit("audio.process_failed", job.job_id, "Audio processing failed quality checks.")
+        repo.add_audit("audio.process_failed", job.job_id, "Audio processing failed quality checks.", actor_id=actor_id)
         return repo.clone(job)
 
     try:
@@ -356,7 +356,7 @@ def run_audio_processing_job(repo: MockRepository, job_id: str) -> ProcessingJob
         job.error_code = "asr_failed"
         job.details = {**job.details, "quality": quality.model_dump(mode="json"), "provider_error": str(exc)}
         append_job_status(job, JobStatus.failed)
-        repo.add_audit("audio.process_failed", job.job_id, "ASR provider failed before draft transcript generation.")
+        repo.add_audit("audio.process_failed", job.job_id, "ASR provider failed before draft transcript generation.", actor_id=actor_id)
         return repo.clone(job)
         
     if result.status != "completed":
@@ -365,7 +365,7 @@ def run_audio_processing_job(repo: MockRepository, job_id: str) -> ProcessingJob
         job.error_code = "asr_failed"
         job.details = {**job.details, "quality": quality.model_dump(mode="json"), "provider_error": result.error_message}
         append_job_status(job, JobStatus.failed)
-        repo.add_audit("audio.process_failed", job.job_id, f"ASR provider failed: {result.error_message}")
+        repo.add_audit("audio.process_failed", job.job_id, f"ASR provider failed: {result.error_message}", actor_id=actor_id)
         return repo.clone(job)
         
     draft_warnings = []
@@ -398,7 +398,7 @@ def run_audio_processing_job(repo: MockRepository, job_id: str) -> ProcessingJob
     job.message = "Draft transcript generated. Therapist correction and attestation are required before features."
     job.details = {**job.details, "asr_draft": asr_draft_result.model_dump(mode="json")}
     append_job_status(job, JobStatus.needs_review)
-    repo.add_audit("audio.process", job.job_id, "Experimental audio-to-draft-CHA processing completed.")
+    repo.add_audit("audio.process", job.job_id, "Experimental audio-to-draft-CHA processing completed.", actor_id=actor_id)
     return repo.clone(job)
 
 def create_draft_transcript_from_result(

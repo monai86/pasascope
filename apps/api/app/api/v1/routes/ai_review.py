@@ -31,7 +31,7 @@ def create_review(
     try:
         _ensure_ai_review_enabled(repo, session_id)
         ensure_session_consent_active(repo, session_id)
-        return create_ai_review(repo, session_id)
+        return create_ai_review(repo, session_id, actor_id=user.user_id)
     except ValueError as exc:
         raise bad_request(str(exc)) from exc
 
@@ -69,6 +69,6 @@ def update_review(
         assert_clinical_mutation_allowed(user)
         _ensure_ai_review_enabled(repo, repo.ai_reviews[ai_review_id].session_id)
         ensure_session_consent_active(repo, repo.ai_reviews[ai_review_id].session_id)
-        return patch_ai_review(repo, ai_review_id, payload)
+        return patch_ai_review(repo, ai_review_id, payload, actor_id=user.user_id)
     except ValueError as exc:
         raise bad_request(str(exc)) from exc

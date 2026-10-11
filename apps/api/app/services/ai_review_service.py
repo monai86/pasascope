@@ -24,7 +24,7 @@ def sanitize_for_ai(text: str, case_code: str) -> str:
     return value
 
 
-def create_ai_review(repo: MockRepository, session_id: str) -> AiReview:
+def create_ai_review(repo: MockRepository, session_id: str, *, actor_id: str = "system") -> AiReview:
     session = repo.sessions[session_id]
     transcript = repo.transcripts.get(session.transcript_id or "")
     feature_set = repo.features.get(session.feature_set_id or "")
@@ -86,7 +86,7 @@ def create_ai_review(repo: MockRepository, session_id: str) -> AiReview:
     )
     return repo.create_ai_review(
         review,
-        actor_id="system",
+        actor_id=actor_id,
         audit_action="ai_review.create",
         audit_message="AI-assisted review support generated with therapist-review requirement.",
     )
@@ -332,7 +332,7 @@ def _progress_deltas(current: FeatureSet, previous: FeatureSet) -> list[str]:
     return deltas
 
 
-def patch_ai_review(repo: MockRepository, review_id: str, payload: AiReviewPatch) -> AiReview:
+def patch_ai_review(repo: MockRepository, review_id: str, payload: AiReviewPatch, *, actor_id: str = "system") -> AiReview:
     review = repo.ai_reviews[review_id]
     session = repo.sessions[review.session_id]
     if review.therapist_review_status == ReviewStatus.stale or session.ai_review_id != review_id:
@@ -349,7 +349,7 @@ def patch_ai_review(repo: MockRepository, review_id: str, payload: AiReviewPatch
     action = "rejected" if review.therapist_review_status == ReviewStatus.withdrawn else "edited"
     return repo.update_ai_review(
         review,
-        actor_id="system",
+        actor_id=actor_id,
         audit_action="ai_review.patch",
         audit_message=f"AI-assisted review support {action} by therapist.",
     )

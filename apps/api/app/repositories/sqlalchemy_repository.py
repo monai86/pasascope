@@ -88,7 +88,13 @@ class SqlAlchemyRepository(MockRepository):
             row = db.get(ChildCaseRecord, case_id)
             return self._case_from_record(row) if row is not None else None
 
-    def create_case(self, payload: ChildCaseCreate, *, actor_id: str) -> ChildCase:
+    def create_case(
+        self,
+        payload: ChildCaseCreate,
+        *,
+        actor_id: str,
+        audit_actor_id: str | None = None,
+    ) -> ChildCase:
         now = _utc_now()
         case = ChildCase(
             case_id=new_id("case"),
@@ -103,7 +109,7 @@ class SqlAlchemyRepository(MockRepository):
         if case.primary_therapist_user_id and case.primary_therapist_user_id not in case.care_team_user_ids:
             case.care_team_user_ids = [*case.care_team_user_ids, case.primary_therapist_user_id]
         audit = validate_audit_event(
-            actor_id=actor_id,
+            actor_id=audit_actor_id or actor_id,
             action="case.create",
             target_id=case.case_id,
             outcome="success",

@@ -34,7 +34,7 @@ def upload_cha(
     assert_clinical_mutation_allowed(user)
     try:
         ensure_session_consent_active(repo, session_id)
-        return transcript_service.create_from_cha(repo, session_id, payload)
+        return transcript_service.create_from_cha(repo, session_id, payload, actor_id=user.user_id)
     except ValueError as exc:
         raise bad_request(str(exc)) from exc
 
@@ -50,7 +50,7 @@ def manual_transcript(
     assert_clinical_mutation_allowed(user)
     try:
         ensure_session_consent_active(repo, session_id)
-        return transcript_service.create_from_manual(repo, session_id, payload)
+        return transcript_service.create_from_manual(repo, session_id, payload, actor_id=user.user_id)
     except ValueError as exc:
         raise bad_request(str(exc)) from exc
 
@@ -79,7 +79,7 @@ def update_session_transcript(
     assert_clinical_mutation_allowed(user)
     try:
         ensure_session_consent_active(repo, session_id)
-        return transcript_service.update_reviewed_transcript(repo, session_id, payload)
+        return transcript_service.update_reviewed_transcript(repo, session_id, payload, actor_id=user.user_id)
     except ValueError as exc:
         raise bad_request(str(exc)) from exc
 
@@ -109,7 +109,7 @@ def patch_transcript(
     assert_clinical_mutation_allowed(user)
     try:
         ensure_transcript_consent_active(repo, transcript_id)
-        return transcript_service.patch_transcript(repo, transcript_id, payload)
+        return transcript_service.patch_transcript(repo, transcript_id, payload, actor_id=user.user_id)
     except ValueError as exc:
         raise bad_request(str(exc)) from exc
 
@@ -125,7 +125,7 @@ def split_transcript_utterance(
     assert_clinical_mutation_allowed(user)
     try:
         ensure_transcript_consent_active(repo, transcript_id)
-        return transcript_service.split_utterance(repo, transcript_id, payload)
+        return transcript_service.split_utterance(repo, transcript_id, payload, actor_id=user.user_id)
     except ValueError as exc:
         raise bad_request(str(exc)) from exc
 
@@ -141,7 +141,7 @@ def merge_transcript_utterances(
     assert_clinical_mutation_allowed(user)
     try:
         ensure_transcript_consent_active(repo, transcript_id)
-        return transcript_service.merge_utterances(repo, transcript_id, payload)
+        return transcript_service.merge_utterances(repo, transcript_id, payload, actor_id=user.user_id)
     except ValueError as exc:
         raise bad_request(str(exc)) from exc
 
@@ -171,7 +171,7 @@ def qa_transcript(
     assert_clinical_mutation_allowed(user)
     try:
         ensure_transcript_consent_active(repo, transcript_id)
-        return transcript_service.run_qa(repo, transcript_id)
+        return transcript_service.run_qa(repo, transcript_id, actor_id=user.user_id)
     except ValueError as exc:
         raise bad_request(str(exc)) from exc
 

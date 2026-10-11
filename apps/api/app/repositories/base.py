@@ -39,7 +39,13 @@ class ReportVersionConflictError(RuntimeError):
 class ClinicalRepository(Protocol):
     def get_case(self, case_id: str) -> ChildCase | None: ...
 
-    def create_case(self, payload: ChildCaseCreate, *, actor_id: str) -> ChildCase: ...
+    def create_case(
+        self,
+        payload: ChildCaseCreate,
+        *,
+        actor_id: str,
+        audit_actor_id: str | None = None,
+    ) -> ChildCase: ...
 
     def update_case(
         self,

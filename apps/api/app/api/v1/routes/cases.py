@@ -106,7 +106,7 @@ def create_case(
     repo: MockRepository = Depends(get_repository),
 ):
     scoped_payload = _resolve_case_creation_payload(payload, repo, user)
-    return repo.create_case(scoped_payload, actor_id="system")
+    return repo.create_case(scoped_payload, actor_id="system", audit_actor_id=user.user_id)
 
 
 @router.get("/{case_id}", response_model=ChildCase)
@@ -167,4 +167,4 @@ def withdraw_case_consent(
     repo: MockRepository = Depends(get_repository),
 ):
     require_case(repo, case_id, user)
-    return withdraw_consent(repo, case_id, payload.reason, payload.redact_notes)
+    return withdraw_consent(repo, case_id, payload.reason, payload.redact_notes, actor_id=user.user_id)

@@ -44,6 +44,8 @@ def draft_report(
     session_id: str,
     report_type: str | ReportGenerationRequest = "Session Review Report",
     replace_existing: bool = False,
+    *,
+    actor_id: str = "system",
 ) -> Report:
     if isinstance(report_type, str):
         payload = ReportGenerationRequest(
@@ -180,7 +182,7 @@ def draft_report(
             )
             return repo.create_report(
                 report,
-                actor_id="system",
+                actor_id=actor_id,
                 audit_action="report.failed",
                 audit_message=f"Report generation failed: {result.error_message}",
             )
@@ -301,7 +303,7 @@ def draft_report(
             )
             return repo.create_report(
                 report,
-                actor_id="system",
+                actor_id=actor_id,
                 audit_action="report.failed_safety",
                 audit_message="Report draft failed safety validation and is locked.",
             )
@@ -347,13 +349,13 @@ def draft_report(
 
     return repo.create_report(
         report,
-        actor_id="system",
+        actor_id=actor_id,
         audit_action="report.draft",
         audit_message=f"Report draft generated successfully using provider '{actual_provider}'.",
     )
 
 
-def patch_report(repo: MockRepository, report_id: str, payload: ReportPatch) -> Report:
+def patch_report(repo: MockRepository, report_id: str, payload: ReportPatch, *, actor_id: str = "system") -> Report:
     report = repo.reports[report_id]
     if report.status == ReviewStatus.stale:
         raise ValueError("Stale reports are read-only; regenerate the report from the current transcript.")
@@ -365,13 +367,13 @@ def patch_report(repo: MockRepository, report_id: str, payload: ReportPatch) -> 
     return repo.update_report(
         report,
         expected_version=expected_version,
-        actor_id="system",
+        actor_id=actor_id,
         audit_action="report.patch",
         audit_message="Report draft edited.",
     )
 
 
-def revise_finalized_report(repo: MockRepository, report_id: str, payload: ReportPatch) -> Report:
+def revise_finalized_report(repo: MockRepository, report_id: str, payload: ReportPatch, *, actor_id: str = "system") -> Report:
     original = repo.reports[report_id]
     if original.status != ReviewStatus.signed_off:
         return patch_report(repo, report_id, payload)
@@ -414,7 +416,7 @@ def revise_finalized_report(repo: MockRepository, report_id: str, payload: Repor
     _apply_report_patch(revision, payload)
     return repo.create_report(
         revision,
-        actor_id="system",
+        actor_id=actor_id,
         audit_action="report.revision",
         audit_message=f"Draft revision created from finalized report {report_id}.",
     )
@@ -490,7 +492,7 @@ def sign_off_report(
     return repo.update_report(
         report,
         expected_version=report.version,
-        actor_id="system",
+        actor_id=signed_by_user_id or "system",
         audit_action="report.sign_off",
         audit_message=f"Report signed off by {signed_by}.",
     )

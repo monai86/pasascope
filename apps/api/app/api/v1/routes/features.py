@@ -25,7 +25,7 @@ def extract(
     assert_clinical_mutation_allowed(user)
     try:
         ensure_transcript_consent_active(repo, transcript_id)
-        return extract_features(repo, transcript_id, payload or FeatureExtractionRequest())
+        return extract_features(repo, transcript_id, payload or FeatureExtractionRequest(), actor_id=user.user_id)
     except ValueError as exc:
         raise bad_request(str(exc)) from exc
 
