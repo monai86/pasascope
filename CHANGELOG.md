@@ -28,6 +28,11 @@
   - Evaluation helper routes now require an authenticated user and are closed whenever auth mode is not `mock`, including staging deployments that keep mock mode on.
 
 ### Fixed
+- **Therapist frontend** (`apps/lingualens-app/`):
+  - The dashboard loads its summary in the browser, where the session token is; the previous server-side fetch could not authenticate in Supabase mode. A 401/403 now says the session is not authorized instead of "Backend Offline".
+  - API error messages show the readable `detail` text instead of the raw JSON payload.
+  - When the backend is unreachable the client assumes the strictest access model (`aal2`, invitation only) and marks audio upload and transcription unavailable.
+  - Security headers moved from `vercel.json` to `next.config.mjs` so they also apply on Cloudflare, with a `Permissions-Policy` and a report-only Content Security Policy added.
 - **Audio jobs and uploads** (`apps/api/`):
   - With the default in-memory queue the API now drains queued audio jobs itself; previously nothing processed them and jobs stayed `queued`. `python -m app.tasks.worker` loops for the Redis queue.
   - Cancelled jobs are no longer run by the worker, completed transcription jobs can no longer be cancelled, and the process-audio response no longer includes the storage object key.

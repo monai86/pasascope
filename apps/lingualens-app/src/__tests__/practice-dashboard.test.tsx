@@ -172,6 +172,7 @@ describe("practice dashboard", () => {
     vi.stubGlobal("fetch", mockSummaryFetch());
 
     await renderAsyncPage(DashboardPage);
+    await screen.findByRole("heading", { name: "Dashboard" });
 
     expect(screen.getByRole("heading", { name: "Dashboard" })).toBeInTheDocument();
     const casesStat = screen.getByText("Active cases").closest("section")!;
@@ -192,6 +193,7 @@ describe("practice dashboard", () => {
     vi.stubGlobal("fetch", mockSummaryFetch());
 
     await renderAsyncPage(DashboardPage);
+    await screen.findByRole("heading", { name: "Dashboard" });
 
     const recentSection = screen.getByRole("region", { name: "Recent sessions" });
     expect(within(recentSection).getAllByText("Case Nine").length).toBeGreaterThan(0);
@@ -206,6 +208,7 @@ describe("practice dashboard", () => {
     vi.stubGlobal("fetch", mockSummaryFetch());
 
     await renderAsyncPage(DashboardPage);
+    await screen.findByRole("heading", { name: "Dashboard" });
 
     const progressSection = screen.getByRole("region", { name: "Language progress" });
     // Default feature is the first one; values for the case with the most points.
@@ -236,6 +239,7 @@ describe("practice dashboard", () => {
     vi.stubGlobal("fetch", mockSummaryFetch());
 
     await renderAsyncPage(DashboardPage);
+    await screen.findByRole("heading", { name: "Dashboard" });
 
     const progressSection = screen.getByRole("region", { name: "Language progress" });
     // Chart-dot overlay hit areas (44px) carry case context.
@@ -252,6 +256,7 @@ describe("practice dashboard", () => {
     vi.stubGlobal("fetch", mockSummaryFetch());
 
     await renderAsyncPage(DashboardPage);
+    await screen.findByRole("heading", { name: "Dashboard" });
 
     const progressSection = screen.getByRole("region", { name: "Language progress" });
     expect(
@@ -327,5 +332,17 @@ describe("practice dashboard", () => {
 
     expect(await screen.findByRole("heading", { name: "Practice summary could not be loaded" })).toBeInTheDocument();
     expect(screen.getByRole("link", { name: "Back to Today" })).toHaveAttribute("href", "/today");
+  });
+
+  it("says the session is not authorized, not that the backend is offline, on 401", async () => {
+    vi.stubGlobal("fetch", vi.fn(async () => new Response(JSON.stringify({ detail: "Bearer token required." }), {
+      status: 401,
+      headers: { "content-type": "application/json" },
+    })));
+
+    await renderAsyncPage(DashboardPage);
+
+    expect(await screen.findByText(/Sign-in required/)).toBeInTheDocument();
+    expect(screen.queryByText(/Backend Offline/)).not.toBeInTheDocument();
   });
 });

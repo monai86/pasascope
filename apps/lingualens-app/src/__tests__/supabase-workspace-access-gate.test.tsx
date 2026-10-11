@@ -163,7 +163,15 @@ describe("SupabaseWorkspaceAccessGate", () => {
 
     fireEvent.click(screen.getByRole("button", { name: "Start TOTP enrollment" }));
 
-    expect(await screen.findByText("TOTP enrollment started. Scan the QR code or enter the secret, then verify with a current code.")).toBeInTheDocument();
+    // The enrollment chain awaits several mocked calls; under a loaded test
+    // run the default 1s wait is not always enough.
+    expect(
+      await screen.findByText(
+        "TOTP enrollment started. Scan the QR code or enter the secret, then verify with a current code.",
+        {},
+        { timeout: 5000 },
+      ),
+    ).toBeInTheDocument();
     expect(screen.getByDisplayValue("SECRET-CODE")).toBeInTheDocument();
 
     fireEvent.change(screen.getByLabelText("Authenticator code"), { target: { value: "123456" } });

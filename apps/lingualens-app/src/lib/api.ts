@@ -23,11 +23,28 @@ export class ApiError extends Error {
   body: string;
 
   constructor(status: number, body: string) {
-    super(body || `API request failed: ${status}`);
+    super(readableApiErrorMessage(body) || `API request failed: ${status}`);
     this.name = "ApiError";
     this.status = status;
     this.body = body;
   }
+}
+
+// API errors arrive as JSON ({"detail": "..."} on v1, {"error": {"message": "..."}} on
+// v2). Surface the human-readable text; the raw payload stays on `.body`.
+function readableApiErrorMessage(body: string): string {
+  try {
+    const parsed: unknown = JSON.parse(body);
+    if (parsed && typeof parsed === "object") {
+      const { detail, error } = parsed as { detail?: unknown; error?: { message?: unknown } };
+      if (typeof detail === "string") return detail;
+      if (typeof error?.message === "string") return error.message;
+      if (Array.isArray(detail)) return "The request was not valid.";
+    }
+  } catch {
+    // Not JSON: fall through to the raw text.
+  }
+  return body;
 }
 
 export async function apiRequest<T>(path: string, init: RequestInit = {}): Promise<T> {
@@ -77,9 +94,11 @@ export const DEFAULT_PRODUCTION_RUNTIME_SETTINGS: RuntimeSettings = {
   feature_schema: "lingualens-app.1",
   guideline_mapping: "review-support-only",
   user_roles: ["therapist", "clinical_supervisor", "org_admin"],
+  // Used only when the backend cannot be reached. Assume the strictest access
+  // model so the client never shows a weaker gate than the server enforces.
   access_model: {
-    invitation_only: false,
-    required_app_aal: "aal1",
+    invitation_only: true,
+    required_app_aal: "aal2",
     active_organization_session: "explicit_selection_when_ambiguous",
     production_mock_mode: "forbidden",
   },
@@ -87,8 +106,8 @@ export const DEFAULT_PRODUCTION_RUNTIME_SETTINGS: RuntimeSettings = {
   consent_policy: "required",
   capabilities: {
     cases: "available",
-    audio_upload: "experimental",
-    transcription: "experimental",
+    audio_upload: "unavailable",
+    transcription: "unavailable",
     transcript_qa: "available",
     feature_extraction: "available",
     ai_review: "disabled",
