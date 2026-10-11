@@ -312,8 +312,8 @@ export function AudioReviewWorkbench({
         role="note"
         className="rounded-lg border border-amber-300 bg-amber-50 px-3 py-2 text-xs font-medium text-amber-950"
       >
-        ภาพคลื่นเสียงและค่าคุณภาพสัญญาณด้านล่างเป็นภาพประกอบตัวอย่าง ไม่ได้วัดจากไฟล์เสียงของ session นี้ ·
-        Illustrative waveform and signal metrics — not measured from this recording.
+        ภาพคลื่นเสียงด้านล่างเป็นภาพประกอบตัวอย่าง ไม่ได้สร้างจากไฟล์เสียงของ session นี้ ·
+        Illustrative waveform — not derived from this recording.
       </p>
 
       {/* Dual-View Waveform: Mini-map + Detail Canvas */}
@@ -322,8 +322,6 @@ export function AudioReviewWorkbench({
         durationMs={durationMs}
         segments={segments}
         peaks={peaks}
-        snrDb={21.8}
-        diarizationConfidence={89.2}
         responseLatencyMs={avgLatencyMs}
         showPitch={showPitch}
         onSeek={handleSeek}

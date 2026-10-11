@@ -162,3 +162,43 @@ def test_cancelled_job_is_not_run_by_the_worker_and_completed_job_cannot_be_canc
     assert repo.sessions["session_demo_001"].transcript_id is None
     assert cancel_finished.json()["status"] == "transcription_completed"
 
+
+
+@pytest.mark.parametrize(
+    "request_body",
+    [
+        {"provider": "mock"},
+        {"provider": "whisper", "allow_fallback_to_mock": True},
+        {"provider": "local_whisper", "allow_fallback_to_mock": True},
+    ],
+)
+def test_mock_transcription_output_is_refused_outside_demo_mode(request_body):
+    from app.core.config import Settings, get_settings
+    from app.repositories.mock_repository import MockRepository
+    from app.schemas.clinical import AudioProcessRequest
+    from app.services import audio_job_service
+    from app.services.audio_job_service import create_audio_processing_job, run_audio_processing_job
+
+    repo = MockRepository()
+    production_like = Settings(mock_mode=False)
+    original = audio_job_service.get_settings
+    audio_job_service.get_settings = lambda: production_like
+    try:
+        try:
+            job = create_audio_processing_job(repo, "session_demo_001", AudioProcessRequest(**request_body))
+        except ValueError as exc:
+            assert "local demo mode only" in str(exc)
+            job = None
+        if job is not None:
+            # A real provider that cannot transcribe must fail, never fall back
+            # to synthetic text.
+            assert job.details.get("actual_provider") != "mock"
+            if job.status.value == "queued":
+                job = run_audio_processing_job(repo, job.job_id)
+            assert job.status.value == "failed"
+    finally:
+        audio_job_service.get_settings = original
+        get_settings.cache_clear()
+
+    assert repo.sessions["session_demo_001"].transcript_id is None
+    assert repo.transcripts == {}

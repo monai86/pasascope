@@ -3,6 +3,7 @@ from __future__ import annotations
 from dataclasses import dataclass
 from pathlib import Path
 
+from app.core.config import get_settings
 from app.repositories.mock_repository import MockRepository, new_id
 from app.schemas.clinical import (
     AsrDraftResult,
@@ -207,6 +208,12 @@ def create_audio_processing_job(repo: MockRepository, session_id: str, payload: 
     except KeyError:
         raise ValueError(f"ASR provider '{payload.provider}' is not registered.")
     
+    # Synthetic ASR text must never be attached to a recording outside local
+    # demo mode, either directly or as a fallback.
+    mock_output_allowed = get_settings().mock_mode
+    if payload.provider == "mock" and not mock_output_allowed:
+        raise ValueError("The mock transcription provider is available in local demo mode only.")
+
     avail = provider.check_availability()
     
     # Fallback logic — explicit, never silent
@@ -220,7 +227,7 @@ def create_audio_processing_job(repo: MockRepository, session_id: str, payload: 
         allow_fallback = getattr(payload, "allow_fallback_to_mock", False)
         
     if not avail:
-        if allow_fallback:
+        if allow_fallback and mock_output_allowed:
             actual_provider = "mock"
             fallback_reason = f"Provider '{payload.provider}' unavailable: {avail.reason}. Fell back to mock."
         else:

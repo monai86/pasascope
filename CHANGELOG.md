@@ -27,6 +27,12 @@
   - Audit events for case, session, transcript, feature, review, report, goal, privacy, audio and consent actions triggered through the v1 routes now record the authenticated user instead of `system`; worker-run audio jobs record `worker`.
   - Evaluation helper routes now require an authenticated user and are closed whenever auth mode is not `mock`, including staging deployments that keep mock mode on.
 
+### Removed
+- **Fabricated audio outputs** (`apps/lingualens-app/`, `apps/api/`):
+  - Removed the unused recording handler that carried a canned "Mock ASR transcript" and the in-browser mock transcription service behind it.
+  - The audio review workbench no longer shows hard-coded SNR and diarization-confidence figures.
+  - The mock ASR provider, and fallback to it, is refused outside local demo mode, so synthetic transcript text cannot be attached to a recording in a production-like runtime.
+
 ### Fixed
 - **Deployment and CI**:
   - `render.yaml` and the cloud runbook set `LINGUALENS_SUPABASE_STORAGE_SERVICE_ROLE_KEY`, the name the API reads; the previous name left the storage key empty.

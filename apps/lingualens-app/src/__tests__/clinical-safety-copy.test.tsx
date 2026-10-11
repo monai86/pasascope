@@ -71,7 +71,6 @@ describe("clinical safety copy", () => {
       THERAPIST_INTERPRETATION_IS_REQUIRED_CLAUSE: "Therapist interpretation is required",
       INTERPRETATION_HINT:
         "Therapist-editable descriptive draft. Do not treat as a diagnosis or final conclusion.",
-      DRAFT_TRANSCRIPT_LABEL: "Draft transcript — therapist review required.",
       DRAFT_ASR_TRANSCRIPT_LABEL: "Draft ASR transcript — therapist review required.",
       NON_DIAGNOSTIC_SCORE_CAUTION:
         "Research prototype scores — non-diagnostic. Therapist clinical judgment required.",
@@ -126,9 +125,7 @@ describe("clinical safety copy", () => {
     );
   });
 
-  it("keeps the draft-transcript labels distinct from the claim they carry", () => {
-    expect(safetyCopy.DRAFT_TRANSCRIPT_LABEL).toContain("therapist review required");
+  it("keeps the draft-transcript label carrying the review claim", () => {
     expect(safetyCopy.DRAFT_ASR_TRANSCRIPT_LABEL).toContain("therapist review required");
-    expect(safetyCopy.DRAFT_ASR_TRANSCRIPT_LABEL).not.toBe(safetyCopy.DRAFT_TRANSCRIPT_LABEL);
   });
 });

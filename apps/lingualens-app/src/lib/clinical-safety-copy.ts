@@ -52,7 +52,6 @@ export const INTERPRETATION_HINT =
   "Therapist-editable descriptive draft. Do not treat as a diagnosis or final conclusion.";
 
 /** Draft-transcript labels, keyed to how the audio actually arrived. */
-export const DRAFT_TRANSCRIPT_LABEL = "Draft transcript — therapist review required.";
 export const DRAFT_ASR_TRANSCRIPT_LABEL = "Draft ASR transcript — therapist review required.";
 
 /** Caution lines attached to numbers a reader could over-interpret. */
@@ -94,7 +93,6 @@ export const CLINICAL_SAFETY_COPY: ReadonlyArray<readonly [string, string]> = [
   ["THERAPIST_INTERPRETATION_REQUIRED", THERAPIST_INTERPRETATION_REQUIRED],
   ["THERAPIST_INTERPRETATION_IS_REQUIRED_CLAUSE", THERAPIST_INTERPRETATION_IS_REQUIRED_CLAUSE],
   ["INTERPRETATION_HINT", INTERPRETATION_HINT],
-  ["DRAFT_TRANSCRIPT_LABEL", DRAFT_TRANSCRIPT_LABEL],
   ["DRAFT_ASR_TRANSCRIPT_LABEL", DRAFT_ASR_TRANSCRIPT_LABEL],
   ["NON_DIAGNOSTIC_SCORE_CAUTION", NON_DIAGNOSTIC_SCORE_CAUTION],
   ["LONGITUDINAL_DELTA_CAUTION", LONGITUDINAL_DELTA_CAUTION],

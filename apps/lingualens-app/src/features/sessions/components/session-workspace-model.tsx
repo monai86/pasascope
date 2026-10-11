@@ -2,22 +2,15 @@
 
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
-import { ApiError, apiBlob, apiRequest, apiGet } from "@/lib/api";
+import { ApiError, apiBlob } from "@/lib/api";
 import {
   DRAFT_ASR_TRANSCRIPT_LABEL,
-  DRAFT_TRANSCRIPT_LABEL,
   THERAPIST_INTERPRETATION_IS_REQUIRED_CLAUSE,
 } from "@/lib/clinical-safety-copy";
 import { FEATURE_EXTRACTION_NOUN } from "@/lib/workflow-glossary";
 
 import type { RecordingMetadata } from "@/components/browser-audio-recorder";
 import { useBackendAvailability } from "@/components/backend-availability-banner";
-import {
-  createExperimentalTranscriptionJob,
-  getExperimentalTranscriptionJob,
-  releaseExperimentalAudioUpload,
-  uploadRecordedAudio
-} from "@/lib/experimental-transcription-service";
 import {
   backendTranscriptLines,
   buildBasicChatExport,
@@ -41,7 +34,6 @@ import {
   type TranscriptLine,
   type WorkflowSource,
   type WorkflowState,
-  uploadAudioFileBytes,
   getSessionAudioFiles,
   uploadAudioBlobToBackend,
   startBackendTranscriptionJob,
@@ -557,256 +549,6 @@ export function useSessionWorkspace({ sessionId, caseId, transcriptId, reportId,
     setTransJobMessage("Transcription timed out. Try again or use manual paste.");
     setUploadStep("error");
     setBusy(false);
-  }
-
-  async function handleRecordedAudioTranscription() {
-    if (!recordedAudio) {
-      persist({
-        ...state,
-        transcriptionJobStatus: "failed",
-        transcriptionJobMessage: "No in-memory recording is available. Record audio again.",
-        error: "No in-memory recording is available. Record audio again."
-      });
-      return;
-    }
-
-    setBusy(true);
-    const mime = recordedAudio.metadata.mimeType || recordedAudio.blob.type || "audio/webm";
-    const durationSeconds = recordedAudio.metadata.durationSeconds;
-
-    if (!backendUnavailable && state.sessionId) {
-      try {
-        const ext = mime.includes("mp4") ? "mp4" : mime.includes("wav") ? "wav" : "webm";
-        const filename = `recording_${Date.now()}.${ext}`;
-
-        // 1. POST upload intent metadata
-        const uploadIntentResponse = await apiRequest<{ details: { audio_file: any; upload_intent: any } }>(
-          `/sessions/${state.sessionId}/audio/upload`,
-          {
-            method: "POST",
-            body: JSON.stringify({
-              filename,
-              content_type: mime,
-              size_bytes: recordedAudio.blob.size,
-              duration_seconds: durationSeconds
-            })
-          }
-        );
-
-        const audioFile = uploadIntentResponse.details.audio_file;
-        const uploadIntent = uploadIntentResponse.details.upload_intent;
-
-        // 2. PUT raw binary blob bytes to backend
-        await uploadAudioFileBytes(uploadIntent.upload_url, recordedAudio.blob);
-
-        // 3. Complete audio upload metadata
-        await apiRequest(`/audio/${audioFile.audio_file_id}/complete-upload`, {
-          method: "POST",
-          body: JSON.stringify({
-            checksum_sha256: `sha-${audioFile.audio_file_id}`,
-            size_bytes: recordedAudio.blob.size
-          })
-        });
-
-        // 4. Trigger ASR mock job processing
-        const processJob = await apiRequest<{ job_id: string; status: string; message: string }>(
-          `/sessions/${state.sessionId}/audio/process`,
-          {
-            method: "POST",
-            body: JSON.stringify({
-              provider: "manual",
-              draft_text: "Mock ASR transcript for workflow testing. CHI: Hello! [00:01.200 - 00:03.500] THER: Hi geographical boy [00:04.000 - 00:07.100]"
-            })
-          }
-        );
-
-        persist(ensureWorkflowSession(state, "recording", {
-          mockAudioStored: true,
-          transcriptionJobId: processJob.job_id,
-          transcriptionJobStatus: processJob.status as any,
-          transcriptionJobMessage: processJob.message,
-          transcriptDraftLabel: DRAFT_TRANSCRIPT_LABEL,
-          transcriptReady: false,
-          transcriptAttested: false,
-          transcriptReviewStatus: "not_started",
-          qaStatus: "not_run",
-          analysisStatus: "not_started",
-          featuresExtracted: false,
-          featurePercent: 0,
-          featureSummary: [],
-          featureSignals: [],
-          statusMessage: processJob.message,
-          error: undefined
-        }));
-
-        const resolvedAudioUrl = await createBackendAudioObjectUrl(audioFile.audio_file_id).catch(() => undefined);
-        setAudioUrl(resolvedAudioUrl);
-
-        window.setTimeout(() => void pollBackendTranscriptionJob(processJob.job_id), 350);
-        return;
-      } catch (err) {
-        console.error("Backend audio upload/process failed, falling back to frontend mock", err);
-      }
-    }
-
-    // Graceful fallback to frontend mock when offline
-    try {
-      const upload = await uploadRecordedAudio(recordedAudio.blob, {
-        durationSeconds,
-        mimeType: mime
-      });
-      const job = await createExperimentalTranscriptionJob(upload.uploadId);
-      persist(ensureWorkflowSession(state, "recording", {
-        mockAudioStored: true,
-        transcriptionJobId: job.jobId,
-        transcriptionJobStatus: job.status,
-        transcriptionJobMessage: job.message,
-        transcriptDraftLabel: job.label,
-        transcriptReady: false,
-        transcriptAttested: false,
-        transcriptReviewStatus: "not_started",
-        qaStatus: "not_run",
-        analysisStatus: "not_started",
-        featuresExtracted: false,
-        featurePercent: 0,
-        featureSummary: [],
-        featureSignals: [],
-        statusMessage: job.message,
-        error: undefined
-      }));
-      window.setTimeout(() => void pollExperimentalTranscriptionJob(job.jobId, upload.uploadId), 350);
-    } catch (error) {
-      const message = error instanceof Error ? error.message : "Experimental transcription upload failed.";
-      persist({
-        ...state,
-        transcriptionJobStatus: "failed",
-        transcriptionJobMessage: message,
-        statusMessage: "Experimental transcription job failed.",
-        error: message
-      });
-      setBusy(false);
-    }
-  }
-
-  async function pollBackendTranscriptionJob(jobId: string) {
-    try {
-      const job = await apiGet<{ status: string; message: string; details?: any }>(`/jobs/${jobId}`);
-      if (job.status === "failed") {
-        persist({
-          ...state,
-          transcriptionJobStatus: "failed",
-          transcriptionJobMessage: job.message,
-          error: job.message
-        });
-        setBusy(false);
-      } else if (job.status === "needs_review" || job.status === "completed") {
-        const transcript = await getBackendSessionTranscript(state.sessionId!);
-        const lines = backendTranscriptLines(transcript);
-        persist({
-          ...state,
-          backendTranscriptId: transcript.transcript_id,
-          transcriptText: transcript.raw_text ?? "",
-          transcriptLines: lines,
-          transcriptReady: true,
-          transcriptionJobStatus: "completed",
-          transcriptionJobMessage: "ASR processing complete.",
-          transcriptReviewStatus: "in_review",
-          statusMessage: "Transcript ready for review.",
-          error: undefined
-        });
-        setEditorLines(lines);
-        setDraftTranscript(transcript.raw_text ?? "");
-        setBusy(false);
-      } else {
-        window.setTimeout(() => void pollBackendTranscriptionJob(jobId), 400);
-      }
-    } catch (err) {
-      console.error("Polling backend job failed", err);
-      setBusy(false);
-    }
-  }
-
-  async function pollExperimentalTranscriptionJob(jobId: string, uploadId: string) {
-    try {
-      const job = await getExperimentalTranscriptionJob(jobId);
-      if (job.status === "completed" && job.draftTranscript) {
-        const draft = prepareTranscriptIntake("cha-upload", job.draftTranscript);
-        releaseExperimentalAudioUpload(uploadId);
-        setDraftTranscript(draft.transcriptText);
-        setEditorLines(draft.transcriptLines);
-        setIntakeWarnings([...draft.warnings, "Experimental ASR output may be inaccurate. Verify all wording and speaker labels."]);
-        setIntakeValidationIssues(draft.validationIssues);
-        setState((current) => saveWorkflowState({
-          ...current,
-          source: "recording",
-          mockAudioStored: true,
-          transcriptionJobId: job.jobId,
-          transcriptionJobStatus: "completed",
-          transcriptionJobMessage: job.message,
-          transcriptDraftLabel: job.label,
-          transcriptText: draft.transcriptText,
-          transcriptLines: draft.transcriptLines,
-          chatMetadata: draft.metadata,
-          chatWarnings: [...draft.warnings, "Experimental ASR output may be inaccurate. Verify all wording and speaker labels."],
-          chatValidationIssues: draft.validationIssues,
-          transcriptReady: true,
-          transcriptAttested: false,
-          transcriptReviewStatus: "draft",
-          transcriptCompleteness: 0,
-          qaStatus: "not_run",
-          qaIssues: [],
-          qaSummary: undefined,
-          analysisStatus: "not_started",
-          featuresExtracted: false,
-          featurePercent: 0,
-          featureSummary: [],
-          featureSignals: [],
-          reportStatus: "not_started",
-          reportMarkdown: undefined,
-          statusMessage: job.message,
-          error: undefined
-        }));
-        setBusy(false);
-        router.push(workflowSessionHref("transcript", {
-          ...state,
-          backendSessionId: state.backendSessionId,
-          backendTranscriptId: state.backendTranscriptId
-        }));
-        return;
-      }
-      if (job.status === "failed") {
-        releaseExperimentalAudioUpload(uploadId);
-        setState((current) => saveWorkflowState({
-          ...current,
-          transcriptionJobStatus: "failed",
-          transcriptionJobMessage: job.error || job.message,
-          statusMessage: "Experimental transcription job failed.",
-          error: job.error || job.message
-        }));
-        setBusy(false);
-        return;
-      }
-      setState((current) => saveWorkflowState({
-        ...current,
-        transcriptionJobId: job.jobId,
-        transcriptionJobStatus: job.status,
-        transcriptionJobMessage: job.message,
-        statusMessage: job.message,
-        error: undefined
-      }));
-      window.setTimeout(() => void pollExperimentalTranscriptionJob(jobId, uploadId), 350);
-    } catch (error) {
-      releaseExperimentalAudioUpload(uploadId);
-      const message = error instanceof Error ? error.message : "Experimental transcription job failed.";
-      setState((current) => saveWorkflowState({
-        ...current,
-        transcriptionJobStatus: "failed",
-        transcriptionJobMessage: message,
-        statusMessage: "Experimental transcription job failed.",
-        error: message
-      }));
-      setBusy(false);
-    }
   }
 
   async function handleAudioUpload() {
