@@ -44,14 +44,6 @@ const config: Config = {
           strong: "var(--color-sky-strong)",
         },
         navy: "var(--color-navy)",
-        // Migration aliases, removed with the last screen that uses them.
-        clinical: {
-          DEFAULT: "var(--color-brand)",
-          strong: "var(--color-brand-strong)",
-        },
-        safety: "var(--color-warning-text)",
-        blossom: "var(--color-highlight)",
-        aqua: "var(--color-brand)",
       },
       fontFamily: {
         sans: ["var(--font-product)"],

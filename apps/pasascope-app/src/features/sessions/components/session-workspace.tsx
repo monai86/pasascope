@@ -30,7 +30,7 @@ export function SessionWorkspace({ view = "intake", ...props }: SessionWorkspace
 function SessionWorkspaceLoading() {
   return (
     <div
-      className="rounded-[var(--radius-panel)] border border-[color:var(--color-border)] bg-[color:var(--color-surface-reading)] p-6"
+      className="rounded-panel border border-line bg-surface p-6"
       role="status"
       aria-live="polite"
     >

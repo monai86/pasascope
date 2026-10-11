@@ -290,7 +290,7 @@ export function AssessmentSegmentReviewWorkspace({
     return (
       <section className="workspace-panel p-6" role="alert">
         <h1 className="text-xl font-semibold">ไม่สามารถโหลดข้อมูลได้</h1>
-        <p className="mt-2 text-sm text-[color:var(--color-text-muted)]">{error}</p>
+        <p className="mt-2 text-sm text-ink-muted">{error}</p>
         <button type="button" className={primaryButtonClass} onClick={() => void loadReview()}>โหลดข้อมูลอีกครั้ง</button>
       </section>
     );
@@ -313,9 +313,9 @@ export function AssessmentSegmentReviewWorkspace({
     return (
       <section className="space-y-5">
         <header>
-          <p className="text-sm font-semibold text-[color:var(--color-accent)]">ขั้นตอนที่ 5 จาก 5</p>
+          <p className="text-sm font-semibold text-brand">ขั้นตอนที่ 5 จาก 5</p>
           <h1 className="mt-1 text-2xl font-semibold">เตรียมการทบทวน transcript รายช่วง</h1>
-          <p className="mt-2 text-sm text-[color:var(--color-text-muted)]">ระบบจะเปิดการตรวจทีละช่วงเมื่อ FastAPI มี segment ที่ผูกกับ transcript revision ปัจจุบัน</p>
+          <p className="mt-2 text-sm text-ink-muted">ระบบจะเปิดการตรวจทีละช่วงเมื่อ FastAPI มี segment ที่ผูกกับ transcript revision ปัจจุบัน</p>
         </header>
         {transcriptIsDraft ? (
           <TranscriptDraftPanel
@@ -346,9 +346,9 @@ export function AssessmentSegmentReviewWorkspace({
   return (
     <section className="space-y-5" data-testid="assessment-segment-review-workspace">
       <header>
-        <p className="text-sm font-semibold text-[color:var(--color-accent)]">ขั้นตอนที่ 5 จาก 5</p>
+        <p className="text-sm font-semibold text-brand">ขั้นตอนที่ 5 จาก 5</p>
         <h1 className="mt-1 text-2xl font-semibold">ทบทวน transcript รายช่วง</h1>
-        <p className="mt-2 max-w-3xl text-sm text-[color:var(--color-text-muted)]">ตรวจเฉพาะช่วงที่ไม่แน่ใจ เปิดฟังเสียงช่วงนั้นเมื่อมีสิทธิ์ แล้วบันทึก revision ใหม่ก่อนรับรอง ข้อมูลนี้เป็นหลักฐานเชิงพรรณนาเพื่อประกอบการพิจารณาของนักบำบัด ไม่ใช่การวินิจฉัยอัตโนมัติ</p>
+        <p className="mt-2 max-w-3xl text-sm text-ink-muted">ตรวจเฉพาะช่วงที่ไม่แน่ใจ เปิดฟังเสียงช่วงนั้นเมื่อมีสิทธิ์ แล้วบันทึก revision ใหม่ก่อนรับรอง ข้อมูลนี้เป็นหลักฐานเชิงพรรณนาเพื่อประกอบการพิจารณาของนักบำบัด ไม่ใช่การวินิจฉัยอัตโนมัติ</p>
       </header>
 
       <div className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-sky-200 bg-sky-50 p-4 text-sky-950" role="status">
@@ -373,7 +373,7 @@ export function AssessmentSegmentReviewWorkspace({
           <div className="flex flex-wrap items-center justify-between gap-3">
             <div>
               <h2 id="segment-timeline-heading" className="text-lg font-semibold">ลำดับช่วง transcript</h2>
-              <p className="mt-1 text-sm text-[color:var(--color-text-muted)]">เลือกช่วงเพื่อแก้ไข ตรวจสอบ speaker และเปิดเสียง</p>
+              <p className="mt-1 text-sm text-ink-muted">เลือกช่วงเพื่อแก้ไข ตรวจสอบ speaker และเปิดเสียง</p>
             </div>
             <button
               type="button"
@@ -392,18 +392,18 @@ export function AssessmentSegmentReviewWorkspace({
                 <li key={segment.id}>
                   <article
                     data-selected={selected ? "true" : undefined}
-                    className={`rounded-xl border p-4 transition-colors ${selected ? "border-[color:var(--color-accent)] bg-[color:var(--color-accent-soft)]" : "border-[color:var(--color-border)] bg-white"}`}
+                    className={`rounded-xl border p-4 transition-colors ${selected ? "border-brand bg-brand-soft" : "border-line bg-white"}`}
                   >
                     <div className="flex items-start gap-3">
-                      <span className="mt-0.5 flex h-8 min-w-8 items-center justify-center rounded-full border border-[color:var(--color-accent)] text-xs font-semibold text-[color:var(--color-accent-strong)]">{segment.ordinal}</span>
+                      <span className="mt-0.5 flex h-8 min-w-8 items-center justify-center rounded-full border border-brand text-xs font-semibold text-brand-strong">{segment.ordinal}</span>
                       <div className="min-w-0 flex-1">
-                        <div className="flex flex-wrap items-center gap-2 text-xs text-[color:var(--color-text-muted)]">
+                        <div className="flex flex-wrap items-center gap-2 text-xs text-ink-muted">
                           <span>{formatTime(segment.start_ms)}–{formatTime(segment.end_ms)}</span>
-                          <span className="rounded-full bg-[color:var(--color-surface-muted)] px-2 py-1 font-semibold">{speakerLabel(segment.speaker_role)}</span>
+                          <span className="rounded-full bg-surface-muted px-2 py-1 font-semibold">{speakerLabel(segment.speaker_role)}</span>
                           {segment.uncertainty_reason !== "none" ? <span className="rounded-full bg-amber-100 px-2 py-1 font-semibold text-amber-900">ต้องตรวจ: {uncertaintyLabel(segment.uncertainty_reason)}</span> : null}
                         </div>
-                        <p className="mt-2 whitespace-pre-wrap text-[length:var(--font-size-transcript)] leading-7 text-[color:var(--color-text-strong)]">{segment.text}</p>
-                        {segment.confidence !== null ? <p className="mt-2 text-xs text-[color:var(--color-text-muted)]">ความมั่นใจจากระบบ {Math.round(segment.confidence * 100)}% · ใช้เป็นสัญญาณประกอบ ไม่ใช่ผลวินิจฉัย</p> : null}
+                        <p className="mt-2 whitespace-pre-wrap text-[length:var(--font-size-transcript)] leading-7 text-ink">{segment.text}</p>
+                        {segment.confidence !== null ? <p className="mt-2 text-xs text-ink-muted">ความมั่นใจจากระบบ {Math.round(segment.confidence * 100)}% · ใช้เป็นสัญญาณประกอบ ไม่ใช่ผลวินิจฉัย</p> : null}
                         <div className="mt-3 flex flex-wrap gap-2">
                           <button type="button" className={secondaryButtonClass} onClick={() => setSelectedSegmentId(segment.id)}>แก้ไขช่วงที่ {segment.ordinal}</button>
                           <button type="button" className={secondaryButtonClass} disabled={replayLoadingId === segment.id} onClick={() => void requestReplay(segment)}>
@@ -419,7 +419,7 @@ export function AssessmentSegmentReviewWorkspace({
               );
             })}
           </ol>
-          {visibleSegments.length === 0 ? <p className="mt-4 rounded-lg bg-[color:var(--color-surface-muted)] p-4 text-sm text-[color:var(--color-text-muted)]">ไม่พบช่วงที่ทำเครื่องหมายว่าไม่แน่ใจ</p> : null}
+          {visibleSegments.length === 0 ? <p className="mt-4 rounded-lg bg-surface-muted p-4 text-sm text-ink-muted">ไม่พบช่วงที่ทำเครื่องหมายว่าไม่แน่ใจ</p> : null}
         </section>
 
         <section className="workspace-panel p-4 sm:p-5" aria-labelledby="segment-editor-heading">
@@ -461,7 +461,7 @@ export function AssessmentSegmentReviewWorkspace({
               <button type="button" className={primaryButtonClass} disabled={busy || !segmentsDirty} onClick={() => void saveSegments()}>{busy ? "กำลังบันทึก…" : "บันทึก revision ใหม่"}</button>
               {segmentsDirty ? <p className="text-xs text-amber-900">มีการแก้ไขในหน้านี้ที่ยังไม่บันทึก</p> : null}
             </div>
-          ) : <p className="mt-4 text-sm text-[color:var(--color-text-muted)]">เลือกช่วงจากรายการทางซ้ายเพื่อเริ่มตรวจ</p>}
+          ) : <p className="mt-4 text-sm text-ink-muted">เลือกช่วงจากรายการทางซ้ายเพื่อเริ่มตรวจ</p>}
         </section>
       </div>
 

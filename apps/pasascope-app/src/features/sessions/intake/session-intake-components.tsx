@@ -55,10 +55,10 @@ export function SourceChoiceButton({
     <button
       type="button"
       onClick={onClick}
-      className={`flex min-h-24 flex-col items-start justify-between rounded-[var(--radius-card)] border px-4 py-4 text-left transition motion-reduce:transition-none ${
+      className={`flex min-h-24 flex-col items-start justify-between rounded-card border px-4 py-4 text-left transition motion-reduce:transition-none ${
         active
-          ? "border-[color:var(--color-accent-subtle)] bg-[color:var(--color-accent-soft)] text-[color:var(--color-accent-strong)]"
-          : "border-[color:var(--color-border)] bg-[color:var(--color-surface-strong)] text-[color:var(--color-text-strong)]"
+          ? "border-tint-strong bg-brand-soft text-brand-strong"
+          : "border-line bg-surface text-ink"
       }`}
       aria-pressed={active}
     >
@@ -160,7 +160,7 @@ export function SourceInputPanel({
       <WorkspacePanel className="p-5">
         <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
           <div className="flex items-center gap-2">
-            {mode === "cha" ? <FileText size={22} aria-hidden="true" className="text-blossom" /> : <ClipboardPaste size={22} aria-hidden="true" className="text-aqua" />}
+            {mode === "cha" ? <FileText size={22} aria-hidden="true" className="text-highlight" /> : <ClipboardPaste size={22} aria-hidden="true" className="text-brand" />}
             <h2 className="font-bold text-ink">{mode === "cha" ? "Upload .cha" : "Paste transcript"}</h2>
           </div>
           {mode === "paste" && (
@@ -193,7 +193,7 @@ export function SourceInputPanel({
               id="cha-transcript-file"
               type="file"
               accept=".cha"
-              className="mb-3 block w-full rounded-[var(--radius-panel)] border border-line bg-[color:var(--color-surface-reading)] px-3 py-3 text-sm"
+              className="mb-3 block w-full rounded-panel border border-line bg-surface px-3 py-3 text-sm"
               onChange={(event) => {
                 const file = event.currentTarget.files?.[0];
                 if (file) void onChaFile(file);
@@ -202,7 +202,7 @@ export function SourceInputPanel({
           </>
         ) : null}
         <textarea
-          className="min-h-44 w-full rounded-[var(--radius-panel)] border border-line bg-[color:var(--color-surface-reading)] p-3 text-sm text-ink outline-none focus:ring-2 focus:ring-clinical"
+          className="min-h-44 w-full rounded-panel border border-line bg-surface p-3 text-sm text-ink outline-none focus:ring-2 focus:ring-brand"
           value={draftTranscript}
           onChange={(event) => onDraftChange(event.target.value)}
           aria-label={mode === "cha" ? "CHA transcript text" : "Pasted transcript text"}
@@ -210,18 +210,18 @@ export function SourceInputPanel({
           data-testid="transcript-input"
         />
         {error ? (
-          <p id="source-transcript-error" className="mt-3 rounded-[var(--radius-card)] border border-red-200 bg-red-50 p-3 text-sm font-semibold text-red-900 animate-fade-in" role="alert">
+          <p id="source-transcript-error" className="mt-3 rounded-card border border-red-200 bg-red-50 p-3 text-sm font-semibold text-red-900 animate-fade-in" role="alert">
             {error}
           </p>
         ) : null}
         {warnings.length > 0 ? (
-          <div className="mt-3 rounded-[var(--radius-card)] border border-amber-200 bg-amber-50 p-3 text-sm text-amber-900" role="status">
+          <div className="mt-3 rounded-card border border-amber-200 bg-amber-50 p-3 text-sm text-amber-900" role="status">
             <p className="font-semibold">Import warnings</p>
             <ul className="mt-1 list-disc space-y-1 pl-5">{warnings.map((warning) => <li key={warning}>{warning}</li>)}</ul>
           </div>
         ) : null}
         {validationIssues.length > 0 ? (
-          <div className="mt-3 rounded-[var(--radius-card)] border border-orange-200 bg-orange-50 p-3 text-sm text-orange-900" role="alert">
+          <div className="mt-3 rounded-card border border-orange-200 bg-orange-50 p-3 text-sm text-orange-900" role="alert">
             <p className="font-semibold">CHAT validation</p>
             <ul className="mt-1 list-disc space-y-1 pl-5">{validationIssues.map((issue) => <li key={issue}>{issue}</li>)}</ul>
           </div>
@@ -248,7 +248,7 @@ export function SessionResultsPreview({ state, onGenerateReport, busy }: { state
   return (
     <WorkspacePanel className="hidden p-6 lg:block">
       <div className="mb-5 flex items-center gap-3">
-        <span className="grid h-12 w-12 place-items-center rounded-full bg-[color:var(--color-accent-soft)] font-bold text-clinical">EL</span>
+        <span className="grid h-12 w-12 place-items-center rounded-full bg-brand-soft font-bold text-brand">EL</span>
         <div>
           <h2 className="text-xl font-bold text-ink">Session Results</h2>
           <p className="text-sm text-slate-600">{state.childName} · {state.qaStatus ?? "Not analyzed"}</p>
@@ -259,7 +259,7 @@ export function SessionResultsPreview({ state, onGenerateReport, busy }: { state
         <MiniResult value={`${state.featurePercent || 0}%`} label="Feature Summary" />
         <MiniResult value={String(state.reviewNeededCount)} label="Review Needed" />
       </div>
-      <div className="mt-6 rounded-[var(--radius-panel)] border border-line bg-[color:var(--color-surface-reading)] p-4">
+      <div className="mt-6 rounded-panel border border-line bg-surface p-4">
         <h3 className="font-bold text-ink">Key insights</h3>
         <ul className="mt-3 space-y-3 text-sm text-slate-700">
           {state.insights.map((insight) => <li key={insight.title}>{insight.title}: {insight.text}</li>)}
@@ -288,10 +288,10 @@ export function WorkflowStatus({ state, backendUnavailable }: { state: WorkflowS
     return null;
   }
   const className = isError
-    ? "rounded-[var(--radius-panel)] border border-red-200 bg-red-50 p-4 text-sm text-red-950 animate-fade-in"
+    ? "rounded-panel border border-red-200 bg-red-50 p-4 text-sm text-red-950 animate-fade-in"
     : isSuccess
-      ? "rounded-[var(--radius-panel)] border border-emerald-200 bg-emerald-50 p-4 text-sm text-emerald-950 animate-fade-in"
-      : "demo-note rounded-[var(--radius-panel)] p-4 text-sm";
+      ? "rounded-panel border border-emerald-200 bg-emerald-50 p-4 text-sm text-emerald-950 animate-fade-in"
+      : "demo-note rounded-panel p-4 text-sm";
   return (
     <div className={className} role={isError ? "alert" : "status"} aria-live="polite">
       {state.statusMessage ? <p className="font-semibold">{state.statusMessage}</p> : null}
@@ -302,7 +302,7 @@ export function WorkflowStatus({ state, backendUnavailable }: { state: WorkflowS
 
 function MiniResult({ value, label }: { value: string; label: string }) {
   return (
-    <div className="rounded-[1.25rem] border border-line bg-[color:var(--color-surface-reading)] p-4 text-center">
+    <div className="rounded-[1.25rem] border border-line bg-surface p-4 text-center">
       <p className="text-3xl font-bold text-ink">{value}</p>
       <p className="mt-2 text-sm font-semibold text-slate-700">{label}</p>
     </div>

@@ -53,15 +53,15 @@ export function TranscriptLineList({
   deleteLine,
 }: TranscriptLineListProps) {
   return (
-    <div className="mt-4 min-w-0 overflow-hidden rounded-[var(--radius-panel)] border border-[color:var(--color-border)] bg-[color:var(--color-surface-strong)] lg:col-start-1 lg:row-start-4">
-      <div className="hidden grid-cols-[7rem_6rem_minmax(16rem,1fr)_5.5rem_5.5rem] gap-3 border-b border-[color:var(--color-border)] bg-[color:var(--color-surface-muted)] px-4 py-3 text-xs font-semibold uppercase tracking-[0.12em] text-[color:var(--color-text-muted)] min-[1380px]:grid">
+    <div className="mt-4 min-w-0 overflow-hidden rounded-panel border border-line bg-surface lg:col-start-1 lg:row-start-4">
+      <div className="hidden grid-cols-[7rem_6rem_minmax(16rem,1fr)_5.5rem_5.5rem] gap-3 border-b border-line bg-surface-muted px-4 py-3 text-xs font-semibold uppercase tracking-[0.12em] text-ink-muted min-[1380px]:grid">
         <span>Time</span>
         <span>Speaker</span>
         <span>Utterance</span>
         <span>QA</span>
         <span>Confidence</span>
       </div>
-      <div className="divide-y divide-[color:var(--color-border)]" role="listbox" aria-label="Transcript lines">
+      <div className="divide-y divide-line" role="listbox" aria-label="Transcript lines">
         {visibleLines.map((line) => {
           const index = lineIndexById.get(line.lineId) ?? -1;
           return (
@@ -154,7 +154,7 @@ const TranscriptLineRow = memo(function TranscriptLineRow({
         role="option"
         aria-label={`Transcript line ${index + 1}`}
         aria-selected={selected}
-        className={`transcript-line-row px-3 py-3 transition motion-reduce:transition-none sm:px-4 ${active || selected ? "bg-[color:var(--color-accent-soft)]" : "bg-transparent"}`}
+        className={`transcript-line-row px-3 py-3 transition motion-reduce:transition-none sm:px-4 ${active || selected ? "bg-brand-soft" : "bg-transparent"}`}
         onClick={() => selectLine(line.lineId)}
       >
         <div className="grid min-w-0 grid-cols-2 gap-2 md:grid-cols-[7rem_6rem_minmax(0,1fr)] min-[1380px]:grid-cols-[7rem_6rem_minmax(16rem,1fr)_5.5rem_5.5rem] min-[1380px]:items-start">
@@ -169,7 +169,7 @@ const TranscriptLineRow = memo(function TranscriptLineRow({
               onFocus={() => selectLine(line.lineId)}
               aria-label={`Timestamp for line ${index + 1}`}
               placeholder="00:00.000 – 00:01.000"
-              className="min-h-11 rounded-[var(--radius-card)] border border-line bg-[color:var(--color-surface-reading)] px-3 text-sm font-normal normal-case tracking-normal text-slate-700"
+              className="min-h-11 rounded-card border border-line bg-surface px-3 text-sm font-normal normal-case tracking-normal text-slate-700"
             />
           </label>
           <label className="grid gap-1 text-xs font-semibold uppercase tracking-wide text-slate-500">
@@ -179,7 +179,7 @@ const TranscriptLineRow = memo(function TranscriptLineRow({
               onChange={(event) => updateLine(index, { speaker: event.target.value })}
               onFocus={() => selectLine(line.lineId)}
               aria-label={`Speaker for line ${index + 1}`}
-              className="min-h-11 rounded-[var(--radius-card)] border border-line bg-[color:var(--color-surface-reading)] px-3 text-sm font-semibold normal-case tracking-normal text-ink"
+              className="min-h-11 rounded-card border border-line bg-surface px-3 text-sm font-semibold normal-case tracking-normal text-ink"
             >
               {[...new Set([...speakers, line.speaker])].map((speaker) => (
                 <option key={speaker} value={speaker}>{speaker}</option>
@@ -193,7 +193,7 @@ const TranscriptLineRow = memo(function TranscriptLineRow({
               onChange={(event) => updateLine(index, { text: event.target.value })}
               onFocus={() => selectLine(line.lineId)}
               aria-label={`Utterance text ${index + 1}`}
-              className="min-h-14 w-full min-w-0 resize-y rounded-[var(--radius-card)] border border-line bg-[color:var(--color-surface-reading)] px-3 py-2 text-sm font-normal normal-case leading-6 tracking-normal text-ink outline-none focus:ring-2 focus:ring-clinical"
+              className="min-h-14 w-full min-w-0 resize-y rounded-card border border-line bg-surface px-3 py-2 text-sm font-normal normal-case leading-6 tracking-normal text-ink outline-none focus:ring-2 focus:ring-brand"
             />
           </label>
           <div className="flex items-start min-[1380px]:justify-center">
@@ -218,7 +218,7 @@ const TranscriptLineRow = memo(function TranscriptLineRow({
                   event.stopPropagation();
                   toggleLineMenu(line.lineId);
                 }}
-                className="inline-flex min-h-11 min-w-11 items-center justify-center rounded-lg border border-line bg-[color:var(--color-surface-reading)] text-slate-700"
+                className="inline-flex min-h-11 min-w-11 items-center justify-center rounded-lg border border-line bg-surface text-slate-700"
               >
                 <MoreHorizontal size={18} aria-hidden="true" />
               </button>
@@ -226,7 +226,7 @@ const TranscriptLineRow = memo(function TranscriptLineRow({
                 <div
                   role="menu"
                   aria-label={`Actions for transcript line ${index + 1}`}
-                  className="motion-popover absolute right-0 z-20 mt-1 w-52 rounded-[var(--radius-card)] border border-[color:var(--color-border)] bg-[color:var(--color-surface-reading)] p-1 shadow-lg"
+                  className="motion-popover absolute right-0 z-20 mt-1 w-52 rounded-card border border-line bg-surface p-1 shadow-lg"
                   onClick={(event) => event.stopPropagation()}
                   onKeyDown={(event) => {
                     if (event.key === "Escape") {

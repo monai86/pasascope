@@ -146,7 +146,7 @@ export function SessionIntakeView({ model }: { model: SessionIntakeViewModel }) 
           aria-label={EXTRACT_FEATURES_ACTION}
           data-testid="extract-features-button"
           aria-describedby={extractFeaturesReason ? "extract-features-reason" : undefined}
-          className="inline-flex min-h-11 w-full items-center justify-center gap-2.5 rounded-[var(--radius-card)] border border-[color:var(--color-border-strong)] bg-[color:var(--color-surface-strong)] px-5 py-3.5 text-sm font-semibold text-[color:var(--color-text-strong)] transition-colors hover:border-[color:var(--color-accent-strong)] hover:bg-[color:var(--color-accent-soft)] hover:text-[color:var(--color-accent-strong)] focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-clinical disabled:cursor-not-allowed disabled:opacity-50 sm:w-auto"
+          className="inline-flex min-h-11 w-full items-center justify-center gap-2.5 rounded-card border border-line-strong bg-surface px-5 py-3.5 text-sm font-semibold text-ink transition-colors hover:border-brand-strong hover:bg-brand-soft hover:text-brand-strong focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-brand disabled:cursor-not-allowed disabled:opacity-50 sm:w-auto"
         >
           <Gauge size={18} aria-hidden="true" />
           {busy ? "Extracting..." : EXTRACT_FEATURES_ACTION}
@@ -155,7 +155,7 @@ export function SessionIntakeView({ model }: { model: SessionIntakeViewModel }) 
           <p
             id="extract-features-reason"
             role="status"
-            className="rounded-[var(--radius-panel)] border border-amber-200 bg-amber-50 p-4 text-sm font-semibold text-amber-900"
+            className="rounded-panel border border-amber-200 bg-amber-50 p-4 text-sm font-semibold text-amber-900"
           >
             {extractFeaturesReason}
           </p>

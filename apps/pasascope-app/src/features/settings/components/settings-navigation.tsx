@@ -50,14 +50,14 @@ export function SettingsNavigation({
       {!mobileIndexOpen ? (
         <button
           type="button"
-          className="flex min-h-11 w-full items-center gap-2 rounded-[var(--radius-card)] border border-line bg-[color:var(--color-surface-reading)] px-3 text-left text-sm font-semibold text-ink md:hidden"
+          className="flex min-h-11 w-full items-center gap-2 rounded-card border border-line bg-surface px-3 text-left text-sm font-semibold text-ink md:hidden"
           onClick={onOpenMobileIndex}
         >
           <ChevronLeft size={17} aria-hidden="true" />
           All settings categories
         </button>
       ) : null}
-      <div className={`${mobileIndexOpen ? "block" : "hidden md:block"} sticky top-24 rounded-[var(--radius-card)] border border-line bg-[color:var(--color-surface-reading)] p-2`}>
+      <div className={`${mobileIndexOpen ? "block" : "hidden md:block"} sticky top-24 rounded-card border border-line bg-surface p-2`}>
         <div className="md:hidden">
           <p className="px-3 pb-3 pt-1 text-sm leading-6 text-slate-600">Choose one category to open its settings page.</p>
         </div>
@@ -91,7 +91,7 @@ function SettingsNavGroup({
                 aria-current={isSelected ? "page" : undefined}
                 className={`flex min-h-11 items-center rounded-xl border-l-3 px-3.5 py-2 text-sm font-semibold transition ${
                   isSelected
-                    ? "border-[color:var(--color-pasa-teal)] bg-[color:var(--color-pasa-teal-soft)] text-[color:var(--color-pasa-teal)]"
+                    ? "border-brand bg-brand-soft text-brand"
                     : "border-transparent text-slate-700 hover:bg-slate-50 hover:text-ink"
                 }`}
                 onClick={(event) => {

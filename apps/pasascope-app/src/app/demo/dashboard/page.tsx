@@ -36,17 +36,17 @@ export default function DemoDashboard() {
       {/* Welcome Header */}
       <div className="flex flex-col gap-2 md:flex-row md:items-center md:justify-between">
         <div>
-          <h1 className="text-3xl font-semibold tracking-[-0.03em] text-[color:var(--color-text-strong)]">
+          <h1 className="text-3xl font-semibold tracking-[-0.03em] text-ink">
             สวัสดี, Dr. Somchai
           </h1>
-          <p className="mt-1 text-sm text-[color:var(--color-text-muted)]">
+          <p className="mt-1 text-sm text-ink-muted">
             Therapist Workspace — ระบบช่วยวิเคราะห์ภาษาพูดและสนับสนุนการตัดสินใจทางคลินิก
           </p>
         </div>
         <div>
           <Link
             href="/demo/upload"
-            className="inline-flex min-h-11 items-center justify-center gap-2 rounded-[var(--radius-pill)] bg-[color:var(--color-accent)] px-5 text-sm font-semibold text-white transition hover:bg-[color:var(--color-accent-strong)]"
+            className="inline-flex min-h-11 items-center justify-center gap-2 rounded-full bg-brand px-5 text-sm font-semibold text-white transition hover:bg-brand-strong"
           >
             <Upload size={16} />
             เริ่มอัปโหลดเสียงบำบัด
@@ -61,16 +61,16 @@ export default function DemoDashboard() {
           return (
             <div
               key={stat.label}
-              className="rounded-[var(--radius-panel)] border border-[color:var(--color-border)] bg-[color:var(--color-surface-strong)] p-5"
+              className="rounded-panel border border-line bg-surface p-5"
             >
               <div className="flex items-center justify-between">
-                <span className="text-sm font-medium text-[color:var(--color-text-muted)]">{stat.label}</span>
+                <span className="text-sm font-medium text-ink-muted">{stat.label}</span>
                 <span className={`grid h-8 w-8 place-items-center rounded-lg ${stat.color}`}>
                   <Icon size={18} />
                 </span>
               </div>
-              <p className="mt-2 text-3xl font-bold text-[color:var(--color-text-strong)]">{stat.value}</p>
-              <p className="mt-1 text-xs text-[color:var(--color-text-subtle)]">{stat.helper}</p>
+              <p className="mt-2 text-3xl font-bold text-ink">{stat.value}</p>
+              <p className="mt-1 text-xs text-ink-subtle">{stat.helper}</p>
             </div>
           );
         })}
@@ -79,20 +79,20 @@ export default function DemoDashboard() {
       <div className="grid gap-6 lg:grid-cols-3">
         {/* Today's Agenda */}
         <div className="space-y-4 lg:col-span-2">
-          <h2 className="text-lg font-semibold text-[color:var(--color-text-strong)]">ตารางการบำบัดวันนี้ (Today&apos;s Agenda)</h2>
+          <h2 className="text-lg font-semibold text-ink">ตารางการบำบัดวันนี้ (Today&apos;s Agenda)</h2>
           <div className="space-y-3">
             {appointments.map((appt) => (
               <div
                 key={appt.child}
-                className="flex flex-col gap-4 rounded-[var(--radius-panel)] border border-[color:var(--color-border)] bg-[color:var(--color-surface-strong)] p-4 sm:flex-row sm:items-center sm:justify-between"
+                className="flex flex-col gap-4 rounded-panel border border-line bg-surface p-4 sm:flex-row sm:items-center sm:justify-between"
               >
                 <div className="flex items-start gap-3.5">
-                  <div className="grid h-10 w-10 shrink-0 place-items-center rounded-xl bg-[color:var(--color-accent-soft)] text-[color:var(--color-accent-strong)] font-semibold text-sm">
+                  <div className="grid h-10 w-10 shrink-0 place-items-center rounded-xl bg-brand-soft text-brand-strong font-semibold text-sm">
                     {appt.time.split(" ")[0]}
                   </div>
                   <div>
-                    <h3 className="font-semibold text-[color:var(--color-text-strong)]">{appt.child}</h3>
-                    <p className="text-xs text-[color:var(--color-text-muted)]">
+                    <h3 className="font-semibold text-ink">{appt.child}</h3>
+                    <p className="text-xs text-ink-muted">
                       อายุ {appt.age} · {appt.type}
                     </p>
                   </div>
@@ -110,7 +110,7 @@ export default function DemoDashboard() {
                   {appt.status === "พร้อมอัปโหลดเสียง" && (
                     <Link
                       href="/demo/upload"
-                      className="inline-flex h-9 items-center justify-center rounded-[var(--radius-pill)] border border-[color:var(--color-border)] bg-[color:var(--color-page-bg)] px-3 text-xs font-semibold hover:border-[color:var(--color-text-strong)]"
+                      className="inline-flex h-9 items-center justify-center rounded-full border border-line bg-canvas px-3 text-xs font-semibold hover:border-ink"
                     >
                       จัดการ
                     </Link>
@@ -123,8 +123,8 @@ export default function DemoDashboard() {
 
         {/* Recent Activity */}
         <div className="space-y-4">
-          <h2 className="text-lg font-semibold text-[color:var(--color-text-strong)]">กิจกรรมล่าสุด (Recent Activity)</h2>
-          <div className="rounded-[var(--radius-panel)] border border-[color:var(--color-border)] bg-[color:var(--color-surface-strong)] p-5 space-y-4">
+          <h2 className="text-lg font-semibold text-ink">กิจกรรมล่าสุด (Recent Activity)</h2>
+          <div className="rounded-panel border border-line bg-surface p-5 space-y-4">
             {recentActivity.map((act, index) => (
               <div key={index} className="flex gap-3">
                 <div className="mt-0.5 shrink-0">
@@ -145,10 +145,10 @@ export default function DemoDashboard() {
                   )}
                 </div>
                 <div className="flex-1">
-                  <p className="text-sm font-medium text-[color:var(--color-text-strong)]">
+                  <p className="text-sm font-medium text-ink">
                     <span className="font-semibold">{act.child}</span> — {act.desc}
                   </p>
-                  <p className="mt-1 text-xs text-[color:var(--color-text-subtle)] flex items-center gap-1">
+                  <p className="mt-1 text-xs text-ink-subtle flex items-center gap-1">
                     <Clock size={10} />
                     {act.time}
                   </p>

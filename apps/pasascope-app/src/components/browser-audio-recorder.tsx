@@ -333,43 +333,43 @@ export function BrowserAudioRecorder({
 
   return (
     <div>
-      <div className={`mb-4 flex items-center justify-center gap-2 text-lg font-bold ${status === "recording" ? "text-red-600" : "text-clinical"}`}>
-        <span className={`h-3 w-3 rounded-full ${status === "recording" ? "animate-pulse bg-red-500" : "bg-clinical"}`} />
+      <div className={`mb-4 flex items-center justify-center gap-2 text-lg font-bold ${status === "recording" ? "text-red-600" : "text-brand"}`}>
+        <span className={`h-3 w-3 rounded-full ${status === "recording" ? "animate-pulse bg-red-500" : "bg-brand"}`} />
         {statusText}
       </div>
       <p className="text-5xl font-bold tracking-normal text-ink">{formatDuration(durationSeconds)}</p>
       <div className="mx-auto mt-8 flex h-28 max-w-sm items-center justify-center gap-1.5" aria-label="Microphone amplitude">
         {amplitudes.map((height, index) => (
-          <span key={index} className={`w-1.5 rounded-full ${status === "recording" ? "bg-clinical" : "bg-[color:var(--color-accent-subtle)]"}`} style={{ height }} />
+          <span key={index} className={`w-1.5 rounded-full ${status === "recording" ? "bg-brand" : "bg-tint-strong"}`} style={{ height }} />
         ))}
       </div>
 
       <div className="mt-6 flex flex-wrap items-center justify-center gap-3">
         {status === "idle" || status === "error" || status === "interrupted" ? (
-          <button type="button" className="grid h-20 w-20 place-items-center rounded-full bg-[color:var(--color-accent)] text-white" aria-label="Start recording" onClick={startRecording}>
+          <button type="button" className="grid h-20 w-20 place-items-center rounded-full bg-brand text-white" aria-label="Start recording" onClick={startRecording}>
             <Mic size={32} aria-hidden="true" />
           </button>
         ) : null}
         {status === "recording" ? (
-          <button type="button" className="grid h-20 w-20 place-items-center rounded-full bg-[color:var(--color-accent)] text-white" aria-label="Pause recording" onClick={pauseRecording}>
+          <button type="button" className="grid h-20 w-20 place-items-center rounded-full bg-brand text-white" aria-label="Pause recording" onClick={pauseRecording}>
             <Pause size={32} fill="currentColor" aria-hidden="true" />
           </button>
         ) : null}
         {status === "paused" ? (
-          <button type="button" className="grid h-20 w-20 place-items-center rounded-full bg-[color:var(--color-accent)] text-white" aria-label="Resume recording" onClick={resumeRecording}>
+          <button type="button" className="grid h-20 w-20 place-items-center rounded-full bg-brand text-white" aria-label="Resume recording" onClick={resumeRecording}>
             <Play size={32} fill="currentColor" aria-hidden="true" />
           </button>
         ) : null}
-        <button type="button" className="grid h-14 w-14 place-items-center rounded-full border border-line bg-[color:var(--color-surface-reading)] text-slate-600 disabled:opacity-35" aria-label="Stop recording" onClick={stopRecording} disabled={status !== "recording" && status !== "paused"}>
+        <button type="button" className="grid h-14 w-14 place-items-center rounded-full border border-line bg-surface text-slate-600 disabled:opacity-35" aria-label="Stop recording" onClick={stopRecording} disabled={status !== "recording" && status !== "paused"}>
           <Square size={20} fill="currentColor" aria-hidden="true" />
         </button>
       </div>
 
       {audioUrl ? (
-        <div className="mt-5 rounded-[var(--radius-panel)] border border-line bg-[color:var(--color-surface-reading)] p-4">
+        <div className="mt-5 rounded-panel border border-line bg-surface p-4">
           <audio className="w-full" controls src={audioUrl} aria-label="Recorded audio playback" />
           <div className="mt-3 flex flex-wrap justify-center gap-2">
-            <button type="button" className="inline-flex min-h-11 items-center gap-2 rounded-xl border border-clinical px-4 py-2 text-sm font-semibold text-clinical" onClick={rerecord}>
+            <button type="button" className="inline-flex min-h-11 items-center gap-2 rounded-xl border border-brand px-4 py-2 text-sm font-semibold text-brand" onClick={rerecord}>
               <RotateCcw size={17} aria-hidden="true" />
               Re-record
             </button>
@@ -383,7 +383,7 @@ export function BrowserAudioRecorder({
 
       {privacyNotice ? <p className="mt-4 rounded-xl border border-amber-200 bg-amber-50 p-3 text-sm font-semibold text-amber-900">Unsaved recording was cleared for privacy. Please record again.</p> : null}
       {error ? <p className="mt-4 rounded-xl border border-red-200 bg-red-50 p-3 text-sm font-semibold text-red-800" role="alert">{error}</p> : null}
-      <p className="mt-3 text-sm font-semibold text-clinical">Transcription is experimental. After you upload, the recording is transcribed on this server and the draft must be reviewed.</p>
+      <p className="mt-3 text-sm font-semibold text-brand">Transcription is experimental. After you upload, the recording is transcribed on this server and the draft must be reviewed.</p>
       <p className="mt-1 text-xs text-slate-600">Audio stays in memory only while this page is open. It is not uploaded automatically.</p>
     </div>
   );

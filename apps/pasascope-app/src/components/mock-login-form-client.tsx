@@ -42,14 +42,14 @@ export function MockLoginFormClient({
           <p className="mt-1 text-sm leading-6 text-slate-500">Therapist, supervisor, and org-admin demo roles are available for local exploration.</p>
         </div>
       </div>
-      <label className="mb-4 block text-sm font-medium text-[color:var(--color-text-strong)]">
+      <label className="mb-4 block text-sm font-medium text-ink">
         Email
-        <input className="mt-1 min-h-11 w-full rounded-[var(--radius-card)] border border-[color:var(--color-border)] bg-[color:var(--color-surface-reading)] px-3 py-2 text-[color:var(--color-text-strong)]" defaultValue="therapist@example.test" type="email" />
+        <input className="mt-1 min-h-11 w-full rounded-card border border-line bg-surface px-3 py-2 text-ink" defaultValue="therapist@example.test" type="email" />
       </label>
-      <label className="mb-3 block text-sm font-medium text-[color:var(--color-text-strong)]">
+      <label className="mb-3 block text-sm font-medium text-ink">
         Role
         <select
-          className="mt-1 min-h-11 w-full rounded-[var(--radius-card)] border border-[color:var(--color-border)] bg-[color:var(--color-surface-reading)] px-3 py-2 text-[color:var(--color-text-strong)]"
+          className="mt-1 min-h-11 w-full rounded-card border border-line bg-surface px-3 py-2 text-ink"
           value={role}
           onChange={(event) => setRole(event.target.value as MockRole)}
         >
@@ -58,10 +58,10 @@ export function MockLoginFormClient({
           <option value="org_admin">Org admin</option>
         </select>
       </label>
-      <label className="mb-3 block text-sm font-medium text-[color:var(--color-text-strong)]">
+      <label className="mb-3 block text-sm font-medium text-ink">
         Active organization session
         <select
-          className="mt-1 min-h-11 w-full rounded-[var(--radius-card)] border border-[color:var(--color-border)] bg-[color:var(--color-surface-reading)] px-3 py-2 text-[color:var(--color-text-strong)]"
+          className="mt-1 min-h-11 w-full rounded-card border border-line bg-surface px-3 py-2 text-ink"
           value={organizationId}
           onChange={(event) => setOrganizationId(event.target.value)}
         >
@@ -72,10 +72,10 @@ export function MockLoginFormClient({
           ))}
         </select>
       </label>
-      <label className="mb-3 block text-sm font-medium text-[color:var(--color-text-strong)]">
+      <label className="mb-3 block text-sm font-medium text-ink">
         Session assurance
         <select
-          className="mt-1 min-h-11 w-full rounded-[var(--radius-card)] border border-[color:var(--color-border)] bg-[color:var(--color-surface-reading)] px-3 py-2 text-[color:var(--color-text-strong)]"
+          className="mt-1 min-h-11 w-full rounded-card border border-line bg-surface px-3 py-2 text-ink"
           value={aal}
           onChange={(event) => setAal(event.target.value as "aal1" | "aal2")}
         >
@@ -83,14 +83,14 @@ export function MockLoginFormClient({
           <option value="aal1">AAL1</option>
         </select>
       </label>
-      <p className="mb-4 text-sm leading-6 text-[color:var(--color-text-muted)]" aria-live="polite">
+      <p className="mb-4 text-sm leading-6 text-ink-muted" aria-live="polite">
         {role === "org_admin"
           ? "Org admin opens assignment-safe runtime controls."
           : role === "clinical_supervisor"
             ? "Clinical supervisor opens the work queue with org-wide oversight."
             : "Therapist opens Today / Work Queue."}
       </p>
-      <div className="mb-4 rounded-[var(--radius-card)] border border-[color:var(--color-border)] bg-[color:var(--color-surface-muted)] p-3 text-sm leading-6 text-[color:var(--color-text-muted)]">
+      <div className="mb-4 rounded-card border border-line bg-surface-muted p-3 text-sm leading-6 text-ink-muted">
         <div className="flex items-start gap-2">
           <Building2 size={16} aria-hidden="true" className="mt-0.5 shrink-0" />
           <div>
@@ -106,7 +106,7 @@ export function MockLoginFormClient({
           </div>
         </div>
       </div>
-      <div className="mb-4 rounded-[var(--radius-card)] border border-[color:var(--color-pasa-teal-border)] bg-[color:var(--color-pasa-teal-soft)] p-3 text-sm leading-6 text-[color:var(--color-pasa-teal)]">
+      <div className="mb-4 rounded-card border border-brand-border bg-brand-soft p-3 text-sm leading-6 text-brand">
         <div className="flex items-start gap-2">
           <LockKeyhole size={16} aria-hidden="true" className="mt-0.5 shrink-0" />
           <div>

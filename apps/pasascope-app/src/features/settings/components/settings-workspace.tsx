@@ -304,7 +304,7 @@ function AdminSettings({ section, organizationId, initialCaseId }: { section: Ad
       <div className="grid gap-4">
         <AdminSectionHeader title="Team" description="Manage organization membership and care-team assignments through backend-authorized actions." />
         <CareTeamAdministration memberships={memberships} initialCaseId={initialCaseId} />
-        <section className="rounded-[var(--radius-card)] border border-line bg-[color:var(--color-surface-reading)] p-4">
+        <section className="rounded-card border border-line bg-surface p-4">
           <div className="mb-4 flex items-center justify-between gap-3">
             <h3 className="text-base font-semibold text-ink">Organization memberships</h3>
             <StatusPill label="Active" value={activeCount} />
@@ -321,7 +321,7 @@ function AdminSettings({ section, organizationId, initialCaseId }: { section: Ad
     content = (
       <div className="grid gap-4">
         <AdminSectionHeader title="Invitations" description="Create and review invitation records for the local pilot lifecycle." />
-        <section className="rounded-[var(--radius-card)] border border-line bg-[color:var(--color-surface-reading)] p-4">
+        <section className="rounded-card border border-line bg-surface p-4">
           <div className="flex flex-wrap items-start justify-between gap-3">
             <div>
               <h3 className="text-lg font-semibold text-ink">Pilot access lifecycle</h3>
@@ -338,21 +338,21 @@ function AdminSettings({ section, organizationId, initialCaseId }: { section: Ad
           <form className="mt-5 grid min-w-0 gap-3 rounded-md border border-line bg-field p-3 xl:grid-cols-[minmax(0,1fr)_minmax(0,1fr)_150px_auto]" onSubmit={handleInvite}>
             <label className="grid gap-1 text-sm font-medium text-ink">
               Invite email
-              <input className="min-h-11 rounded-md border border-line bg-[color:var(--color-surface-reading)] px-3 text-sm text-ink outline-none focus:border-clinical" type="email" value={inviteEmail} onChange={(event) => setInviteEmail(event.target.value)} placeholder="clinician@example.test" required />
+              <input className="min-h-11 rounded-md border border-line bg-surface px-3 text-sm text-ink outline-none focus:border-brand" type="email" value={inviteEmail} onChange={(event) => setInviteEmail(event.target.value)} placeholder="clinician@example.test" required />
             </label>
             <label className="grid gap-1 text-sm font-medium text-ink">
               Display name
-              <input className="min-h-11 rounded-md border border-line bg-[color:var(--color-surface-reading)] px-3 text-sm text-ink outline-none focus:border-clinical" value={inviteName} onChange={(event) => setInviteName(event.target.value)} placeholder="Pilot Clinician" required />
+              <input className="min-h-11 rounded-md border border-line bg-surface px-3 text-sm text-ink outline-none focus:border-brand" value={inviteName} onChange={(event) => setInviteName(event.target.value)} placeholder="Pilot Clinician" required />
             </label>
             <label className="grid gap-1 text-sm font-medium text-ink">
               Role
-              <select className="min-h-11 rounded-md border border-line bg-[color:var(--color-surface-reading)] px-3 text-sm text-ink outline-none focus:border-clinical" value={inviteRole} onChange={(event) => setInviteRole(event.target.value)}>
+              <select className="min-h-11 rounded-md border border-line bg-surface px-3 text-sm text-ink outline-none focus:border-brand" value={inviteRole} onChange={(event) => setInviteRole(event.target.value)}>
                 <option value="therapist">Therapist</option>
                 <option value="clinical_supervisor">Supervisor</option>
                 <option value="org_admin">Org admin</option>
               </select>
             </label>
-            <button type="submit" className="inline-flex min-h-11 items-center justify-center gap-2 rounded-md bg-clinical px-4 text-sm font-semibold text-white transition hover:bg-clinical-strong disabled:opacity-50" disabled={busy}>
+            <button type="submit" className="inline-flex min-h-11 items-center justify-center gap-2 rounded-md bg-brand px-4 text-sm font-semibold text-white transition hover:bg-brand-strong disabled:opacity-50" disabled={busy}>
               <MailPlus size={17} aria-hidden="true" />
               Create invitation
             </button>
@@ -371,7 +371,7 @@ function AdminSettings({ section, organizationId, initialCaseId }: { section: Ad
     content = (
       <div className="grid gap-4">
         <AdminSectionHeader title="Audit" description="Review the scope and guarantees of backend audit records." />
-        <section className="rounded-[var(--radius-card)] border border-line bg-[color:var(--color-surface-reading)] p-4">
+        <section className="rounded-card border border-line bg-surface p-4">
           <div className="flex h-11 w-11 items-center justify-center rounded-md bg-amber-50 text-amber-700"><FileCheck2 size={22} aria-hidden="true" /></div>
           <h3 className="mt-4 text-base font-semibold text-ink">Audit & break-glass</h3>
           <div className="mt-4 grid gap-3 md:grid-cols-2">
@@ -387,7 +387,7 @@ function AdminSettings({ section, organizationId, initialCaseId }: { section: Ad
     content = (
       <div className="grid gap-4">
         <AdminSectionHeader title="Privacy Operations" description="Organization-level privacy workflows remain backend-authorized and auditable." />
-        <section className="rounded-[var(--radius-card)] border border-line bg-[color:var(--color-surface-reading)] p-5">
+        <section className="rounded-card border border-line bg-surface p-5">
           <div className="grid gap-3 md:grid-cols-2">
             <Guardrail icon={ShieldCheck} label="Authorization" value="Organization-admin role required at the backend boundary" />
             <Guardrail icon={CheckCircle2} label="Audit logging" value="Privacy actions retain actor, target, outcome, and timestamp" />
@@ -403,7 +403,7 @@ function AdminSettings({ section, organizationId, initialCaseId }: { section: Ad
         <AdminSectionHeader title="Integration Status" description="Backend-derived readiness and server-owned runtime boundaries." />
         <SettingRows rows={adminSettings} />
         <ReadinessCockpit readiness={readiness} activeCount={activeCount} pendingCount={pendingCount} />
-        <section className="rounded-[var(--radius-card)] border border-line bg-[color:var(--color-surface-reading)] p-4">
+        <section className="rounded-card border border-line bg-surface p-4">
           <h3 className="text-base font-semibold text-ink">Admin safety boundaries</h3>
           <div className="mt-4 grid gap-3 md:grid-cols-2">
             <Guardrail icon={CheckCircle2} label="Invitation backend" value="Implemented locally" />
@@ -419,10 +419,10 @@ function AdminSettings({ section, organizationId, initialCaseId }: { section: Ad
   return (
     <div className="grid gap-4">
       <BackendAvailabilityBanner unavailable={backendUnavailable} />
-      {message ? <p className="rounded-xl border border-[color:var(--color-pasa-teal-border)] bg-[color:var(--color-pasa-teal-soft)] px-3.5 py-2.5 text-sm font-medium text-[color:var(--color-pasa-teal)]" role="status">{message}</p> : null}
+      {message ? <p className="rounded-xl border border-brand-border bg-brand-soft px-3.5 py-2.5 text-sm font-medium text-brand" role="status">{message}</p> : null}
       {content}
       {loading ? (
-        <div className="rounded-[var(--radius-card)] border border-line bg-[color:var(--color-surface-reading)] p-5" role="status" aria-live="polite">
+        <div className="rounded-card border border-line bg-surface p-5" role="status" aria-live="polite">
           <span className="sr-only">Loading organization settings…</span>
           <Skeleton className="h-6 w-2/5" />
           <div className="mt-5 grid gap-3" aria-hidden="true">
@@ -437,8 +437,8 @@ function AdminSettings({ section, organizationId, initialCaseId }: { section: Ad
 
 function AdminSectionHeader({ title, description }: { title: string; description: string }) {
   return (
-    <section className="rounded-[var(--radius-card)] border border-line bg-[color:var(--color-surface-reading)] p-5">
-      <p className="text-xs font-bold uppercase tracking-[0.14em] text-[color:var(--color-pasa-teal)]">Organization administration</p>
+    <section className="rounded-card border border-line bg-surface p-5">
+      <p className="text-xs font-bold uppercase tracking-[0.14em] text-brand">Organization administration</p>
       <h2 className="mt-2 text-xl font-semibold text-ink">{title}</h2>
       <p className="mt-2 max-w-3xl text-sm leading-6 text-slate-700">{description}</p>
     </section>

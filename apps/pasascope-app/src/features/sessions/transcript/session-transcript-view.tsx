@@ -85,13 +85,13 @@ export function SessionTranscriptView({
       />
       <WorkflowStatus state={state} backendUnavailable={backendUnavailable} />
       {state.transcriptDraftLabel ? (
-        <div className="rounded-[var(--radius-panel)] border border-amber-200 bg-amber-50 p-4 text-amber-950">
+        <div className="rounded-panel border border-amber-200 bg-amber-50 p-4 text-amber-950">
           <p className="font-bold">{state.transcriptDraftLabel}</p>
           <p className="mt-1 text-sm">Experimental ASR can be inaccurate. Verify wording, timestamps, and speaker labels before attestation.</p>
         </div>
       ) : null}
       {state.chatWarnings && state.chatWarnings.length > 0 ? (
-        <div className="rounded-[var(--radius-panel)] border border-amber-200 bg-amber-50 p-4 text-amber-950" role="status">
+        <div className="rounded-panel border border-amber-200 bg-amber-50 p-4 text-amber-950" role="status">
           <p className="font-bold">Import Warnings</p>
           <ul className="mt-1 list-disc space-y-1 pl-5 text-sm">
             {state.chatWarnings.map((warning) => <li key={warning}>{warning}</li>)}
@@ -143,7 +143,7 @@ export function SessionTranscriptView({
                 findingsStale={Boolean(state.featuresExtracted && state.transcriptSaveStatus === "unsaved")}
               />
               {/* Saving, QA and attestation live in the text editor; point to them from here. */}
-              <div className="flex flex-col gap-3 rounded-[var(--radius-panel)] border border-line bg-[color:var(--color-surface-reading)] p-4 sm:flex-row sm:items-center sm:justify-between">
+              <div className="flex flex-col gap-3 rounded-panel border border-line bg-surface p-4 sm:flex-row sm:items-center sm:justify-between">
                 <p className="text-sm text-slate-700">
                   {state.transcriptAttested
                     ? "This transcript is attested."
@@ -153,7 +153,7 @@ export function SessionTranscriptView({
                   type="button"
                   data-testid="continue-to-attestation-button"
                   onClick={() => setReviewMode("classic")}
-                  className="inline-flex min-h-11 shrink-0 items-center justify-center rounded-[var(--radius-card)] bg-clinical px-4 py-2 text-sm font-semibold text-white"
+                  className="inline-flex min-h-11 shrink-0 items-center justify-center rounded-card bg-brand px-4 py-2 text-sm font-semibold text-white"
                 >
                   Continue to save, QA and attestation
                 </button>
@@ -177,7 +177,7 @@ export function SessionTranscriptView({
             />
           )}
         </section>
-        <details className="responsive-details rounded-[var(--radius-panel)] border border-line bg-[color:var(--color-surface-reading)]" data-testid="mobile-transcript-report-readiness">
+        <details className="responsive-details rounded-panel border border-line bg-surface" data-testid="mobile-transcript-report-readiness">
           <summary className="flex min-h-11 cursor-pointer items-center justify-between gap-3 px-4 py-3 text-sm font-semibold text-ink">
             <span>Report readiness</span>
             <span className={reportBlockedReason ? "text-amber-800" : "text-emerald-700"}>{reportBlockedReason ? "Locked" : "Ready"}</span>
@@ -202,7 +202,7 @@ export function SessionTranscriptView({
                 type="button"
                 onClick={onAttest}
                 disabled={busy}
-                className="inline-flex min-h-11 shrink-0 items-center justify-center gap-2 rounded-[var(--radius-card)] bg-[color:var(--color-text-strong)] px-4 py-2 text-sm font-semibold text-white transition hover:opacity-90 disabled:cursor-not-allowed disabled:bg-slate-300 disabled:text-slate-600 motion-reduce:transition-none"
+                className="inline-flex min-h-11 shrink-0 items-center justify-center gap-2 rounded-card bg-ink px-4 py-2 text-sm font-semibold text-white transition hover:opacity-90 disabled:cursor-not-allowed disabled:bg-slate-300 disabled:text-slate-600 motion-reduce:transition-none"
               >
                 <ShieldCheck size={17} aria-hidden="true" />
                 {busy ? "Recording attestation..." : "Record attestation"}
@@ -213,7 +213,7 @@ export function SessionTranscriptView({
                 type="button"
                 onClick={onExtractFeatures}
                 disabled={busy}
-                className="inline-flex min-h-11 shrink-0 items-center justify-center gap-2 rounded-[var(--radius-card)] bg-[color:var(--color-text-strong)] px-4 py-2 text-sm font-semibold text-white transition hover:opacity-90 disabled:cursor-not-allowed disabled:bg-slate-300 disabled:text-slate-600 motion-reduce:transition-none"
+                className="inline-flex min-h-11 shrink-0 items-center justify-center gap-2 rounded-card bg-ink px-4 py-2 text-sm font-semibold text-white transition hover:opacity-90 disabled:cursor-not-allowed disabled:bg-slate-300 disabled:text-slate-600 motion-reduce:transition-none"
               >
                 <Gauge size={17} aria-hidden="true" />
                 {busy ? "Extracting..." : EXTRACT_FEATURES_ACTION}
@@ -222,7 +222,7 @@ export function SessionTranscriptView({
           </div>
           <ul className="mt-4 grid gap-2 text-sm sm:grid-cols-2 xl:grid-cols-4">
             {reviewChecklist.map((item) => (
-              <li key={item.label} className="flex items-center gap-2 rounded-[var(--radius-card)] border border-black/5 bg-[color:var(--color-surface-reading)] px-3 py-2 font-medium">
+              <li key={item.label} className="flex items-center gap-2 rounded-card border border-black/5 bg-surface px-3 py-2 font-medium">
                 <span className={`grid h-5 w-5 place-items-center rounded-full text-xs font-bold ${item.complete ? "bg-emerald-600 text-white" : "bg-slate-200 text-slate-600"}`}>
                   {item.complete ? "✓" : "•"}
                 </span>
@@ -242,7 +242,7 @@ export function SessionTranscriptView({
             </PrimaryActionButton>
           </section>
         </details>
-        <details className="responsive-details rounded-[var(--radius-panel)] border border-line bg-[color:var(--color-surface-reading)]" data-testid="mobile-transcript-review-requirements">
+        <details className="responsive-details rounded-panel border border-line bg-surface" data-testid="mobile-transcript-review-requirements">
           <summary className="flex min-h-11 cursor-pointer items-center justify-between px-4 py-3 text-sm font-semibold text-ink">
             <span>Review requirements</span>
             <span aria-hidden="true">›</span>
@@ -286,8 +286,8 @@ function WorkflowStatus({ state, backendUnavailable }: { state: WorkflowState; b
   if (routineSaveAnnouncement) return null;
   if (state.statusMessage && !isError && backendUnavailable) return null;
   const className = isError
-    ? "rounded-[var(--radius-panel)] border border-red-200 bg-red-50 p-4 text-sm text-red-950 animate-fade-in"
-    : "rounded-[var(--radius-panel)] border border-emerald-200 bg-emerald-50 p-4 text-sm text-emerald-950 animate-fade-in";
+    ? "rounded-panel border border-red-200 bg-red-50 p-4 text-sm text-red-950 animate-fade-in"
+    : "rounded-panel border border-emerald-200 bg-emerald-50 p-4 text-sm text-emerald-950 animate-fade-in";
   return (
     <div className={className} role={isError ? "alert" : "status"} aria-live="polite">
       {state.statusMessage ? <p className="font-semibold">{state.statusMessage}</p> : null}

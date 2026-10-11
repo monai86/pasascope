@@ -170,15 +170,15 @@ export function CaseDetail({ model }: { model: CaseDetailViewModel }) {
 
       <PipelineProgressBar currentStatus={localConsent === "granted" ? "ready_for_audio" : "awaiting_consent"} />
 
-      <section className="rounded-2xl border border-[color:var(--color-border)] bg-[color:var(--color-surface-reading)] p-6 shadow-2xs">
+      <section className="rounded-2xl border border-line bg-surface p-6 shadow-2xs">
         <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
           <div className="flex items-center gap-4">
-            <div className="grid h-14 w-14 place-items-center rounded-2xl bg-[color:var(--color-pasa-teal-soft)] text-xl font-bold text-[color:var(--color-pasa-teal)] border border-[color:var(--color-pasa-teal-border)]/60 shadow-2xs">
+            <div className="grid h-14 w-14 place-items-center rounded-2xl bg-brand-soft text-xl font-bold text-brand border border-[color:var(--color-brand-border)]/60 shadow-2xs">
               {childInitials(caseItem)}
             </div>
             <div>
-              <h2 className="text-xl font-bold text-[color:var(--color-text-strong)]">Case profile</h2>
-              <p className="mt-0.5 text-xs text-[color:var(--color-text-muted)] font-mono">
+              <h2 className="text-xl font-bold text-ink">Case profile</h2>
+              <p className="mt-0.5 text-xs text-ink-muted font-mono">
                 {codeLabel(caseItem)} · {languageLabel(caseItem)}
               </p>
             </div>
@@ -210,12 +210,12 @@ export function CaseDetail({ model }: { model: CaseDetailViewModel }) {
                 </div>
               </section>
 
-              <section className="rounded-2xl border border-[color:var(--color-border)] bg-[color:var(--color-surface-reading)] grid gap-4 p-6 shadow-2xs">
+              <section className="rounded-2xl border border-line bg-surface grid gap-4 p-6 shadow-2xs">
                 <div className="grid gap-1 pb-3 border-b border-[color:var(--color-border)]/60">
-                  <h2 className="text-base font-bold text-[color:var(--color-text-strong)]">
+                  <h2 className="text-base font-bold text-ink">
                     Consent Verification Form
                   </h2>
-                  <p className="text-xs text-[color:var(--color-text-muted)]">
+                  <p className="text-xs text-ink-muted">
                     Please verify consent credentials below to unlock the clinical intake and session workflows.
                   </p>
                 </div>
@@ -239,14 +239,14 @@ export function CaseDetail({ model }: { model: CaseDetailViewModel }) {
               </section>
             </div>
           ) : (
-            <section className="grid gap-4 rounded-2xl border border-[color:var(--color-pasa-teal-border)] bg-[color:var(--color-pasa-teal-soft)] p-5 shadow-2xs">
+            <section className="grid gap-4 rounded-2xl border border-brand-border bg-brand-soft p-5 shadow-2xs">
               <div className="flex flex-wrap items-center justify-between gap-3">
                 <div className="flex flex-wrap items-center gap-3">
-                  <span className="inline-flex min-h-8 items-center gap-2 rounded-xl border border-[color:var(--color-pasa-teal-border)] bg-[color:var(--color-pasa-teal)] px-3 text-xs font-bold text-white shadow-2xs">
+                  <span className="inline-flex min-h-8 items-center gap-2 rounded-xl border border-brand-border bg-brand px-3 text-xs font-bold text-white shadow-2xs">
                     <ShieldCheck size={14} aria-hidden="true" />
                     Consent Active
                   </span>
-                  <p className="text-xs font-bold text-[color:var(--color-pasa-teal)]">
+                  <p className="text-xs font-bold text-brand">
                     Caregiver consent has been verified and clinical workflows are unlocked.
                   </p>
                 </div>
@@ -267,7 +267,7 @@ export function CaseDetail({ model }: { model: CaseDetailViewModel }) {
             <p className={`rounded-xl border px-4 py-3 text-xs font-semibold ${
               consentMsg.includes("Failed") || consentMsg.includes("Could not")
                 ? "border-rose-200 bg-rose-50 text-rose-950"
-                : "border-[color:var(--color-pasa-teal-border)] bg-[color:var(--color-pasa-teal-soft)] text-[color:var(--color-pasa-teal)]"
+                : "border-brand-border bg-brand-soft text-brand"
             }`}>
               {consentMsg}
             </p>
@@ -284,7 +284,7 @@ export function CaseDetail({ model }: { model: CaseDetailViewModel }) {
             <InfoCard title="Care team">
               <DetailRow label="Primary clinician" value={primaryClinician(caseItem)} />
               <DetailRow label="Assigned clinicians" value={clinicianList(caseItem)} />
-              <p className="mt-4 text-sm leading-6 text-[color:var(--color-text-muted)]">
+              <p className="mt-4 text-sm leading-6 text-ink-muted">
                 This is a read-only care-team summary. Organization administrators manage assignments in the role-gated Team section of Settings.
               </p>
             </InfoCard>
@@ -293,19 +293,19 @@ export function CaseDetail({ model }: { model: CaseDetailViewModel }) {
               {goals.length ? (
                 <div className="space-y-3">
                   {goals.map((goal) => (
-                    <div key={goal.goal_id} className="rounded-[var(--radius-card)] border border-[color:var(--color-border)] bg-[color:var(--color-surface-muted)] p-4">
-                      <p className="font-medium text-[color:var(--color-text-strong)]">{goal.title}</p>
-                      <p className="mt-1 text-sm text-[color:var(--color-text-muted)]">
+                    <div key={goal.goal_id} className="rounded-card border border-line bg-surface-muted p-4">
+                      <p className="font-medium text-ink">{goal.title}</p>
+                      <p className="mt-1 text-sm text-ink-muted">
                         {goal.target?.trim() || "Target not yet documented."}
                       </p>
                       {goal.notes?.trim() ? (
-                        <p className="mt-2 text-sm leading-6 text-[color:var(--color-text-muted)]">{goal.notes}</p>
+                        <p className="mt-2 text-sm leading-6 text-ink-muted">{goal.notes}</p>
                       ) : null}
                     </div>
                   ))}
                 </div>
               ) : (
-                <p className="text-sm leading-6 text-[color:var(--color-text-muted)]">No communication goals recorded yet.</p>
+                <p className="text-sm leading-6 text-ink-muted">No communication goals recorded yet.</p>
               )}
             </InfoCard>
           </section>
@@ -314,7 +314,7 @@ export function CaseDetail({ model }: { model: CaseDetailViewModel }) {
             {timeline.length ? (
               <SessionHistory timeline={timeline} />
             ) : (
-              <p className="text-sm leading-6 text-[color:var(--color-text-muted)]">No sessions recorded yet for this case.</p>
+              <p className="text-sm leading-6 text-ink-muted">No sessions recorded yet for this case.</p>
             )}
           </InfoCard>
 
@@ -326,7 +326,7 @@ export function CaseDetail({ model }: { model: CaseDetailViewModel }) {
             <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
               <div>
                 <StatusBadge status={caseItem.latest_report_status ?? "Not started"} />
-                <p className="mt-3 text-sm leading-6 text-[color:var(--color-text-muted)]">
+                <p className="mt-3 text-sm leading-6 text-ink-muted">
                   Report status reflects backend workflow state. {THERAPIST_SIGNOFF_CLAUSE} before export.
                 </p>
               </div>
@@ -336,10 +336,10 @@ export function CaseDetail({ model }: { model: CaseDetailViewModel }) {
 
           <section className="grid gap-6 lg:grid-cols-2">
             <InfoCard title="Upcoming tasks">
-              <ul className="space-y-3 text-sm leading-6 text-[color:var(--color-text-muted)]">
+              <ul className="space-y-3 text-sm leading-6 text-ink-muted">
                 {tasks.map((task) => (
                   <li key={task} className="flex gap-3">
-                    <CircleDot size={18} className="mt-1 shrink-0 text-[color:var(--color-accent-strong)]" aria-hidden="true" />
+                    <CircleDot size={18} className="mt-1 shrink-0 text-brand-strong" aria-hidden="true" />
                     <span>{task}</span>
                   </li>
                 ))}
@@ -347,7 +347,7 @@ export function CaseDetail({ model }: { model: CaseDetailViewModel }) {
             </InfoCard>
 
             <InfoCard title="Recent notes">
-              <p className="text-sm leading-6 text-[color:var(--color-text-muted)]">
+              <p className="text-sm leading-6 text-ink-muted">
                 {caseItem.notes?.trim() || "No recent therapist notes recorded yet."}
               </p>
             </InfoCard>
@@ -359,8 +359,8 @@ export function CaseDetail({ model }: { model: CaseDetailViewModel }) {
         </div>
 
         <aside className="space-y-4">
-          <section className="rounded-2xl border border-[color:var(--color-border)] bg-[color:var(--color-surface-reading)] p-6 shadow-2xs">
-            <h2 className="text-base font-bold text-[color:var(--color-text-strong)] pb-3 border-b border-[color:var(--color-border)]/60">Progress</h2>
+          <section className="rounded-2xl border border-line bg-surface p-6 shadow-2xs">
+            <h2 className="text-base font-bold text-ink pb-3 border-b border-[color:var(--color-border)]/60">Progress</h2>
             <div className="mt-4 grid gap-3">
               {snapshot.map((item) => (
                 <StatCard key={item.label} label={item.label} value={item.value} helper={item.helper} icon={Gauge} />
@@ -397,7 +397,7 @@ function SessionHistory({ timeline }: { timeline: BackendTimelineEvent[] }) {
           nextAction: (
             <Link
               href={`/sessions/${encodeURIComponent(event.target_id)}?view=intake`}
-              className="inline-flex min-h-11 items-center gap-2 rounded-[var(--radius-card)] border border-[color:var(--color-border)] px-4 py-2 font-medium text-[color:var(--color-text-strong)] transition hover:border-[color:var(--color-accent-strong)] hover:bg-[color:var(--color-accent-soft)]"
+              className="inline-flex min-h-11 items-center gap-2 rounded-card border border-line px-4 py-2 font-medium text-ink transition hover:border-brand-strong hover:bg-brand-soft"
             >
               Open session workspace
               <ArrowRight size={16} aria-hidden="true" />
@@ -410,7 +410,7 @@ function SessionHistory({ timeline }: { timeline: BackendTimelineEvent[] }) {
           type="button"
           onClick={() => setExpanded((value) => !value)}
           aria-expanded={expanded}
-          className="inline-flex min-h-11 items-center gap-2 rounded-[var(--radius-card)] px-2 text-sm font-medium text-[color:var(--color-accent-strong)] transition hover:bg-[color:var(--color-accent-soft)]"
+          className="inline-flex min-h-11 items-center gap-2 rounded-card px-2 text-sm font-medium text-brand-strong transition hover:bg-brand-soft"
         >
           {expanded ? "Show fewer sessions" : `Show all sessions (${timeline.length})`}
         </button>
@@ -430,11 +430,11 @@ function HeaderMeta({
 }) {
   return (
     <div className="rounded-xl border border-[color:var(--color-border)]/70 bg-[color:var(--color-surface-muted)]/50 px-4 py-3 shadow-2xs">
-      <div className="flex items-center gap-2 text-xs font-bold uppercase tracking-wider text-[color:var(--color-text-subtle)]">
-        <Icon size={14} aria-hidden="true" className="text-[color:var(--color-pasa-teal)]" />
+      <div className="flex items-center gap-2 text-xs font-bold uppercase tracking-wider text-ink-subtle">
+        <Icon size={14} aria-hidden="true" className="text-brand" />
         <span>{label}</span>
       </div>
-      <p className="mt-1.5 text-sm font-bold text-[color:var(--color-text-strong)]">{value}</p>
+      <p className="mt-1.5 text-sm font-bold text-ink">{value}</p>
     </div>
   );
 }
@@ -447,8 +447,8 @@ function InfoCard({
   children: ReactNode;
 }) {
   return (
-    <section className="rounded-2xl border border-[color:var(--color-border)] bg-[color:var(--color-surface-reading)] p-6 shadow-2xs">
-      <h2 className="text-base font-bold text-[color:var(--color-text-strong)] pb-3 border-b border-[color:var(--color-border)]/60">{title}</h2>
+    <section className="rounded-2xl border border-line bg-surface p-6 shadow-2xs">
+      <h2 className="text-base font-bold text-ink pb-3 border-b border-[color:var(--color-border)]/60">{title}</h2>
       <div className="mt-4">{children}</div>
     </section>
   );
@@ -457,8 +457,8 @@ function InfoCard({
 function DetailRow({ label, value }: { label: string; value: string }) {
   return (
     <div className="border-b border-[color:var(--color-border)]/60 py-3 last:border-b-0">
-      <p className="text-xs font-bold uppercase tracking-wider text-[color:var(--color-text-subtle)]">{label}</p>
-      <p className="mt-1 text-sm font-medium leading-relaxed text-[color:var(--color-text-strong)]">{value}</p>
+      <p className="text-xs font-bold uppercase tracking-wider text-ink-subtle">{label}</p>
+      <p className="mt-1 text-sm font-medium leading-relaxed text-ink">{value}</p>
     </div>
   );
 }

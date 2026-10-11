@@ -52,7 +52,7 @@ export function TherapistSettings({ section }: { section: SharedSettingsSection 
             <SettingLine label="Production MFA" value="Not configured" tone="muted" />
             <SettingLine label="Session storage" value="Browser UI cache only" />
           </SettingsCard>
-          <section className="rounded-[var(--radius-card)] border border-amber-200 bg-amber-50 p-5 text-amber-950" aria-labelledby="owned-privacy-requests-title">
+          <section className="rounded-card border border-amber-200 bg-amber-50 p-5 text-amber-950" aria-labelledby="owned-privacy-requests-title">
             <div className="flex items-start gap-3">
               <ShieldCheck size={22} aria-hidden="true" className="mt-0.5 shrink-0" />
               <div>
@@ -110,9 +110,9 @@ function SettingsCard({
   title: string;
 }) {
   return (
-    <section className="rounded-[var(--radius-card)] border border-line bg-[color:var(--color-surface-reading)] p-5">
+    <section className="rounded-card border border-line bg-surface p-5">
       <div className="flex items-start gap-3">
-        <span className="grid h-11 w-11 shrink-0 place-items-center rounded-xl bg-[color:var(--color-pasa-teal-soft)] text-[color:var(--color-pasa-teal)] border border-[color:var(--color-pasa-teal-border)]/60">
+        <span className="grid h-11 w-11 shrink-0 place-items-center rounded-xl bg-brand-soft text-brand border border-[color:var(--color-brand-border)]/60">
           <Icon size={21} aria-hidden="true" />
         </span>
         <div>
@@ -120,7 +120,7 @@ function SettingsCard({
           <p className="mt-1 text-sm leading-6 text-slate-600">{description}</p>
         </div>
       </div>
-      <div className="mt-5 divide-y divide-line/70 rounded-[var(--radius-control)] border border-line bg-field">
+      <div className="mt-5 divide-y divide-line/70 rounded-control border border-line bg-field">
         {children}
       </div>
     </section>

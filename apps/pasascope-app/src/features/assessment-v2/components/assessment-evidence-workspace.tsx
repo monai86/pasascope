@@ -65,12 +65,12 @@ export function AssessmentEvidenceWorkspace({
     return (
       <section className="workspace-panel p-6" role="alert">
         <h1 className="text-xl font-semibold">ไม่สามารถโหลดผลหลักฐานได้</h1>
-        <p className="mt-2 text-sm text-[color:var(--color-text-muted)]">
+        <p className="mt-2 text-sm text-ink-muted">
           ระบบยังอ่านผลจาก FastAPI ไม่ได้ ผลลัพธ์จะไม่ถูกสร้างขึ้นในเบราว์เซอร์
         </p>
         <button
           type="button"
-          className="mt-4 rounded-lg bg-[color:var(--color-primary)] px-4 py-2 text-sm font-semibold text-white"
+          className="mt-4 rounded-lg bg-brand px-4 py-2 text-sm font-semibold text-white"
           onClick={() => void loadEvidence()}
         >
           ลองใหม่
@@ -83,9 +83,9 @@ export function AssessmentEvidenceWorkspace({
     return (
       <section className="space-y-5">
         <header>
-          <p className="text-sm font-semibold text-[color:var(--color-primary)]">ขั้นตอนที่ 5 จาก 5</p>
+          <p className="text-sm font-semibold text-brand">ขั้นตอนที่ 5 จาก 5</p>
           <h1 className="mt-1 text-2xl font-semibold">ผลหลักฐานเชิงพรรณนา</h1>
-          <p className="mt-2 text-sm text-[color:var(--color-text-muted)]">
+          <p className="mt-2 text-sm text-ink-muted">
             ผลจะปรากฏเมื่อ worker ประมวลผล transcript ที่นักบำบัดรับรองแล้วเสร็จ
           </p>
         </header>
@@ -104,9 +104,9 @@ export function AssessmentEvidenceWorkspace({
     <section className="space-y-5">
       <header className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
         <div>
-          <p className="text-sm font-semibold text-[color:var(--color-primary)]">ขั้นตอนที่ 5 จาก 5</p>
+          <p className="text-sm font-semibold text-brand">ขั้นตอนที่ 5 จาก 5</p>
           <h1 className="mt-1 text-2xl font-semibold">โปรไฟล์พัฒนาการเชิงพรรณนา</h1>
-          <p className="mt-2 text-sm text-[color:var(--color-text-muted)]">
+          <p className="mt-2 text-sm text-ink-muted">
             แสดงสิ่งที่วัดได้ แหล่งข้อมูล และข้อจำกัด เพื่อประกอบการพิจารณาของนักบำบัด
           </p>
         </div>
@@ -141,7 +141,7 @@ export function AssessmentEvidenceWorkspace({
       <section className="workspace-panel p-5" aria-labelledby="developmental-domains-heading">
         <div className="flex flex-wrap items-baseline justify-between gap-3">
           <h2 id="developmental-domains-heading" className="text-lg font-semibold">ประเด็นพัฒนาการตามโดเมน</h2>
-          <span className="text-sm text-[color:var(--color-text-muted)]">ข้อมูลจาก run เวอร์ชัน {profile.version}</span>
+          <span className="text-sm text-ink-muted">ข้อมูลจาก run เวอร์ชัน {profile.version}</span>
         </div>
         <div className="mt-4 grid gap-3 md:grid-cols-2">
           {profile.domains.map((domain) => <DomainCard key={domain.domain} domain={domain} />)}
@@ -151,15 +151,15 @@ export function AssessmentEvidenceWorkspace({
       <section className="workspace-panel p-5" aria-labelledby="measured-features-heading">
         <h2 id="measured-features-heading" className="text-lg font-semibold">ฟีเจอร์ที่สกัดได้</h2>
         {profile.features.length === 0 ? (
-          <p className="mt-3 text-sm text-[color:var(--color-text-muted)]">ยังไม่มีค่าที่ใช้ได้ในช่องนี้</p>
+          <p className="mt-3 text-sm text-ink-muted">ยังไม่มีค่าที่ใช้ได้ในช่องนี้</p>
         ) : (
           <dl className="mt-4 grid gap-3 sm:grid-cols-2">
             {profile.features.map((feature) => (
-              <div key={feature.key} className="rounded-lg border border-[color:var(--color-border)] p-3">
+              <div key={feature.key} className="rounded-lg border border-line p-3">
                 <dt className="text-sm font-semibold">{feature.key}</dt>
                 <dd className="mt-1 text-lg">{formatFeatureValue(feature.value)} {feature.unit}</dd>
-                {feature.limitation ? <p className="mt-1 text-xs text-[color:var(--color-text-muted)]">{feature.limitation}</p> : null}
-                <p className="mt-2 text-xs text-[color:var(--color-text-muted)]">สถานะ: {evidenceStateLabel(feature.state)}</p>
+                {feature.limitation ? <p className="mt-1 text-xs text-ink-muted">{feature.limitation}</p> : null}
+                <p className="mt-2 text-xs text-ink-muted">สถานะ: {evidenceStateLabel(feature.state)}</p>
               </div>
             ))}
           </dl>
@@ -169,13 +169,13 @@ export function AssessmentEvidenceWorkspace({
       <details className="workspace-panel p-5">
         <summary className="cursor-pointer font-semibold">ดู provenance และข้อจำกัดของการประมวลผล</summary>
         <dl className="mt-4 grid gap-3 text-sm sm:grid-cols-2">
-          <div><dt className="text-[color:var(--color-text-muted)]">Protocol</dt><dd>{profile.provenance.protocol_version_key}</dd></div>
-          <div><dt className="text-[color:var(--color-text-muted)]">Feature schema</dt><dd>{profile.provenance.feature_schema_version}</dd></div>
-          <div><dt className="text-[color:var(--color-text-muted)]">Pipeline</dt><dd>{profile.provenance.pipeline_version}</dd></div>
-          <div><dt className="text-[color:var(--color-text-muted)]">Input checksum</dt><dd className="break-all">{profile.provenance.input_sha256}</dd></div>
+          <div><dt className="text-ink-muted">Protocol</dt><dd>{profile.provenance.protocol_version_key}</dd></div>
+          <div><dt className="text-ink-muted">Feature schema</dt><dd>{profile.provenance.feature_schema_version}</dd></div>
+          <div><dt className="text-ink-muted">Pipeline</dt><dd>{profile.provenance.pipeline_version}</dd></div>
+          <div><dt className="text-ink-muted">Input checksum</dt><dd className="break-all">{profile.provenance.input_sha256}</dd></div>
         </dl>
         {profile.limitations.length > 0 ? (
-          <ul className="mt-4 list-disc space-y-1 pl-5 text-sm text-[color:var(--color-text-muted)]">
+          <ul className="mt-4 list-disc space-y-1 pl-5 text-sm text-ink-muted">
             {profile.limitations.map((limitation) => <li key={limitation}>{limitation}</li>)}
           </ul>
         ) : null}
@@ -186,14 +186,14 @@ export function AssessmentEvidenceWorkspace({
 
 function DomainCard({ domain }: { domain: AssessmentV2DomainProfile }) {
   return (
-    <article className="rounded-xl border border-[color:var(--color-border)] p-4">
+    <article className="rounded-xl border border-line p-4">
       <div className="flex items-start justify-between gap-3">
         <h3 className="font-semibold">{domainLabel(domain.domain)}</h3>
-        <span className="rounded-full bg-[color:var(--color-surface-muted)] px-2 py-1 text-xs font-semibold">
+        <span className="rounded-full bg-surface-muted px-2 py-1 text-xs font-semibold">
           {domainStatusLabel(domain.status)}
         </span>
       </div>
-      <p className="mt-2 text-sm text-[color:var(--color-text-muted)]">{domain.summary}</p>
+      <p className="mt-2 text-sm text-ink-muted">{domain.summary}</p>
       {domain.supporting_features.length > 0 ? (
         <p className="mt-3 text-xs">ข้อมูลสนับสนุน: {domain.supporting_features.join(", ")}</p>
       ) : null}
@@ -201,7 +201,7 @@ function DomainCard({ domain }: { domain: AssessmentV2DomainProfile }) {
         <p className="mt-1 text-xs text-amber-800">ข้อมูลที่ต้องพิจารณาร่วม: {domain.conflicting_features.join(", ")}</p>
       ) : null}
       {domain.limitations.length > 0 ? (
-        <p className="mt-2 text-xs text-[color:var(--color-text-muted)]">ข้อจำกัด: {domain.limitations.join(" ")}</p>
+        <p className="mt-2 text-xs text-ink-muted">ข้อจำกัด: {domain.limitations.join(" ")}</p>
       ) : null}
     </article>
   );

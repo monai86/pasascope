@@ -61,7 +61,7 @@ export function LineMenuItem({
       disabled={disabled}
       onClick={onClick}
       className={`flex min-h-11 w-full items-center gap-2 rounded-md px-3 py-2 text-left text-sm font-semibold disabled:opacity-40 ${
-        tone === "danger" ? "text-red-700 hover:bg-red-50" : "text-slate-700 hover:bg-[color:var(--color-surface-muted)]"
+        tone === "danger" ? "text-red-700 hover:bg-red-50" : "text-slate-700 hover:bg-surface-muted"
       }`}
     >
       {children}

@@ -108,12 +108,12 @@ export function PipelineProgressBar({ currentStatus, path }: PipelineProgressBar
   }
 
   return (
-    <section className="grid gap-4 rounded-[var(--radius-panel)] border border-[color:var(--color-border)] bg-white p-5">
+    <section className="grid gap-4 rounded-panel border border-line bg-white p-5">
       <div className="flex items-center justify-between gap-3">
-        <h2 className="text-sm font-semibold uppercase tracking-[0.1em] text-[color:var(--color-text-subtle)]">
+        <h2 className="text-sm font-semibold uppercase tracking-[0.1em] text-ink-subtle">
           Pipeline Status
         </h2>
-        <p className="text-xs font-medium text-[color:var(--color-accent-strong)]">
+        <p className="text-xs font-medium text-brand-strong">
           Stage {activeIndex + 1} of {stages.length}: {stages[activeIndex].label}
         </p>
       </div>
@@ -123,10 +123,10 @@ export function PipelineProgressBar({ currentStatus, path }: PipelineProgressBar
         aria-label={`Pipeline Progress: ${stages[activeIndex].label}`}
       >
         {/* Progress bar line background */}
-        <div className="absolute left-0 top-4 hidden h-0.5 w-full bg-[color:var(--color-border)] sm:block" />
+        <div className="absolute left-0 top-4 hidden h-0.5 w-full bg-line sm:block" />
         {/* Active progress bar line */}
         <div
-          className="motion-panel absolute left-0 top-4 hidden h-0.5 bg-[color:var(--color-accent-strong)] transition-all sm:block"
+          className="motion-panel absolute left-0 top-4 hidden h-0.5 bg-brand-strong transition-all sm:block"
           style={{ width: `${(activeIndex / (stages.length - 1)) * 100}%` }}
         />
 
@@ -139,10 +139,10 @@ export function PipelineProgressBar({ currentStatus, path }: PipelineProgressBar
               <span
                 className={`motion-panel rounded-full border-2 text-xs font-semibold transition-all ${
                   isCompleted
-                    ? "border-[color:var(--color-accent-strong)] bg-[color:var(--color-accent-strong)] text-white"
+                    ? "border-brand-strong bg-brand-strong text-white"
                     : isActive
-                    ? "border-[color:var(--color-accent-strong)] bg-white text-[color:var(--color-accent-strong)] ring-4 ring-[color:var(--color-accent-soft)]"
-                    : "border-[color:var(--color-border)] bg-white text-[color:var(--color-text-muted)]"
+                    ? "border-brand-strong bg-white text-brand-strong ring-4 ring-brand-soft"
+                    : "border-line bg-white text-ink-muted"
                 } grid h-8 w-8 place-items-center`}
               >
                 {isCompleted ? <Check size={14} aria-hidden="true" /> : idx + 1}
@@ -150,8 +150,8 @@ export function PipelineProgressBar({ currentStatus, path }: PipelineProgressBar
               <span
                 className={`mt-2 text-center text-2xs font-semibold uppercase sm:max-w-20 ${
                   isActive
-                    ? "text-[color:var(--color-text-strong)]"
-                    : "text-[color:var(--color-text-muted)]"
+                    ? "text-ink"
+                    : "text-ink-muted"
                 }`}
               >
                 {stage.label}

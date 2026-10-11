@@ -467,8 +467,8 @@ export function AssessmentCaptureWorkspace({ client = defaultAssessmentV2Client 
     return (
       <section className="workspace-panel p-6" role="alert">
         <h1 className="text-xl font-semibold">ไม่สามารถโหลดรายการเด็กได้</h1>
-        <p className="mt-2 text-sm text-[color:var(--color-text-muted)]">{error}</p>
-        <button type="button" className="mt-4 rounded-lg bg-[color:var(--color-primary)] px-4 py-2 text-sm font-semibold text-white" onClick={() => void loadChildren()}>
+        <p className="mt-2 text-sm text-ink-muted">{error}</p>
+        <button type="button" className="mt-4 rounded-lg bg-brand px-4 py-2 text-sm font-semibold text-white" onClick={() => void loadChildren()}>
           ลองใหม่
         </button>
       </section>
@@ -479,20 +479,20 @@ export function AssessmentCaptureWorkspace({ client = defaultAssessmentV2Client 
     return (
       <section className="space-y-5">
         <header>
-          <p className="text-sm font-semibold text-[color:var(--color-primary)]">ขั้นตอนที่ 1 จาก 5</p>
+          <p className="text-sm font-semibold text-brand">ขั้นตอนที่ 1 จาก 5</p>
           <h1 className="mt-1 text-2xl font-semibold">เริ่มการประเมินพัฒนาการ</h1>
-          <p className="mt-2 text-sm text-[color:var(--color-text-muted)]">เลือกเด็กจากรายการที่คุณมีสิทธิ์ดูแล</p>
+          <p className="mt-2 text-sm text-ink-muted">เลือกเด็กจากรายการที่คุณมีสิทธิ์ดูแล</p>
         </header>
-        <div className="workspace-panel divide-y divide-[color:var(--color-border)]">
+        <div className="workspace-panel divide-y divide-line">
           {children.length === 0 ? (
-            <p className="p-6 text-sm text-[color:var(--color-text-muted)]">ยังไม่มีรายการเด็กที่เข้าถึงได้</p>
+            <p className="p-6 text-sm text-ink-muted">ยังไม่มีรายการเด็กที่เข้าถึงได้</p>
           ) : children.map((child) => (
             <div key={child.id} className="flex items-center justify-between gap-4 p-4">
               <div>
                 <p className="font-semibold">{child.display_code}</p>
-                <p className="mt-1 text-sm text-[color:var(--color-text-muted)]">ภาษาเริ่มต้น: {child.language_context.primary}</p>
+                <p className="mt-1 text-sm text-ink-muted">ภาษาเริ่มต้น: {child.language_context.primary}</p>
               </div>
-              <button type="button" className="rounded-lg bg-[color:var(--color-primary)] px-4 py-2 text-sm font-semibold text-white" disabled={busy} onClick={() => void chooseChild(child)}>
+              <button type="button" className="rounded-lg bg-brand px-4 py-2 text-sm font-semibold text-white" disabled={busy} onClick={() => void chooseChild(child)}>
                 เลือก {child.display_code}
               </button>
             </div>
@@ -506,9 +506,9 @@ export function AssessmentCaptureWorkspace({ client = defaultAssessmentV2Client 
     return (
       <section className="space-y-5">
         <header>
-          <p className="text-sm font-semibold text-[color:var(--color-primary)]">ขั้นตอนที่ 2 จาก 5 · {selectedChild.display_code}</p>
+          <p className="text-sm font-semibold text-brand">ขั้นตอนที่ 2 จาก 5 · {selectedChild.display_code}</p>
           <h1 className="mt-1 text-2xl font-semibold">ยืนยันข้อมูลก่อนเริ่ม</h1>
-          <p className="mt-2 text-sm text-[color:var(--color-text-muted)]">เลือกวัตถุประสงค์และตรวจสอบ consent จากระบบ</p>
+          <p className="mt-2 text-sm text-ink-muted">เลือกวัตถุประสงค์และตรวจสอบ consent จากระบบ</p>
         </header>
 
         {!hasActiveConsent ? (
@@ -529,35 +529,35 @@ export function AssessmentCaptureWorkspace({ client = defaultAssessmentV2Client 
 
         <div className="workspace-panel p-5">
           <label htmlFor="assessment-purpose" className="text-sm font-semibold">วัตถุประสงค์การประเมิน</label>
-          <select id="assessment-purpose" value={purpose} onChange={(event) => setPurpose(event.target.value as AssessmentV2Purpose)} className="mt-2 block w-full rounded-lg border border-[color:var(--color-border)] bg-white px-3 py-3 text-sm">
+          <select id="assessment-purpose" value={purpose} onChange={(event) => setPurpose(event.target.value as AssessmentV2Purpose)} className="mt-2 block w-full rounded-lg border border-line bg-white px-3 py-3 text-sm">
             {PURPOSES.map((item) => <option key={item.value} value={item.value}>{item.label}</option>)}
           </select>
-          <p className="mt-2 text-sm text-[color:var(--color-text-muted)]">{selectedPurpose.description}</p>
+          <p className="mt-2 text-sm text-ink-muted">{selectedPurpose.description}</p>
         </div>
 
         {error ? <p className="text-sm text-red-700" role="alert">{error}</p> : null}
-        <button type="button" disabled={busy || (!hasActiveConsent && !consentConfirmed)} onClick={() => void createAssessment()} className="rounded-lg bg-[color:var(--color-primary)] px-5 py-3 text-sm font-semibold text-white disabled:cursor-not-allowed disabled:opacity-50">
+        <button type="button" disabled={busy || (!hasActiveConsent && !consentConfirmed)} onClick={() => void createAssessment()} className="rounded-lg bg-brand px-5 py-3 text-sm font-semibold text-white disabled:cursor-not-allowed disabled:opacity-50">
           {busy ? "กำลังเตรียมการประเมิน…" : hasActiveConsent ? "เริ่มการประเมิน" : "บันทึก consent และเริ่มการประเมิน"}
         </button>
 
         <section className="workspace-panel p-5" aria-labelledby="assessment-history-heading">
           <h2 id="assessment-history-heading" className="font-semibold">ประวัติการประเมิน</h2>
-          {assessments.length === 0 ? <p className="mt-2 text-sm text-[color:var(--color-text-muted)]">ยังไม่มีการประเมินก่อนหน้านี้</p> : (
+          {assessments.length === 0 ? <p className="mt-2 text-sm text-ink-muted">ยังไม่มีการประเมินก่อนหน้านี้</p> : (
             <ul className="mt-3 space-y-2 text-sm">
               {assessments.map((assessment) => (
                 <li key={assessment.id} className="flex flex-wrap items-center justify-between gap-3">
                   <span>{purposeLabel(assessment.purpose)}</span>
-                  <span className="flex items-center gap-3 text-[color:var(--color-text-muted)]">
+                  <span className="flex items-center gap-3 text-ink-muted">
                     {stateLabel(assessment.state)}
                     {isTranscriptReviewAssessment(assessment.state) ? (
                       <Link
                         href={`/assessments/${encodeURIComponent(assessment.id)}/transcript`}
-                        className="rounded-lg border border-[color:var(--color-border-strong)] px-3 py-1.5 text-xs font-semibold text-[color:var(--color-text-strong)]"
+                        className="rounded-lg border border-line-strong px-3 py-1.5 text-xs font-semibold text-ink"
                       >
                         เปิด transcript review
                       </Link>
                     ) : isResumableAssessment(assessment.state) ? (
-                      <button type="button" disabled={busy} onClick={() => void resumeAssessment(assessment)} className="rounded-lg border border-[color:var(--color-border-strong)] px-3 py-1.5 text-xs font-semibold text-[color:var(--color-text-strong)] disabled:opacity-50">
+                      <button type="button" disabled={busy} onClick={() => void resumeAssessment(assessment)} className="rounded-lg border border-line-strong px-3 py-1.5 text-xs font-semibold text-ink disabled:opacity-50">
                         ดำเนินการต่อ
                       </button>
                     ) : null}
@@ -575,23 +575,23 @@ export function AssessmentCaptureWorkspace({ client = defaultAssessmentV2Client 
     return (
       <section className="space-y-5">
         <header>
-          <p className="text-sm font-semibold text-[color:var(--color-primary)]">ขั้นตอนที่ 3 จาก 5 · {selectedChild?.display_code}</p>
+          <p className="text-sm font-semibold text-brand">ขั้นตอนที่ 3 จาก 5 · {selectedChild?.display_code}</p>
           <h1 className="mt-1 text-2xl font-semibold">พร้อมบันทึกเสียง</h1>
-          <p className="mt-2 text-sm text-[color:var(--color-text-muted)]">ระบบเลือก protocol จากภาษา อายุ และวัตถุประสงค์ที่บันทึกไว้</p>
+          <p className="mt-2 text-sm text-ink-muted">ระบบเลือก protocol จากภาษา อายุ และวัตถุประสงค์ที่บันทึกไว้</p>
         </header>
         <div className="workspace-panel p-5">
           <p className="text-sm font-semibold">{capture.protocol?.protocol_version_key}</p>
           <ul className="mt-4 space-y-3">
             {capture.activities.map((activity) => (
-              <li key={activity.activity_code} className="rounded-lg border border-[color:var(--color-border)] p-4">
-                <div className="flex items-center justify-between gap-3"><span className="font-semibold">{activityLabel(activity.activity_code)}</span><span className="text-sm text-[color:var(--color-text-muted)]">อย่างน้อย {activity.minimum_duration_seconds} วินาที</span></div>
-                <p className="mt-1 text-sm text-[color:var(--color-text-muted)]">เป้าหมาย {activity.target_duration_seconds} วินาที {activity.required ? "· กิจกรรมจำเป็น" : "· กิจกรรมเสริม"}</p>
+              <li key={activity.activity_code} className="rounded-lg border border-line p-4">
+                <div className="flex items-center justify-between gap-3"><span className="font-semibold">{activityLabel(activity.activity_code)}</span><span className="text-sm text-ink-muted">อย่างน้อย {activity.minimum_duration_seconds} วินาที</span></div>
+                <p className="mt-1 text-sm text-ink-muted">เป้าหมาย {activity.target_duration_seconds} วินาที {activity.required ? "· กิจกรรมจำเป็น" : "· กิจกรรมเสริม"}</p>
               </li>
             ))}
           </ul>
         </div>
         {error ? <p className="text-sm text-red-700" role="alert">{error}</p> : null}
-        <button type="button" disabled={busy} onClick={() => void beginCapture()} className="rounded-lg bg-[color:var(--color-primary)] px-5 py-3 text-sm font-semibold text-white disabled:opacity-50">
+        <button type="button" disabled={busy} onClick={() => void beginCapture()} className="rounded-lg bg-brand px-5 py-3 text-sm font-semibold text-white disabled:opacity-50">
           {busy ? "กำลังเตรียมเครื่องบันทึก…" : "เริ่มบันทึกเสียง"}
         </button>
       </section>
@@ -602,9 +602,9 @@ export function AssessmentCaptureWorkspace({ client = defaultAssessmentV2Client 
     return (
       <section className="space-y-5">
         <header>
-          <p className="text-sm font-semibold text-[color:var(--color-primary)]">ขั้นตอนที่ 5 จาก 5</p>
+          <p className="text-sm font-semibold text-brand">ขั้นตอนที่ 5 จาก 5</p>
           <h1 className="mt-1 text-2xl font-semibold">ส่งข้อมูลครบแล้ว</h1>
-          <p className="mt-2 text-sm text-[color:var(--color-text-muted)]">ระบบกำลังเตรียมผลการวิเคราะห์เชิงพัฒนาการสำหรับการพิจารณาของนักบำบัด</p>
+          <p className="mt-2 text-sm text-ink-muted">ระบบกำลังเตรียมผลการวิเคราะห์เชิงพัฒนาการสำหรับการพิจารณาของนักบำบัด</p>
         </header>
         <div className="rounded-xl border border-emerald-300 bg-emerald-50 p-5 text-emerald-950" role="status">
           <p className="font-semibold">Assessment อยู่ระหว่าง processing</p>
@@ -612,7 +612,7 @@ export function AssessmentCaptureWorkspace({ client = defaultAssessmentV2Client 
           <p className="mt-3 text-sm">สถานะปัจจุบัน: {stateLabel(completedAssessment.state)}</p>
           <Link
             href={`/assessments/${encodeURIComponent(completedAssessment.id)}/transcript`}
-            className="mt-4 inline-flex rounded-lg border border-[color:var(--color-border-strong)] px-4 py-2 text-sm font-semibold text-[color:var(--color-text-strong)]"
+            className="mt-4 inline-flex rounded-lg border border-line-strong px-4 py-2 text-sm font-semibold text-ink"
           >
             เปิดหน้า transcript review
           </Link>
@@ -627,19 +627,19 @@ export function AssessmentCaptureWorkspace({ client = defaultAssessmentV2Client 
   return (
     <section className="space-y-5">
       <header>
-        <p className="text-sm font-semibold text-[color:var(--color-primary)]">ขั้นตอนที่ 4 จาก 5 · กิจกรรมที่ {Math.min(activeActivityIndex + 1, activityCount)} จาก {activityCount}</p>
+        <p className="text-sm font-semibold text-brand">ขั้นตอนที่ 4 จาก 5 · กิจกรรมที่ {Math.min(activeActivityIndex + 1, activityCount)} จาก {activityCount}</p>
         <h1 className="mt-1 text-2xl font-semibold">บันทึกกิจกรรม</h1>
-        <p className="mt-2 text-sm text-[color:var(--color-text-muted)]">อัดเสียงทีละกิจกรรม แล้วอัปโหลดเมื่อพร้อมเพื่อรอตรวจสอบคุณภาพ</p>
+        <p className="mt-2 text-sm text-ink-muted">อัดเสียงทีละกิจกรรม แล้วอัปโหลดเมื่อพร้อมเพื่อรอตรวจสอบคุณภาพ</p>
       </header>
 
       {activeActivity ? (
         <>
           <div className="workspace-panel p-5">
             <p className="text-lg font-semibold">{activityLabel(activeActivity.activity_code)}</p>
-            <p className="mt-2 text-sm text-[color:var(--color-text-muted)]">
+            <p className="mt-2 text-sm text-ink-muted">
               เป้าหมาย {activeActivity.target_duration_seconds} วินาที · ขั้นต่ำ {activeActivity.minimum_duration_seconds} วินาที
             </p>
-            <p className="mt-2 text-sm text-[color:var(--color-text-muted)]">กิจกรรมนี้{activeActivity.required ? "เป็นกิจกรรมจำเป็น" : "เป็นกิจกรรมเสริม"}</p>
+            <p className="mt-2 text-sm text-ink-muted">กิจกรรมนี้{activeActivity.required ? "เป็นกิจกรรมจำเป็น" : "เป็นกิจกรรมเสริม"}</p>
           </div>
 
           <div className="workspace-panel p-5">
@@ -658,14 +658,14 @@ export function AssessmentCaptureWorkspace({ client = defaultAssessmentV2Client 
               type="button"
               disabled={busy}
               onClick={() => void uploadCurrentRecording()}
-              className="rounded-lg bg-[color:var(--color-primary)] px-5 py-3 text-sm font-semibold text-white disabled:cursor-not-allowed disabled:opacity-50"
+              className="rounded-lg bg-brand px-5 py-3 text-sm font-semibold text-white disabled:cursor-not-allowed disabled:opacity-50"
             >
               {busy ? uploadStageLabel(uploadStage) : "อัปโหลดตัวอย่างเสียง"}
             </button>
           ) : null}
 
           {recordingMetadata?.recordingStatus === "stopped" && uploadStatus === "ready" ? (
-            <p className="text-sm text-[color:var(--color-text-muted)]">บันทึกแล้ว {recordingMetadata.durationSeconds} วินาที ตรวจสอบเสียงก่อนอัปโหลดได้</p>
+            <p className="text-sm text-ink-muted">บันทึกแล้ว {recordingMetadata.durationSeconds} วินาที ตรวจสอบเสียงก่อนอัปโหลดได้</p>
           ) : null}
 
           {uploadStatus === "uploaded" ? (
@@ -675,12 +675,12 @@ export function AssessmentCaptureWorkspace({ client = defaultAssessmentV2Client 
               {qualityStatus === "ready" && quality ? <p className="mt-3 font-semibold">{qualityLabel(quality.status)}</p> : null}
               {qualityError ? <p className="mt-3 text-sm">{qualityError}</p> : null}
               {quality?.status === "usable" && isLastActivity ? (
-                <button type="button" disabled={busy} onClick={() => void completeAssessmentCapture()} className="mt-4 rounded-lg bg-[color:var(--color-primary)] px-4 py-2 text-sm font-semibold text-white disabled:opacity-50">
+                <button type="button" disabled={busy} onClick={() => void completeAssessmentCapture()} className="mt-4 rounded-lg bg-brand px-4 py-2 text-sm font-semibold text-white disabled:opacity-50">
                   {busy ? "กำลังส่งข้อมูล…" : "ส่ง assessment เข้า processing"}
                 </button>
               ) : null}
               {!isLastActivity ? (
-                <button type="button" onClick={continueToNextActivity} className="mt-4 rounded-lg bg-[color:var(--color-primary)] px-4 py-2 text-sm font-semibold text-white">
+                <button type="button" onClick={continueToNextActivity} className="mt-4 rounded-lg bg-brand px-4 py-2 text-sm font-semibold text-white">
                   ไปกิจกรรมถัดไป
                 </button>
               ) : null}

@@ -18,7 +18,7 @@ export const reportSectionDefinitions = [
   {
     icon: ArrowRight,
     title: "Next Steps",
-    tone: "bg-[color:var(--color-accent-soft)] text-clinical",
+    tone: "bg-brand-soft text-brand",
     items: ["Edit draft report language", "Finalize only after therapist review"],
   },
 ];
@@ -29,10 +29,10 @@ export function WorkflowStatus({ state, backendUnavailable }: { state: WorkflowS
   const isSuccess = Boolean(state.statusMessage && !isError);
   if (isSuccess && backendUnavailable) return null;
   const className = isError
-    ? "rounded-[var(--radius-panel)] border border-red-200 bg-red-50 p-4 text-sm text-red-950 animate-fade-in"
+    ? "rounded-panel border border-red-200 bg-red-50 p-4 text-sm text-red-950 animate-fade-in"
     : isSuccess
-      ? "rounded-[var(--radius-panel)] border border-emerald-200 bg-emerald-50 p-4 text-sm text-emerald-950 animate-fade-in"
-      : "demo-note rounded-[var(--radius-panel)] p-4 text-sm";
+      ? "rounded-panel border border-emerald-200 bg-emerald-50 p-4 text-sm text-emerald-950 animate-fade-in"
+      : "demo-note rounded-panel p-4 text-sm";
   return (
     <div className={className} role={isError ? "alert" : "status"} aria-live="polite">
       {state.statusMessage ? <p className="font-semibold">{state.statusMessage}</p> : null}
@@ -43,7 +43,7 @@ export function WorkflowStatus({ state, backendUnavailable }: { state: WorkflowS
 
 export function ReportProvenanceItem({ label, value }: { label: string; value: string }) {
   return (
-    <div className="rounded-[var(--radius-card)] border border-line bg-[color:var(--color-surface-muted)] p-3">
+    <div className="rounded-card border border-line bg-surface-muted p-3">
       <dt className="text-xs font-semibold uppercase tracking-[0.1em] text-slate-500">{label}</dt>
       <dd className="mt-1 [overflow-wrap:anywhere] text-sm font-bold text-ink">{value}</dd>
     </div>

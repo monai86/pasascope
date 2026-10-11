@@ -65,17 +65,17 @@ export function StartSessionSelector({ cases, preselectedCaseId }: { cases: Back
 
       <form className="workspace-panel p-4 sm:p-5" onSubmit={handleSubmit}>
         <fieldset disabled={busy}>
-          <legend className="text-lg font-semibold text-[color:var(--color-text-strong)]">Available cases</legend>
-          <p className="mt-1 text-sm leading-6 text-[color:var(--color-text-muted)]">
+          <legend className="text-lg font-semibold text-ink">Available cases</legend>
+          <p className="mt-1 text-sm leading-6 text-ink-muted">
             Cases without active consent remain visible for context but cannot be selected.
           </p>
           {preselected ? (
-            <p className="mt-3 rounded-[var(--radius-card)] border border-[color:var(--color-border)] bg-[color:var(--color-surface-muted)] px-3 py-2 text-sm text-[color:var(--color-text-muted)]">
+            <p className="mt-3 rounded-card border border-line bg-surface-muted px-3 py-2 text-sm text-ink-muted">
               Case {codeLabel(preselected)} was preselected from the previous screen. You can still choose another consented case.
             </p>
           ) : null}
           {!hasConsentedCase ? (
-            <div className="mt-4 rounded-[var(--radius-card)] border border-amber-200 bg-amber-50 p-4 text-amber-950">
+            <div className="mt-4 rounded-card border border-amber-200 bg-amber-50 p-4 text-amber-950">
               <h2 className="font-semibold">No consented cases available</h2>
               <p className="mt-1 text-sm leading-6">
                 Confirm consent from the case record before starting a session.
@@ -88,10 +88,10 @@ export function StartSessionSelector({ cases, preselectedCaseId }: { cases: Back
               const selected = selectedCaseId === caseItem.case_id;
               return (
                 <li key={caseItem.case_id}>
-                  <label className={`flex min-h-16 cursor-pointer items-start gap-3 rounded-[var(--radius-card)] border p-4 transition focus-within:ring-4 focus-within:ring-[color:var(--color-focus-ring)] ${
+                  <label className={`flex min-h-16 cursor-pointer items-start gap-3 rounded-card border p-4 transition focus-within:ring-4 focus-within:ring-[color:var(--color-focus-ring)] ${
                     selected
-                      ? "border-[color:var(--color-accent-strong)] bg-[color:var(--color-accent-soft)]"
-                      : "border-[color:var(--color-border)] bg-[color:var(--color-surface-reading)]"
+                      ? "border-brand-strong bg-brand-soft"
+                      : "border-line bg-surface"
                   } ${allowed ? "" : "cursor-not-allowed opacity-65"}`}>
                     <input
                       type="radio"
@@ -100,15 +100,15 @@ export function StartSessionSelector({ cases, preselectedCaseId }: { cases: Back
                       checked={selected}
                       onChange={() => setSelectedCaseId(caseItem.case_id)}
                       disabled={!allowed}
-                      className="mt-1 h-5 w-5 shrink-0 accent-[color:var(--color-accent-strong)]"
+                      className="mt-1 h-5 w-5 shrink-0 accent-brand-strong"
                     />
                     <span className="min-w-0 flex-1">
-                      <span className="block font-semibold text-[color:var(--color-text-strong)]">{caseLabel(caseItem)}</span>
-                      <span className="mt-1 block text-sm text-[color:var(--color-text-muted)]">
+                      <span className="block font-semibold text-ink">{caseLabel(caseItem)}</span>
+                      <span className="mt-1 block text-sm text-ink-muted">
                         {codeLabel(caseItem)} · {caseItem.language ?? "Language not recorded"}
                       </span>
                     </span>
-                    <span className="inline-flex min-h-8 shrink-0 items-center gap-2 rounded-[var(--radius-card)] border border-[color:var(--color-border)] px-3 text-xs font-semibold text-[color:var(--color-text-muted)]">
+                    <span className="inline-flex min-h-8 shrink-0 items-center gap-2 rounded-card border border-line px-3 text-xs font-semibold text-ink-muted">
                       <ShieldCheck size={14} aria-hidden="true" />
                       {allowed ? "Consent active" : "Consent required"}
                     </span>
@@ -123,7 +123,7 @@ export function StartSessionSelector({ cases, preselectedCaseId }: { cases: Back
           <ActionButton type="submit" disabled={!selectedCase || busy}>
             {busy ? "Creating session…" : selectedCase ? `Start session for ${codeLabel(selectedCase)}` : "Start session"}
           </ActionButton>
-          <p className="text-sm text-[color:var(--color-text-muted)]" role="status" aria-live="polite">
+          <p className="text-sm text-ink-muted" role="status" aria-live="polite">
             {message}
           </p>
         </div>

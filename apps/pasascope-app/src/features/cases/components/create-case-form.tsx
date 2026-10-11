@@ -12,7 +12,7 @@ import {
 import { casesAdapter } from "@/features/cases/services/cases-adapter";
 
 const fieldClassName =
-  "min-h-11 w-full rounded-[var(--radius-card)] border border-[color:var(--color-border)] bg-[color:var(--color-surface-reading)] px-4 text-sm text-[color:var(--color-text-strong)] outline-none focus-visible:ring-4 focus-visible:ring-[color:var(--color-focus-ring)]";
+  "min-h-11 w-full rounded-card border border-line bg-surface px-4 text-sm text-ink outline-none focus-visible:ring-4 focus-visible:ring-[color:var(--color-focus-ring)]";
 
 export function CreateCaseForm({ onCancel }: { onCancel: () => void }) {
   const router = useRouter();
@@ -42,11 +42,11 @@ export function CreateCaseForm({ onCancel }: { onCancel: () => void }) {
     <section className="workspace-panel p-5" aria-labelledby="create-case-heading">
       <h2
         id="create-case-heading"
-        className="text-lg font-semibold text-[color:var(--color-text-strong)]"
+        className="text-lg font-semibold text-ink"
       >
         Create a de-identified case
       </h2>
-      <p className="mt-1 text-sm leading-6 text-[color:var(--color-text-muted)]">
+      <p className="mt-1 text-sm leading-6 text-ink-muted">
         Use a study or clinic code, not a child&apos;s name or direct identifier. Consent starts as pending.
       </p>
       <form className="mt-5 grid gap-4" onSubmit={handleSubmit(submit)} noValidate>
@@ -104,13 +104,13 @@ function Field({
   children: React.ReactNode;
 }) {
   return (
-    <label className="grid gap-1 text-sm font-medium text-[color:var(--color-text-strong)]">
+    <label className="grid gap-1 text-sm font-medium text-ink">
       <span>{label}</span>
       {children}
       {error ? (
         <span className="text-xs text-[color:var(--color-danger-text)]">{error}</span>
       ) : hint ? (
-        <span className="text-xs font-normal text-[color:var(--color-text-muted)]">{hint}</span>
+        <span className="text-xs font-normal text-ink-muted">{hint}</span>
       ) : null}
     </label>
   );

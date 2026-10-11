@@ -27,12 +27,12 @@ export function DataTable<T extends Record<string, React.ReactNode>>({
         <table className="min-w-full border-collapse" aria-label={caption}>
           <caption className="sr-only">{caption}</caption>
           <thead>
-            <tr className="border-b border-[color:var(--color-border)] bg-[color:var(--color-surface-muted)] text-left">
+            <tr className="border-b border-line bg-surface-muted text-left">
               {columns.map((column) => (
                 <th
                   key={String(column.key)}
                   scope="col"
-                  className={`px-4 py-3 text-xs font-semibold uppercase tracking-[0.12em] text-[color:var(--color-text-subtle)] ${
+                  className={`px-4 py-3 text-xs font-semibold uppercase tracking-[0.12em] text-ink-subtle ${
                     column.align === "right" ? "text-right" : "text-left"
                   }`}
                 >
@@ -51,20 +51,20 @@ export function DataTable<T extends Record<string, React.ReactNode>>({
                   data-testid={rowTestId}
                   aria-selected={selectable ? selected : undefined}
                   onClick={selectable ? () => onSelect?.(row.id) : undefined}
-                  className={`border-b border-[color:var(--color-border)] last:border-b-0 ${
+                  className={`border-b border-line last:border-b-0 ${
                     selectable ? "cursor-pointer" : ""
                   } ${
                     selected
-                      ? "bg-[color:var(--color-accent-soft)]"
+                      ? "bg-brand-soft"
                       : selectable
-                        ? "transition-colors hover:bg-[color:var(--color-surface-muted)]"
+                        ? "transition-colors hover:bg-surface-muted"
                         : ""
                   }`}
                 >
                   {columns.map((column) => (
                     <td
                       key={String(column.key)}
-                      className={`px-4 py-3 text-sm text-[color:var(--color-text-strong)] ${
+                      className={`px-4 py-3 text-sm text-ink ${
                         column.align === "right" ? "text-right" : "text-left"
                       }`}
                     >

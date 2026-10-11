@@ -114,9 +114,9 @@ export function evidenceDisposition(decisionSupport?: WorkflowState["mlDecisionS
 
 export function ProvenanceItem({ label, value }: { label: string; value: string }) {
   return (
-    <div className="rounded-[var(--radius-card)] border border-[color:var(--color-border)] bg-[color:var(--color-surface-strong)] p-3">
-      <dt className="text-xs font-semibold uppercase tracking-[0.1em] text-[color:var(--color-text-subtle)]">{label}</dt>
-      <dd className="mt-1 break-words text-sm font-semibold text-[color:var(--color-text-strong)]">{value}</dd>
+    <div className="rounded-card border border-line bg-surface p-3">
+      <dt className="text-xs font-semibold uppercase tracking-[0.1em] text-ink-subtle">{label}</dt>
+      <dd className="mt-1 break-words text-sm font-semibold text-ink">{value}</dd>
     </div>
   );
 }
@@ -176,10 +176,10 @@ export function WorkflowStatus({ state, backendUnavailable }: { state: WorkflowS
     return null;
   }
   const className = isError
-    ? "rounded-[var(--radius-panel)] border border-red-200 bg-red-50 p-4 text-sm text-red-950 animate-fade-in"
+    ? "rounded-panel border border-red-200 bg-red-50 p-4 text-sm text-red-950 animate-fade-in"
     : isSuccess
-      ? "rounded-[var(--radius-panel)] border border-emerald-200 bg-emerald-50 p-4 text-sm text-emerald-950 animate-fade-in"
-      : "demo-note rounded-[var(--radius-panel)] p-4 text-sm";
+      ? "rounded-panel border border-emerald-200 bg-emerald-50 p-4 text-sm text-emerald-950 animate-fade-in"
+      : "demo-note rounded-panel p-4 text-sm";
   return (
     <div className={className} role={isError ? "alert" : "status"} aria-live="polite">
       {state.statusMessage ? <p className="font-semibold">{state.statusMessage}</p> : null}

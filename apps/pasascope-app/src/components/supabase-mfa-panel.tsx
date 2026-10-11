@@ -176,9 +176,9 @@ export function SupabaseMfaPanel({
 
   return (
     <div className="mt-5 grid gap-4">
-      <div className="rounded-[var(--radius-panel)] border border-line bg-slate-50 p-4 text-sm text-slate-700">
+      <div className="rounded-panel border border-line bg-slate-50 p-4 text-sm text-slate-700">
         <div className="flex items-start gap-3">
-          <ShieldCheck size={18} aria-hidden="true" className="mt-0.5 shrink-0 text-clinical" />
+          <ShieldCheck size={18} aria-hidden="true" className="mt-0.5 shrink-0 text-brand" />
           <div>
             <p className="font-semibold text-ink">Real TOTP MFA flow</p>
             <p className="mt-1">
@@ -192,7 +192,7 @@ export function SupabaseMfaPanel({
       </div>
 
       {verifiedFactor ? (
-        <div className="rounded-[var(--radius-panel)] border border-emerald-200 bg-emerald-50 p-4 text-sm text-emerald-950">
+        <div className="rounded-panel border border-emerald-200 bg-emerald-50 p-4 text-sm text-emerald-950">
           <div className="flex items-start gap-3">
             <KeyRound size={18} aria-hidden="true" className="mt-0.5 shrink-0" />
             <div>
@@ -210,12 +210,12 @@ export function SupabaseMfaPanel({
       ) : null}
 
       {!verifiedFactor && qrImageSource ? (
-        <div className="rounded-[var(--radius-panel)] border border-[color:var(--color-pasa-teal-border)] bg-[color:var(--color-pasa-teal-soft)] p-4 text-sm text-[color:var(--color-pasa-teal)]">
+        <div className="rounded-panel border border-brand-border bg-brand-soft p-4 text-sm text-brand">
           <div className="flex items-start gap-3">
             <QrCode size={18} aria-hidden="true" className="mt-0.5 shrink-0" />
             <div className="min-w-0">
-              <p className="font-semibold text-[color:var(--color-text-strong)]">Scan your authenticator app</p>
-              <p className="mt-1 text-[color:var(--color-text-muted)]">
+              <p className="font-semibold text-ink">Scan your authenticator app</p>
+              <p className="mt-1 text-ink-muted">
                 Add the new TOTP factor
                 {" "}
                 <strong>{enrollment?.friendlyName ?? "PasaScope Authenticator"}</strong>
@@ -227,15 +227,15 @@ export function SupabaseMfaPanel({
               <img
                 src={qrImageSource}
                 alt="Supabase TOTP QR code"
-                className="mt-4 h-40 w-40 rounded-xl border border-[color:var(--color-pasa-teal-border)] bg-white p-2"
+                className="mt-4 h-40 w-40 rounded-xl border border-brand-border bg-white p-2"
               />
-              <label className="mt-4 grid gap-1 text-xs font-medium text-[color:var(--color-text-strong)]">
+              <label className="mt-4 grid gap-1 text-xs font-medium text-ink">
                 Backup secret
                 <input
                   type="text"
                   readOnly
                   value={enrollment?.secret ?? ""}
-                  className="rounded-xl border border-[color:var(--color-pasa-teal-border)] bg-white px-3 py-2 font-mono text-xs text-[color:var(--color-text-strong)]"
+                  className="rounded-xl border border-brand-border bg-white px-3 py-2 font-mono text-xs text-ink"
                 />
               </label>
             </div>
@@ -244,7 +244,7 @@ export function SupabaseMfaPanel({
       ) : null}
 
       {!verifiedFactor && !enrollment && pendingFactor ? (
-        <div className="rounded-[var(--radius-panel)] border border-amber-200 bg-amber-50 p-4 text-sm text-amber-950">
+        <div className="rounded-panel border border-amber-200 bg-amber-50 p-4 text-sm text-amber-950">
           <div className="flex items-start gap-3">
             <RefreshCw size={18} aria-hidden="true" className="mt-0.5 shrink-0" />
             <div>
@@ -263,15 +263,15 @@ export function SupabaseMfaPanel({
           type="button"
           onClick={() => void handleStartEnrollment()}
           disabled={isSubmitting || isLoadingFactors}
-          className="inline-flex min-h-11 items-center justify-center rounded-full bg-[color:var(--color-pasa-teal)] px-5 text-sm font-semibold text-white transition hover:bg-[color:var(--color-pasa-teal-hover)] disabled:cursor-not-allowed disabled:bg-slate-300"
+          className="inline-flex min-h-11 items-center justify-center rounded-full bg-brand px-5 text-sm font-semibold text-white transition hover:bg-brand-hover disabled:cursor-not-allowed disabled:bg-slate-300"
         >
           {isSubmitting ? "Starting TOTP enrollment..." : "Start TOTP enrollment"}
         </button>
       ) : null}
 
       {(verifiedFactor || pendingFactor || enrollment) ? (
-        <div className="grid gap-3 rounded-[var(--radius-panel)] border border-[color:var(--color-border)] bg-white p-4">
-          <label className="grid gap-2 text-sm font-medium text-[color:var(--color-text-strong)]">
+        <div className="grid gap-3 rounded-panel border border-line bg-white p-4">
+          <label className="grid gap-2 text-sm font-medium text-ink">
             Authenticator code
             <input
               type="text"
@@ -280,7 +280,7 @@ export function SupabaseMfaPanel({
               placeholder="123456"
               value={code}
               onChange={(event) => setCode(event.target.value)}
-              className="min-h-11 rounded-[var(--radius-pill)] border border-[color:var(--color-border)] bg-white px-4 text-sm text-[color:var(--color-text-strong)] outline-none focus:ring-2 focus:ring-[color:var(--color-pasa-teal)]"
+              className="min-h-11 rounded-full border border-line bg-white px-4 text-sm text-ink outline-none focus:ring-2 focus:ring-brand"
             />
           </label>
 
@@ -289,7 +289,7 @@ export function SupabaseMfaPanel({
               type="button"
               onClick={() => void handleVerifyCode()}
               disabled={isSubmitting || !code.trim()}
-              className="inline-flex min-h-11 items-center justify-center rounded-full bg-[color:var(--color-pasa-teal)] px-5 text-sm font-semibold text-white transition hover:bg-[color:var(--color-pasa-teal-hover)] disabled:cursor-not-allowed disabled:bg-slate-300"
+              className="inline-flex min-h-11 items-center justify-center rounded-full bg-brand px-5 text-sm font-semibold text-white transition hover:bg-brand-hover disabled:cursor-not-allowed disabled:bg-slate-300"
             >
               {isSubmitting ? "Verifying code..." : verifiedFactor ? "Verify TOTP and continue" : "Complete TOTP enrollment"}
             </button>
@@ -298,7 +298,7 @@ export function SupabaseMfaPanel({
               type="button"
               onClick={() => void refreshFactors()}
               disabled={isSubmitting || isLoadingFactors}
-              className="inline-flex min-h-11 items-center justify-center rounded-full border border-[color:var(--color-border)] bg-white px-5 text-sm font-semibold text-[color:var(--color-text-muted)] hover:bg-[color:var(--color-surface)] disabled:cursor-not-allowed disabled:bg-slate-100"
+              className="inline-flex min-h-11 items-center justify-center rounded-full border border-line bg-white px-5 text-sm font-semibold text-ink-muted hover:bg-surface-soft disabled:cursor-not-allowed disabled:bg-slate-100"
             >
               Refresh factors
             </button>

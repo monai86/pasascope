@@ -113,16 +113,15 @@ export function findGreen(path: string, text: string): string[] {
 
 /**
  * Styling that bypasses the design system: raw Tailwind palette classes,
- * `dark:` variants in a light-only product, and the migration aliases.
+ * `dark:` variants in a light-only product, and the names of the previous
+ * palette, which were removed and must not be declared or used again.
  */
-export function findLegacyStyling(path: string, text: string): string[] {
-  // The token file and Tailwind config are where the aliases are declared.
-  const declaresAliases = path === TOKENS_FILE || path === "tailwind.config.ts";
+export function findLegacyStyling(_path: string, text: string): string[] {
   return [
     ...matches(text, RAW_PALETTE_CLASS),
     ...matches(text, DARK_VARIANT).map(() => "dark:"),
-    ...(declaresAliases ? [] : matches(text, ALIAS_PROPERTY)),
-    ...(declaresAliases ? [] : matches(text, ALIAS_CLASS)),
+    ...matches(text, ALIAS_PROPERTY),
+    ...matches(text, ALIAS_CLASS),
   ];
 }
 

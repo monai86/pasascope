@@ -64,7 +64,7 @@ export function SessionIntakeSteps({ model }: { model: SessionIntakeViewModel })
                 </p>
               </div>
               {intakeError && (
-                <p className="rounded-[var(--radius-card)] border border-rose-100 bg-rose-50 px-4 py-3 text-sm font-medium text-rose-950">
+                <p className="rounded-card border border-rose-100 bg-rose-50 px-4 py-3 text-sm font-medium text-rose-950">
                   {intakeError}
                 </p>
               )}
@@ -104,7 +104,7 @@ export function SessionIntakeSteps({ model }: { model: SessionIntakeViewModel })
                     type="text"
                     value={sessionDetails.childClient}
                     onChange={(event) => setSessionDetails((current) => ({ ...current, childClient: event.target.value }))}
-                    className="min-h-11 rounded-[var(--radius-panel)] border border-line bg-[color:var(--color-surface-reading)] px-4 py-3 text-sm text-ink outline-none focus:ring-2 focus:ring-clinical"
+                    className="min-h-11 rounded-panel border border-line bg-surface px-4 py-3 text-sm text-ink outline-none focus:ring-2 focus:ring-brand"
                   />
                 </Field>
                 <Field>
@@ -114,7 +114,7 @@ export function SessionIntakeSteps({ model }: { model: SessionIntakeViewModel })
                     type="text"
                     value={sessionDetails.clinician}
                     onChange={(event) => setSessionDetails((current) => ({ ...current, clinician: event.target.value }))}
-                    className="min-h-11 rounded-[var(--radius-panel)] border border-line bg-[color:var(--color-surface-reading)] px-4 py-3 text-sm text-ink outline-none focus:ring-2 focus:ring-clinical"
+                    className="min-h-11 rounded-panel border border-line bg-surface px-4 py-3 text-sm text-ink outline-none focus:ring-2 focus:ring-brand"
                   />
                 </Field>
                 <Field>
@@ -124,7 +124,7 @@ export function SessionIntakeSteps({ model }: { model: SessionIntakeViewModel })
                     type="date"
                     value={sessionDetails.sessionDate}
                     onChange={(event) => setSessionDetails((current) => ({ ...current, sessionDate: event.target.value }))}
-                    className="min-h-11 rounded-[var(--radius-panel)] border border-line bg-[color:var(--color-surface-reading)] px-4 py-3 text-sm text-ink outline-none focus:ring-2 focus:ring-clinical"
+                    className="min-h-11 rounded-panel border border-line bg-surface px-4 py-3 text-sm text-ink outline-none focus:ring-2 focus:ring-brand"
                   />
                 </Field>
                 <Field>
@@ -134,7 +134,7 @@ export function SessionIntakeSteps({ model }: { model: SessionIntakeViewModel })
                     type="time"
                     value={sessionDetails.sessionTime}
                     onChange={(event) => setSessionDetails((current) => ({ ...current, sessionTime: event.target.value }))}
-                    className="min-h-11 rounded-[var(--radius-panel)] border border-line bg-[color:var(--color-surface-reading)] px-4 py-3 text-sm text-ink outline-none focus:ring-2 focus:ring-clinical"
+                    className="min-h-11 rounded-panel border border-line bg-surface px-4 py-3 text-sm text-ink outline-none focus:ring-2 focus:ring-brand"
                   />
                 </Field>
                 <Field>
@@ -143,7 +143,7 @@ export function SessionIntakeSteps({ model }: { model: SessionIntakeViewModel })
                     id="session-setting"
                     value={sessionDetails.setting}
                     onChange={(event) => setSessionDetails((current) => ({ ...current, setting: event.target.value }))}
-                    className="min-h-11 rounded-[var(--radius-panel)] border border-line bg-[color:var(--color-surface-reading)] px-4 py-3 text-sm text-ink outline-none focus:ring-2 focus:ring-clinical"
+                    className="min-h-11 rounded-panel border border-line bg-surface px-4 py-3 text-sm text-ink outline-none focus:ring-2 focus:ring-brand"
                   >
                     <option value="clinic">Clinic</option>
                     <option value="home">Home</option>
@@ -156,7 +156,7 @@ export function SessionIntakeSteps({ model }: { model: SessionIntakeViewModel })
                     id="session-duration"
                     value={sessionDetails.durationMinutes}
                     onChange={(event) => setSessionDetails((current) => ({ ...current, durationMinutes: event.target.value }))}
-                    className="min-h-11 rounded-[var(--radius-panel)] border border-line bg-[color:var(--color-surface-reading)] px-4 py-3 text-sm text-ink outline-none focus:ring-2 focus:ring-clinical"
+                    className="min-h-11 rounded-panel border border-line bg-surface px-4 py-3 text-sm text-ink outline-none focus:ring-2 focus:ring-brand"
                   >
                     <option value="30">30 minutes</option>
                     <option value="45">45 minutes</option>
@@ -171,7 +171,7 @@ export function SessionIntakeSteps({ model }: { model: SessionIntakeViewModel })
                   id="session-goals"
                   value={sessionDetails.sessionGoals}
                   onChange={(event) => setSessionDetails((current) => ({ ...current, sessionGoals: event.target.value }))}
-                  className="min-h-32 rounded-[var(--radius-panel)] border border-line bg-[color:var(--color-surface-reading)] px-4 py-3 text-sm text-ink outline-none focus:ring-2 focus:ring-clinical"
+                  className="min-h-32 rounded-panel border border-line bg-surface px-4 py-3 text-sm text-ink outline-none focus:ring-2 focus:ring-brand"
                 />
               </Field>
               <SafetyNotice>
@@ -191,7 +191,7 @@ export function SessionIntakeSteps({ model }: { model: SessionIntakeViewModel })
                 <p
                   id="continue-to-source-material-reason"
                   role="status"
-                  className="rounded-[var(--radius-card)] border border-amber-200 bg-amber-50 px-3 py-2 text-sm font-semibold text-amber-900"
+                  className="rounded-card border border-amber-200 bg-amber-50 px-3 py-2 text-sm font-semibold text-amber-900"
                 >
                   {continueToSourceMaterialReason}
                 </p>
@@ -325,7 +325,7 @@ export function SessionIntakeSteps({ model }: { model: SessionIntakeViewModel })
                     : draftTranscript.trim()
                       ? draftTranscript.trim().split("\n").slice(0, 6).map((line) => <p key={line}>{line}</p>)
                       : (
-                        <div className="rounded-[var(--radius-card)] border border-dashed border-line bg-[color:var(--color-surface-muted)] p-4 text-center">
+                        <div className="rounded-card border border-dashed border-line bg-surface-muted p-4 text-center">
                           <p className="font-semibold text-ink">No transcript available yet</p>
                           <p className="mt-1 text-sm text-slate-600">Add source material, then continue into transcript setup and therapist review.</p>
                         </div>
@@ -359,7 +359,7 @@ export function SessionIntakeSteps({ model }: { model: SessionIntakeViewModel })
                     id="speaker-labels"
                     value={transcriptSetup.speakerLabels}
                     onChange={(event) => setTranscriptSetup((current) => ({ ...current, speakerLabels: event.target.value }))}
-                    className="min-h-28 rounded-[var(--radius-panel)] border border-line bg-[color:var(--color-surface-reading)] px-4 py-3 text-sm text-ink outline-none focus:ring-2 focus:ring-clinical"
+                    className="min-h-28 rounded-panel border border-line bg-surface px-4 py-3 text-sm text-ink outline-none focus:ring-2 focus:ring-brand"
                   />
                 </Field>
                 <Field className="md:col-span-2">
@@ -368,7 +368,7 @@ export function SessionIntakeSteps({ model }: { model: SessionIntakeViewModel })
                     id="session-metadata"
                     value={transcriptSetup.sessionMetadata}
                     onChange={(event) => setTranscriptSetup((current) => ({ ...current, sessionMetadata: event.target.value }))}
-                    className="min-h-28 rounded-[var(--radius-panel)] border border-line bg-[color:var(--color-surface-reading)] px-4 py-3 text-sm text-ink outline-none focus:ring-2 focus:ring-clinical"
+                    className="min-h-28 rounded-panel border border-line bg-surface px-4 py-3 text-sm text-ink outline-none focus:ring-2 focus:ring-brand"
                   />
                 </Field>
                 <Field>
@@ -377,7 +377,7 @@ export function SessionIntakeSteps({ model }: { model: SessionIntakeViewModel })
                     id="transcript-language"
                     value={transcriptSetup.language}
                     onChange={(event) => setTranscriptSetup((current) => ({ ...current, language: event.target.value }))}
-                    className="min-h-11 rounded-[var(--radius-panel)] border border-line bg-[color:var(--color-surface-reading)] px-4 py-3 text-sm text-ink outline-none focus:ring-2 focus:ring-clinical"
+                    className="min-h-11 rounded-panel border border-line bg-surface px-4 py-3 text-sm text-ink outline-none focus:ring-2 focus:ring-brand"
                   >
                     <option value="eng">English</option>
                     <option value="tha">Thai</option>
@@ -390,7 +390,7 @@ export function SessionIntakeSteps({ model }: { model: SessionIntakeViewModel })
                     id="sample-type"
                     value={transcriptSetup.sampleType}
                     onChange={(event) => setTranscriptSetup((current) => ({ ...current, sampleType: event.target.value }))}
-                    className="min-h-11 rounded-[var(--radius-panel)] border border-line bg-[color:var(--color-surface-reading)] px-4 py-3 text-sm text-ink outline-none focus:ring-2 focus:ring-clinical"
+                    className="min-h-11 rounded-panel border border-line bg-surface px-4 py-3 text-sm text-ink outline-none focus:ring-2 focus:ring-brand"
                   >
                     <option value="conversation">Conversation</option>
                     <option value="play">Play-based interaction</option>
@@ -398,7 +398,7 @@ export function SessionIntakeSteps({ model }: { model: SessionIntakeViewModel })
                   </select>
                 </Field>
               </div>
-              <div className="space-y-3 rounded-[var(--radius-panel)] border border-line bg-[color:var(--color-surface-reading)] p-4">
+              <div className="space-y-3 rounded-panel border border-line bg-surface p-4">
                 <p className="text-sm font-semibold text-ink">Review requirements</p>
                 <label className="flex min-h-11 items-start gap-3 text-sm text-slate-700">
                   <input
@@ -461,7 +461,7 @@ export function SessionIntakeSteps({ model }: { model: SessionIntakeViewModel })
                 {DECISION_SUPPORT_ONLY} Audio bytes are not stored in browser persistent storage. Experimental ASR output must be reviewed by a therapist before transcript attestation, feature extraction, or report use.
               </SafetyNotice>
               {selectedSource === "audio" || selectedSource === "recording" ? (
-                <div className="rounded-[var(--radius-panel)] border border-amber-200 bg-amber-50 p-4 text-sm text-amber-900">
+                <div className="rounded-panel border border-amber-200 bg-amber-50 p-4 text-sm text-amber-900">
                   Audio upload and ASR remain experimental in this workflow. Start transcript review only after a draft transcript is actually available.
                 </div>
               ) : null}
@@ -495,7 +495,7 @@ export function SessionIntakeSteps({ model }: { model: SessionIntakeViewModel })
                   <p
                     id="start-transcript-review-reason"
                     role="status"
-                    className="rounded-[var(--radius-card)] border border-amber-200 bg-amber-50 px-3 py-2 text-sm font-semibold text-amber-900"
+                    className="rounded-card border border-amber-200 bg-amber-50 px-3 py-2 text-sm font-semibold text-amber-900"
                   >
                     {startTranscriptReviewBlockedReasonText}
                   </p>

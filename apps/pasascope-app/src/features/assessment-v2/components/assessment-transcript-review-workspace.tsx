@@ -114,12 +114,12 @@ export function AssessmentTranscriptReviewWorkspace({
     return (
       <section className="workspace-panel p-6" role="alert">
         <h1 className="text-xl font-semibold">ไม่สามารถโหลด transcript ได้</h1>
-        <p className="mt-2 text-sm text-[color:var(--color-text-muted)]">
+        <p className="mt-2 text-sm text-ink-muted">
           ระบบยังอ่าน transcript จาก FastAPI ไม่ได้ จึงยังไม่เปิดให้ตรวจหรือรับรองข้อมูลในเบราว์เซอร์
         </p>
         <button
           type="button"
-          className="mt-4 rounded-lg bg-[color:var(--color-primary)] px-4 py-2 text-sm font-semibold text-white"
+          className="mt-4 rounded-lg bg-brand px-4 py-2 text-sm font-semibold text-white"
           onClick={() => void loadTranscript()}
         >
           ลองใหม่
@@ -132,9 +132,9 @@ export function AssessmentTranscriptReviewWorkspace({
     return (
       <section className="space-y-5">
         <header>
-          <p className="text-sm font-semibold text-[color:var(--color-primary)]">ขั้นตอนที่ 5 จาก 5</p>
+          <p className="text-sm font-semibold text-brand">ขั้นตอนที่ 5 จาก 5</p>
           <h1 className="mt-1 text-2xl font-semibold">สร้าง transcript ฉบับแรก</h1>
-          <p className="mt-2 text-sm text-[color:var(--color-text-muted)]">
+          <p className="mt-2 text-sm text-ink-muted">
             ระบบยังไม่มีฉบับร่างจากการถอดเสียง ให้ตรวจสอบหรือวางข้อความจาก FastAPI ก่อนรับรอง
           </p>
         </header>
@@ -148,13 +148,13 @@ export function AssessmentTranscriptReviewWorkspace({
             onChange={(event) => setDraftContent(event.target.value)}
             disabled={busy}
             rows={14}
-            className="mt-4 min-h-72 w-full rounded-lg border border-[color:var(--color-border)] bg-white p-4 font-mono text-sm leading-7 outline-none focus-visible:ring-4 focus-visible:ring-[color:var(--color-focus-ring)] disabled:bg-[color:var(--color-surface-muted)]"
+            className="mt-4 min-h-72 w-full rounded-lg border border-line bg-white p-4 font-mono text-sm leading-7 outline-none focus-visible:ring-4 focus-visible:ring-[color:var(--color-focus-ring)] disabled:bg-surface-muted"
           />
           <button
             type="button"
             disabled={busy || !draftContent.trim()}
             onClick={() => void saveDraft()}
-            className="mt-4 rounded-lg bg-[color:var(--color-primary)] px-4 py-2 text-sm font-semibold text-white disabled:cursor-not-allowed disabled:opacity-50"
+            className="mt-4 rounded-lg bg-brand px-4 py-2 text-sm font-semibold text-white disabled:cursor-not-allowed disabled:opacity-50"
           >
             {busy ? "กำลังบันทึก…" : "สร้างฉบับร่าง"}
           </button>
@@ -171,9 +171,9 @@ export function AssessmentTranscriptReviewWorkspace({
   return (
     <section className="space-y-5">
       <header>
-        <p className="text-sm font-semibold text-[color:var(--color-primary)]">ขั้นตอนที่ 5 จาก 5</p>
+        <p className="text-sm font-semibold text-brand">ขั้นตอนที่ 5 จาก 5</p>
         <h1 className="mt-1 text-2xl font-semibold">ทบทวน transcript</h1>
-        <p className="mt-2 text-sm text-[color:var(--color-text-muted)]">
+        <p className="mt-2 text-sm text-ink-muted">
           ตรวจแก้ข้อความและ speaker label ให้เรียบร้อยก่อนรับรอง ข้อมูลที่ยังไม่รับรองจะไม่ถูกนำไปสร้างหลักฐาน
         </p>
       </header>
@@ -190,7 +190,7 @@ export function AssessmentTranscriptReviewWorkspace({
         <div className="flex flex-wrap items-center justify-between gap-3">
           <div>
             <h2 id="transcript-editor-heading" className="text-lg font-semibold">ข้อความ transcript</h2>
-            <p className="mt-1 text-sm text-[color:var(--color-text-muted)]">แก้ไขได้โดยตรง ระบบจะเก็บ revision ใหม่เมื่อกดบันทึก</p>
+            <p className="mt-1 text-sm text-ink-muted">แก้ไขได้โดยตรง ระบบจะเก็บ revision ใหม่เมื่อกดบันทึก</p>
           </div>
           {isDirty ? <span className="rounded-full bg-amber-100 px-3 py-1 text-xs font-semibold text-amber-900">มีการแก้ไขที่ยังไม่บันทึก</span> : null}
         </div>
@@ -202,18 +202,18 @@ export function AssessmentTranscriptReviewWorkspace({
           onChange={(event) => setDraftContent(event.target.value)}
           disabled={busy}
           rows={14}
-          className="mt-4 min-h-72 w-full rounded-lg border border-[color:var(--color-border)] bg-white p-4 font-mono text-sm leading-7 outline-none focus-visible:ring-4 focus-visible:ring-[color:var(--color-focus-ring)] disabled:bg-[color:var(--color-surface-muted)]"
+          className="mt-4 min-h-72 w-full rounded-lg border border-line bg-white p-4 font-mono text-sm leading-7 outline-none focus-visible:ring-4 focus-visible:ring-[color:var(--color-focus-ring)] disabled:bg-surface-muted"
         />
         <div className="mt-3 flex flex-wrap items-center gap-3">
           <button
             type="button"
             disabled={busy || !isDirty || !draftContent.trim()}
             onClick={() => void saveDraft()}
-            className="rounded-lg bg-[color:var(--color-primary)] px-4 py-2 text-sm font-semibold text-white disabled:cursor-not-allowed disabled:opacity-50"
+            className="rounded-lg bg-brand px-4 py-2 text-sm font-semibold text-white disabled:cursor-not-allowed disabled:opacity-50"
           >
             {busy ? "กำลังบันทึก…" : "บันทึกฉบับร่าง"}
           </button>
-          <span className="text-xs text-[color:var(--color-text-muted)]">SHA-256: {transcript.content_sha256.slice(0, 12)}…</span>
+          <span className="text-xs text-ink-muted">SHA-256: {transcript.content_sha256.slice(0, 12)}…</span>
         </div>
       </section>
 
@@ -235,7 +235,7 @@ export function AssessmentTranscriptReviewWorkspace({
             type="button"
             disabled={!canAttest}
             onClick={() => void attestTranscript()}
-            className="mt-4 rounded-lg border border-[color:var(--color-border-strong)] px-4 py-2 text-sm font-semibold text-[color:var(--color-text-strong)] disabled:cursor-not-allowed disabled:opacity-50"
+            className="mt-4 rounded-lg border border-line-strong px-4 py-2 text-sm font-semibold text-ink disabled:cursor-not-allowed disabled:opacity-50"
           >
             {busy ? "กำลังรับรอง…" : "รับรอง transcript"}
           </button>

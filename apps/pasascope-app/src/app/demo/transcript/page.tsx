@@ -31,10 +31,10 @@ export default function DemoTranscript() {
       {/* Page Header */}
       <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
         <div>
-          <h1 className="text-3xl font-semibold tracking-[-0.03em] text-[color:var(--color-text-strong)]">
+          <h1 className="text-3xl font-semibold tracking-[-0.03em] text-ink">
             ถอดความบทสนทนา (Transcript)
           </h1>
-          <p className="mt-1 text-sm text-[color:var(--color-text-muted)]">
+          <p className="mt-1 text-sm text-ink-muted">
             ตรวจสอบความถูกต้องของบทสนทนาก่อนนำไปวิเคราะห์ฟีเจอร์ทางภาษา
           </p>
         </div>
@@ -47,34 +47,34 @@ export default function DemoTranscript() {
       </div>
 
       {/* Meta Card */}
-      <div className="grid gap-4 rounded-[var(--radius-panel)] border border-[color:var(--color-border)] bg-[color:var(--color-surface-strong)] p-4 sm:grid-cols-2 lg:grid-cols-4">
+      <div className="grid gap-4 rounded-panel border border-line bg-surface p-4 sm:grid-cols-2 lg:grid-cols-4">
         <div>
-          <p className="text-xs text-[color:var(--color-text-subtle)] font-medium">ชื่อ/รหัสจำลอง</p>
-          <p className="text-sm font-semibold text-[color:var(--color-text-strong)] mt-0.5">{meta.child}</p>
+          <p className="text-xs text-ink-subtle font-medium">ชื่อ/รหัสจำลอง</p>
+          <p className="text-sm font-semibold text-ink mt-0.5">{meta.child}</p>
         </div>
         <div>
-          <p className="text-xs text-[color:var(--color-text-subtle)] font-medium">อายุเมื่อประเมิน</p>
-          <p className="text-sm font-semibold text-[color:var(--color-text-strong)] mt-0.5">{meta.age}</p>
+          <p className="text-xs text-ink-subtle font-medium">อายุเมื่อประเมิน</p>
+          <p className="text-sm font-semibold text-ink mt-0.5">{meta.age}</p>
         </div>
         <div>
-          <p className="text-xs text-[color:var(--color-text-subtle)] font-medium">วันที่ประเมิน</p>
-          <p className="text-sm font-semibold text-[color:var(--color-text-strong)] mt-0.5">{meta.date}</p>
+          <p className="text-xs text-ink-subtle font-medium">วันที่ประเมิน</p>
+          <p className="text-sm font-semibold text-ink mt-0.5">{meta.date}</p>
         </div>
         <div>
-          <p className="text-xs text-[color:var(--color-text-subtle)] font-medium">ภาษาที่ใช้ประเมิน</p>
-          <p className="text-sm font-semibold text-[color:var(--color-text-strong)] mt-0.5">{meta.language}</p>
+          <p className="text-xs text-ink-subtle font-medium">ภาษาที่ใช้ประเมิน</p>
+          <p className="text-sm font-semibold text-ink mt-0.5">{meta.language}</p>
         </div>
       </div>
 
       {/* Chat Container */}
-      <div className="overflow-hidden rounded-[var(--radius-panel)] border border-[color:var(--color-border)] bg-white/50">
+      <div className="overflow-hidden rounded-panel border border-line bg-white/50">
         {/* Chat Header */}
-        <div className="border-b border-[color:var(--color-border)] bg-[color:var(--color-surface-muted)] px-5 py-3.5 flex items-center justify-between">
+        <div className="border-b border-line bg-surface-muted px-5 py-3.5 flex items-center justify-between">
           <div className="flex items-center gap-2">
-            <MessageSquare size={16} className="text-[color:var(--color-text-muted)]" />
-            <span className="text-sm font-semibold text-[color:var(--color-text-strong)]">บทสนทนา (12 บทพูด)</span>
+            <MessageSquare size={16} className="text-ink-muted" />
+            <span className="text-sm font-semibold text-ink">บทสนทนา (12 บทพูด)</span>
           </div>
-          <div className="flex items-center gap-4 text-xs text-[color:var(--color-text-muted)]">
+          <div className="flex items-center gap-4 text-xs text-ink-muted">
             <span className="flex items-center gap-1"><Clock size={12} /> ความยาว {meta.duration}</span>
             <span>ตอบสนอง 100%</span>
           </div>
@@ -98,14 +98,14 @@ export default function DemoTranscript() {
 
                 {/* Message Box */}
                 <div>
-                  <div className={`rounded-[var(--radius-panel)] p-4 ${
+                  <div className={`rounded-panel p-4 ${
                     isChi
-                      ? "bg-[color:var(--color-accent-soft)] text-[color:var(--color-accent-strong)] rounded-tr-none"
-                      : "bg-white text-[color:var(--color-text-strong)] border border-[color:var(--color-border)] rounded-tl-none"
+                      ? "bg-brand-soft text-brand-strong rounded-tr-none"
+                      : "bg-white text-ink border border-line rounded-tl-none"
                   }`}>
                     <p className="text-sm leading-relaxed">{line.text}</p>
                   </div>
-                  <p className={`text-xs text-[color:var(--color-text-subtle)] mt-1 ${isChi ? "text-right" : "text-left"}`}>
+                  <p className={`text-xs text-ink-subtle mt-1 ${isChi ? "text-right" : "text-left"}`}>
                     Timestamp {line.time}
                   </p>
                 </div>
@@ -116,16 +116,16 @@ export default function DemoTranscript() {
       </div>
 
       {/* Action Buttons */}
-      <div className="flex items-center justify-between border-t border-[color:var(--color-border)] pt-6">
+      <div className="flex items-center justify-between border-t border-line pt-6">
         <Link
           href="/demo/upload"
-          className="inline-flex min-h-11 items-center justify-center rounded-[var(--radius-pill)] border border-[color:var(--color-border)] bg-white px-5 text-sm font-semibold text-[color:var(--color-text-strong)] transition hover:bg-slate-50"
+          className="inline-flex min-h-11 items-center justify-center rounded-full border border-line bg-white px-5 text-sm font-semibold text-ink transition hover:bg-slate-50"
         >
           ย้อนกลับ
         </Link>
         <Link
           href="/demo/features"
-          className="inline-flex min-h-11 items-center justify-center gap-2 rounded-[var(--radius-pill)] bg-[color:var(--color-accent)] px-6 text-sm font-semibold text-white transition hover:bg-[color:var(--color-accent-strong)]"
+          className="inline-flex min-h-11 items-center justify-center gap-2 rounded-full bg-brand px-6 text-sm font-semibold text-white transition hover:bg-brand-strong"
         >
           ถัดไป: ดูผลวิเคราะห์
           <ArrowRight size={16} />

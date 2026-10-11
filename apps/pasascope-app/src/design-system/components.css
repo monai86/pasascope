@@ -50,9 +50,9 @@
     inset: 0 auto 0 0;
     width: 0.75rem;
     background:
-      linear-gradient(var(--color-accent), var(--color-accent)) 50% 18% / 2px 32% no-repeat,
-      linear-gradient(var(--color-accent), var(--color-accent)) 50% 50% / 2px 54% no-repeat,
-      linear-gradient(var(--color-accent), var(--color-accent)) 50% 82% / 2px 26% no-repeat;
+      linear-gradient(var(--color-brand), var(--color-brand)) 50% 18% / 2px 32% no-repeat,
+      linear-gradient(var(--color-brand), var(--color-brand)) 50% 50% / 2px 54% no-repeat,
+      linear-gradient(var(--color-brand), var(--color-brand)) 50% 82% / 2px 26% no-repeat;
     opacity: 0.75;
     pointer-events: none;
   }
@@ -69,9 +69,9 @@
     bottom: 0.4rem;
     width: 0.75rem;
     background:
-      linear-gradient(var(--color-accent), var(--color-accent)) 0.35rem 10% / 2px 26% no-repeat,
-      linear-gradient(var(--color-accent), var(--color-accent)) 0.35rem 50% / 2px 50% no-repeat,
-      linear-gradient(var(--color-accent), var(--color-accent)) 0.35rem 88% / 2px 20% no-repeat;
+      linear-gradient(var(--color-brand), var(--color-brand)) 0.35rem 10% / 2px 26% no-repeat,
+      linear-gradient(var(--color-brand), var(--color-brand)) 0.35rem 50% / 2px 50% no-repeat,
+      linear-gradient(var(--color-brand), var(--color-brand)) 0.35rem 88% / 2px 20% no-repeat;
     opacity: 0.65;
     pointer-events: none;
   }
@@ -90,16 +90,16 @@
     width: 3px;
     background-image: linear-gradient(
       to bottom,
-      var(--color-accent) 0%,
-      var(--color-accent) 20%,
+      var(--color-brand) 0%,
+      var(--color-brand) 20%,
       transparent 20%,
       transparent 30%,
-      var(--color-accent) 30%,
-      var(--color-accent) 60%,
+      var(--color-brand) 30%,
+      var(--color-brand) 60%,
       transparent 60%,
       transparent 70%,
-      var(--color-accent) 70%,
-      var(--color-accent) 100%
+      var(--color-brand) 70%,
+      var(--color-brand) 100%
     );
     background-size: 100% 12px;
     opacity: 0.6;

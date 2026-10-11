@@ -54,7 +54,7 @@ export function ReadinessCockpit({
     <section className="clinical-card rounded-md p-4" aria-label="SaaS readiness">
       <div className="flex flex-col gap-4 xl:flex-row xl:items-start xl:justify-between">
         <div>
-          <p className="text-xs font-bold uppercase tracking-[0.22em] text-[color:var(--color-pasa-teal)]">SaaS readiness</p>
+          <p className="text-xs font-bold uppercase tracking-[0.22em] text-brand">SaaS readiness</p>
           <div className="mt-2 flex flex-wrap items-center gap-2">
             <h2 className="text-xl font-bold text-ink">Organization readiness cockpit</h2>
             <Badge tone={summaryTone === "green" ? "green" : summaryTone === "amber" ? "amber" : "slate"}>{summaryLabel}</Badge>
@@ -100,7 +100,7 @@ function ReadinessItemCard({ item }: { item: OrganizationReadinessItem }) {
     <article className={`rounded-md border p-3 ${tone}`}>
       <div className="flex items-start justify-between gap-3">
         <h3 className="text-sm font-semibold">{item.label}</h3>
-        <span className="shrink-0 rounded-md bg-[color:var(--color-surface-reading)] px-2 py-1 text-xs font-semibold capitalize">{item.status}</span>
+        <span className="shrink-0 rounded-md bg-surface px-2 py-1 text-xs font-semibold capitalize">{item.status}</span>
       </div>
       <p className="mt-2 text-xs leading-5">{item.detail}</p>
       {evidence.length > 0 ? (
@@ -114,7 +114,7 @@ function ReadinessItemCard({ item }: { item: OrganizationReadinessItem }) {
         </div>
       ) : null}
       {item.next_action ? (
-        <p className="mt-3 rounded-md bg-[color:var(--color-surface-reading)] p-2 text-xs font-medium leading-5">
+        <p className="mt-3 rounded-md bg-surface p-2 text-xs font-medium leading-5">
           Next action: {item.next_action}
         </p>
       ) : null}
@@ -133,7 +133,7 @@ export function StatusTile({ label, value }: { label: string; value: string }) {
 
 export function StatusPill({ label, value }: { label: string; value: number }) {
   return (
-    <div className="min-w-20 rounded-md border border-line bg-[color:var(--color-surface-reading)] px-3 py-2">
+    <div className="min-w-20 rounded-md border border-line bg-surface px-3 py-2">
       <p className="text-lg font-semibold text-ink">{value}</p>
       <p className="text-xs text-slate-600">{label}</p>
     </div>
@@ -180,7 +180,7 @@ export function InvitationRow({
       {invitation.status === "pending" ? (
         <button
           type="button"
-          className="mt-3 inline-flex min-h-10 items-center gap-2 rounded-xl border border-[color:var(--color-pasa-teal-border)] bg-[color:var(--color-surface-reading)] px-3 text-sm font-semibold text-[color:var(--color-pasa-teal)] transition hover:bg-[color:var(--color-pasa-teal-soft)] disabled:opacity-50"
+          className="mt-3 inline-flex min-h-10 items-center gap-2 rounded-xl border border-brand-border bg-surface px-3 text-sm font-semibold text-brand transition hover:bg-brand-soft disabled:opacity-50"
           disabled={busy}
           onClick={onAccept}
         >
@@ -195,7 +195,7 @@ export function InvitationRow({
           </p>
           <button
             type="button"
-            className="inline-flex min-h-10 items-center gap-2 rounded-xl border border-amber-200 bg-[color:var(--color-surface-reading)] px-3 text-sm font-semibold text-amber-900 transition hover:bg-amber-50 disabled:opacity-50"
+            className="inline-flex min-h-10 items-center gap-2 rounded-xl border border-amber-200 bg-surface px-3 text-sm font-semibold text-amber-900 transition hover:bg-amber-50 disabled:opacity-50"
             disabled={busy}
             onClick={onPrepareSession}
           >
@@ -220,7 +220,7 @@ export function MembershipRow({ member, busy, onRevoke }: { member: Organization
       </div>
       <button
         type="button"
-        className="mt-3 inline-flex min-h-10 items-center gap-2 rounded-xl border border-red-200 bg-[color:var(--color-surface-reading)] px-3 text-sm font-semibold text-red-700 transition hover:bg-red-50 disabled:opacity-50"
+        className="mt-3 inline-flex min-h-10 items-center gap-2 rounded-xl border border-red-200 bg-surface px-3 text-sm font-semibold text-red-700 transition hover:bg-red-50 disabled:opacity-50"
         disabled={busy || !member.active}
         onClick={onRevoke}
       >
@@ -234,7 +234,7 @@ export function MembershipRow({ member, busy, onRevoke }: { member: Organization
 export function Guardrail({ icon: Icon, label, value }: { icon: LucideIcon; label: string; value: string }) {
   return (
     <div className="flex gap-3 rounded-xl border border-line bg-field p-3">
-      <Icon size={18} aria-hidden="true" className="mt-0.5 shrink-0 text-[color:var(--color-pasa-teal)]" />
+      <Icon size={18} aria-hidden="true" className="mt-0.5 shrink-0 text-brand" />
       <div>
         <p className="text-sm font-semibold text-ink">{label}</p>
         <p className="mt-0.5 text-xs leading-5 text-slate-600">{value}</p>
@@ -250,7 +250,7 @@ function Badge({ children, tone = "cyan" }: { children: ReactNode; tone?: "cyan"
       ? "border-amber-200 bg-amber-50 text-amber-900"
       : tone === "slate"
         ? "border-slate-200 bg-slate-50 text-slate-700"
-        : "border-[color:var(--color-pasa-teal-border)] bg-[color:var(--color-pasa-teal-soft)] text-[color:var(--color-pasa-teal)]";
+        : "border-brand-border bg-brand-soft text-brand";
   return <span className={`rounded-md border px-2 py-1 text-xs font-semibold ${className}`}>{children}</span>;
 }
 

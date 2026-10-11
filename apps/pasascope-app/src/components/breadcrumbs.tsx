@@ -20,13 +20,13 @@ export function Breadcrumbs({ items }: { items: BreadcrumbItem[] }) {
             {index > 0 ? (
               <ChevronRight
                 aria-hidden="true"
-                className="h-3.5 w-3.5 shrink-0 text-[color:var(--color-text-subtle)]"
+                className="h-3.5 w-3.5 shrink-0 text-ink-subtle"
               />
             ) : null}
             {item.href && !isLast ? (
               <Link
                 href={item.href}
-                className="-mx-1.5 -my-3 shrink-0 px-1.5 py-3 font-medium text-[color:var(--color-text-muted)] transition hover:text-[color:var(--color-accent-strong)]"
+                className="-mx-1.5 -my-3 shrink-0 px-1.5 py-3 font-medium text-ink-muted transition hover:text-brand-strong"
               >
                 {item.label}
               </Link>
@@ -34,8 +34,8 @@ export function Breadcrumbs({ items }: { items: BreadcrumbItem[] }) {
               <span
                 className={
                   isLast
-                    ? "shrink-0 font-semibold text-[color:var(--color-text-strong)]"
-                    : "shrink-0 text-[color:var(--color-text-muted)]"
+                    ? "shrink-0 font-semibold text-ink"
+                    : "shrink-0 text-ink-muted"
                 }
                 aria-current={isLast ? "page" : undefined}
               >

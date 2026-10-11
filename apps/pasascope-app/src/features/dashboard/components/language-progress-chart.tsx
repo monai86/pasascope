@@ -82,7 +82,7 @@ function ChartGeometry({
         viewBox={`0 0 ${CHART_WIDTH} ${CHART_HEIGHT}`}
         role="img"
         aria-label={`Line chart of ${points.length} value${points.length === 1 ? "" : "s"} across sessions`}
-        className="h-auto w-full text-[color:var(--color-accent-strong)]"
+        className="h-auto w-full text-brand-strong"
         preserveAspectRatio="xMidYMid meet"
       >
         {reference ? (
@@ -182,7 +182,7 @@ export function LanguageProgressChart({ trends }: { trends?: Trends }) {
 
   if (!feature || uniqueCases.length === 0) {
     return (
-      <p className="mt-4 rounded-[var(--radius-card)] border border-dashed border-[color:var(--color-border)] p-5 text-sm leading-6 text-[color:var(--color-text-muted)]">
+      <p className="mt-4 rounded-card border border-dashed border-line p-5 text-sm leading-6 text-ink-muted">
         No language-progress data yet. Extract features from a session to start
         tracking MLU, NDW, and TTR across sessions.
       </p>
@@ -196,10 +196,10 @@ export function LanguageProgressChart({ trends }: { trends?: Trends }) {
   return (
     <div className="mt-4">
       <div className="flex flex-col gap-3 sm:flex-row sm:items-end">
-        <label className="grid min-w-0 gap-1 text-sm font-medium text-[color:var(--color-text-muted)]">
+        <label className="grid min-w-0 gap-1 text-sm font-medium text-ink-muted">
           Feature
           <select
-            className="min-h-11 w-full min-w-0 max-w-full rounded-[var(--radius-card)] border border-[color:var(--color-border)] bg-[color:var(--color-surface-reading)] px-3 text-sm text-[color:var(--color-text-strong)] outline-none transition focus-visible:ring-4 focus-visible:ring-[color:var(--color-focus-ring)] sm:w-56"
+            className="min-h-11 w-full min-w-0 max-w-full rounded-card border border-line bg-surface px-3 text-sm text-ink outline-none transition focus-visible:ring-4 focus-visible:ring-[color:var(--color-focus-ring)] sm:w-56"
             value={feature.key}
             onChange={(event) => setFeatureKey(event.target.value)}
           >
@@ -211,10 +211,10 @@ export function LanguageProgressChart({ trends }: { trends?: Trends }) {
           </select>
         </label>
         {uniqueCases.length > 1 ? (
-          <label className="grid min-w-0 gap-1 text-sm font-medium text-[color:var(--color-text-muted)]">
+          <label className="grid min-w-0 gap-1 text-sm font-medium text-ink-muted">
             Case
             <select
-              className="min-h-11 w-full min-w-0 max-w-full rounded-[var(--radius-card)] border border-[color:var(--color-border)] bg-[color:var(--color-surface-reading)] px-3 text-sm text-[color:var(--color-text-strong)] outline-none transition focus-visible:ring-4 focus-visible:ring-[color:var(--color-focus-ring)] sm:w-56"
+              className="min-h-11 w-full min-w-0 max-w-full rounded-card border border-line bg-surface px-3 text-sm text-ink outline-none transition focus-visible:ring-4 focus-visible:ring-[color:var(--color-focus-ring)] sm:w-56"
               value={selectedCase.case_id}
               onChange={(event) => setCaseId(event.target.value)}
             >
@@ -226,32 +226,32 @@ export function LanguageProgressChart({ trends }: { trends?: Trends }) {
             </select>
           </label>
         ) : (
-          <p className="text-sm font-medium text-[color:var(--color-text-muted)]">
-            Case: <span className="text-[color:var(--color-text-strong)]">{singleCase?.case_label}</span>
+          <p className="text-sm font-medium text-ink-muted">
+            Case: <span className="text-ink">{singleCase?.case_label}</span>
           </p>
         )}
       </div>
 
       {points.length === 0 ? (
-        <p className="mt-5 rounded-[var(--radius-card)] border border-dashed border-[color:var(--color-border)] p-5 text-sm leading-6 text-[color:var(--color-text-muted)]">
+        <p className="mt-5 rounded-card border border-dashed border-line p-5 text-sm leading-6 text-ink-muted">
           No {feature.label.toLowerCase()} data for {selectedCase.case_label} yet.
           Extract features from a language-sample session to see it here.
         </p>
       ) : (
         <>
           {points.length === 1 ? (
-            <p className="mt-4 text-sm leading-6 text-[color:var(--color-text-muted)]">
+            <p className="mt-4 text-sm leading-6 text-ink-muted">
               One session with {feature.label.toLowerCase()} data so far — add
               more sessions to see the trend line.
             </p>
           ) : null}
           <div className="mt-4">
             <ChartGeometry points={points} reference={reference} caseId={selectedCase.case_id} />
-            <p className="mt-1 text-xs text-[color:var(--color-text-subtle)]">
+            <p className="mt-1 text-xs text-ink-subtle">
               Unit: {feature.unit} · across {points.length} session{points.length === 1 ? "" : "s"}
             </p>
             {reference && referenceMeta ? (
-              <p className="mt-1 text-xs text-[color:var(--color-text-subtle)]">
+              <p className="mt-1 text-xs text-ink-subtle">
                 Reference band (typical development, {referenceMeta.age_band} months, {referenceMeta.task_type}):{" "}
                 median {formatValue(reference.median)} · IQR {formatValue(reference.q1)}–{formatValue(reference.q3)}
               </p>
@@ -262,27 +262,27 @@ export function LanguageProgressChart({ trends }: { trends?: Trends }) {
               {feature.label} values by session for {selectedCase.case_label}
             </caption>
             <thead>
-              <tr className="border-b border-[color:var(--color-border)] text-left">
-                <th scope="col" className="py-2 pr-4 font-medium text-[color:var(--color-text-muted)]">
+              <tr className="border-b border-line text-left">
+                <th scope="col" className="py-2 pr-4 font-medium text-ink-muted">
                   Session date
                 </th>
-                <th scope="col" className="py-2 font-medium text-[color:var(--color-text-muted)]">
+                <th scope="col" className="py-2 font-medium text-ink-muted">
                   {feature.label}
                 </th>
               </tr>
             </thead>
             <tbody>
               {points.map((point) => (
-                <tr key={point.session_id} className="border-b border-[color:var(--color-border)] last:border-b-0">
+                <tr key={point.session_id} className="border-b border-line last:border-b-0">
                   <td className="py-1 pr-4">
                     <Link
                       href={sessionHref(point.session_id)}
-                      className="inline-flex min-h-11 items-center rounded-lg px-1 font-medium text-[color:var(--color-accent-strong)] transition hover:bg-[color:var(--color-accent-soft)]"
+                      className="inline-flex min-h-11 items-center rounded-lg px-1 font-medium text-brand-strong transition hover:bg-brand-soft"
                     >
                       {formatDate(point.session_date)}
                     </Link>
                   </td>
-                  <td className="py-2 font-semibold text-[color:var(--color-text-strong)]">{formatValue(point.value)}</td>
+                  <td className="py-2 font-semibold text-ink">{formatValue(point.value)}</td>
                 </tr>
               ))}
             </tbody>

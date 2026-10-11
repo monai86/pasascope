@@ -232,7 +232,7 @@ export function TranscriptEditorPanel({
         </div>
         <div className="flex shrink-0 items-center justify-end gap-2">
           <span
-            className={`inline-flex min-h-8 items-center rounded-[var(--radius-card)] border px-2.5 text-xs font-semibold ${attested ? "border-emerald-200 bg-emerald-50 text-emerald-800" : "border-amber-200 bg-amber-50 text-amber-900"}`}
+            className={`inline-flex min-h-8 items-center rounded-card border px-2.5 text-xs font-semibold ${attested ? "border-emerald-200 bg-emerald-50 text-emerald-800" : "border-amber-200 bg-amber-50 text-amber-900"}`}
             data-testid="transcript-attestation-badge"
             aria-label={attested ? "Transcript attested" : TRANSCRIPT_REVIEW_REQUIRED_LABEL}
           >
@@ -243,7 +243,7 @@ export function TranscriptEditorPanel({
             onClick={addLine}
             disabled={busy}
             aria-label="Add line"
-            className="inline-flex min-h-11 min-w-11 items-center justify-center gap-2 rounded-[var(--radius-card)] border border-clinical bg-[color:var(--color-surface-reading)] px-2 py-2 text-sm font-semibold text-clinical disabled:opacity-50 sm:px-3"
+            className="inline-flex min-h-11 min-w-11 items-center justify-center gap-2 rounded-card border border-brand bg-surface px-2 py-2 text-sm font-semibold text-brand disabled:opacity-50 sm:px-3"
           >
             <Plus size={16} aria-hidden="true" />
             <span className="hidden sm:inline">Add line</span>
@@ -252,14 +252,14 @@ export function TranscriptEditorPanel({
       </div>
 
       {/* Studio Dual-Mode Switcher */}
-      <div className="mt-3 flex items-center gap-2 border-b border-[color:var(--color-border)] pb-2 lg:col-span-2">
+      <div className="mt-3 flex items-center gap-2 border-b border-line pb-2 lg:col-span-2">
         <button
           type="button"
           onClick={() => setEditorMode("table")}
           className={`flex min-h-11 items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-semibold transition-all ${
             editorMode === "table"
-              ? "bg-[color:var(--color-accent-soft)] text-[color:var(--color-accent-strong)] shadow-xs font-bold border border-[color:var(--color-border)]"
-              : "text-[color:var(--color-text-muted)] hover:bg-[color:var(--color-surface)]"
+              ? "bg-brand-soft text-brand-strong shadow-xs font-bold border border-line"
+              : "text-ink-muted hover:bg-surface-soft"
           }`}
         >
           <Table size={14} aria-hidden="true" />
@@ -270,8 +270,8 @@ export function TranscriptEditorPanel({
           onClick={() => setEditorMode("talkbank")}
           className={`flex min-h-11 items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-semibold transition-all ${
             editorMode === "talkbank"
-              ? "bg-[color:var(--color-accent-soft)] text-[color:var(--color-accent-strong)] shadow-xs font-bold border border-[color:var(--color-border)]"
-              : "text-[color:var(--color-text-muted)] hover:bg-[color:var(--color-surface)]"
+              ? "bg-brand-soft text-brand-strong shadow-xs font-bold border border-line"
+              : "text-ink-muted hover:bg-surface-soft"
           }`}
         >
           <FileCode size={14} aria-hidden="true" />
@@ -296,7 +296,7 @@ export function TranscriptEditorPanel({
 
       <div className={`mt-4 hidden items-center justify-between gap-3 md:flex ${inspectorOpen ? "lg:col-span-2" : ""} ${editorMode === "talkbank" ? "hidden" : ""}`}>
         {inspectorOpen ? (
-          <div className="inline-flex rounded-[var(--radius-card)] border border-[color:var(--color-border)] bg-[color:var(--color-surface-reading)] p-1" aria-label="Inspector view">
+          <div className="inline-flex rounded-card border border-line bg-surface p-1" aria-label="Inspector view">
             {(["audio", "qa"] as const).map((view) => (
               <button
                 key={view}
@@ -306,7 +306,7 @@ export function TranscriptEditorPanel({
                   setInspectorView(view);
                   setQaDetailsOpen(view === "qa");
                 }}
-                className={`min-h-11 rounded-md px-4 text-sm font-semibold ${inspectorView === view ? "bg-[color:var(--color-accent-soft)] text-[color:var(--color-accent-strong)]" : "text-[color:var(--color-text-muted)]"}`}
+                className={`min-h-11 rounded-md px-4 text-sm font-semibold ${inspectorView === view ? "bg-brand-soft text-brand-strong" : "text-ink-muted"}`}
               >
                 {view === "audio" ? "Audio" : "QA"}
               </button>
@@ -317,13 +317,13 @@ export function TranscriptEditorPanel({
           type="button"
           aria-expanded={inspectorOpen}
           onClick={() => setInspectorOpen((current) => !current)}
-          className="min-h-11 rounded-[var(--radius-card)] border border-[color:var(--color-border)] bg-[color:var(--color-surface-reading)] px-4 text-sm font-semibold text-[color:var(--color-text-muted)]"
+          className="min-h-11 rounded-card border border-line bg-surface px-4 text-sm font-semibold text-ink-muted"
         >
           {inspectorOpen ? "Hide inspector" : "Show Audio and QA"}
         </button>
       </div>
 
-      <div className={`mt-4 overflow-hidden rounded-[var(--radius-panel)] border border-[color:var(--color-border)] bg-[color:var(--color-text-strong)] p-3 text-white max-md:sticky max-md:top-0 max-md:z-20 lg:col-start-2 lg:row-start-3 lg:self-start lg:bg-slate-50 lg:p-4 lg:text-ink ${!inspectorOpen ? "hidden" : inspectorView === "qa" ? "md:hidden" : ""}`} data-testid="transcript-audio-inspector">
+      <div className={`mt-4 overflow-hidden rounded-panel border border-line bg-ink p-3 text-white max-md:sticky max-md:top-0 max-md:z-20 lg:col-start-2 lg:row-start-3 lg:self-start lg:bg-slate-50 lg:p-4 lg:text-ink ${!inspectorOpen ? "hidden" : inspectorView === "qa" ? "md:hidden" : ""}`} data-testid="transcript-audio-inspector">
         <div className="flex flex-wrap items-center justify-between gap-4">
           <div>
             <h3 className="font-semibold">Session audio</h3>
@@ -341,16 +341,16 @@ export function TranscriptEditorPanel({
               aria-label="Workspace audio playback"
             />
           ) : (
-            <span className="rounded-full border border-white/25 px-3 py-1 text-xs font-semibold text-white lg:border-[color:var(--color-border)] lg:bg-[color:var(--color-surface-reading)] lg:text-slate-600">
+            <span className="rounded-full border border-white/25 px-3 py-1 text-xs font-semibold text-white lg:border-line lg:bg-surface lg:text-slate-600">
               Audio not linked
             </span>
           )}
         </div>
-        <div className="mt-4 hidden h-20 grid-cols-24 items-end gap-1 rounded-[var(--radius-card)] border border-slate-100 bg-[color:var(--color-surface-reading)] px-3 py-3 md:grid">
+        <div className="mt-4 hidden h-20 grid-cols-24 items-end gap-1 rounded-card border border-slate-100 bg-surface px-3 py-3 md:grid">
           {waveformHeights.map((height, index) => (
             <span
               key={`wave-${index}`}
-              className="rounded-full bg-[color:var(--color-accent)] opacity-80 motion-reduce:transition-none"
+              className="rounded-full bg-brand opacity-80 motion-reduce:transition-none"
               style={{ height: `${height}%` }}
               aria-hidden="true"
             />
@@ -360,21 +360,21 @@ export function TranscriptEditorPanel({
 
       <div className="min-w-0 lg:col-start-1 lg:row-start-3">
         <div className="mt-4 flex min-w-0 items-center gap-2 self-start">
-          <ListFilter size={17} aria-hidden="true" className="shrink-0 text-[color:var(--color-text-muted)]" />
+          <ListFilter size={17} aria-hidden="true" className="shrink-0 text-ink-muted" />
           <label className="sr-only" htmlFor="transcript-line-filter">Transcript line filter</label>
           <select
             id="transcript-line-filter"
             aria-label="Transcript line filter"
             value={selectedFilter}
             onChange={(event) => setSelectedFilter(event.target.value as TranscriptFilter)}
-            className="min-h-11 min-w-0 max-w-full rounded-[var(--radius-card)] border border-[color:var(--color-border)] bg-[color:var(--color-surface-reading)] px-3 text-sm font-semibold text-[color:var(--color-text-strong)] outline-none focus-visible:ring-4 focus-visible:ring-[color:var(--color-focus-ring)]"
+            className="min-h-11 min-w-0 max-w-full rounded-card border border-line bg-surface px-3 text-sm font-semibold text-ink outline-none focus-visible:ring-4 focus-visible:ring-[color:var(--color-focus-ring)]"
           >
             {transcriptFilters.map((filter) => {
               const count = lines.filter((line) => lineMatchesFilter(line, filter.id, qaStatus)).length;
               return <option key={filter.id} value={filter.id}>{filter.label} ({count})</option>;
             })}
           </select>
-          <span className="text-xs text-[color:var(--color-text-subtle)]" aria-live="polite">{visibleLines.length} shown</span>
+          <span className="text-xs text-ink-subtle" aria-live="polite">{visibleLines.length} shown</span>
         </div>
 
         <TranscriptLineList
@@ -399,12 +399,12 @@ export function TranscriptEditorPanel({
         />
 
         {lines.length === 0 ? (
-          <div className="mt-4 rounded-[var(--radius-panel)] border border-dashed border-line bg-slate-50 p-5 text-center text-sm text-slate-600">
+          <div className="mt-4 rounded-panel border border-dashed border-line bg-slate-50 p-5 text-center text-sm text-slate-600">
             Add a transcript line to begin review.
           </div>
         ) : null}
         {lines.length > 0 && visibleLines.length === 0 ? (
-          <div className="mt-4 rounded-[var(--radius-panel)] border border-dashed border-line bg-slate-50 p-5 text-center text-sm text-slate-600">
+          <div className="mt-4 rounded-panel border border-dashed border-line bg-slate-50 p-5 text-center text-sm text-slate-600">
             No lines match the current review filter.
           </div>
         ) : null}

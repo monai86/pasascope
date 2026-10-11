@@ -37,7 +37,7 @@ export function WorkspaceAccessGate({
           workspace remains blocked until the session reaches <strong>aal2</strong>.
         </p>
 
-        <div className="mt-5 rounded-2xl border border-[color:var(--color-pasa-teal-border)] bg-[color:var(--color-pasa-teal-soft)] p-4 text-sm text-[color:var(--color-pasa-teal)] shadow-2xs">
+        <div className="mt-5 rounded-2xl border border-brand-border bg-brand-soft p-4 text-sm text-brand shadow-2xs">
           <div className="flex items-start gap-3">
             <LockKeyhole size={18} aria-hidden="true" className="mt-0.5 shrink-0" />
             <div>
@@ -49,9 +49,9 @@ export function WorkspaceAccessGate({
           </div>
         </div>
 
-        <div className="mt-5 rounded-[var(--radius-panel)] border border-line bg-slate-50 p-4 text-sm text-slate-700">
+        <div className="mt-5 rounded-panel border border-line bg-slate-50 p-4 text-sm text-slate-700">
           <div className="flex items-start gap-3">
-            <ShieldCheck size={18} aria-hidden="true" className="mt-0.5 shrink-0 text-clinical" />
+            <ShieldCheck size={18} aria-hidden="true" className="mt-0.5 shrink-0 text-brand" />
             <div>
               <p className="font-semibold text-ink">Mock MFA step</p>
               <p className="mt-1">
@@ -68,7 +68,7 @@ export function WorkspaceAccessGate({
               updateMockAccessSessionAal("aal2");
               setSession(loadMockAccessSession());
             }}
-            className="inline-flex min-h-11 items-center justify-center rounded-full bg-clinical px-5 text-sm font-semibold text-white"
+            className="inline-flex min-h-11 items-center justify-center rounded-full bg-brand px-5 text-sm font-semibold text-white"
           >
             Complete mock MFA
           </button>

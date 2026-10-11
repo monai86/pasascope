@@ -26,10 +26,10 @@ export function ActiveOrganizationSummary({ compact = false }: { compact?: boole
   const [session, setSession] = useState<MockAccessSession | null>(null);
   const [supabaseSession, setSupabaseSession] = useState<SupabaseAccessSession | null>(null);
   const [switchMessage, setSwitchMessage] = useState("");
-  const containerClassName = `min-w-0 rounded-[var(--radius-card)] border border-[color:var(--color-border)] bg-[color:var(--color-surface-reading)] text-sm ${compact ? "px-3 py-2" : "px-4 py-3"}`;
+  const containerClassName = `min-w-0 rounded-card border border-line bg-surface text-sm ${compact ? "px-3 py-2" : "px-4 py-3"}`;
   const contextClassName = compact
     ? "sr-only"
-    : "truncate text-xs text-[color:var(--color-text-muted)]";
+    : "truncate text-xs text-ink-muted";
 
   useEffect(() => {
     const syncSession = () => setSession(loadMockAccessSession());
@@ -56,9 +56,9 @@ export function ActiveOrganizationSummary({ compact = false }: { compact?: boole
     return (
       <div className={containerClassName}>
         <div className="flex items-center gap-2">
-          <Building2 size={15} aria-hidden="true" className="text-[color:var(--color-accent-strong)]" />
+          <Building2 size={15} aria-hidden="true" className="text-brand-strong" />
           <div className="min-w-0">
-            <p className="truncate font-semibold text-[color:var(--color-text-strong)]">{organizationLabel}</p>
+            <p className="truncate font-semibold text-ink">{organizationLabel}</p>
             <p className={contextClassName}>{contextLabel}</p>
           </div>
         </div>
@@ -75,18 +75,18 @@ export function ActiveOrganizationSummary({ compact = false }: { compact?: boole
     return (
       <div className={containerClassName}>
         <div className="flex items-center gap-2">
-          <Building2 size={15} aria-hidden="true" className="text-[color:var(--color-accent-strong)]" />
+          <Building2 size={15} aria-hidden="true" className="text-brand-strong" />
           <div className="min-w-0">
-            <p className="truncate font-semibold text-[color:var(--color-text-strong)]">{organizationLabel}</p>
+            <p className="truncate font-semibold text-ink">{organizationLabel}</p>
             <p className={contextClassName}>Active organization session</p>
           </div>
         </div>
         {canSwitch ? (
-          <div className="mt-3 grid gap-2 text-xs text-[color:var(--color-text-muted)]">
+          <div className="mt-3 grid gap-2 text-xs text-ink-muted">
             <span className="font-semibold uppercase tracking-[0.08em]">Switch active org</span>
             <button
               type="button"
-              className="min-h-10 rounded-[var(--radius-card)] border border-[color:var(--color-border-strong)] bg-[color:var(--color-surface-muted)] px-3 text-sm text-[color:var(--color-text-strong)]"
+              className="min-h-10 rounded-card border border-line-strong bg-surface-muted px-3 text-sm text-ink"
               onClick={() => {
                 beginSupabaseBrowserOrganizationSwitch();
                 setSwitchMessage("Choose the next active organization before workspace access resumes.");
@@ -112,18 +112,18 @@ export function ActiveOrganizationSummary({ compact = false }: { compact?: boole
   return (
     <div className={containerClassName}>
       <div className="flex items-center gap-2">
-        <Building2 size={15} aria-hidden="true" className="text-[color:var(--color-accent-strong)]" />
+        <Building2 size={15} aria-hidden="true" className="text-brand-strong" />
         <div className="min-w-0">
-          <p className="truncate font-semibold text-[color:var(--color-text-strong)]">{resolveOrganizationLabel(organizationId)}</p>
+          <p className="truncate font-semibold text-ink">{resolveOrganizationLabel(organizationId)}</p>
           <p className={contextClassName}>Active organization session</p>
         </div>
       </div>
       {requiresExplicitSelection ? (
-        <label className="mt-3 grid gap-1 text-xs text-[color:var(--color-text-muted)]">
+        <label className="mt-3 grid gap-1 text-xs text-ink-muted">
           <span className="font-semibold uppercase tracking-[0.08em]">Switch active org</span>
           <select
             aria-label="Switch active organization"
-            className="min-h-10 rounded-[var(--radius-card)] border border-[color:var(--color-border-strong)] bg-[color:var(--color-surface-muted)] px-3 text-sm text-[color:var(--color-text-strong)] outline-none focus:ring-2 focus:ring-[color:var(--color-focus-ring)]"
+            className="min-h-10 rounded-card border border-line-strong bg-surface-muted px-3 text-sm text-ink outline-none focus:ring-2 focus:ring-[color:var(--color-focus-ring)]"
             value={organizationId}
             onChange={(event) => {
               updateMockAccessSessionOrganizationId(event.target.value);

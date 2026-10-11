@@ -110,7 +110,7 @@ export function SessionFindingsView({
           context={sessionContext}
         />
         <WorkspacePanel className="p-8 text-center">
-          <FileSearch className="mx-auto text-clinical" size={38} aria-hidden="true" />
+          <FileSearch className="mx-auto text-brand" size={38} aria-hidden="true" />
           <h2 className="mt-3 text-xl font-bold text-ink">No analysis results yet</h2>
           <p className="mx-auto mt-2 max-w-lg text-sm leading-6 text-slate-600">
             Add a transcript, complete therapist review and attestation, then extract language-sample features.
@@ -178,8 +178,8 @@ export function SessionFindingsView({
         <section className="space-y-4">
           <div className="flex flex-wrap items-center justify-between gap-3">
             <div>
-              <h2 className="text-base font-semibold text-[color:var(--color-text-strong)]">Linguistic Signals</h2>
-              <p className="mt-2 text-sm leading-6 text-[color:var(--color-text-muted)]">
+              <h2 className="text-base font-semibold text-ink">Linguistic Signals</h2>
+              <p className="mt-2 text-sm leading-6 text-ink-muted">
                 {findingsStale
                   ? "Prior derived values are hidden until findings are regenerated from the current transcript."
                   : `Backend feature values are shown as descriptive cues only. ${THERAPIST_INTERPRETATION_IS_REQUIRED_CLAUSE} for any clinical use.`}
@@ -197,7 +197,7 @@ export function SessionFindingsView({
                   {busy ? "Generating..." : GENERATE_EVIDENCE_REVIEW_ACTION}
                 </PrimaryActionButton>
                 {evidenceReviewReason ? (
-                  <p id="generate-evidence-review-reason" role="status" className="rounded-[var(--radius-card)] border border-amber-200 bg-amber-50 px-3 py-2 text-sm font-semibold text-amber-900">
+                  <p id="generate-evidence-review-reason" role="status" className="rounded-card border border-amber-200 bg-amber-50 px-3 py-2 text-sm font-semibold text-amber-900">
                     {evidenceReviewReason}
                   </p>
                 ) : null}
@@ -209,48 +209,48 @@ export function SessionFindingsView({
           ) : null}
         </section>
 
-        <section aria-labelledby="findings-workflow-summary-title" className="overflow-hidden rounded-[var(--radius-panel)] border border-[color:var(--color-border)] bg-[color:var(--color-border)]">
-          <div className="bg-[color:var(--color-surface-reading)] px-4 py-3">
-            <h2 id="findings-workflow-summary-title" className="text-sm font-semibold text-[color:var(--color-text-strong)]">Workflow summary</h2>
+        <section aria-labelledby="findings-workflow-summary-title" className="overflow-hidden rounded-panel border border-line bg-line">
+          <div className="bg-surface px-4 py-3">
+            <h2 id="findings-workflow-summary-title" className="text-sm font-semibold text-ink">Workflow summary</h2>
           </div>
           <dl className="grid gap-px sm:grid-cols-2 xl:grid-cols-4">
-            <div className="bg-[color:var(--color-surface-strong)] px-4 py-3">
-              <dt className="text-xs font-medium uppercase tracking-[0.08em] text-[color:var(--color-text-subtle)]">Transcript quality</dt>
-              <dd className="mt-1 font-semibold text-[color:var(--color-text-strong)]">{transcriptQualityLabel(state)}</dd>
-              <p className="mt-1 text-xs leading-5 text-[color:var(--color-text-muted)]">{state.qaSummary ?? THERAPIST_REVIEW_REMAINS_REQUIRED}</p>
+            <div className="bg-surface px-4 py-3">
+              <dt className="text-xs font-medium uppercase tracking-[0.08em] text-ink-subtle">Transcript quality</dt>
+              <dd className="mt-1 font-semibold text-ink">{transcriptQualityLabel(state)}</dd>
+              <p className="mt-1 text-xs leading-5 text-ink-muted">{state.qaSummary ?? THERAPIST_REVIEW_REMAINS_REQUIRED}</p>
             </div>
-            <div className="bg-[color:var(--color-surface-strong)] px-4 py-3">
-              <dt className="text-xs font-medium uppercase tracking-[0.08em] text-[color:var(--color-text-subtle)]">Features extracted</dt>
-              <dd className="mt-1 font-semibold text-[color:var(--color-text-strong)]">{currentFindingsState.featuresExtracted ? `${signalCards.length} signals` : "Pending"}</dd>
-              <p className="mt-1 text-xs leading-5 text-[color:var(--color-text-muted)]">{currentFindingsState.featuresExtracted ? "Backend values available for review." : `Run ${EXTRACT_FEATURES_ACTION} on the reviewed transcript.`}</p>
+            <div className="bg-surface px-4 py-3">
+              <dt className="text-xs font-medium uppercase tracking-[0.08em] text-ink-subtle">Features extracted</dt>
+              <dd className="mt-1 font-semibold text-ink">{currentFindingsState.featuresExtracted ? `${signalCards.length} signals` : "Pending"}</dd>
+              <p className="mt-1 text-xs leading-5 text-ink-muted">{currentFindingsState.featuresExtracted ? "Backend values available for review." : `Run ${EXTRACT_FEATURES_ACTION} on the reviewed transcript.`}</p>
             </div>
-            <div className="bg-[color:var(--color-surface-strong)] px-4 py-3">
-              <dt className="text-xs font-medium uppercase tracking-[0.08em] text-[color:var(--color-text-subtle)]">Review flags</dt>
-              <dd className="mt-1 font-semibold text-[color:var(--color-text-strong)]">{totalReviewFlags(currentFindingsState)}</dd>
-              <p className="mt-1 text-xs leading-5 text-[color:var(--color-text-muted)]">{totalReviewFlags(currentFindingsState) > 0 ? "Review flagged items before drafting." : "No additional flags are open."}</p>
+            <div className="bg-surface px-4 py-3">
+              <dt className="text-xs font-medium uppercase tracking-[0.08em] text-ink-subtle">Review flags</dt>
+              <dd className="mt-1 font-semibold text-ink">{totalReviewFlags(currentFindingsState)}</dd>
+              <p className="mt-1 text-xs leading-5 text-ink-muted">{totalReviewFlags(currentFindingsState) > 0 ? "Review flagged items before drafting." : "No additional flags are open."}</p>
             </div>
-            <div className="bg-[color:var(--color-surface-strong)] px-4 py-3">
-              <dt className="text-xs font-medium uppercase tracking-[0.08em] text-[color:var(--color-text-subtle)]">Report readiness</dt>
-              <dd className="mt-1 font-semibold text-[color:var(--color-text-strong)]">{reportReady ? "Ready" : "Blocked"}</dd>
-              <p className="mt-1 text-xs leading-5 text-[color:var(--color-text-muted)]">{reportReady ? "Workflow gates passed for a draft." : "Reviewed transcript and current findings required."}</p>
+            <div className="bg-surface px-4 py-3">
+              <dt className="text-xs font-medium uppercase tracking-[0.08em] text-ink-subtle">Report readiness</dt>
+              <dd className="mt-1 font-semibold text-ink">{reportReady ? "Ready" : "Blocked"}</dd>
+              <p className="mt-1 text-xs leading-5 text-ink-muted">{reportReady ? "Workflow gates passed for a draft." : "Reviewed transcript and current findings required."}</p>
             </div>
           </dl>
         </section>
 
         <ProgressSummaryCard state={state} aiReview={state.aiReview} busy={busy} onGenerateAiReview={onGenerateAiReview} />
 
-        <details className="responsive-details rounded-[var(--radius-shell)] border border-[color:var(--color-border)] bg-[color:var(--color-surface-reading)]">
+        <details className="responsive-details rounded-shell border border-line bg-surface">
           <summary className="flex min-h-14 cursor-pointer items-center justify-between gap-3 px-5 py-3">
             <span>
-              <span className="block font-semibold text-[color:var(--color-text-strong)]">Technical provenance</span>
-              <span className="mt-0.5 block text-sm text-[color:var(--color-text-muted)]">Versions and backend source identifiers</span>
+              <span className="block font-semibold text-ink">Technical provenance</span>
+              <span className="mt-0.5 block text-sm text-ink-muted">Versions and backend source identifiers</span>
             </span>
             <span className={`rounded-full px-3 py-1 text-xs font-semibold ${findingsCurrent ? "bg-emerald-100 text-emerald-900" : "bg-amber-100 text-amber-950"}`}>
               {analysisDispositionLabel(state.analysisStatus)}
             </span>
           </summary>
-          <section aria-label="Findings provenance" className="border-t border-[color:var(--color-border)] p-5">
-            <p className="text-sm leading-6 text-[color:var(--color-text-muted)]">
+          <section aria-label="Findings provenance" className="border-t border-line p-5">
+            <p className="text-sm leading-6 text-ink-muted">
               Versions identify the reviewed inputs behind these descriptive cues. Missing metadata is never inferred.
             </p>
             <dl className="mt-4 grid gap-3 sm:grid-cols-2 xl:grid-cols-5">
@@ -281,12 +281,12 @@ export function SessionFindingsView({
           />
 
           <div className="space-y-6">
-            <section className="rounded-[var(--radius-shell)] border border-[color:var(--color-border)] bg-[color:var(--color-surface-reading)] p-6">
-              <h2 className="text-xl font-semibold text-[color:var(--color-text-strong)]">Action panel</h2>
+            <section className="rounded-shell border border-line bg-surface p-6">
+              <h2 className="text-xl font-semibold text-ink">Action panel</h2>
               <div className="mt-4 space-y-3">
                 <button
                   type="button"
-                  className="flex min-h-11 w-full items-center justify-center rounded-[var(--radius-card)] border border-[color:var(--color-border)] bg-[color:var(--color-surface-strong)] px-4 py-3 text-sm font-semibold text-[color:var(--color-text-strong)] disabled:cursor-not-allowed disabled:opacity-50"
+                  className="flex min-h-11 w-full items-center justify-center rounded-card border border-line bg-surface px-4 py-3 text-sm font-semibold text-ink disabled:cursor-not-allowed disabled:opacity-50"
                   onClick={() => onApproveReviewedCues()}
                   disabled={busy || findingsStale || (!currentFindingsState.mlDecisionSupport && signalCards.length === 0)}
                   aria-describedby={approveCuesReason ? "approve-reviewed-cues-reason" : undefined}
@@ -294,7 +294,7 @@ export function SessionFindingsView({
                   Approve reviewed cues
                 </button>
                 {approveCuesReason ? (
-                  <p id="approve-reviewed-cues-reason" role="status" className="rounded-[var(--radius-card)] border border-amber-200 bg-amber-50 px-3 py-2 text-sm font-semibold text-amber-900">
+                  <p id="approve-reviewed-cues-reason" role="status" className="rounded-card border border-amber-200 bg-amber-50 px-3 py-2 text-sm font-semibold text-amber-900">
                     {approveCuesReason}
                   </p>
                 ) : null}
@@ -303,7 +303,7 @@ export function SessionFindingsView({
                 </PrimaryActionButton>
                 <button
                   type="button"
-                  className="flex min-h-11 w-full items-center justify-center rounded-[var(--radius-card)] bg-[color:var(--color-accent-strong)] px-4 py-3 text-sm font-semibold text-white disabled:cursor-not-allowed disabled:opacity-50"
+                  className="flex min-h-11 w-full items-center justify-center rounded-card bg-brand-strong px-4 py-3 text-sm font-semibold text-white disabled:cursor-not-allowed disabled:opacity-50"
                   onClick={onGenerateReport}
                   disabled={busy || !reportReady}
                   data-testid="generate-report-button"
@@ -323,14 +323,14 @@ export function SessionFindingsView({
               ) : null}
             </section>
 
-            <section className="rounded-[var(--radius-shell)] border border-[color:var(--color-border)] bg-[color:var(--color-surface-reading)] p-6">
-              <h2 className="text-xl font-semibold text-[color:var(--color-text-strong)]">Therapist-editable interpretation draft</h2>
-              <p className="mt-2 text-sm leading-6 text-[color:var(--color-text-muted)]">
+            <section className="rounded-shell border border-line bg-surface p-6">
+              <h2 className="text-xl font-semibold text-ink">Therapist-editable interpretation draft</h2>
+              <p className="mt-2 text-sm leading-6 text-ink-muted">
                 Draft wording only. Edit this text before using it in any report or clinical documentation.
               </p>
               <textarea
                 aria-label="Therapist-editable interpretation draft"
-                className="mt-4 min-h-48 w-full rounded-[var(--radius-panel)] border border-[color:var(--color-border)] bg-[color:var(--color-surface-strong)] p-4 text-sm leading-6 text-[color:var(--color-text-strong)]"
+                className="mt-4 min-h-48 w-full rounded-panel border border-line bg-surface p-4 text-sm leading-6 text-ink"
                 value={interpretationDraft}
                 readOnly={findingsStale}
                 onChange={(event) => setInterpretationDraft(event.target.value)}
@@ -346,26 +346,26 @@ export function SessionFindingsView({
         title="Safety & limitations"
         description="Interpret descriptive cues in context; limitations remain attached to each feature."
       >
-        <div className="rounded-[var(--radius-panel)] border border-[color:var(--color-border)] bg-[color:var(--color-surface-strong)] p-4">
-          <h3 className="text-sm font-semibold text-[color:var(--color-text-strong)]">Review readiness</h3>
-          <ul className="mt-3 space-y-2 text-sm text-[color:var(--color-text-muted)]">
+        <div className="rounded-panel border border-line bg-surface p-4">
+          <h3 className="text-sm font-semibold text-ink">Review readiness</h3>
+          <ul className="mt-3 space-y-2 text-sm text-ink-muted">
             <li>{state.transcriptAttested ? "Transcript attested" : "Transcript attestation required"}</li>
             <li>{currentFindingsState.featuresExtracted ? `${FEATURE_EXTRACTION_NOUN} complete` : `${FEATURE_EXTRACTION_NOUN} pending`}</li>
             <li>{currentFindingsState.mlReadiness?.ready === false ? "Evidence readiness check still blocked" : "Evidence readiness check can proceed"}</li>
           </ul>
         </div>
-        <div className="rounded-[var(--radius-panel)] border border-[color:var(--color-border)] bg-[color:var(--color-surface-strong)] p-4">
-          <h3 className="text-sm font-semibold text-[color:var(--color-text-strong)]">Reference status</h3>
-          <p className="mt-2 text-sm leading-6 text-[color:var(--color-text-muted)]">
+        <div className="rounded-panel border border-line bg-surface p-4">
+          <h3 className="text-sm font-semibold text-ink">Reference status</h3>
+          <p className="mt-2 text-sm leading-6 text-ink-muted">
             {missingReferenceData ? "Reference comparison unavailable" : "Reference comparisons are shown only when the backend provides supporting data."}
           </p>
         </div>
-        <details className="responsive-details rounded-[var(--radius-panel)] border border-[color:var(--color-border)] bg-[color:var(--color-surface-strong)]">
-          <summary className="flex min-h-11 cursor-pointer items-center justify-between gap-3 px-4 text-sm font-semibold text-[color:var(--color-text-strong)]">
+        <details className="responsive-details rounded-panel border border-line bg-surface">
+          <summary className="flex min-h-11 cursor-pointer items-center justify-between gap-3 px-4 text-sm font-semibold text-ink">
             <span>Limitations</span>
             <span aria-hidden="true">›</span>
           </summary>
-          <ul className="border-t border-[color:var(--color-border)] px-4 py-3 pl-9 text-sm text-[color:var(--color-text-muted)]">
+          <ul className="border-t border-line px-4 py-3 pl-9 text-sm text-ink-muted">
             {(currentFindingsState.mlDecisionSupport?.limitations.length
               ? currentFindingsState.mlDecisionSupport.limitations
               : [

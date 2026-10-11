@@ -6,8 +6,8 @@ export default function AssistantPage() {
   return (
     <AppShell active="Today">
       <div className="mx-auto max-w-3xl py-8">
-        <section className="rounded-2xl border border-[color:var(--color-pasa-teal-border)] bg-[color:var(--color-surface-reading)] p-8 shadow-xs">
-          <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-[color:var(--color-pasa-teal-soft)] text-[color:var(--color-pasa-teal)]">
+        <section className="rounded-2xl border border-brand-border bg-surface p-8 shadow-xs">
+          <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-brand-soft text-brand">
             <Sparkles className="h-6 w-6" />
           </div>
 
@@ -16,16 +16,16 @@ export default function AssistantPage() {
               <ShieldCheck className="h-3.5 w-3.5" />
               Integrated Clinical Decision Support
             </span>
-            <h1 className="mt-3 text-2xl font-extrabold tracking-tight text-[color:var(--color-text-strong)] sm:text-3xl">
+            <h1 className="mt-3 text-2xl font-extrabold tracking-tight text-ink sm:text-3xl">
               AI Decision Support has moved to Session Findings
             </h1>
-            <p className="mt-3 text-sm leading-relaxed text-[color:var(--color-text-muted)]">
+            <p className="mt-3 text-sm leading-relaxed text-ink-muted">
               เพื่อความถูกต้องทางคลินิกและการป้องกันข้อมูลรั่วไหล ระบบ AI Assistant สำหรับวิเคราะห์ตัวชี้วัดภาษาไทย (Thai LSA Pragmatics) และการร่างข้อความรายงาน (Clinical Narrative Drafting) ได้รับการผสานรวมเข้ากับหน้า Session Workspace โดยตรงแล้ว
             </p>
           </div>
 
-          <div className="mt-6 rounded-xl border border-[color:var(--color-border)] bg-[color:var(--color-surface)] p-4 text-xs leading-relaxed text-[color:var(--color-text-muted)]">
-            <p className="font-semibold text-[color:var(--color-text-strong)]">
+          <div className="mt-6 rounded-xl border border-line bg-surface-soft p-4 text-xs leading-relaxed text-ink-muted">
+            <p className="font-semibold text-ink">
               ฟังก์ชันที่ย้ายไปยัง Session Workspace:
             </p>
             <ul className="mt-2 list-inside list-disc space-y-1">
@@ -38,14 +38,14 @@ export default function AssistantPage() {
           <div className="mt-8 flex flex-wrap gap-3">
             <Link
               href="/today"
-              className="inline-flex min-h-11 items-center justify-center gap-2 rounded-xl bg-[color:var(--color-pasa-teal)] px-5 text-sm font-semibold text-white shadow-xs transition hover:bg-[color:var(--color-pasa-teal-hover)]"
+              className="inline-flex min-h-11 items-center justify-center gap-2 rounded-xl bg-brand px-5 text-sm font-semibold text-white shadow-xs transition hover:bg-brand-hover"
             >
               <span>ไปยังคิวงานวันนี้ (Today Queue)</span>
               <ArrowRight className="h-4 w-4" />
             </Link>
             <Link
               href="/sessions/session_demo_001?view=findings"
-              className="inline-flex min-h-11 items-center justify-center gap-2 rounded-xl border border-[color:var(--color-pasa-teal-border)] bg-[color:var(--color-pasa-teal-soft)] px-5 text-sm font-semibold text-[color:var(--color-pasa-teal)] shadow-2xs transition hover:bg-[color:var(--color-pasa-teal)] hover:text-white"
+              className="inline-flex min-h-11 items-center justify-center gap-2 rounded-xl border border-brand-border bg-brand-soft px-5 text-sm font-semibold text-brand shadow-2xs transition hover:bg-brand hover:text-white"
             >
               <FileText className="h-4 w-4" />
               <span>เปิดดูตัวอย่าง Findings AI Review</span>

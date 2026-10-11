@@ -14,7 +14,7 @@ import {
 
 export default function LoginPage() {
   return (
-    <main className="min-h-dvh bg-gradient-to-br from-[#f2f7f4] via-[#edf3f0] to-[#e4ede8] text-[color:var(--color-text-strong)] flex flex-col justify-between p-3 sm:p-5 lg:p-7 selection:bg-emerald-500/20 font-sans">
+    <main className="min-h-dvh bg-gradient-to-br from-[#f2f7f4] via-[#edf3f0] to-[#e4ede8] text-ink flex flex-col justify-between p-3 sm:p-5 lg:p-7 selection:bg-emerald-500/20 font-sans">
       {/* 1. TOP BAR HEADER */}
       <header className="mx-auto w-full max-w-7xl flex flex-wrap items-center justify-between gap-3 pb-4 border-b border-slate-200/60">
         <div className="flex items-center gap-3">

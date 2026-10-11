@@ -37,8 +37,8 @@ export function CasesWorkspaceClient({ caseId, intent, preselectedCaseId, initia
   if (model.status === "unavailable") {
     return (
       <section className="workspace-panel p-5" role="alert">
-        <h1 className="text-xl font-semibold text-[color:var(--color-text-strong)]">Cases are unavailable</h1>
-        <p className="mt-2 text-sm text-[color:var(--color-text-muted)]">
+        <h1 className="text-xl font-semibold text-ink">Cases are unavailable</h1>
+        <p className="mt-2 text-sm text-ink-muted">
           The backend cases service could not be reached. Try again when the service is available.
         </p>
       </section>
@@ -48,8 +48,8 @@ export function CasesWorkspaceClient({ caseId, intent, preselectedCaseId, initia
   if (model.status === "error") {
     return (
       <section className="workspace-panel p-5" role="alert">
-        <h1 className="text-xl font-semibold text-[color:var(--color-text-strong)]">Case could not be loaded</h1>
-        <p className="mt-2 text-sm text-[color:var(--color-text-muted)]">
+        <h1 className="text-xl font-semibold text-ink">Case could not be loaded</h1>
+        <p className="mt-2 text-sm text-ink-muted">
           The requested backend case was not returned. Check the case link or try again.
         </p>
       </section>
@@ -72,9 +72,9 @@ function CaseListSkeleton() {
   return (
     <section className="workspace-panel p-4">
       <div className="space-y-3 animate-pulse motion-reduce:animate-none">
-        <div className="h-12 rounded-[var(--radius-card)] bg-[color:var(--color-surface-muted)]" />
-        <div className="h-12 rounded-[var(--radius-card)] bg-[color:var(--color-surface-muted)]" />
-        <div className="h-12 rounded-[var(--radius-card)] bg-[color:var(--color-surface-muted)]" />
+        <div className="h-12 rounded-card bg-surface-muted" />
+        <div className="h-12 rounded-card bg-surface-muted" />
+        <div className="h-12 rounded-card bg-surface-muted" />
       </div>
     </section>
   );

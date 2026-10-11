@@ -46,7 +46,7 @@ export function TranscriptionJobStatusPanel({
 
   return (
     <div role="region" aria-label="Transcription job status" aria-live="polite"
-      className="rounded-[var(--radius-panel)] border border-slate-200 bg-[color:var(--color-surface-reading)] p-5 space-y-4">
+      className="rounded-panel border border-slate-200 bg-surface p-5 space-y-4">
       <div className={`flex items-center gap-2 font-semibold ${cfg.color}`}>
         {cfg.icon}<span>{cfg.label}</span>
       </div>
@@ -63,26 +63,26 @@ export function TranscriptionJobStatusPanel({
         <p className="text-xs text-slate-500">Transcribed by: {PROVIDER_LABELS[actualProvider] ?? actualProvider}</p>
       )}
       {isSuccess && (
-        <div className="rounded-[var(--radius-card)] border border-amber-200 bg-amber-50 p-3 text-sm text-amber-900">
+        <div className="rounded-card border border-amber-200 bg-amber-50 p-3 text-sm text-amber-900">
           <strong>Draft ASR transcript.</strong> {THERAPIST_REVIEW_REQUIRED_CLAUSE} before feature extraction.
         </div>
       )}
       <div className="flex flex-wrap gap-2">
         {isSuccess && onOpenTranscript && (
           <button type="button" id="btn-open-draft-transcript" onClick={onOpenTranscript}
-            className="inline-flex items-center gap-2 rounded-[var(--radius-card)] bg-[color:var(--color-accent)] px-5 py-2.5 text-sm font-semibold text-white">
+            className="inline-flex items-center gap-2 rounded-card bg-brand px-5 py-2.5 text-sm font-semibold text-white">
             Review transcript
           </button>
         )}
         {isError && onRetry && (
           <button type="button" onClick={onRetry}
-            className="inline-flex items-center gap-2 rounded-[var(--radius-card)] border border-slate-300 bg-[color:var(--color-surface-reading)] px-4 py-2 text-sm font-semibold text-slate-700">
+            className="inline-flex items-center gap-2 rounded-card border border-slate-300 bg-surface px-4 py-2 text-sm font-semibold text-slate-700">
             <RefreshCw size={15} /> Retry
           </button>
         )}
         {isError && onUsePaste && (
           <button type="button" onClick={onUsePaste}
-            className="inline-flex items-center gap-2 rounded-[var(--radius-card)] border border-clinical px-4 py-2 text-sm font-semibold text-clinical">
+            className="inline-flex items-center gap-2 rounded-card border border-brand px-4 py-2 text-sm font-semibold text-brand">
             Use manual paste instead
           </button>
         )}

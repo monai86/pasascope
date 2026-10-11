@@ -13,13 +13,13 @@ export function SessionStepper() {
           <li key={step.name} className="clinical-card rounded-md p-4">
             <div className="flex flex-wrap items-start justify-between gap-3">
               <div className="flex items-start gap-3">
-                <span className="mt-1 grid h-8 w-8 shrink-0 place-items-center rounded-md border border-line bg-field text-clinical">
+                <span className="mt-1 grid h-8 w-8 shrink-0 place-items-center rounded-md border border-line bg-field text-brand">
                   <Icon size={18} aria-hidden="true" />
                 </span>
                 <div>
                   <h2 className="text-base font-semibold">{index + 1}. {step.name}</h2>
                   <p className="mt-1 text-sm text-slate-600">{step.action}</p>
-                  <p className="mt-2 flex items-start gap-2 text-xs text-safety">
+                  <p className="mt-2 flex items-start gap-2 text-xs text-[color:var(--color-warning-text)]">
                     <ClipboardCheck size={14} aria-hidden="true" />
                     {step.warning}
                   </p>
@@ -27,7 +27,7 @@ export function SessionStepper() {
               </div>
               <StatusBadge status={step.status} />
             </div>
-            <p className="mt-4 text-sm font-medium text-clinical">Next action: {step.action}</p>
+            <p className="mt-4 text-sm font-medium text-brand">Next action: {step.action}</p>
           </li>
         );
       })}

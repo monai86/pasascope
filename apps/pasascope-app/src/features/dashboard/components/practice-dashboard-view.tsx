@@ -50,20 +50,20 @@ export function PracticeDashboardView({ summary }: { summary: DashboardSummary }
       />
 
       {/* 4 Core Pillars Architecture & Quick Action Cards */}
-      <section aria-label="Core workflow pillars" className="rounded-2xl border border-[color:var(--color-border)] bg-[color:var(--color-surface-reading)] p-6 shadow-2xs">
+      <section aria-label="Core workflow pillars" className="rounded-2xl border border-line bg-surface p-6 shadow-2xs">
         <div className="flex flex-wrap items-center justify-between gap-3 pb-4 border-b border-[color:var(--color-border)]/60">
           <div>
-            <h2 className="text-xl font-bold tracking-tight text-[color:var(--color-text-strong)]">
+            <h2 className="text-xl font-bold tracking-tight text-ink">
               ขั้นตอนการทำงาน
             </h2>
-            <p className="text-xs text-[color:var(--color-text-muted)] mt-0.5">
+            <p className="text-xs text-ink-muted mt-0.5">
               เข้าถึง 4 ขั้นตอนหลักของระบบเพื่อเริ่มการประเมินหรือดูผลสรุป
             </p>
           </div>
           <div className="flex items-center gap-2">
             <Link
               href="/sessions/session_demo_001?view=findings"
-              className="inline-flex min-h-10 items-center gap-2 rounded-xl bg-[color:var(--color-pasa-teal)] px-4 text-xs font-bold text-white shadow-xs hover:bg-[color:var(--color-pasa-teal-hover)] transition"
+              className="inline-flex min-h-10 items-center gap-2 rounded-xl bg-brand px-4 text-xs font-bold text-white shadow-xs hover:bg-brand-hover transition"
             >
               <Activity className="h-3.5 w-3.5" />
               <span>ทดลองดูผลวิเคราะห์ตัวอย่าง (Demo Case)</span>
@@ -73,25 +73,25 @@ export function PracticeDashboardView({ summary }: { summary: DashboardSummary }
 
         <div className="mt-5 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
           {/* Pillar 1: Dashboard */}
-          <div className="flex flex-col justify-between rounded-xl border border-[color:var(--color-pasa-teal-border)] bg-[color:var(--color-pasa-teal-soft)]/50 p-4 transition hover:shadow-xs">
+          <div className="flex flex-col justify-between rounded-xl border border-brand-border bg-[color:var(--color-brand-soft)]/50 p-4 transition hover:shadow-xs">
             <div>
               <div className="flex items-center justify-between">
-                <span className="flex h-9 w-9 items-center justify-center rounded-lg bg-[color:var(--color-pasa-teal)] text-white shadow-2xs">
+                <span className="flex h-9 w-9 items-center justify-center rounded-lg bg-brand text-white shadow-2xs">
                   <LayoutDashboard className="h-4 w-4" />
                 </span>
-                <span className="text-xs font-bold text-[color:var(--color-pasa-teal)] bg-white px-2 py-0.5 rounded-full border border-[color:var(--color-pasa-teal-border)]">
+                <span className="text-xs font-bold text-brand bg-white px-2 py-0.5 rounded-full border border-brand-border">
                   หน้าปัจจุบัน
                 </span>
               </div>
-              <h3 className="mt-3 text-sm font-bold text-[color:var(--color-text-strong)]">
+              <h3 className="mt-3 text-sm font-bold text-ink">
                 1. แดชบอร์ดภาพรวม
               </h3>
-              <p className="mt-1 text-xs text-[color:var(--color-text-muted)] leading-relaxed">
+              <p className="mt-1 text-xs text-ink-muted leading-relaxed">
                 ดูสถิติเคสที่กำลังดูแล และวิเคราะห์กราฟแนวโน้มพัฒนาการทางภาษา (MLU, TTR)
               </p>
             </div>
             <div className="mt-4 pt-3 border-t border-[color:var(--color-border)]/50">
-              <span className="inline-flex items-center gap-1 text-xs font-semibold text-[color:var(--color-pasa-teal)]">
+              <span className="inline-flex items-center gap-1 text-xs font-semibold text-brand">
                 <CheckCircle2 className="h-3.5 w-3.5" />
                 <span>กำลังแสดงผลอยู่ด้านล่าง</span>
               </span>
@@ -99,27 +99,27 @@ export function PracticeDashboardView({ summary }: { summary: DashboardSummary }
           </div>
 
           {/* Pillar 2: Cases */}
-          <div className="flex flex-col justify-between rounded-xl border border-[color:var(--color-border)] bg-white p-4 transition hover:border-[color:var(--color-pasa-teal-border)] hover:shadow-xs">
+          <div className="flex flex-col justify-between rounded-xl border border-line bg-white p-4 transition hover:border-brand-border hover:shadow-xs">
             <div>
               <div className="flex items-center justify-between">
-                <span className="flex h-9 w-9 items-center justify-center rounded-lg bg-[color:var(--color-surface-muted)] text-[color:var(--color-pasa-teal)]">
+                <span className="flex h-9 w-9 items-center justify-center rounded-lg bg-surface-muted text-brand">
                   <FolderOpen className="h-4 w-4" />
                 </span>
-                <span className="text-xs font-bold text-[color:var(--color-text-subtle)] bg-[color:var(--color-surface-muted)] px-2 py-0.5 rounded-full">
+                <span className="text-xs font-bold text-ink-subtle bg-surface-muted px-2 py-0.5 rounded-full">
                   จัดการเด็ก
                 </span>
               </div>
-              <h3 className="mt-3 text-sm font-bold text-[color:var(--color-text-strong)]">
+              <h3 className="mt-3 text-sm font-bold text-ink">
                 2. จัดการข้อมูลเคส
               </h3>
-              <p className="mt-1 text-xs text-[color:var(--color-text-muted)] leading-relaxed">
+              <p className="mt-1 text-xs text-ink-muted leading-relaxed">
                 ค้นหาเคส ตรวจสอบอายุ เพศ ข้อมูลพัฒนาการ และหนังสือยินยอมของผู้ปกครอง
               </p>
             </div>
             <div className="mt-4 pt-3 border-t border-[color:var(--color-border)]/50">
               <Link
                 href="/cases"
-                className="inline-flex min-h-10 items-center justify-between w-full rounded-lg bg-[color:var(--color-surface-muted)]/70 px-3 text-xs font-bold text-[color:var(--color-text-strong)] hover:bg-[color:var(--color-pasa-teal-soft)] hover:text-[color:var(--color-pasa-teal)] transition"
+                className="inline-flex min-h-10 items-center justify-between w-full rounded-lg bg-[color:var(--color-surface-muted)]/70 px-3 text-xs font-bold text-ink hover:bg-brand-soft hover:text-brand transition"
               >
                 <span>ไปที่หน้าเคสทั้งหมด</span>
                 <ArrowRight className="h-3.5 w-3.5" />
@@ -128,34 +128,34 @@ export function PracticeDashboardView({ summary }: { summary: DashboardSummary }
           </div>
 
           {/* Pillar 3: Studio */}
-          <div className="flex flex-col justify-between rounded-xl border border-[color:var(--color-border)] bg-white p-4 transition hover:border-[color:var(--color-pasa-teal-border)] hover:shadow-xs">
+          <div className="flex flex-col justify-between rounded-xl border border-line bg-white p-4 transition hover:border-brand-border hover:shadow-xs">
             <div>
               <div className="flex items-center justify-between">
-                <span className="flex h-9 w-9 items-center justify-center rounded-lg bg-[color:var(--color-scope-coral-soft)] text-[color:var(--color-scope-coral)]">
+                <span className="flex h-9 w-9 items-center justify-center rounded-lg bg-highlight-soft text-highlight">
                   <AudioLines className="h-4 w-4" />
                 </span>
-                <span className="text-xs font-bold text-[color:var(--color-scope-coral)] bg-[color:var(--color-scope-coral-soft)] px-2 py-0.5 rounded-full border border-[color:var(--color-scope-coral-border)]">
+                <span className="text-xs font-bold text-highlight bg-highlight-soft px-2 py-0.5 rounded-full border border-highlight-border">
                   วิเคราะห์ LSA
                 </span>
               </div>
-              <h3 className="mt-3 text-sm font-bold text-[color:var(--color-text-strong)]">
+              <h3 className="mt-3 text-sm font-bold text-ink">
                 3. สตูดิโอวิเคราะห์ภาษา
               </h3>
-              <p className="mt-1 text-xs text-[color:var(--color-text-muted)] leading-relaxed">
+              <p className="mt-1 text-xs text-ink-muted leading-relaxed">
                 นำเข้าไฟล์เสียง/TalkBank (.cha) คำนวณ 15 ดัชนีภาษา และสร้าง Spider Diagram
               </p>
             </div>
             <div className="mt-4 pt-3 border-t border-[color:var(--color-border)]/50 flex flex-col gap-1.5">
               <Link
                 href="/sessions/session_demo_001?view=findings"
-                className="inline-flex min-h-10 items-center justify-between w-full rounded-lg bg-[color:var(--color-surface-muted)]/70 px-3 text-xs font-bold text-[color:var(--color-text-strong)] hover:bg-[color:var(--color-pasa-teal-soft)] hover:text-[color:var(--color-pasa-teal)] transition"
+                className="inline-flex min-h-10 items-center justify-between w-full rounded-lg bg-[color:var(--color-surface-muted)]/70 px-3 text-xs font-bold text-ink hover:bg-brand-soft hover:text-brand transition"
               >
                 <span>ดูกราฟใยแมงมุม (Spider)</span>
                 <ArrowRight className="h-3.5 w-3.5" />
               </Link>
               <Link
                 href="/sessions/session_demo_001?view=transcript"
-                className="inline-flex min-h-10 items-center gap-1.5 text-xs font-medium text-[color:var(--color-text-muted)] hover:text-[color:var(--color-pasa-teal)] px-1"
+                className="inline-flex min-h-10 items-center gap-1.5 text-xs font-medium text-ink-muted hover:text-brand px-1"
               >
                 <FileCode className="h-3 w-3" />
                 <span>เปิดห้องตรวจ TalkBank (.cha)</span>
@@ -164,27 +164,27 @@ export function PracticeDashboardView({ summary }: { summary: DashboardSummary }
           </div>
 
           {/* Pillar 4: Reports */}
-          <div className="flex flex-col justify-between rounded-xl border border-[color:var(--color-border)] bg-white p-4 transition hover:border-[color:var(--color-pasa-teal-border)] hover:shadow-xs">
+          <div className="flex flex-col justify-between rounded-xl border border-line bg-white p-4 transition hover:border-brand-border hover:shadow-xs">
             <div>
               <div className="flex items-center justify-between">
-                <span className="flex h-9 w-9 items-center justify-center rounded-lg bg-[color:var(--color-warm-butter-soft)] text-[color:var(--color-pasa-teal)]">
+                <span className="flex h-9 w-9 items-center justify-center rounded-lg bg-[color:var(--color-attention-bg)] text-brand">
                   <FileCheck2 className="h-4 w-4" />
                 </span>
-                <span className="text-xs font-bold text-[color:var(--color-pasa-teal)] bg-[color:var(--color-warm-butter-soft)] px-2 py-0.5 rounded-full border border-[color:var(--color-warm-butter-border)]">
+                <span className="text-xs font-bold text-brand bg-[color:var(--color-attention-bg)] px-2 py-0.5 rounded-full border border-[color:var(--color-attention-border)]">
                   รายงานคลินิก
                 </span>
               </div>
-              <h3 className="mt-3 text-sm font-bold text-[color:var(--color-text-strong)]">
+              <h3 className="mt-3 text-sm font-bold text-ink">
                 4. รายงานผล &amp; พิมพ์ PDF
               </h3>
-              <p className="mt-1 text-xs text-[color:var(--color-text-muted)] leading-relaxed">
+              <p className="mt-1 text-xs text-ink-muted leading-relaxed">
                 สรุปข้อค้นพบทางภาษา ตรวจสอบผล และพิมพ์รายงานแบบมาตรฐานสำหรับอาจารย์
               </p>
             </div>
             <div className="mt-4 pt-3 border-t border-[color:var(--color-border)]/50 flex flex-col gap-1.5">
               <Link
                 href="/reports/preview"
-                className="inline-flex min-h-10 items-center justify-between w-full rounded-lg bg-[color:var(--color-surface-muted)]/70 px-3 text-xs font-bold text-[color:var(--color-text-strong)] hover:bg-[color:var(--color-pasa-teal-soft)] hover:text-[color:var(--color-pasa-teal)] transition"
+                className="inline-flex min-h-10 items-center justify-between w-full rounded-lg bg-[color:var(--color-surface-muted)]/70 px-3 text-xs font-bold text-ink hover:bg-brand-soft hover:text-brand transition"
               >
                 <span className="flex items-center gap-1.5">
                   <Printer className="h-3.5 w-3.5" />
@@ -194,7 +194,7 @@ export function PracticeDashboardView({ summary }: { summary: DashboardSummary }
               </Link>
               <Link
                 href="/reports"
-                className="inline-flex min-h-10 items-center gap-1.5 text-xs font-medium text-[color:var(--color-text-muted)] hover:text-[color:var(--color-pasa-teal)] px-1"
+                className="inline-flex min-h-10 items-center gap-1.5 text-xs font-medium text-ink-muted hover:text-brand px-1"
               >
                 <span>ดูประวัติรายงานทั้งหมด</span>
               </Link>
@@ -239,17 +239,17 @@ export function PracticeDashboardView({ summary }: { summary: DashboardSummary }
         />
       </section>
 
-      <section aria-labelledby="progress-heading" className="rounded-2xl border border-[color:var(--color-border)] bg-[color:var(--color-surface-reading)] p-6 shadow-2xs">
+      <section aria-labelledby="progress-heading" className="rounded-2xl border border-line bg-surface p-6 shadow-2xs">
         <div className="flex flex-wrap items-center justify-between gap-3 pb-3 border-b border-[color:var(--color-border)]/60">
           <div>
-            <h2 id="progress-heading" className="text-base font-bold text-[color:var(--color-text-strong)]">
+            <h2 id="progress-heading" className="text-base font-bold text-ink">
               Language progress
             </h2>
-            <p className="mt-0.5 text-xs text-[color:var(--color-text-muted)]">
+            <p className="mt-0.5 text-xs text-ink-muted">
               Track a language-sample feature across each case&apos;s sessions over time.
             </p>
           </div>
-          <span className="inline-flex items-center gap-1.5 rounded-full bg-[color:var(--color-pasa-teal-soft)] border border-[color:var(--color-pasa-teal-border)] px-2.5 py-1 text-xs font-semibold text-[color:var(--color-pasa-teal)]">
+          <span className="inline-flex items-center gap-1.5 rounded-full bg-brand-soft border border-brand-border px-2.5 py-1 text-xs font-semibold text-brand">
             <Activity className="h-3.5 w-3.5" />
             Linguistic Trajectory
           </span>
@@ -260,56 +260,56 @@ export function PracticeDashboardView({ summary }: { summary: DashboardSummary }
       </section>
 
       <div className="grid grid-cols-1 gap-6 xl:grid-cols-3">
-        <section aria-labelledby="consent-heading" className="rounded-2xl border border-[color:var(--color-border)] bg-[color:var(--color-surface-reading)] p-6 shadow-2xs">
-          <h2 id="consent-heading" className="text-base font-bold text-[color:var(--color-text-strong)] pb-3 border-b border-[color:var(--color-border)]/60">
+        <section aria-labelledby="consent-heading" className="rounded-2xl border border-line bg-surface p-6 shadow-2xs">
+          <h2 id="consent-heading" className="text-base font-bold text-ink pb-3 border-b border-[color:var(--color-border)]/60">
             Consent status
           </h2>
           {consentCounts.length ? (
             <ul className="mt-4 space-y-3">
               {consentCounts.map(([status, count]) => (
                 <li key={status} className="flex items-center justify-between gap-3 text-sm rounded-xl bg-[color:var(--color-surface-muted)]/50 px-3 py-2 border border-[color:var(--color-border)]/40">
-                  <span className="flex items-center gap-2 text-[color:var(--color-text-muted)] font-medium">
-                    <span className={`h-2 w-2 rounded-full ${status === "granted" ? "bg-[color:var(--color-pasa-teal)]" : "bg-[color:var(--color-warm-butter-strong)]"}`} />
+                  <span className="flex items-center gap-2 text-ink-muted font-medium">
+                    <span className={`h-2 w-2 rounded-full ${status === "granted" ? "bg-brand" : "bg-[color:var(--color-warning-border)]"}`} />
                     {consentLabel(status)}
                   </span>
-                  <span className="font-bold text-[color:var(--color-text-strong)]">{count}</span>
+                  <span className="font-bold text-ink">{count}</span>
                 </li>
               ))}
             </ul>
           ) : (
-            <p className="mt-4 text-sm leading-6 text-[color:var(--color-text-muted)]">No cases yet.</p>
+            <p className="mt-4 text-sm leading-6 text-ink-muted">No cases yet.</p>
           )}
         </section>
 
-        <section aria-labelledby="pipeline-heading" className="rounded-2xl border border-[color:var(--color-border)] bg-[color:var(--color-surface-reading)] p-6 shadow-2xs">
-          <h2 id="pipeline-heading" className="text-base font-bold text-[color:var(--color-text-strong)] pb-1">
+        <section aria-labelledby="pipeline-heading" className="rounded-2xl border border-line bg-surface p-6 shadow-2xs">
+          <h2 id="pipeline-heading" className="text-base font-bold text-ink pb-1">
             Pipeline progress
           </h2>
-          <p className="text-xs text-[color:var(--color-text-muted)] pb-3 border-b border-[color:var(--color-border)]/60">
+          <p className="text-xs text-ink-muted pb-3 border-b border-[color:var(--color-border)]/60">
             Sessions that reached each stage of the analysis pipeline.
           </p>
           <ul className="mt-4 space-y-2.5 text-sm">
             <li className="flex items-center justify-between gap-3 rounded-xl bg-[color:var(--color-surface-muted)]/50 px-3 py-2 border border-[color:var(--color-border)]/40">
-              <span className="text-[color:var(--color-text-muted)] font-medium">Transcript recorded</span>
-              <span className="font-bold text-[color:var(--color-text-strong)]">{summary.sessions.with_transcript}</span>
+              <span className="text-ink-muted font-medium">Transcript recorded</span>
+              <span className="font-bold text-ink">{summary.sessions.with_transcript}</span>
             </li>
             <li className="flex items-center justify-between gap-3 rounded-xl bg-[color:var(--color-surface-muted)]/50 px-3 py-2 border border-[color:var(--color-border)]/40">
-              <span className="text-[color:var(--color-text-muted)] font-medium">Features extracted</span>
-              <span className="font-bold text-[color:var(--color-text-strong)]">{summary.sessions.with_features}</span>
+              <span className="text-ink-muted font-medium">Features extracted</span>
+              <span className="font-bold text-ink">{summary.sessions.with_features}</span>
             </li>
             <li className="flex items-center justify-between gap-3 rounded-xl bg-[color:var(--color-surface-muted)]/50 px-3 py-2 border border-[color:var(--color-border)]/40">
-              <span className="text-[color:var(--color-text-muted)] font-medium">ML decision support</span>
-              <span className="font-bold text-[color:var(--color-text-strong)]">{summary.sessions.with_ml_review}</span>
+              <span className="text-ink-muted font-medium">ML decision support</span>
+              <span className="font-bold text-ink">{summary.sessions.with_ml_review}</span>
             </li>
             <li className="flex items-center justify-between gap-3 rounded-xl bg-[color:var(--color-surface-muted)]/50 px-3 py-2 border border-[color:var(--color-border)]/40">
-              <span className="text-[color:var(--color-text-muted)] font-medium">Report drafted</span>
-              <span className="font-bold text-[color:var(--color-text-strong)]">{summary.sessions.with_report}</span>
+              <span className="text-ink-muted font-medium">Report drafted</span>
+              <span className="font-bold text-ink">{summary.sessions.with_report}</span>
             </li>
           </ul>
         </section>
 
-        <section aria-labelledby="report-heading" className="rounded-2xl border border-[color:var(--color-border)] bg-[color:var(--color-surface-reading)] p-6 shadow-2xs">
-          <h2 id="report-heading" className="text-base font-bold text-[color:var(--color-text-strong)] pb-3 border-b border-[color:var(--color-border)]/60">
+        <section aria-labelledby="report-heading" className="rounded-2xl border border-line bg-surface p-6 shadow-2xs">
+          <h2 id="report-heading" className="text-base font-bold text-ink pb-3 border-b border-[color:var(--color-border)]/60">
             Report sign-off
           </h2>
           {summary.reports.total ? (
@@ -319,12 +319,12 @@ export function PracticeDashboardView({ summary }: { summary: DashboardSummary }
                 .map(([status, count]) => (
                   <li key={status} className="flex items-center justify-between gap-3 rounded-xl bg-[color:var(--color-surface-muted)]/50 px-3 py-2 border border-[color:var(--color-border)]/40">
                     <StatusBadge status={status} />
-                    <span className="font-bold text-[color:var(--color-text-strong)]">{count}</span>
+                    <span className="font-bold text-ink">{count}</span>
                   </li>
                 ))}
             </ul>
           ) : (
-            <p className="mt-4 text-sm leading-6 text-[color:var(--color-text-muted)]">No reports yet.</p>
+            <p className="mt-4 text-sm leading-6 text-ink-muted">No reports yet.</p>
           )}
         </section>
       </div>
@@ -332,61 +332,61 @@ export function PracticeDashboardView({ summary }: { summary: DashboardSummary }
       <section aria-labelledby="recent-heading" className="mt-6">
         <div className="mb-4 flex items-center justify-between gap-3">
           <div>
-            <h2 id="recent-heading" className="text-base font-bold text-[color:var(--color-text-strong)]">
+            <h2 id="recent-heading" className="text-base font-bold text-ink">
               Recent sessions
             </h2>
-            <p className="text-xs text-[color:var(--color-text-muted)]">Active pediatric assessment sessions and pipeline status</p>
+            <p className="text-xs text-ink-muted">Active pediatric assessment sessions and pipeline status</p>
           </div>
           <Link
             href="/cases"
-            className="inline-flex min-h-10 items-center rounded-xl border border-[color:var(--color-border)] bg-white px-3.5 text-xs font-bold text-[color:var(--color-pasa-teal)] shadow-2xs transition hover:bg-[color:var(--color-pasa-teal-soft)] hover:border-[color:var(--color-pasa-teal-border)]"
+            className="inline-flex min-h-10 items-center rounded-xl border border-line bg-white px-3.5 text-xs font-bold text-brand shadow-2xs transition hover:bg-brand-soft hover:border-brand-border"
           >
             View all cases
           </Link>
         </div>
         {summary.recent_sessions.length ? (
           <>
-            <div className="overflow-hidden rounded-2xl border border-[color:var(--color-border)] bg-[color:var(--color-surface-reading)] shadow-2xs hidden md:block">
+            <div className="overflow-hidden rounded-2xl border border-line bg-surface shadow-2xs hidden md:block">
               <table className="w-full border-collapse text-sm">
                 <thead>
-                  <tr className="border-b border-[color:var(--color-border)] bg-[color:var(--color-surface-muted)]/60 text-left">
-                    <th scope="col" className="px-5 py-3.5 font-bold text-[color:var(--color-text-strong)] text-xs uppercase tracking-wider">
+                  <tr className="border-b border-line bg-[color:var(--color-surface-muted)]/60 text-left">
+                    <th scope="col" className="px-5 py-3.5 font-bold text-ink text-xs uppercase tracking-wider">
                       Case
                     </th>
-                    <th scope="col" className="px-5 py-3.5 font-bold text-[color:var(--color-text-strong)] text-xs uppercase tracking-wider">
+                    <th scope="col" className="px-5 py-3.5 font-bold text-ink text-xs uppercase tracking-wider">
                       Date
                     </th>
-                    <th scope="col" className="px-5 py-3.5 font-bold text-[color:var(--color-text-strong)] text-xs uppercase tracking-wider">
+                    <th scope="col" className="px-5 py-3.5 font-bold text-ink text-xs uppercase tracking-wider">
                       Stage
                     </th>
-                    <th scope="col" className="px-5 py-3.5 font-bold text-[color:var(--color-text-strong)] text-xs uppercase tracking-wider">
+                    <th scope="col" className="px-5 py-3.5 font-bold text-ink text-xs uppercase tracking-wider">
                       Status
                     </th>
-                    <th scope="col" className="px-5 py-3.5 font-bold text-[color:var(--color-text-strong)] text-xs uppercase tracking-wider text-right">
+                    <th scope="col" className="px-5 py-3.5 font-bold text-ink text-xs uppercase tracking-wider text-right">
                       <span className="sr-only">Open</span>
                     </th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-[color:var(--color-border)]/60">
                   {summary.recent_sessions.map((session) => (
-                    <tr key={session.session_id} className="transition-colors hover:bg-[color:var(--color-pasa-teal-soft)]/30">
+                    <tr key={session.session_id} className="transition-colors hover:bg-[color:var(--color-brand-soft)]/30">
                       <td className="px-5 py-2">
                         <Link
                           href={`/sessions/${encodeURIComponent(session.session_id)}?case_id=${encodeURIComponent(session.case_id)}`}
-                          className="inline-flex min-h-10 min-w-10 items-center font-bold text-[color:var(--color-pasa-teal)] hover:underline"
+                          className="inline-flex min-h-10 min-w-10 items-center font-bold text-brand hover:underline"
                         >
                           {session.case_label}
                         </Link>
                       </td>
-                      <td className="px-5 py-2 text-xs text-[color:var(--color-text-muted)] font-mono">{session.session_date}</td>
-                      <td className="px-5 py-2 text-xs font-medium text-[color:var(--color-text-strong)]">{sessionStage(session)}</td>
+                      <td className="px-5 py-2 text-xs text-ink-muted font-mono">{session.session_date}</td>
+                      <td className="px-5 py-2 text-xs font-medium text-ink">{sessionStage(session)}</td>
                       <td className="px-5 py-2">
                         <StatusBadge status={session.status} />
                       </td>
                       <td className="px-5 py-2 text-right">
                         <Link
                           href={`/sessions/${encodeURIComponent(session.session_id)}?case_id=${encodeURIComponent(session.case_id)}`}
-                          className="inline-flex min-h-10 items-center rounded-xl border border-[color:var(--color-border)] bg-white px-3.5 text-xs font-bold text-[color:var(--color-pasa-teal)] shadow-2xs hover:bg-[color:var(--color-pasa-teal-soft)] hover:border-[color:var(--color-pasa-teal-border)] transition"
+                          className="inline-flex min-h-10 items-center rounded-xl border border-line bg-white px-3.5 text-xs font-bold text-brand shadow-2xs hover:bg-brand-soft hover:border-brand-border transition"
                         >
                           Open
                         </Link>
@@ -398,22 +398,22 @@ export function PracticeDashboardView({ summary }: { summary: DashboardSummary }
             </div>
             <ul className="space-y-3 md:hidden">
               {summary.recent_sessions.map((session) => (
-                <li key={session.session_id} className="rounded-2xl border border-[color:var(--color-border)] bg-[color:var(--color-surface-reading)] p-4 shadow-2xs">
+                <li key={session.session_id} className="rounded-2xl border border-line bg-surface p-4 shadow-2xs">
                   <div className="flex items-center justify-between gap-3">
                     <Link
                       href={`/sessions/${encodeURIComponent(session.session_id)}?case_id=${encodeURIComponent(session.case_id)}`}
-                      className="inline-flex min-h-10 min-w-10 items-center font-bold text-[color:var(--color-pasa-teal)] hover:underline"
+                      className="inline-flex min-h-10 min-w-10 items-center font-bold text-brand hover:underline"
                     >
                       {session.case_label}
                     </Link>
                     <StatusBadge status={session.status} />
                   </div>
-                  <p className="mt-2 text-xs text-[color:var(--color-text-muted)]">
+                  <p className="mt-2 text-xs text-ink-muted">
                     {session.session_date} · {sessionStage(session)}
                   </p>
                   <Link
                     href={`/sessions/${encodeURIComponent(session.session_id)}?case_id=${encodeURIComponent(session.case_id)}`}
-                    className="mt-3 inline-flex min-h-10 w-full items-center justify-center rounded-xl bg-[color:var(--color-pasa-teal-soft)] text-xs font-bold text-[color:var(--color-pasa-teal)] border border-[color:var(--color-pasa-teal-border)] transition hover:bg-[color:var(--color-pasa-teal)] hover:text-white"
+                    className="mt-3 inline-flex min-h-10 w-full items-center justify-center rounded-xl bg-brand-soft text-xs font-bold text-brand border border-brand-border transition hover:bg-brand hover:text-white"
                   >
                     Open session
                   </Link>
@@ -422,7 +422,7 @@ export function PracticeDashboardView({ summary }: { summary: DashboardSummary }
             </ul>
           </>
         ) : (
-          <div className="rounded-2xl border border-[color:var(--color-border)] bg-[color:var(--color-surface-reading)] p-8 text-center text-sm text-[color:var(--color-text-muted)] shadow-2xs">
+          <div className="rounded-2xl border border-line bg-surface p-8 text-center text-sm text-ink-muted shadow-2xs">
             No sessions yet. Start a session from the Cases list to populate the pipeline.
           </div>
         )}

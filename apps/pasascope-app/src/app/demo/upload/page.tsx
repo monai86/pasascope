@@ -6,23 +6,23 @@ export default function DemoUpload() {
     <div className="mx-auto max-w-3xl space-y-8">
       {/* Page Header */}
       <div>
-        <h1 className="text-3xl font-semibold tracking-[-0.03em] text-[color:var(--color-text-strong)]">
+        <h1 className="text-3xl font-semibold tracking-[-0.03em] text-ink">
           อัปโหลดไฟล์เสียง (Upload Audio)
         </h1>
-        <p className="mt-1 text-sm text-[color:var(--color-text-muted)]">
+        <p className="mt-1 text-sm text-ink-muted">
           อัปโหลดคลิปวิดีโอหรือเสียงจากเซสชันการบำบัดเพื่อถอดความและวิเคราะห์ทางภาษาพูด
         </p>
       </div>
 
       {/* Drag & Drop Zone */}
-      <div className="relative flex flex-col items-center justify-center rounded-[var(--radius-panel)] border-2 border-dashed border-[color:var(--color-border)] bg-white p-12 text-center transition hover:border-[color:var(--color-accent)]">
-        <div className="flex h-12 w-12 items-center justify-center text-[color:var(--color-accent)]">
+      <div className="relative flex flex-col items-center justify-center rounded-panel border-2 border-dashed border-line bg-white p-12 text-center transition hover:border-brand">
+        <div className="flex h-12 w-12 items-center justify-center text-brand">
           <UploadCloud size={32} />
         </div>
-        <h3 className="mt-4 text-lg font-semibold text-[color:var(--color-text-strong)]">
+        <h3 className="mt-4 text-lg font-semibold text-ink">
           ลากไฟล์มาวางที่นี่ หรือ คลิกเพื่อเลือกไฟล์
         </h3>
-        <p className="mt-2 text-sm text-[color:var(--color-text-muted)]">
+        <p className="mt-2 text-sm text-ink-muted">
           รองรับไฟล์วิดีโอและไฟล์เสียง เช่น .mp4, .wav, .m4a หรือไฟล์ถอดคำรหัส .cha
         </p>
         <span className="mt-4 inline-flex items-center gap-1.5 rounded-full bg-slate-100 px-3 py-1 text-xs font-semibold text-slate-600">
@@ -31,14 +31,14 @@ export default function DemoUpload() {
       </div>
 
       {/* Upload Progress (Static Showcase) */}
-      <div className="rounded-[var(--radius-panel)] border border-[color:var(--color-border)] bg-[color:var(--color-surface-strong)] p-5">
+      <div className="rounded-panel border border-line bg-surface p-5">
         <div className="flex items-start gap-4">
           <div className="grid h-10 w-10 shrink-0 place-items-center rounded-xl bg-emerald-50 text-emerald-600">
             <FileAudio size={20} />
           </div>
           <div className="min-w-0 flex-1">
             <div className="flex items-center justify-between gap-3">
-              <p className="truncate text-sm font-semibold text-[color:var(--color-text-strong)]">
+              <p className="truncate text-sm font-semibold text-ink">
                 session_recording_ava_2026-07-05.wav
               </p>
               <span className="shrink-0 text-xs font-semibold text-emerald-600 flex items-center gap-1">
@@ -46,7 +46,7 @@ export default function DemoUpload() {
                 อัปโหลดสำเร็จ
               </span>
             </div>
-            <p className="mt-1 text-xs text-[color:var(--color-text-subtle)]">
+            <p className="mt-1 text-xs text-ink-subtle">
               12.4 MB · ถอดความเสียงอัตโนมัติด้วย Whisper (Thai-English)
             </p>
             {/* Custom Progress Bar */}
@@ -58,16 +58,16 @@ export default function DemoUpload() {
       </div>
 
       {/* Action Buttons */}
-      <div className="flex items-center justify-between border-t border-[color:var(--color-border)] pt-6">
+      <div className="flex items-center justify-between border-t border-line pt-6">
         <Link
           href="/demo/dashboard"
-          className="inline-flex min-h-11 items-center justify-center rounded-[var(--radius-pill)] border border-[color:var(--color-border)] bg-white px-5 text-sm font-semibold text-[color:var(--color-text-strong)] transition hover:bg-slate-50"
+          className="inline-flex min-h-11 items-center justify-center rounded-full border border-line bg-white px-5 text-sm font-semibold text-ink transition hover:bg-slate-50"
         >
           กลับหน้าหลัก
         </Link>
         <Link
           href="/demo/transcript"
-          className="inline-flex min-h-11 items-center justify-center gap-2 rounded-[var(--radius-pill)] bg-[color:var(--color-accent)] px-6 text-sm font-semibold text-white transition hover:bg-[color:var(--color-accent-strong)]"
+          className="inline-flex min-h-11 items-center justify-center gap-2 rounded-full bg-brand px-6 text-sm font-semibold text-white transition hover:bg-brand-strong"
         >
           ถัดไป: ดูบทสนทนา
           <ArrowRight size={16} />

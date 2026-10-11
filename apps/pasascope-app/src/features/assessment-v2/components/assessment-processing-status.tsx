@@ -187,7 +187,7 @@ export function AssessmentProcessingStatus({
           <p className="mt-1 text-sm">เมื่อกดเริ่ม ระบบจะส่ง transcript ที่รับรองแล้วให้ FastAPI ประมวลผลเชิงพรรณนา</p>
           <button
             type="button"
-            className="mt-4 min-h-11 rounded-lg bg-[color:var(--color-primary)] px-4 py-2 text-sm font-semibold text-white disabled:cursor-not-allowed disabled:opacity-50"
+            className="mt-4 min-h-11 rounded-lg bg-brand px-4 py-2 text-sm font-semibold text-white disabled:cursor-not-allowed disabled:opacity-50"
             disabled={busy || !canQueue}
             onClick={() => void queueEvidence()}
           >
@@ -204,7 +204,7 @@ export function AssessmentProcessingStatus({
           {run.state === "failed" && run.can_retry ? (
             <button
               type="button"
-              className="mt-4 min-h-11 rounded-lg bg-[color:var(--color-primary)] px-4 py-2 text-sm font-semibold text-white disabled:cursor-not-allowed disabled:opacity-50"
+              className="mt-4 min-h-11 rounded-lg bg-brand px-4 py-2 text-sm font-semibold text-white disabled:cursor-not-allowed disabled:opacity-50"
               disabled={busy}
               onClick={() => void retryProcessing()}
             >
@@ -214,7 +214,7 @@ export function AssessmentProcessingStatus({
           {run.state === "cancelled" && run.can_retry ? (
             <button
               type="button"
-              className="mt-4 min-h-11 rounded-lg bg-[color:var(--color-primary)] px-4 py-2 text-sm font-semibold text-white disabled:cursor-not-allowed disabled:opacity-50"
+              className="mt-4 min-h-11 rounded-lg bg-brand px-4 py-2 text-sm font-semibold text-white disabled:cursor-not-allowed disabled:opacity-50"
               disabled={busy}
               onClick={() => void retryProcessing()}
             >

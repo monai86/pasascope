@@ -61,10 +61,10 @@ export function CaregiverConsentForm({
   const notesId = `${idPrefix}-consent-notes`;
   return (
     <form onSubmit={onSubmit} className="space-y-4">
-      <label className="flex cursor-pointer items-start gap-3 text-sm font-medium text-[color:var(--color-text-strong)]">
+      <label className="flex cursor-pointer items-start gap-3 text-sm font-medium text-ink">
         <input
           type="checkbox"
-          className="mt-1 h-4 w-4 rounded border-[color:var(--color-border)] accent-[color:var(--color-accent-strong)]"
+          className="mt-1 h-4 w-4 rounded border-line accent-brand-strong"
           checked={checked}
           onChange={(event) => onCheckedChange(event.target.checked)}
           disabled={busy}
@@ -72,17 +72,17 @@ export function CaregiverConsentForm({
         />
         <span className="grid gap-1">
           <span>{CONFIRMATION_EN}</span>
-          <span className="text-xs leading-5 text-[color:var(--color-text-muted)]">{CONFIRMATION_TH}</span>
+          <span className="text-xs leading-5 text-ink-muted">{CONFIRMATION_TH}</span>
         </span>
       </label>
 
       <div className="grid gap-4 sm:grid-cols-2">
-        <label htmlFor={signerId} className="grid gap-1 text-sm font-medium text-[color:var(--color-text-strong)]">
+        <label htmlFor={signerId} className="grid gap-1 text-sm font-medium text-ink">
           Signer relationship
           <input
             id={signerId}
             type="text"
-            className="min-h-11 w-full rounded-[var(--radius-card)] border border-[color:var(--color-border)] bg-[color:var(--color-surface-reading)] px-4 text-sm text-[color:var(--color-text-strong)] outline-none focus-visible:ring-4 focus-visible:ring-[color:var(--color-focus-ring)]"
+            className="min-h-11 w-full rounded-card border border-line bg-surface px-4 text-sm text-ink outline-none focus-visible:ring-4 focus-visible:ring-[color:var(--color-focus-ring)]"
             value={signer}
             onChange={(event) => onSignerChange(event.target.value)}
             disabled={busy}
@@ -91,12 +91,12 @@ export function CaregiverConsentForm({
           />
         </label>
 
-        <label htmlFor={dateId} className="grid gap-1 text-sm font-medium text-[color:var(--color-text-strong)]">
+        <label htmlFor={dateId} className="grid gap-1 text-sm font-medium text-ink">
           Consent date
           <input
             id={dateId}
             type="date"
-            className="min-h-11 w-full rounded-[var(--radius-card)] border border-[color:var(--color-border)] bg-[color:var(--color-surface-reading)] px-4 text-sm text-[color:var(--color-text-strong)] outline-none focus-visible:ring-4 focus-visible:ring-[color:var(--color-focus-ring)]"
+            className="min-h-11 w-full rounded-card border border-line bg-surface px-4 text-sm text-ink outline-none focus-visible:ring-4 focus-visible:ring-[color:var(--color-focus-ring)]"
             value={consentDate}
             onChange={(event) => onConsentDateChange(event.target.value)}
             disabled={busy}
@@ -105,11 +105,11 @@ export function CaregiverConsentForm({
         </label>
       </div>
 
-      <label htmlFor={notesId} className="grid gap-1 text-sm font-medium text-[color:var(--color-text-strong)]">
+      <label htmlFor={notesId} className="grid gap-1 text-sm font-medium text-ink">
         Verification notes
         <textarea
           id={notesId}
-          className="min-h-24 w-full resize-y rounded-[var(--radius-card)] border border-[color:var(--color-border)] bg-[color:var(--color-surface-reading)] p-4 text-sm text-[color:var(--color-text-strong)] outline-none focus-visible:ring-4 focus-visible:ring-[color:var(--color-focus-ring)]"
+          className="min-h-24 w-full resize-y rounded-card border border-line bg-surface p-4 text-sm text-ink outline-none focus-visible:ring-4 focus-visible:ring-[color:var(--color-focus-ring)]"
           value={notes}
           onChange={(event) => onNotesChange(event.target.value)}
           disabled={busy}
@@ -128,7 +128,7 @@ export function CaregiverConsentForm({
       </div>
 
       {submitBlockedReason && reasonId ? (
-        <p id={reasonId} role="status" className="rounded-[var(--radius-card)] border border-amber-200 bg-amber-50 px-3 py-2 text-sm font-semibold text-amber-900">
+        <p id={reasonId} role="status" className="rounded-card border border-amber-200 bg-amber-50 px-3 py-2 text-sm font-semibold text-amber-900">
           {submitBlockedReason}
         </p>
       ) : null}

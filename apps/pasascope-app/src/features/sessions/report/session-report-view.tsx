@@ -137,11 +137,11 @@ function ReportSummaryIdentityScope({ caseId, sessionId, transcriptId, reportId 
       <div className="grid min-w-0 gap-6 lg:grid-cols-[minmax(18rem,26rem)_minmax(0,1fr)]">
       <div className="min-w-0 space-y-5">
         {isStale ? (
-          <div className="rounded-[var(--radius-panel)] border border-amber-300 bg-amber-50 p-4 text-sm text-amber-950" role="alert">
+          <div className="rounded-panel border border-amber-300 bg-amber-50 p-4 text-sm text-amber-950" role="alert">
             <p className="font-semibold">This report is stale because the transcript changed.</p>
             <p className="mt-1" id="stale-report-explanation">The prior draft is read-only and cannot be saved, signed, exported, or shared as current.</p>
             <Link
-              className="mt-3 inline-flex min-h-11 items-center rounded-[var(--radius-card)] bg-amber-900 px-4 font-semibold text-white"
+              className="mt-3 inline-flex min-h-11 items-center rounded-card bg-amber-900 px-4 font-semibold text-white"
               href={state.backendSessionId ? `/sessions/${state.backendSessionId}?view=findings` : "/cases?intent=start-session"}
             >
               Regenerate findings
@@ -150,14 +150,14 @@ function ReportSummaryIdentityScope({ caseId, sessionId, transcriptId, reportId 
         ) : null}
 
         {hasSnapshotIntegrityError ? (
-          <div className="rounded-[var(--radius-panel)] border border-red-300 bg-red-50 p-4 text-sm text-red-950" role="alert">
+          <div className="rounded-panel border border-red-300 bg-red-50 p-4 text-sm text-red-950" role="alert">
             <p className="font-semibold">Signed snapshot integrity error.</p>
             <p className="mt-1">{snapshotIntegrity.status === "invalid" ? snapshotIntegrity.reason : ""} The mutable report row is hidden, and export, revision, or sharing is blocked until the persisted signed snapshot is repaired and verified.</p>
           </div>
         ) : null}
 
         {isSnapshotIntegrityChecking ? (
-          <div className="rounded-[var(--radius-panel)] border border-[color:var(--color-pasa-teal-border)] bg-[color:var(--color-pasa-teal-soft)] p-4 text-sm text-[color:var(--color-pasa-teal)]" role="status" aria-live="polite">
+          <div className="rounded-panel border border-brand-border bg-brand-soft p-4 text-sm text-brand" role="status" aria-live="polite">
             <p className="font-semibold">Verifying signed snapshot integrity…</p>
             <p className="mt-1">Export, revision, and sharing remain blocked until the signed payload hash is verified.</p>
           </div>
@@ -166,7 +166,7 @@ function ReportSummaryIdentityScope({ caseId, sessionId, transcriptId, reportId 
         {identityLoaded && canRenderReportMetadata ? (
           <section
             aria-label="Report provenance"
-            className="rounded-[var(--radius-shell)] border border-[color:var(--color-border)] bg-[color:var(--color-surface-reading)] p-5"
+            className="rounded-shell border border-line bg-surface p-5"
           >
             <div className="flex flex-wrap items-start justify-between gap-3">
               <div>
@@ -176,7 +176,7 @@ function ReportSummaryIdentityScope({ caseId, sessionId, transcriptId, reportId 
               {signedSnapshotVerified ? (
                 <span className="rounded-full bg-emerald-100 px-3 py-1 text-xs font-bold text-emerald-900">Signed snapshot · immutable</span>
               ) : isSnapshotIntegrityChecking ? (
-                <span className="rounded-full border border-[color:var(--color-pasa-teal-border)] bg-[color:var(--color-pasa-teal-soft)] px-3 py-1 text-xs font-bold text-[color:var(--color-pasa-teal)]">Verifying signed snapshot</span>
+                <span className="rounded-full border border-brand-border bg-brand-soft px-3 py-1 text-xs font-bold text-brand">Verifying signed snapshot</span>
               ) : hasSnapshotIntegrityError ? (
                 <span className="rounded-full bg-red-100 px-3 py-1 text-xs font-bold text-red-900">Snapshot integrity error</span>
               ) : isStale ? (
@@ -186,7 +186,7 @@ function ReportSummaryIdentityScope({ caseId, sessionId, transcriptId, reportId 
               ) : isNotStarted ? (
                 <span className="rounded-full bg-slate-100 px-3 py-1 text-xs font-bold text-slate-700">Never generated</span>
               ) : (
-                <span className="rounded-full bg-[color:var(--color-accent-soft)] px-3 py-1 text-xs font-bold text-[color:var(--color-accent-strong)]">Editable draft</span>
+                <span className="rounded-full bg-brand-soft px-3 py-1 text-xs font-bold text-brand-strong">Editable draft</span>
               )}
             </div>
             <dl className="mt-4 grid gap-3 sm:grid-cols-2">
@@ -217,7 +217,7 @@ function ReportSummaryIdentityScope({ caseId, sessionId, transcriptId, reportId 
         ) : null}
 
         {identityLoaded && canRenderReportMetadata ? (
-          <section aria-label="Report source and safety" className="rounded-[var(--radius-shell)] border border-[color:var(--color-border)] bg-[color:var(--color-surface-reading)] p-5">
+          <section aria-label="Report source and safety" className="rounded-shell border border-line bg-surface p-5">
             <h2 className="text-lg font-bold text-ink">Report source and safety</h2>
             <p className="mt-1 text-sm leading-6 text-slate-600">Persisted provider and validation metadata. Missing values are shown as unavailable.</p>
             <dl className="mt-4 grid gap-3 sm:grid-cols-2">
@@ -234,7 +234,7 @@ function ReportSummaryIdentityScope({ caseId, sessionId, transcriptId, reportId 
         ) : null}
 
         {identityLoaded ? (
-          <section aria-label="Report workflow states" className="rounded-[var(--radius-shell)] border border-[color:var(--color-border)] bg-[color:var(--color-surface-reading)] p-5">
+          <section aria-label="Report workflow states" className="rounded-shell border border-line bg-surface p-5">
             <h2 className="text-lg font-bold text-ink">Save, sign-off, and export</h2>
             <dl className="mt-4 grid gap-3 sm:grid-cols-3">
               <ReportProvenanceItem label="Save" value={isSnapshotIntegrityChecking ? "Verifying snapshot" : hasSnapshotIntegrityError ? "Integrity error" : isNotStarted ? "Never generated" : reportSaveStateLabel(state.reportSaveStatus, isFinalized, isStale)} />
@@ -250,7 +250,7 @@ function ReportSummaryIdentityScope({ caseId, sessionId, transcriptId, reportId 
             const Icon = section.icon;
             return (
               <div key={section.title} className="flex gap-4 py-4 first:pt-0 last:pb-0">
-                <Icon size={22} aria-hidden="true" className="mt-1 shrink-0 text-[color:var(--color-accent)]" />
+                <Icon size={22} aria-hidden="true" className="mt-1 shrink-0 text-brand" />
                 <div>
                   <h3 className="text-lg font-bold text-ink">{section.title}</h3>
                   <ul className="mt-2 space-y-1 text-sm text-slate-700">
@@ -267,7 +267,7 @@ function ReportSummaryIdentityScope({ caseId, sessionId, transcriptId, reportId 
           <h2 className="text-lg font-bold text-ink">Report inputs</h2>
           <div>
             <label className="block text-sm font-semibold text-ink" htmlFor="therapist-notes">Therapist notes</label>
-            <textarea id="therapist-notes" aria-label="Therapist notes" className="mt-2 min-h-24 w-full rounded-[var(--radius-card)] border border-line bg-[color:var(--color-surface-reading)] p-3 outline-none focus:ring-2 focus:ring-clinical text-sm" value={therapistNotes} readOnly={isEditorLocked} onChange={(event) => {
+            <textarea id="therapist-notes" aria-label="Therapist notes" className="mt-2 min-h-24 w-full rounded-card border border-line bg-surface p-3 outline-none focus:ring-2 focus:ring-brand text-sm" value={therapistNotes} readOnly={isEditorLocked} onChange={(event) => {
               if (isEditorLocked) return;
               setTherapistNotes(event.target.value);
               persist({ ...state, reportSaveStatus: "unsaved", statusMessage: "Unsaved report edits.", error: undefined });
@@ -275,7 +275,7 @@ function ReportSummaryIdentityScope({ caseId, sessionId, transcriptId, reportId 
           </div>
           <div>
             <label className="mt-2 block text-sm font-semibold text-ink" htmlFor="therapy-goals">Therapy goals</label>
-            <textarea id="therapy-goals" aria-label="Therapy goals" className="mt-2 min-h-24 w-full rounded-[var(--radius-card)] border border-line bg-[color:var(--color-surface-reading)] p-3 outline-none focus:ring-2 focus:ring-clinical text-sm" value={goalsText} readOnly={isEditorLocked} onChange={(event) => {
+            <textarea id="therapy-goals" aria-label="Therapy goals" className="mt-2 min-h-24 w-full rounded-card border border-line bg-surface p-3 outline-none focus:ring-2 focus:ring-brand text-sm" value={goalsText} readOnly={isEditorLocked} onChange={(event) => {
               if (isEditorLocked) return;
               setGoalsText(event.target.value);
               persist({ ...state, reportSaveStatus: "unsaved", statusMessage: "Unsaved report edits.", error: undefined });
@@ -289,7 +289,7 @@ function ReportSummaryIdentityScope({ caseId, sessionId, transcriptId, reportId 
             <label className="block text-sm font-semibold text-ink" htmlFor="provider-selector">Drafting Provider</label>
             <select
               id="provider-selector"
-              className="mt-2 w-full rounded-[var(--radius-card)] border border-line bg-[color:var(--color-surface-reading)] p-3 text-sm font-medium focus:ring-2 focus:ring-clinical outline-none"
+              className="mt-2 w-full rounded-card border border-line bg-surface p-3 text-sm font-medium focus:ring-2 focus:ring-brand outline-none"
               value={providerId}
               disabled={isEditorLocked}
               onChange={(e) => setProviderId(e.target.value)}
@@ -302,7 +302,7 @@ function ReportSummaryIdentityScope({ caseId, sessionId, transcriptId, reportId 
             <label className="flex min-h-11 cursor-pointer select-none items-center gap-3 text-sm">
               <input
                 type="checkbox"
-                className="h-4 w-4 rounded border-line text-clinical focus:ring-clinical focus:ring-offset-0"
+                className="h-4 w-4 rounded border-line text-brand focus:ring-brand focus:ring-offset-0"
                 checked={allowFallback}
                 disabled={isEditorLocked}
                 onChange={(e) => setAllowFallback(e.target.checked)}
@@ -316,9 +316,9 @@ function ReportSummaryIdentityScope({ caseId, sessionId, transcriptId, reportId 
         </> : null}
 
         {!isFinalized && !isFailedSafety && !isStale && (
-          <WorkspacePanel className="p-5 space-y-4 animate-fade-in border border-[color:var(--color-border)]">
+          <WorkspacePanel className="p-5 space-y-4 animate-fade-in border border-line">
             <h2 className="text-lg font-bold text-ink">Sign-off Confirmation</h2>
-            <div className="rounded-[var(--radius-panel)] border border-line bg-[color:var(--color-surface-reading)] p-4">
+            <div className="rounded-panel border border-line bg-surface p-4">
               <p className="text-sm font-semibold text-ink">Primary assigned therapist</p>
               <p className="mt-2 text-sm text-slate-700">{primaryTherapistLabel}</p>
               <p className="mt-2 text-xs leading-5 text-slate-600">
@@ -326,14 +326,14 @@ function ReportSummaryIdentityScope({ caseId, sessionId, transcriptId, reportId 
               </p>
             </div>
             {!primaryTherapistAssigned ? (
-              <p className="rounded-[var(--radius-card)] border border-amber-200 bg-amber-50 p-3 text-sm font-semibold text-amber-900">
+              <p className="rounded-card border border-amber-200 bg-amber-50 p-3 text-sm font-semibold text-amber-900">
                 Assign a primary therapist before finalizing this report.
               </p>
             ) : null}
             <label className="flex min-h-11 cursor-pointer select-none items-start gap-3 text-sm">
               <input
                 type="checkbox"
-                className="mt-1 h-4 w-4 shrink-0 rounded border-line text-clinical focus:ring-clinical focus:ring-offset-0"
+                className="mt-1 h-4 w-4 shrink-0 rounded border-line text-brand focus:ring-brand focus:ring-offset-0"
                 checked={confirmationChecked}
                 onChange={(e) => setConfirmationChecked(e.target.checked)}
               />
@@ -349,12 +349,12 @@ function ReportSummaryIdentityScope({ caseId, sessionId, transcriptId, reportId 
           <p className="mt-2 text-sm leading-6 text-slate-600">
             Local/demo status only. This does not send a message, create a production delivery channel, or claim secure caregiver sharing.
           </p>
-          <p className="mt-2 font-bold text-clinical">{state.shareStatus}</p>
+          <p className="mt-2 font-bold text-brand">{state.shareStatus}</p>
           <div className="mt-3 grid gap-2 sm:grid-cols-2">
-            <button className="inline-flex min-h-11 items-center justify-center gap-2 rounded-[var(--radius-card)] border border-line bg-[color:var(--color-surface-reading)] px-3 font-semibold" disabled={!identityLoaded || isStale || signedActionsBlocked} onClick={handleCopyLocalDemoShareLink}>
+            <button className="inline-flex min-h-11 items-center justify-center gap-2 rounded-card border border-line bg-surface px-3 font-semibold" disabled={!identityLoaded || isStale || signedActionsBlocked} onClick={handleCopyLocalDemoShareLink}>
               <Clipboard size={17} aria-hidden="true" /> Copy local demo share link
             </button>
-            <button className="inline-flex min-h-11 items-center justify-center gap-2 rounded-[var(--radius-card)] border border-line bg-[color:var(--color-surface-reading)] px-3 font-semibold" disabled={!identityLoaded || isStale || signedActionsBlocked} onClick={handleMarkSent}>
+            <button className="inline-flex min-h-11 items-center justify-center gap-2 rounded-card border border-line bg-surface px-3 font-semibold" disabled={!identityLoaded || isStale || signedActionsBlocked} onClick={handleMarkSent}>
               <Send size={17} aria-hidden="true" /> Mark caregiver share recorded
             </button>
           </div>
@@ -372,14 +372,14 @@ function ReportSummaryIdentityScope({ caseId, sessionId, transcriptId, reportId 
         {isFinalized ? (
           <button
             type="button"
-            className="inline-flex min-h-11 w-full items-center justify-center rounded-[var(--radius-card)] border border-clinical bg-[color:var(--color-surface-reading)] px-4 text-sm font-bold text-clinical disabled:opacity-50"
+            className="inline-flex min-h-11 w-full items-center justify-center rounded-card border border-brand bg-surface px-4 text-sm font-bold text-brand disabled:opacity-50"
             onClick={() => void handleCreateRevision()}
             disabled={busy || backendUnavailable || signedActionsBlocked || !(backendReport?.report_id ?? state.reportId)}
           >
             {busy ? "Creating revision..." : "Create report revision"}
           </button>
         ) : null}
-        {state.finalizeStatus ? <p className="demo-note rounded-[var(--radius-panel)] p-3 text-sm">{state.finalizeStatus}</p> : null}
+        {state.finalizeStatus ? <p className="demo-note rounded-panel p-3 text-sm">{state.finalizeStatus}</p> : null}
         <WorkflowStatus state={state} backendUnavailable={backendUnavailable} />
         <SafetyNote>{NON_DIAGNOSTIC_CLAIM} Final report text must be reviewed by the therapist.</SafetyNote>
       </div>
@@ -405,7 +405,7 @@ function ReportSummaryIdentityScope({ caseId, sessionId, transcriptId, reportId 
             </p>
           </div>
           <button
-            className="rounded-[var(--radius-panel)] border border-line bg-[color:var(--color-surface-reading)] px-4 py-2 text-sm font-bold text-clinical disabled:opacity-50"
+            className="rounded-panel border border-line bg-surface px-4 py-2 text-sm font-bold text-brand disabled:opacity-50"
             onClick={() => handleGenerateDraft(false)}
             disabled={busy || isFinalized || isStale || !transcriptUnlocked}
             data-testid="generate-report-draft-button"
@@ -414,14 +414,14 @@ function ReportSummaryIdentityScope({ caseId, sessionId, transcriptId, reportId 
           </button>
         </div>
         {!transcriptUnlocked ? (
-          <p className="mt-4 rounded-[var(--radius-card)] border border-amber-200 bg-amber-50 p-3 text-sm font-semibold text-amber-900">
+          <p className="mt-4 rounded-card border border-amber-200 bg-amber-50 p-3 text-sm font-semibold text-amber-900">
             Transcript review and attestation are required before report generation.
           </p>
         ) : null}
 
         {/* Failed Safety Warning Banner */}
         {!isFinalized && isFailedSafety && (
-          <div className="mt-4 rounded-[var(--radius-panel)] border border-red-200 bg-red-50 p-5 text-red-950 animate-fade-in" data-testid="report-safety-failed">
+          <div className="mt-4 rounded-panel border border-red-200 bg-red-50 p-5 text-red-950 animate-fade-in" data-testid="report-safety-failed">
             <h3 className="text-lg font-bold text-red-900">Safety Validation Failed</h3>
             <p className="mt-1 text-sm text-red-800">
               The drafted report contains prohibited diagnostic wording or fails required safety disclaimers. 
@@ -429,7 +429,7 @@ function ReportSummaryIdentityScope({ caseId, sessionId, transcriptId, reportId 
             </p>
             <ul className="mt-3 space-y-2 text-sm">
               {backendReport?.safety_validation_result?.issues.map((issue: any) => (
-                <li key={issue.issue_id} className="flex items-start gap-2 bg-[color:var(--color-surface-muted)] p-3 rounded-[var(--radius-card)] border border-red-100">
+                <li key={issue.issue_id} className="flex items-start gap-2 bg-surface-muted p-3 rounded-card border border-red-100">
                   <span className="font-bold text-red-700 uppercase tracking-wide text-xs bg-red-100 px-2 py-0.5 rounded shrink-0 mt-0.5">
                     {issue.severity}
                   </span>
@@ -451,7 +451,7 @@ function ReportSummaryIdentityScope({ caseId, sessionId, transcriptId, reportId 
             </ul>
             <button
               onClick={() => handleGenerateDraft(true)}
-              className="mt-4 inline-flex min-h-11 items-center justify-center gap-2 rounded-[var(--radius-card)] bg-clinical px-5 font-bold text-white hover:bg-[color:var(--color-accent-strong)] active:scale-95 transition-transform"
+              className="mt-4 inline-flex min-h-11 items-center justify-center gap-2 rounded-card bg-brand px-5 font-bold text-white hover:bg-brand-strong active:scale-95 transition-transform"
               data-testid="regenerate-safe-template-button"
             >
               Regenerate using Safe Template
@@ -461,14 +461,14 @@ function ReportSummaryIdentityScope({ caseId, sessionId, transcriptId, reportId 
 
         {/* Non-blocking Safety Warnings (Yellow Alert) */}
         {!isFinalized && !isFailedSafety && backendReport?.safety_validation_result?.issues && backendReport.safety_validation_result.issues.length > 0 && (
-          <div className="mt-4 rounded-[var(--radius-panel)] border border-amber-200 bg-amber-50 p-5 text-amber-950 animate-fade-in" data-testid="report-safety-warning">
+          <div className="mt-4 rounded-panel border border-amber-200 bg-amber-50 p-5 text-amber-950 animate-fade-in" data-testid="report-safety-warning">
             <h3 className="text-lg font-bold text-amber-900">Clinical Safety Warnings</h3>
             <p className="mt-1 text-sm text-amber-800">
               Please address the following safety rules in your draft. Finalization is blocked until they are resolved.
             </p>
             <ul className="mt-3 space-y-2 text-sm">
               {backendReport.safety_validation_result.issues.map((issue: any) => (
-                <li key={issue.issue_id} className="flex items-start gap-2 bg-[color:var(--color-surface-muted)] p-3 rounded-[var(--radius-card)] border border-amber-100">
+                <li key={issue.issue_id} className="flex items-start gap-2 bg-surface-muted p-3 rounded-card border border-amber-100">
                   <span className="font-bold text-amber-700 uppercase tracking-wide text-xs bg-amber-100 px-2 py-0.5 rounded shrink-0 mt-0.5">
                     {issue.severity}
                   </span>
@@ -491,7 +491,7 @@ function ReportSummaryIdentityScope({ caseId, sessionId, transcriptId, reportId 
           </div>
         )}
 
-        <textarea className="mt-5 min-h-80 w-full rounded-[var(--radius-panel)] border border-line bg-[color:var(--color-surface-reading)] p-4 text-sm leading-6 text-ink outline-none focus:ring-2 focus:ring-clinical" value={reportText} readOnly={isEditorLocked || isNotStarted} onChange={(event) => {
+        <textarea className="mt-5 min-h-80 w-full rounded-panel border border-line bg-surface p-4 text-sm leading-6 text-ink outline-none focus:ring-2 focus:ring-brand" value={reportText} readOnly={isEditorLocked || isNotStarted} onChange={(event) => {
           if (isEditorLocked || isNotStarted) return;
           setReportText(event.target.value);
           persist({ ...state, reportMarkdown: event.target.value, reportSaveStatus: "unsaved", statusMessage: "Unsaved report edits.", error: undefined });
@@ -501,7 +501,7 @@ function ReportSummaryIdentityScope({ caseId, sessionId, transcriptId, reportId 
         </p>
         <div className="mt-4 flex flex-wrap gap-2">
           <button
-            className="inline-flex items-center gap-2 rounded-[var(--radius-card)] border border-clinical bg-[color:var(--color-surface-reading)] px-4 py-3 text-sm font-bold text-clinical disabled:opacity-50"
+            className="inline-flex items-center gap-2 rounded-card border border-brand bg-surface px-4 py-3 text-sm font-bold text-brand disabled:opacity-50"
             onClick={handleSaveDraft}
             disabled={busy || isEditorLocked || !state.reportId || state.reportSaveStatus === "saved"}
             data-testid="save-report-draft-button"
@@ -512,13 +512,13 @@ function ReportSummaryIdentityScope({ caseId, sessionId, transcriptId, reportId 
         <div className="mt-4 border-t border-line pt-4">
           <p className="text-xs font-semibold uppercase tracking-[0.12em] text-slate-500">Export</p>
           <div className="mt-2 flex flex-wrap gap-2">
-            <button className="inline-flex items-center gap-2 rounded-[var(--radius-card)] border border-line bg-[color:var(--color-surface-reading)] px-4 py-3 text-sm font-bold text-clinical disabled:opacity-50" disabled={!isFinalized || signedActionsBlocked} onClick={() => void handleExport("markdown")}><Download size={18} aria-hidden="true" />Export Markdown</button>
-            <button className="inline-flex items-center gap-2 rounded-[var(--radius-card)] border border-line bg-[color:var(--color-surface-reading)] px-4 py-3 text-sm font-bold text-clinical disabled:opacity-50" disabled={!isFinalized || signedActionsBlocked} onClick={() => void handleExport("html")}><Download size={18} aria-hidden="true" />Export HTML</button>
+            <button className="inline-flex items-center gap-2 rounded-card border border-line bg-surface px-4 py-3 text-sm font-bold text-brand disabled:opacity-50" disabled={!isFinalized || signedActionsBlocked} onClick={() => void handleExport("markdown")}><Download size={18} aria-hidden="true" />Export Markdown</button>
+            <button className="inline-flex items-center gap-2 rounded-card border border-line bg-surface px-4 py-3 text-sm font-bold text-brand disabled:opacity-50" disabled={!isFinalized || signedActionsBlocked} onClick={() => void handleExport("html")}><Download size={18} aria-hidden="true" />Export HTML</button>
             {isFinalized ? (
               <Link
                 href={`/reports/preview${state.backendReportId ? `?report_id=${encodeURIComponent(state.backendReportId)}` : ""}`}
                 target="_blank"
-                className="inline-flex items-center gap-2 rounded-[var(--radius-card)] border border-emerald-600 bg-emerald-50 px-4 py-3 text-sm font-bold text-emerald-800 hover:bg-emerald-100 transition shadow-sm"
+                className="inline-flex items-center gap-2 rounded-card border border-emerald-600 bg-emerald-50 px-4 py-3 text-sm font-bold text-emerald-800 hover:bg-emerald-100 transition shadow-sm"
                 title="Print or Save as PDF with Thai Clinical Layout"
               >
                 <Printer size={18} aria-hidden="true" />
@@ -526,16 +526,16 @@ function ReportSummaryIdentityScope({ caseId, sessionId, transcriptId, reportId 
               </Link>
             ) : (
               <button
-                className="inline-flex items-center gap-2 rounded-[var(--radius-card)] border border-line bg-[color:var(--color-surface-reading)] px-4 py-3 text-sm font-bold text-slate-500 disabled:opacity-60"
+                className="inline-flex items-center gap-2 rounded-card border border-line bg-surface px-4 py-3 text-sm font-bold text-slate-500 disabled:opacity-60"
                 disabled
               >
                 Export PDF later
               </button>
             )}
-            <button className="inline-flex items-center gap-2 rounded-[var(--radius-card)] border border-line bg-[color:var(--color-surface-reading)] px-4 py-3 text-sm font-bold text-clinical disabled:opacity-50" onClick={handleExportCha} disabled={!state.transcriptAttested || state.transcriptReviewStatus !== "reviewed"}><Download size={18} aria-hidden="true" />Export reviewed .cha</button>
+            <button className="inline-flex items-center gap-2 rounded-card border border-line bg-surface px-4 py-3 text-sm font-bold text-brand disabled:opacity-50" onClick={handleExportCha} disabled={!state.transcriptAttested || state.transcriptReviewStatus !== "reviewed"}><Download size={18} aria-hidden="true" />Export reviewed .cha</button>
           </div>
         </div>
-        {exportedCha ? <textarea className="mt-4 h-40 w-full rounded-[var(--radius-panel)] border border-line bg-[color:var(--color-surface-reading)] p-3 font-mono text-xs" readOnly value={exportedCha} aria-label="Exported reviewed CHA" /> : null}
+        {exportedCha ? <textarea className="mt-4 h-40 w-full rounded-panel border border-line bg-surface p-3 font-mono text-xs" readOnly value={exportedCha} aria-label="Exported reviewed CHA" /> : null}
       </WorkspacePanel>
       </div>
     </>

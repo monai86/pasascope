@@ -42,21 +42,21 @@ export function ReportsWorkspaceClient() {
       <header className="workspace-panel flex flex-col gap-4 p-5 md:flex-row md:items-end md:justify-between">
         <div>
           <h1 className="text-3xl font-bold text-ink">Reports</h1>
-          <p className="mt-2 max-w-[70ch] text-[color:var(--color-text-muted)]">
+          <p className="mt-2 max-w-[70ch] text-ink-muted">
             รายการร่างรายงานผลการประเมินทางคลินิก และประวัติรายงานที่ได้รับการรับรองแล้ว
           </p>
         </div>
         <div className="flex flex-wrap items-center gap-2">
           <Link
             href="/reports/preview"
-            className="inline-flex min-h-11 items-center justify-center gap-2 rounded-xl bg-[color:var(--color-pasa-teal)] px-4 text-sm font-semibold text-white shadow-xs hover:bg-[color:var(--color-pasa-teal-hover)] transition"
+            className="inline-flex min-h-11 items-center justify-center gap-2 rounded-xl bg-brand px-4 text-sm font-semibold text-white shadow-xs hover:bg-brand-hover transition"
           >
             <Printer size={16} aria-hidden="true" />
             <span>พิมพ์รายงาน A4 / PDF</span>
           </Link>
           <Link
             href="/cases?intent=start-session"
-            className="inline-flex min-h-11 items-center justify-center gap-2 rounded-xl border border-[color:var(--color-border)] bg-[color:var(--color-surface-reading)] px-4 text-sm font-semibold text-[color:var(--color-text-strong)] hover:bg-[color:var(--color-surface-muted)] transition"
+            className="inline-flex min-h-11 items-center justify-center gap-2 rounded-xl border border-line bg-surface px-4 text-sm font-semibold text-ink hover:bg-surface-muted transition"
           >
             <span>Start session</span>
             <ExternalLink size={16} aria-hidden="true" />
@@ -86,12 +86,12 @@ export function ReportsWorkspaceClient() {
           <div className="mt-4 flex flex-wrap items-center gap-3">
             <Link
               href="/reports/preview"
-              className="inline-flex min-h-11 items-center gap-2 rounded-xl bg-[color:var(--color-pasa-teal)] px-4 text-sm font-semibold text-white shadow-xs hover:bg-[color:var(--color-pasa-teal-hover)] transition"
+              className="inline-flex min-h-11 items-center gap-2 rounded-xl bg-brand px-4 text-sm font-semibold text-white shadow-xs hover:bg-brand-hover transition"
             >
               <Printer size={16} />
               <span>เปิดดูตัวอย่างใบคะแนน (Preview Clinical Report)</span>
             </Link>
-            <Link href="/cases?intent=start-session" className="inline-flex min-h-11 items-center gap-2 rounded-xl border border-[color:var(--color-border)] bg-white px-4 text-sm font-semibold text-[color:var(--color-text-strong)] hover:bg-[color:var(--color-surface-muted)] transition">
+            <Link href="/cases?intent=start-session" className="inline-flex min-h-11 items-center gap-2 rounded-xl border border-line bg-white px-4 text-sm font-semibold text-ink hover:bg-surface-muted transition">
               <span>Choose a case</span>
               <ExternalLink size={16} aria-hidden="true" />
             </Link>
