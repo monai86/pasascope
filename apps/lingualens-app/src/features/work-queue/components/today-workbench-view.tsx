@@ -20,10 +20,10 @@ export function TodayWorkbenchView({
   compactContext?: React.ReactNode;
 }) {
   return (
-    <div className="space-y-6">
-      <header className="rounded-2xl border border-[color:var(--color-border)] bg-[color:var(--color-surface-reading)] flex flex-col gap-4 p-5 sm:p-6 md:flex-row md:items-end md:justify-between shadow-xs">
+    <div className="space-y-4">
+      <header className="rounded-2xl border border-[color:var(--color-border)] bg-[color:var(--color-surface-reading)] flex flex-col gap-4 p-4 sm:p-5 md:flex-row md:items-end md:justify-between shadow-xs">
         <div className="min-w-0">
-          <div className="inline-flex items-center gap-2 rounded-full border border-[color:var(--color-pasa-teal-border)] bg-[color:var(--color-pasa-teal-soft)] px-3 py-1 text-xs font-semibold text-[color:var(--color-pasa-teal)] mb-2.5">
+          <div className="inline-flex items-center gap-2 rounded-full border border-[color:var(--color-pasa-teal-border)] bg-[color:var(--color-pasa-teal-soft)] px-3 py-1 text-xs font-semibold text-[color:var(--color-pasa-teal)] mb-2.5 lg:hidden">
             <span className="h-2 w-2 rounded-full bg-[color:var(--color-scope-coral)]" />
             <span>Active Clinician Caseload</span>
           </div>
@@ -88,7 +88,7 @@ function TodayReadyState({ model }: { model: TodayWorkbenchModel }) {
   }
 
   return (
-    <div data-testid="today-primary-workbench" className="space-y-5">
+    <div data-testid="today-primary-workbench" className="space-y-3">
       <TodayNextUp model={model} />
       <dl
         className="flex snap-x snap-proximity gap-2 overflow-x-auto pb-1 sm:grid sm:grid-cols-3 sm:gap-4 sm:overflow-visible sm:pb-0"
@@ -100,7 +100,7 @@ function TodayReadyState({ model }: { model: TodayWorkbenchModel }) {
       </dl>
 
       <section className="rounded-2xl border border-[color:var(--color-border)] bg-[color:var(--color-surface-reading)] overflow-hidden shadow-xs" aria-labelledby="prioritized-queue-title">
-        <div className="px-5 py-4 border-b border-[color:var(--color-border)]">
+        <div className="px-5 py-3 border-b border-[color:var(--color-border)]">
           <h2 id="prioritized-queue-title" className="text-xl font-bold text-[color:var(--color-text-strong)]">Prioritized queue</h2>
         </div>
 
@@ -114,10 +114,10 @@ function TodayReadyState({ model }: { model: TodayWorkbenchModel }) {
                 aria-labelledby={`today-group-${group.key}`}
                 className="border-b border-[color:var(--color-border)] last:border-b-0"
               >
-                <div className="flex flex-wrap items-baseline justify-between gap-2 bg-[color:var(--color-surface-strong)] px-5 py-3">
-                  <div>
-                    <h3 id={`today-group-${group.key}`} className="text-sm font-bold text-[color:var(--color-text-strong)]">{group.label}</h3>
-                    <p className="mt-0.5 hidden text-xs leading-5 text-[color:var(--color-text-muted)] sm:block">{group.description}</p>
+                <div className="flex flex-wrap items-baseline justify-between gap-2 bg-[color:var(--color-surface-strong)] px-5 py-2">
+                  <div className="min-w-0 lg:flex lg:items-baseline lg:gap-3">
+                    <h3 id={`today-group-${group.key}`} className="shrink-0 text-sm font-bold text-[color:var(--color-text-strong)]">{group.label}</h3>
+                    <p className="mt-0.5 hidden text-xs leading-5 text-[color:var(--color-text-muted)] sm:block lg:mt-0 lg:truncate">{group.description}</p>
                   </div>
                   <span className="rounded-full bg-[color:var(--color-surface-muted)] px-2.5 py-0.5 text-xs font-semibold text-[color:var(--color-text-muted)]">{items.length} {items.length === 1 ? "item" : "items"}</span>
                 </div>
@@ -140,7 +140,7 @@ function TodayNextUp({ model }: { model: TodayWorkbenchModel }) {
     <section
       data-testid="today-next-up"
       aria-labelledby="today-next-up-title"
-      className="overflow-hidden rounded-2xl border border-[color:var(--color-pasa-teal-border)] bg-gradient-to-br from-[color:var(--color-pasa-teal-soft)]/60 via-white to-white p-5 sm:p-6 shadow-xs"
+      className="overflow-hidden rounded-2xl border border-[color:var(--color-pasa-teal-border)] bg-gradient-to-br from-[color:var(--color-pasa-teal-soft)]/60 via-white to-white p-4 sm:p-5 shadow-xs"
     >
       <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
         <div className="min-w-0">
@@ -150,11 +150,11 @@ function TodayNextUp({ model }: { model: TodayWorkbenchModel }) {
               Next up for you
             </p>
           </div>
-          <h2 className="mt-2 text-xl font-bold text-[color:var(--color-text-strong)] sm:text-2xl">
+          <h2 className="mt-1.5 text-xl font-bold text-[color:var(--color-text-strong)]">
             {item.caseLabel} · {item.taskType}
           </h2>
           <p className="mt-1 max-w-[70ch] text-sm leading-relaxed text-[color:var(--color-text-muted)]">{item.reason}</p>
-          <div className="mt-3 flex flex-wrap items-center gap-2">
+          <div className="mt-2 flex flex-wrap items-center gap-2">
             <StatusBadge status={item.workflowStatus} />
             <span className="rounded-full bg-[color:var(--color-surface-muted)] px-2.5 py-0.5 text-xs font-medium text-[color:var(--color-text-muted)]">{item.reviewPriority}</span>
             <span className="text-xs text-[color:var(--color-text-muted)]">{formatDate(item.sessionDate)}</span>
@@ -175,7 +175,7 @@ function TodayQueueRow({ item }: { item: TodayWorkbenchModel["items"][number] })
   return (
     <article
       data-testid="today-queue-row"
-      className="flex flex-col gap-2 px-5 py-3.5 sm:px-5 lg:flex-row lg:items-center lg:gap-4 hover:bg-[color:var(--color-surface)]/50 transition"
+      className="flex flex-col gap-2 px-5 py-3.5 sm:px-5 lg:flex-row lg:items-center lg:gap-4 lg:py-2.5 hover:bg-[color:var(--color-surface)]/50 transition"
     >
       <div className="min-w-0 lg:w-48">
         <h4 className="truncate font-bold text-[color:var(--color-text-strong)]">{item.caseLabel}</h4>
@@ -201,9 +201,9 @@ function TodayQueueRow({ item }: { item: TodayWorkbenchModel["items"][number] })
 
 function QueueMetric({ label, value }: { label: string; value: number }) {
   return (
-    <div className="min-w-0 flex-1 snap-start rounded-2xl border border-[color:var(--color-border)] bg-[color:var(--color-surface-reading)] p-4 shadow-xs transition hover:shadow-lift sm:min-w-0 sm:flex-none">
+    <div className="flex min-w-0 flex-1 snap-start items-baseline justify-between gap-3 rounded-xl border border-[color:var(--color-border)] bg-[color:var(--color-surface-reading)] px-4 py-2.5 shadow-xs sm:min-w-0 sm:flex-none">
       <dt className="text-xs font-bold uppercase tracking-wider text-[color:var(--color-text-muted)]">{label}</dt>
-      <dd className="mt-1.5 text-2xl font-extrabold text-[color:var(--color-text-strong)] sm:text-3xl">{value}</dd>
+      <dd className="text-xl font-extrabold text-[color:var(--color-text-strong)]">{value}</dd>
     </div>
   );
 }
