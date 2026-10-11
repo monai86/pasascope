@@ -15,7 +15,10 @@ from packages.tui.client import PasaScopeClient
 @pytest.fixture
 def tk_root():
     import tkinter as tk
-    root = tk.Tk()
+    try:
+        root = tk.Tk()
+    except tk.TclError:
+        pytest.skip("Headless environment without display server")
     root.withdraw()
     try:
         yield root
