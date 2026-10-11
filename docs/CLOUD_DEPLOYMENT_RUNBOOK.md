@@ -76,14 +76,14 @@
 2. กดปุ่ม **New +** > เลือก **Blueprint**
 3. เชื่อมต่อกับ GitHub Repository: `monai86/lingualens`
 4. Render จะอ่านไฟล์ [`render.yaml`](file:///Users/porschecaa/lingualens/render.yaml) และสร้าง service:
-   - **Service Name:** `lingualens-api`
+   - **Service Name:** `pasascope-api`
    - **Runtime:** Docker (สร้างจาก `Dockerfile` ที่มี FFmpeg, libsndfile, PyThaiNLP)
    - **Region:** Singapore
    - **Health Check Path:** `/health`
 5. กรอก Environment Variables ที่ต้องใส่เพิ่ม (Secret):
-   - `LINGUALENS_DATABASE_URL`: URI จาก Supabase (ขั้นตอนที่ 1.3)
-   - `LINGUALENS_SUPABASE_STORAGE_SERVICE_ROLE_KEY`: Service role secret จาก Supabase
-   - `LINGUALENS_CORS_ALLOWED_ORIGINS`: ใส่โดเมนของ Frontend บน Vercel เช่น `https://lingualens.vercel.app,http://localhost:3000`
+   - `PASASCOPE_DATABASE_URL`: URI จาก Supabase (ขั้นตอนที่ 1.3)
+   - `PASASCOPE_SUPABASE_STORAGE_SERVICE_ROLE_KEY`: Service role secret จาก Supabase
+   - `PASASCOPE_CORS_ALLOWED_ORIGINS`: ใส่โดเมนของ Frontend บน Vercel เช่น `https://lingualens.vercel.app,http://localhost:3000`
 6. กด **Apply** เพื่อเริ่มการ Build และ Deploy
 
 ---
