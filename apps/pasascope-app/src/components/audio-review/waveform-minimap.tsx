@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useRef, useEffect, useCallback } from "react";
+import { withAlpha, WORKBENCH_CANVAS } from "@/design-system/dataviz";
 
 export interface WaveformMinimapProps {
   durationMs: number;
@@ -46,7 +47,7 @@ export function WaveformMinimap({
     ctx.clearRect(0, 0, width, height);
 
     // Background
-    ctx.fillStyle = "#0f172a"; // Slate-900
+    ctx.fillStyle = WORKBENCH_CANVAS.background;
     ctx.fillRect(0, 0, width, height);
 
     // Draw peaks if available, else synthetic fallback envelope
@@ -54,7 +55,7 @@ export function WaveformMinimap({
       const numPoints = peaks.length;
       const step = numPoints / width;
 
-      ctx.fillStyle = "#38bdf8"; // Sky-400
+      ctx.fillStyle = WORKBENCH_CANVAS.peaks;
       ctx.beginPath();
       for (let x = 0; x < width; x++) {
         const peakIdx = Math.floor(x * step);
@@ -64,7 +65,7 @@ export function WaveformMinimap({
       }
     } else {
       // Default placeholder baseline
-      ctx.strokeStyle = "#334155";
+      ctx.strokeStyle = WORKBENCH_CANVAS.grid;
       ctx.lineWidth = 1;
       ctx.beginPath();
       ctx.moveTo(0, midY);
@@ -79,20 +80,20 @@ export function WaveformMinimap({
       const vpWidth = Math.max(8, endX - startX);
 
       // Shaded non-active areas
-      ctx.fillStyle = "rgba(15, 23, 42, 0.65)";
+      ctx.fillStyle = withAlpha(WORKBENCH_CANVAS.background, 0.65);
       ctx.fillRect(0, 0, startX, height);
       ctx.fillRect(endX, 0, width - endX, height);
 
       // Viewport highlight box
-      ctx.strokeStyle = "#38bdf8";
+      ctx.strokeStyle = WORKBENCH_CANVAS.viewport;
       ctx.lineWidth = 1.5;
       ctx.strokeRect(startX, 0.5, vpWidth, height - 1);
-      ctx.fillStyle = "rgba(56, 189, 248, 0.12)";
+      ctx.fillStyle = withAlpha(WORKBENCH_CANVAS.peaks, 0.12);
       ctx.fillRect(startX, 1, vpWidth, height - 2);
 
       // Playhead line
       const playheadX = (currentTimeMs / durationMs) * width;
-      ctx.strokeStyle = "#f43f5e"; // Rose-500
+      ctx.strokeStyle = WORKBENCH_CANVAS.playhead;
       ctx.lineWidth = 2;
       ctx.beginPath();
       ctx.moveTo(playheadX, 0);
@@ -158,7 +159,7 @@ export function WaveformMinimap({
       onPointerDown={handlePointerDown}
       onPointerMove={handlePointerMove}
       onPointerUp={handlePointerUp}
-      className={`relative h-12 w-full cursor-crosshair overflow-hidden rounded-md border border-slate-700 bg-slate-900 select-none ${className}`}
+      className={`relative h-12 w-full cursor-crosshair overflow-hidden rounded-control border border-navy-line bg-navy select-none ${className}`}
       data-testid="waveform-minimap"
       role="region"
       aria-label="Overview waveform minimap"

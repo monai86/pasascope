@@ -4,6 +4,7 @@ import React, { useState, useEffect } from "react";
 import { Gauge, Radio, Clock, ShieldCheck } from "lucide-react";
 import { WaveformMinimap } from "./waveform-minimap";
 import { WaveformDetailCanvas, type WaveformSegment } from "./waveform-detail-canvas";
+import { SPEAKER_COLOURS, SPEAKER_ROLE_LABELS, type SpeakerRole } from "@/design-system/dataviz";
 
 export interface DualViewWaveformProps {
   currentTimeMs: number;
@@ -13,7 +14,6 @@ export interface DualViewWaveformProps {
   snrDb?: number;
   diarizationConfidence?: number;
   responseLatencyMs?: number;
-  showPitch?: boolean;
   onSeek?: (timeMs: number) => void;
   onSegmentBoundaryChange?: (segmentId: string, startMs: number, endMs: number) => void;
   className?: string;
@@ -27,7 +27,6 @@ export function DualViewWaveform({
   snrDb,
   diarizationConfidence,
   responseLatencyMs,
-  showPitch = false,
   onSeek,
   onSegmentBoundaryChange,
   className = "",
@@ -61,56 +60,48 @@ export function DualViewWaveform({
 
   return (
     <div
-      className={`flex flex-col gap-2 rounded-xl border border-slate-800 bg-slate-900/90 p-3 text-slate-100 shadow-xl ${className}`}
+      className={`flex flex-col gap-2 rounded-card border border-navy-line bg-navy p-3 text-on-navy shadow-lift ${className}`}
       data-testid="dual-view-waveform"
     >
-      {/* Top Header Bar: Track Legends & Quality KPIs */}
-      <div className="flex flex-wrap items-center justify-between gap-2 border-b border-slate-800 pb-2 text-xs">
-        {/* Track Legends */}
-        <div className="flex items-center gap-3">
-          <span className="font-semibold text-slate-300">Tracks:</span>
-          <div className="flex items-center gap-1.5">
-            <span className="h-2.5 w-2.5 rounded-full bg-blue-500 ring-2 ring-blue-500/30" />
-            <span className="font-medium text-blue-300">CHI (Child)</span>
-          </div>
-          <div className="flex items-center gap-1.5">
-            <span className="h-2.5 w-2.5 rounded-full bg-emerald-500 ring-2 ring-emerald-500/30" />
-            <span className="font-medium text-emerald-300">INV (Clinician)</span>
-          </div>
-          <div className="flex items-center gap-1.5">
-            <span className="h-2.5 w-2.5 rounded-full bg-purple-500 ring-2 ring-purple-500/30" />
-            <span className="font-medium text-purple-300">OTH / Parent</span>
-          </div>
-        </div>
+      {/* Legend and measured indicators */}
+      <div className="flex flex-wrap items-center justify-between gap-2 border-b border-navy-line pb-2 text-xs">
+        {/* Speaker legend: the dot carries the colour, the label stays in text ink. */}
+        <ul className="flex flex-wrap items-center gap-3" aria-label="Speaker colours">
+          {(Object.keys(SPEAKER_ROLE_LABELS) as SpeakerRole[]).map((role) => (
+            <li key={role} className="flex items-center gap-1.5 font-medium text-on-navy-muted">
+              <span aria-hidden="true" className="h-2.5 w-2.5 rounded-full" style={{ backgroundColor: SPEAKER_COLOURS.navy[role] }} />
+              {SPEAKER_ROLE_LABELS[role]}
+            </li>
+          ))}
+        </ul>
 
-        {/* Quality Indicators */}
         <div className="flex items-center gap-3 font-mono">
           {typeof snrDb === "number" && (
             <div
-              className="flex items-center gap-1 rounded bg-slate-800 px-2 py-0.5 text-slate-300"
+              className="flex items-center gap-1 rounded-full bg-navy-raised px-2 py-0.5 text-on-navy-muted"
               title="Signal-to-Noise Ratio (Clean audio > 15 dB)"
             >
-              <Radio size={12} className="text-sky-400" />
+              <Radio size={12} aria-hidden="true" className="text-tint" />
               <span>SNR: {snrDb.toFixed(1)} dB</span>
             </div>
           )}
 
           {typeof diarizationConfidence === "number" && (
             <div
-              className="flex items-center gap-1 rounded bg-slate-800 px-2 py-0.5 text-slate-300"
+              className="flex items-center gap-1 rounded-full bg-navy-raised px-2 py-0.5 text-on-navy-muted"
               title="Diarization Alignment Confidence"
             >
-              <ShieldCheck size={12} className="text-emerald-400" />
+              <ShieldCheck size={12} aria-hidden="true" className="text-tint" />
               <span>Diarization: {diarizationConfidence.toFixed(1)}%</span>
             </div>
           )}
 
           {typeof responseLatencyMs === "number" && (
             <div
-              className="flex items-center gap-1 rounded bg-slate-800 px-2 py-0.5 text-slate-300"
+              className="flex items-center gap-1 rounded-full bg-navy-raised px-2 py-0.5 text-on-navy-muted"
               title="Clinician-to-Child Turn-taking Latency"
             >
-              <Clock size={12} className="text-amber-400" />
+              <Clock size={12} aria-hidden="true" className="text-tint" />
               <span>Latency: {Math.round(responseLatencyMs)} ms</span>
             </div>
           )}
@@ -138,7 +129,6 @@ export function DualViewWaveform({
           viewportEndMs={viewportEndMs}
           segments={segments}
           peaks={peaks}
-          showPitch={showPitch}
           onSeek={onSeek}
           onSegmentBoundaryChange={onSegmentBoundaryChange}
         />

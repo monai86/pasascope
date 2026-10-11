@@ -4,6 +4,8 @@ import { useState } from "react";
 import { ClipboardCheck, FileText, Inbox, LayoutGrid, Rows3 } from "lucide-react";
 
 import { designSystemMessages } from "@/app/demo/design-system/design-system.messages";
+import { AudioScrubberBar } from "@/components/audio-review/audio-scrubber-bar";
+import { DualViewWaveform } from "@/components/audio-review/dual-view-waveform";
 import { LanguageToggle } from "@/components/language-toggle";
 import { PasaScopeLogo } from "@/components/pasascope-logo";
 import { StatusBadge } from "@/components/status-badge";
@@ -27,6 +29,15 @@ const swatches = {
   thirty: ["--color-sky-soft", "--color-sky", "--color-sky-strong", "--color-text-muted", "--color-text-strong", "--color-navy"],
   ten: ["--color-brand", "--color-brand-hover", "--color-brand-soft", "--color-highlight", "--color-highlight-soft"],
 } as const;
+
+// Invented segments and envelope, only to show the workbench styling.
+const sampleSegments = [
+  { id: "s1", speaker: "INV", startMs: 400, endMs: 2300, text: "What do you see?" },
+  { id: "s2", speaker: "CHI", startMs: 2700, endMs: 4600, text: "I see a blue car." },
+  { id: "s3", speaker: "MOT", startMs: 5000, endMs: 6400, text: "A big one." },
+  { id: "s4", speaker: "CHI", startMs: 6800, endMs: 8600, text: "Car goes fast." },
+];
+const samplePeaks = Int8Array.from({ length: 240 }, (_, index) => Math.round(Math.abs(Math.sin(index / 7) * Math.cos(index / 23)) * 110));
 
 const statuses = ["Draft", "Processing", "Needs Review", "Attested", "Report Ready", "Signed Off", "Awaiting Consent", "Recording", "Failed"];
 
@@ -187,6 +198,32 @@ export default function DesignSystemPage() {
           <EmptyState title={t.states.emptyTitle} description={t.states.emptyBody} action={<Button>{t.states.emptyAction}</Button>} />
           <ErrorState title={t.states.errorTitle} description={t.states.errorBody} retryLabel={t.states.retry} onRetry={() => {}} />
         </div>
+      </Section>
+
+      <Section heading={t.audio.heading}>
+        <div className="grid gap-3">
+          <AudioScrubberBar
+            isPlaying={false}
+            currentTimeMs={3200}
+            durationMs={9000}
+            speed={1}
+            isLooping={false}
+            onPlayPause={() => {}}
+            onSpeedChange={() => {}}
+            onToggleLoop={() => {}}
+            onSeek={() => {}}
+          />
+          <DualViewWaveform
+            currentTimeMs={3200}
+            durationMs={9000}
+            segments={sampleSegments}
+            peaks={samplePeaks}
+            responseLatencyMs={400}
+            onSeek={() => {}}
+            onSegmentBoundaryChange={() => {}}
+          />
+        </div>
+        <p className="mt-4 text-sm leading-6 text-ink-muted">{t.audio.note}</p>
       </Section>
 
       <Section heading={t.dialog.heading}>

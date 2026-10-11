@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useRef, useEffect, useCallback, useState } from "react";
+import { speakerColour, withAlpha, WORKBENCH_CANVAS } from "@/design-system/dataviz";
 
 export interface WaveformSegment {
   id: string;
@@ -16,7 +17,6 @@ export interface WaveformDetailCanvasProps {
   viewportEndMs: number;
   segments: WaveformSegment[];
   peaks?: Int8Array | null;
-  showPitch?: boolean;
   onSeek?: (timeMs: number) => void;
   onSegmentBoundaryChange?: (segmentId: string, startMs: number, endMs: number) => void;
   className?: string;
@@ -34,7 +34,6 @@ export function WaveformDetailCanvas({
   viewportEndMs,
   segments,
   peaks,
-  showPitch = false,
   onSeek,
   onSegmentBoundaryChange,
   className = "",
@@ -46,14 +45,8 @@ export function WaveformDetailCanvas({
   const durationInWindow = Math.max(1000, viewportEndMs - viewportStartMs);
 
   const getSpeakerColor = (speaker: string) => {
-    const s = speaker.toUpperCase();
-    if (s === "CHI" || s === "*CHI") {
-      return { fill: "rgba(59, 130, 246, 0.25)", border: "#3b82f6", text: "#93c5fd" };
-    }
-    if (s === "INV" || s === "*INV") {
-      return { fill: "rgba(16, 185, 129, 0.25)", border: "#10b981", text: "#6ee7b7" };
-    }
-    return { fill: "rgba(168, 85, 247, 0.25)", border: "#a855f7", text: "#d8b4fe" };
+    const colour = speakerColour(speaker, "navy");
+    return { fill: withAlpha(colour, 0.25), border: colour, text: WORKBENCH_CANVAS.segmentLabel };
   };
 
   const draw = useCallback(() => {
@@ -73,17 +66,16 @@ export function WaveformDetailCanvas({
 
     ctx.clearRect(0, 0, width, height);
 
-    // Dark background
-    ctx.fillStyle = "#090d16";
+    ctx.fillStyle = WORKBENCH_CANVAS.background;
     ctx.fillRect(0, 0, width, height);
 
     // Draw grid lines (1 second intervals)
     const secStepMs = 1000;
     const firstSec = Math.ceil(viewportStartMs / secStepMs) * secStepMs;
-    ctx.strokeStyle = "#1e293b";
+    ctx.strokeStyle = WORKBENCH_CANVAS.grid;
     ctx.lineWidth = 1;
     ctx.font = "10px monospace";
-    ctx.fillStyle = "#64748b";
+    ctx.fillStyle = WORKBENCH_CANVAS.axisLabel;
 
     for (let t = firstSec; t <= viewportEndMs; t += secStepMs) {
       const x = ((t - viewportStartMs) / durationInWindow) * width;
@@ -97,7 +89,7 @@ export function WaveformDetailCanvas({
     }
 
     // Draw baseline
-    ctx.strokeStyle = "#1e293b";
+    ctx.strokeStyle = WORKBENCH_CANVAS.grid;
     ctx.lineWidth = 1;
     ctx.beginPath();
     ctx.moveTo(0, midY);
@@ -136,28 +128,10 @@ export function WaveformDetailCanvas({
       ctx.fillRect(segEndX - 3, midY - 14, 6, 28);
     });
 
-    // Draw pitch contour overlay if enabled
-    if (showPitch) {
-      ctx.strokeStyle = "#f59e0b"; // Amber-500
-      ctx.lineWidth = 2;
-      ctx.setLineDash([4, 2]);
-      ctx.beginPath();
-      for (let x = 0; x < width; x += 4) {
-        const timeAtX = viewportStartMs + (x / width) * durationInWindow;
-        // Synthesize gentle pitch curve modulated with speech boundaries
-        const pitchNorm = Math.sin(timeAtX / 400) * 0.25 + 0.5;
-        const pitchY = height * 0.7 - pitchNorm * 40;
-        if (x === 0) ctx.moveTo(x, pitchY);
-        else ctx.lineTo(x, pitchY);
-      }
-      ctx.stroke();
-      ctx.setLineDash([]);
-    }
-
     // Draw playhead cursor
     if (currentTimeMs >= viewportStartMs && currentTimeMs <= viewportEndMs) {
       const playheadX = ((currentTimeMs - viewportStartMs) / durationInWindow) * width;
-      ctx.strokeStyle = "#f43f5e"; // Rose-500
+      ctx.strokeStyle = WORKBENCH_CANVAS.playhead;
       ctx.lineWidth = 2.5;
       ctx.beginPath();
       ctx.moveTo(playheadX, 0);
@@ -165,7 +139,7 @@ export function WaveformDetailCanvas({
       ctx.stroke();
 
       // Playhead top cap triangle
-      ctx.fillStyle = "#f43f5e";
+      ctx.fillStyle = WORKBENCH_CANVAS.playhead;
       ctx.beginPath();
       ctx.moveTo(playheadX - 6, 0);
       ctx.lineTo(playheadX + 6, 0);
@@ -178,7 +152,6 @@ export function WaveformDetailCanvas({
     viewportEndMs,
     durationInWindow,
     segments,
-    showPitch,
   ]);
 
   useEffect(() => {
@@ -253,7 +226,7 @@ export function WaveformDetailCanvas({
       onPointerDown={handlePointerDown}
       onPointerMove={handlePointerMove}
       onPointerUp={handlePointerUp}
-      className={`relative h-44 w-full cursor-crosshair overflow-hidden rounded-md border border-slate-800 bg-slate-950 select-none ${className}`}
+      className={`relative h-44 w-full cursor-crosshair overflow-hidden rounded-control border border-navy-line bg-navy select-none ${className}`}
       data-testid="waveform-detail-canvas"
       role="region"
       aria-label="High-resolution waveform detail canvas"

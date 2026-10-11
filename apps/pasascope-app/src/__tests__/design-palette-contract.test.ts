@@ -1,6 +1,3 @@
-import { readFileSync, writeFileSync } from "node:fs";
-import { resolve } from "node:path";
-
 import { describe, expect, it } from "vitest";
 
 import {
@@ -17,46 +14,14 @@ import {
 
 /**
  * The palette contract: no green anywhere, every colour through a design
- * token, and every text/fill pairing at WCAG AA.
- *
- * The redesign moves screens to the new palette a surface at a time. Files
- * that have not been moved yet are listed in palette-migration-pending.json.
- * That list may only shrink: a listed file that has become clean fails the
- * suite until its entry is removed, and a file that is not listed may not
- * offend at all. `PALETTE_WRITE_PENDING=1` rewrites the list from the current
- * tree and exists for the removal step, never to admit a new offender.
+ * token, and every text/fill pairing at WCAG AA. It scans every styling
+ * source in the app, so a new offender fails here with its file and class.
  */
-const PENDING_FILE = "src/__tests__/support/palette-migration-pending.json";
-
-type PendingLists = { green: string[]; legacy: string[] };
-
-function scan(find: (path: string, text: string) => string[]): Map<string, string[]> {
-  const offendersByFile = new Map<string, string[]>();
-  for (const path of styleSources()) {
+function scan(find: (path: string, text: string) => string[]): string[] {
+  return styleSources().flatMap((path) => {
     const offenders = find(path, readSource(path));
-    if (offenders.length) offendersByFile.set(path, offenders);
-  }
-  return offendersByFile;
-}
-
-const greenByFile = scan(findGreen);
-const legacyByFile = scan(findLegacyStyling);
-
-if (process.env.PALETTE_WRITE_PENDING === "1") {
-  const lists: PendingLists = { green: [...greenByFile.keys()], legacy: [...legacyByFile.keys()] };
-  writeFileSync(resolve(process.cwd(), PENDING_FILE), `${JSON.stringify(lists, null, 2)}\n`);
-}
-
-const pending = JSON.parse(readFileSync(resolve(process.cwd(), PENDING_FILE), "utf8")) as PendingLists;
-
-function describeOffenders(offendersByFile: Map<string, string[]>, allowed: readonly string[]): string[] {
-  return [...offendersByFile]
-    .filter(([path]) => !allowed.includes(path))
-    .map(([path, offenders]) => `${path}: ${[...new Set(offenders)].slice(0, 6).join(", ")}`);
-}
-
-function cleanedButStillListed(offendersByFile: Map<string, string[]>, listed: readonly string[]): string[] {
-  return listed.filter((path) => !offendersByFile.has(path));
+    return offenders.length ? [`${path}: ${[...new Set(offenders)].slice(0, 6).join(", ")}`] : [];
+  });
 }
 
 describe("palette contract", () => {
@@ -69,17 +34,14 @@ describe("palette contract", () => {
     }
   });
 
-  it("renders no green outside the screens still waiting to be migrated", () => {
-    expect(describeOffenders(greenByFile, pending.green)).toEqual([]);
+  it("renders no green, teal or turquoise anywhere", () => {
+    expect(scan(findGreen)).toEqual([]);
   });
 
-  it("uses design tokens outside the screens still waiting to be migrated", () => {
-    expect(describeOffenders(legacyByFile, pending.legacy)).toEqual([]);
-  });
-
-  it("lists only files that still need migrating", () => {
-    expect(cleanedButStillListed(greenByFile, pending.green)).toEqual([]);
-    expect(cleanedButStillListed(legacyByFile, pending.legacy)).toEqual([]);
+  it("styles every screen through the design tokens", () => {
+    // No raw Tailwind palette classes, no `dark:` variants in a light-only
+    // product, and none of the retired palette's names.
+    expect(scan(findLegacyStyling)).toEqual([]);
   });
 
   it("defines every custom property the app references", () => {

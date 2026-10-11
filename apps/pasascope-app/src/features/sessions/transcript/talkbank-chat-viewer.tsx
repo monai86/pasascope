@@ -68,15 +68,15 @@ export function TalkbankChatViewer({
   };
 
   return (
-    <div className={`flex flex-col rounded-xl border border-slate-200 bg-white shadow-sm ${className}`}>
+    <div className={`flex flex-col rounded-xl border border-line bg-white shadow-sm ${className}`}>
       {/* Header Toolbar */}
-      <div className="flex items-center justify-between border-b border-slate-200 bg-slate-50/80 px-4 py-2.5">
+      <div className="flex items-center justify-between border-b border-line bg-surface-soft px-4 py-2.5">
         <div className="flex items-center gap-2">
-          <FileCode className="h-4 w-4 text-sky-600" />
-          <span className="text-xs font-bold text-slate-800">
+          <FileCode className="h-4 w-4 text-[color:var(--color-info-text)]" />
+          <span className="text-xs font-bold text-ink">
             TalkBank / CHAT Standard Syntax View
           </span>
-          <span className="rounded bg-sky-100 px-1.5 py-0.5 text-xs font-semibold text-sky-700">
+          <span className="rounded bg-brand-soft px-1.5 py-0.5 text-xs font-semibold text-[color:var(--color-info-text)]">
             @UTF8
           </span>
         </div>
@@ -84,16 +84,16 @@ export function TalkbankChatViewer({
         <button
           type="button"
           onClick={handleCopy}
-          className="flex min-h-10 items-center gap-1.5 rounded-lg border border-slate-300 bg-white px-3 py-1.5 text-xs font-medium text-slate-700 shadow-xs hover:bg-slate-50 active:scale-98 transition-all"
+          className="flex min-h-10 items-center gap-1.5 rounded-lg border border-line-strong bg-white px-3 py-1.5 text-xs font-medium text-ink shadow-xs hover:bg-surface-soft active:scale-98 transition-all"
         >
           {copied ? (
             <>
-              <Check className="h-3.5 w-3.5 text-emerald-600" />
-              <span className="text-emerald-700 font-semibold">Copied!</span>
+              <Check className="h-3.5 w-3.5 text-[color:var(--color-success-text)]" />
+              <span className="text-[color:var(--color-success-text)] font-semibold">Copied!</span>
             </>
           ) : (
             <>
-              <Copy className="h-3.5 w-3.5 text-slate-500" />
+              <Copy className="h-3.5 w-3.5 text-ink-muted" />
               <span>Copy CHAT</span>
             </>
           )}
@@ -101,11 +101,11 @@ export function TalkbankChatViewer({
       </div>
 
       {/* Syntax Render Panel */}
-      <div className="max-h-[500px] overflow-auto p-4 font-mono text-xs leading-relaxed text-slate-800 selection:bg-sky-200">
+      <div className="max-h-[500px] overflow-auto p-4 font-mono text-xs leading-relaxed text-ink selection:bg-brand-soft">
         {chatContent.split("\n").map((line, idx) => {
           if (line.startsWith("@")) {
             return (
-              <div key={idx} className="text-purple-700 font-semibold py-0.5">
+              <div key={idx} className="text-[color:var(--color-info-text)] font-semibold py-0.5">
                 {line}
               </div>
             );
@@ -115,10 +115,10 @@ export function TalkbankChatViewer({
             const spk = parts[0];
             const rest = parts.slice(1).join("\t");
             return (
-              <div key={idx} className="py-0.5 hover:bg-emerald-50/50 rounded px-1 -mx-1">
-                <span className="font-bold text-emerald-700">{spk}</span>
-                <span className="text-slate-400">	</span>
-                <span className="text-slate-900 font-medium">{rest}</span>
+              <div key={idx} className="py-0.5 hover:bg-[color:var(--color-success-bg)] rounded px-1 -mx-1">
+                <span className="font-bold text-[color:var(--color-success-text)]">{spk}</span>
+                <span className="text-ink-subtle">	</span>
+                <span className="text-ink font-medium">{rest}</span>
               </div>
             );
           }
@@ -127,22 +127,22 @@ export function TalkbankChatViewer({
             const spk = parts[0];
             const rest = parts.slice(1).join("\t");
             return (
-              <div key={idx} className="py-0.5 hover:bg-sky-50/50 rounded px-1 -mx-1">
-                <span className="font-bold text-sky-700">{spk}</span>
-                <span className="text-slate-400">	</span>
-                <span className="text-slate-700">{rest}</span>
+              <div key={idx} className="py-0.5 hover:bg-brand-soft rounded px-1 -mx-1">
+                <span className="font-bold text-[color:var(--color-info-text)]">{spk}</span>
+                <span className="text-ink-subtle">	</span>
+                <span className="text-ink">{rest}</span>
               </div>
             );
           }
           if (line.startsWith("%")) {
             return (
-              <div key={idx} className="text-slate-500 italic py-0.5 pl-4">
+              <div key={idx} className="text-ink-muted italic py-0.5 pl-4">
                 {line}
               </div>
             );
           }
           return (
-            <div key={idx} className="text-slate-600 py-0.5">
+            <div key={idx} className="text-ink-muted py-0.5">
               {line}
             </div>
           );

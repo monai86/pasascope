@@ -12,6 +12,28 @@ export interface KeyboardReviewOptions {
   isEnabled?: boolean;
 }
 
+const SPEAKER_BY_DIGIT = {
+  Digit1: "CHI",
+  Digit2: "INV",
+  Digit3: "MOT",
+  Digit4: "FAT",
+} as const;
+
+/**
+ * Keyboard shortcuts for audio review. None of them takes over a browser
+ * shortcut: Cmd/Ctrl with a digit switches tabs and Cmd/Ctrl+L focuses the
+ * address bar, so those combinations are left alone and the review actions
+ * use Alt (Option) instead.
+ *
+ *   Space              play or pause (not while typing in a field)
+ *   Alt+R              replay the active utterance
+ *   Alt+L              toggle loop
+ *   Alt+1 … Alt+4      assign CHI, INV, MOT, FAT to the active utterance
+ *   Cmd/Ctrl+Enter     mark verified and advance
+ *
+ * Alt shortcuts are matched on the physical key (`code`), because Option
+ * changes the character a key produces on macOS.
+ */
 export function useKeyboardReview({
   onPlayPause,
   onReplayActive,
@@ -26,6 +48,7 @@ export function useKeyboardReview({
 
     const handleKeyDown = (e: KeyboardEvent) => {
       const isCmdOrCtrl = e.metaKey || e.ctrlKey;
+      const isAltOnly = e.altKey && !isCmdOrCtrl;
       const target = e.target as HTMLElement | null;
       const isTextInput =
         target &&
@@ -33,52 +56,28 @@ export function useKeyboardReview({
           target.tagName === "TEXTAREA" ||
           target.isContentEditable);
 
-      // Cmd/Ctrl + Space: Replay active utterance
-      if (isCmdOrCtrl && e.code === "Space") {
+      if (isAltOnly && e.code === "KeyR") {
         e.preventDefault();
         onReplayActive?.();
         return;
       }
 
-      // Spacebar: Play/Pause (only when not typing in text input)
-      if (e.code === "Space" && !isTextInput) {
-        e.preventDefault();
-        onPlayPause?.();
-        return;
-      }
-
-      // Cmd/Ctrl + L: Toggle loop mode
-      if (isCmdOrCtrl && (e.key === "l" || e.key === "L")) {
+      if (isAltOnly && e.code === "KeyL") {
         e.preventDefault();
         onToggleLoop?.();
         return;
       }
 
-      // Cmd/Ctrl + 1: CHI
-      if (isCmdOrCtrl && e.key === "1") {
+      if (isAltOnly && e.code in SPEAKER_BY_DIGIT) {
         e.preventDefault();
-        onAssignSpeaker?.("CHI");
+        onAssignSpeaker?.(SPEAKER_BY_DIGIT[e.code as keyof typeof SPEAKER_BY_DIGIT]);
         return;
       }
 
-      // Cmd/Ctrl + 2: INV
-      if (isCmdOrCtrl && e.key === "2") {
+      // Spacebar: Play/Pause (only when not typing in text input)
+      if (e.code === "Space" && !isTextInput && !isCmdOrCtrl && !e.altKey) {
         e.preventDefault();
-        onAssignSpeaker?.("INV");
-        return;
-      }
-
-      // Cmd/Ctrl + 3: MOT
-      if (isCmdOrCtrl && e.key === "3") {
-        e.preventDefault();
-        onAssignSpeaker?.("MOT");
-        return;
-      }
-
-      // Cmd/Ctrl + 4: FAT
-      if (isCmdOrCtrl && e.key === "4") {
-        e.preventDefault();
-        onAssignSpeaker?.("FAT");
+        onPlayPause?.();
         return;
       }
 

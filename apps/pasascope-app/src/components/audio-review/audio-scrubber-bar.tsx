@@ -1,7 +1,7 @@
 "use client";
 
 import React from "react";
-import { Play, Pause, Repeat, Activity, Volume2 } from "lucide-react";
+import { Play, Pause, Repeat, Volume2 } from "lucide-react";
 
 export interface AudioScrubberBarProps {
   isPlaying: boolean;
@@ -9,11 +9,9 @@ export interface AudioScrubberBarProps {
   durationMs: number;
   speed: number;
   isLooping: boolean;
-  showPitch: boolean;
   onPlayPause: () => void;
   onSpeedChange: (speed: number) => void;
   onToggleLoop: () => void;
-  onTogglePitch: () => void;
   onSeek?: (timeMs: number) => void;
 }
 
@@ -32,11 +30,9 @@ export function AudioScrubberBar({
   durationMs,
   speed,
   isLooping,
-  showPitch,
   onPlayPause,
   onSpeedChange,
   onToggleLoop,
-  onTogglePitch,
   onSeek,
 }: AudioScrubberBarProps) {
   const speeds = [0.75, 1.0, 1.25];
@@ -51,7 +47,7 @@ export function AudioScrubberBar({
 
   return (
     <div
-      className="flex flex-wrap items-center justify-between gap-3 rounded-lg border border-slate-200 bg-slate-900 px-4 py-2.5 text-white shadow-md dark:border-slate-800"
+      className="flex flex-wrap items-center justify-between gap-3 rounded-card border border-navy-line bg-navy px-4 py-2.5 text-on-navy shadow-soft"
       data-testid="audio-scrubber-bar"
     >
       {/* Play/Pause & Times */}
@@ -60,15 +56,15 @@ export function AudioScrubberBar({
           type="button"
           onClick={onPlayPause}
           aria-label={isPlaying ? "Pause" : "Play"}
-          className="flex h-9 w-9 items-center justify-center rounded-full bg-blue-600 text-white transition hover:bg-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-400 focus:ring-offset-2 focus:ring-offset-slate-900"
+          className="flex h-11 w-11 items-center justify-center rounded-full bg-surface text-brand-strong transition hover:bg-brand-soft focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-[color:var(--color-sky)]"
         >
           {isPlaying ? <Pause size={18} /> : <Play size={18} className="translate-x-0.5" />}
         </button>
 
-        <div className="font-mono text-sm tracking-tight text-slate-200">
+        <div className="font-mono text-sm tracking-tight text-on-navy-muted">
           <span className="font-semibold text-white">{formatTimecode(currentTimeMs)}</span>
-          <span className="text-slate-400"> / </span>
-          <span className="text-slate-400">{formatTimecode(durationMs)}</span>
+          <span className="text-on-navy-subtle"> / </span>
+          <span className="text-on-navy-subtle">{formatTimecode(durationMs)}</span>
         </div>
       </div>
 
@@ -82,22 +78,23 @@ export function AudioScrubberBar({
           value={progressPercent}
           onChange={handleScrubberChange}
           aria-label="Audio scrubber"
-          className="h-1.5 w-full cursor-pointer appearance-none rounded-lg bg-slate-700 accent-blue-500 transition hover:bg-slate-600 focus:outline-none"
+          className="h-1.5 w-full cursor-pointer appearance-none rounded-full bg-navy-line accent-[color:var(--color-sky)] transition hover:bg-navy-raised focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-[color:var(--color-sky)]"
         />
       </div>
 
-      {/* Speed, Loop & Pitch Controls */}
+      {/* Speed and loop controls */}
       <div className="flex items-center gap-2">
-        <div className="flex rounded-md bg-slate-800 p-0.5" role="group" aria-label="Playback speed">
+        <div className="flex rounded-full bg-navy-raised p-0.5" role="group" aria-label="Playback speed">
           {speeds.map((s) => (
             <button
               key={s}
               type="button"
               onClick={() => onSpeedChange(s)}
-              className={`rounded px-2 py-1 text-xs font-semibold transition ${
+              aria-pressed={speed === s}
+              className={`min-h-9 rounded-full px-2.5 py-1 text-xs font-semibold transition ${
                 speed === s
-                  ? "bg-blue-600 text-white shadow-sm"
-                  : "text-slate-300 hover:text-white"
+                  ? "bg-surface text-brand-strong"
+                  : "text-on-navy-muted hover:text-on-navy"
               }`}
             >
               {s.toFixed(2).replace(/\.?0+$/, "")}x
@@ -109,28 +106,15 @@ export function AudioScrubberBar({
           type="button"
           onClick={onToggleLoop}
           aria-label="Loop"
-          className={`flex items-center gap-1 rounded-md px-2.5 py-1 text-xs font-medium transition ${
+          aria-pressed={isLooping}
+          className={`flex min-h-9 items-center gap-1 rounded-full px-3 py-1 text-xs font-medium transition ${
             isLooping
-              ? "bg-emerald-600 text-white"
-              : "bg-slate-800 text-slate-300 hover:bg-slate-700 hover:text-white"
+              ? "bg-surface text-brand-strong"
+              : "bg-navy-raised text-on-navy-muted hover:bg-navy-line hover:text-on-navy"
           }`}
         >
           <Repeat size={14} />
           <span>Loop</span>
-        </button>
-
-        <button
-          type="button"
-          onClick={onTogglePitch}
-          aria-label="F0 Pitch"
-          className={`flex items-center gap-1 rounded-md px-2.5 py-1 text-xs font-medium transition ${
-            showPitch
-              ? "bg-amber-600 text-white"
-              : "bg-slate-800 text-slate-300 hover:bg-slate-700 hover:text-white"
-          }`}
-        >
-          <Activity size={14} />
-          <span>F0 Pitch</span>
         </button>
       </div>
     </div>

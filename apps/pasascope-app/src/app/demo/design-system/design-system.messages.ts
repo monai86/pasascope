@@ -42,6 +42,10 @@ export const designSystemMessages = defineMessages({
       errorBody: "The server did not respond. Nothing was changed.",
       retry: "Try again",
     },
+    audio: {
+      heading: "Audio workbench",
+      note: "The one dark surface. Coral marks the child and blue the clinician; every other speaker is neutral, and the speaker code is always written beside the colour. The segments shown here are invented.",
+    },
     dialog: { heading: "Confirmation", open: "Withdraw consent", title: "Withdraw consent for this case?", body: "New sessions are blocked until consent is granted again. Existing signed reports are kept.", confirm: "Withdraw consent", cancel: "Keep consent" },
   },
   th: {
@@ -84,6 +88,10 @@ export const designSystemMessages = defineMessages({
       errorTitle: "โหลดรายการเคสไม่สำเร็จ",
       errorBody: "เซิร์ฟเวอร์ไม่ตอบสนอง ไม่มีข้อมูลใดถูกเปลี่ยนแปลง",
       retry: "ลองอีกครั้ง",
+    },
+    audio: {
+      heading: "พื้นที่ทำงานกับเสียง",
+      note: "พื้นผิวสีเข้มเพียงจุดเดียวของแอป สีคอรัลแทนเด็กและสีฟ้าแทนนักบำบัด ผู้พูดอื่นใช้สีกลาง และมีรหัสผู้พูดเป็นตัวอักษรกำกับคู่กับสีเสมอ ช่วงเสียงที่แสดงนี้เป็นข้อมูลสมมติ",
     },
     dialog: { heading: "การยืนยัน", open: "ถอนความยินยอม", title: "ถอนความยินยอมของเคสนี้หรือไม่", body: "จะเริ่มเซสชันใหม่ไม่ได้จนกว่าจะได้รับความยินยอมอีกครั้ง รายงานที่ลงนามแล้วยังคงอยู่", confirm: "ถอนความยินยอม", cancel: "คงความยินยอมไว้" },
   },

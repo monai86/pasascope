@@ -27,7 +27,6 @@ describe("AudioScrubberBar", () => {
     const onSpeedChange = vi.fn();
     const onPlayPause = vi.fn();
     const onToggleLoop = vi.fn();
-    const onTogglePitch = vi.fn();
 
     render(
       <AudioScrubberBar
@@ -36,11 +35,9 @@ describe("AudioScrubberBar", () => {
         durationMs={300000}
         speed={1.0}
         isLooping={false}
-        showPitch={false}
         onPlayPause={onPlayPause}
         onSpeedChange={onSpeedChange}
         onToggleLoop={onToggleLoop}
-        onTogglePitch={onTogglePitch}
       />
     );
 
@@ -55,9 +52,8 @@ describe("AudioScrubberBar", () => {
     fireEvent.click(loopBtn);
     expect(onToggleLoop).toHaveBeenCalled();
 
-    const pitchBtn = screen.getByRole("button", { name: /f0 pitch/i });
-    fireEvent.click(pitchBtn);
-    expect(onTogglePitch).toHaveBeenCalled();
+    // There is no pitch toggle: the app has no measured pitch contour to draw.
+    expect(screen.queryByRole("button", { name: /pitch/i })).not.toBeInTheDocument();
   });
 });
 
@@ -76,7 +72,6 @@ describe("DualViewWaveform", () => {
         snrDb={22.4}
         diarizationConfidence={88.5}
         responseLatencyMs={420}
-        showPitch={true}
         onSeek={vi.fn()}
         onSegmentBoundaryChange={vi.fn()}
       />

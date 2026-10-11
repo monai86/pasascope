@@ -43,7 +43,16 @@ const config: Config = {
           soft: "var(--color-sky-soft)",
           strong: "var(--color-sky-strong)",
         },
-        navy: "var(--color-navy)",
+        navy: {
+          DEFAULT: "var(--color-navy)",
+          raised: "var(--color-navy-raised)",
+          line: "var(--color-navy-line)",
+        },
+        "on-navy": {
+          DEFAULT: "var(--color-on-navy)",
+          muted: "var(--color-on-navy-muted)",
+          subtle: "var(--color-on-navy-subtle)",
+        },
       },
       fontFamily: {
         sans: ["var(--font-product)"],

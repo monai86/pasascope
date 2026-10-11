@@ -9,6 +9,8 @@ import { useKeyboardReview } from "./use-keyboard-review";
 import { apiBlob } from "@/lib/api";
 import type { TranscriptLine } from "@/lib/workflow";
 
+const kbdClass = "rounded bg-surface-muted px-1 py-0.5 font-mono text-xs";
+
 export interface AudioReviewWorkbenchProps {
   lines: TranscriptLine[];
   onLinesChange: (lines: TranscriptLine[]) => void;
@@ -45,7 +47,6 @@ export function AudioReviewWorkbench({
   const [durationMs, setDurationMs] = useState(60000);
   const [speed, setSpeed] = useState(1.0);
   const [isLooping, setIsLooping] = useState(false);
-  const [showPitch, setShowPitch] = useState(false);
   const [activeLineId, setActiveLineId] = useState<string>(lines[0]?.lineId || "");
   const [peaks, setPeaks] = useState<Int8Array | null>(null);
 
@@ -140,10 +141,6 @@ export function AudioReviewWorkbench({
 
   const handleToggleLoop = useCallback(() => {
     setIsLooping((prev) => !prev);
-  }, []);
-
-  const handleTogglePitch = useCallback(() => {
-    setShowPitch((prev) => !prev);
   }, []);
 
   const handleReplayActive = useCallback(() => {
@@ -287,9 +284,9 @@ export function AudioReviewWorkbench({
       {findingsStale && (
         <div
           role="status"
-          className="flex items-center gap-3 rounded-lg border border-amber-300 bg-amber-50 p-3.5 text-amber-900 shadow-sm dark:border-amber-700/60 dark:bg-amber-950/40 dark:text-amber-200"
+          className="flex items-center gap-3 rounded-lg border border-[color:var(--color-attention-border)] bg-[color:var(--color-warning-bg)] p-3.5 text-[color:var(--color-warning-text)] shadow-sm   "
         >
-          <AlertCircle size={20} className="flex-shrink-0 text-amber-600 dark:text-amber-400" />
+          <AlertCircle size={20} className="flex-shrink-0 text-[color:var(--color-warning-text)] " />
           <div className="flex-1 text-sm font-medium">
             Downstream language-sample features and report draft are currently out of sync with edited transcript lines.
             Re-run feature extraction or attest transcript to refresh.
@@ -304,16 +301,14 @@ export function AudioReviewWorkbench({
         durationMs={durationMs}
         speed={speed}
         isLooping={isLooping}
-        showPitch={showPitch}
         onPlayPause={handlePlayPause}
         onSpeedChange={handleSpeedChange}
         onToggleLoop={handleToggleLoop}
-        onTogglePitch={handleTogglePitch}
         onSeek={handleSeek}
       />
 
       {peaks === null ? (
-        <p role="note" className="rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 text-xs font-medium text-slate-700">
+        <p role="note" className="rounded-control border border-line bg-surface-soft px-3 py-2 text-xs font-medium text-ink">
           ไม่มีภาพคลื่นเสียงสำหรับไฟล์นี้ · No waveform is available for this recording.
         </p>
       ) : null}
@@ -325,31 +320,30 @@ export function AudioReviewWorkbench({
         segments={segments}
         peaks={peaks}
         responseLatencyMs={avgLatencyMs ?? undefined}
-        showPitch={showPitch}
         onSeek={handleSeek}
         onSegmentBoundaryChange={handleSegmentBoundaryChange}
       />
 
       {/* Live Acoustic & Conversational Summary Strip */}
-      <div className="flex flex-wrap items-center justify-between gap-3 rounded-lg border border-slate-200 bg-slate-50 px-4 py-2.5 text-xs text-slate-700 dark:border-slate-800 dark:bg-slate-900/50 dark:text-slate-300">
+      <div className="flex flex-wrap items-center justify-between gap-3 rounded-lg border border-line bg-surface-soft px-4 py-2.5 text-xs text-ink   ">
         <div className="flex items-center gap-4">
           <span>
-            <strong className="text-slate-900 dark:text-slate-100">Child Talk Time:</strong>{" "}
+            <strong className="text-ink ">Child Talk Time:</strong>{" "}
             {childTalkRatio === null ? "–" : `${childTalkRatio.toFixed(1)}%`}
           </span>
           <span>
-            <strong className="text-slate-900 dark:text-slate-100">Conversational Turns:</strong>{" "}
+            <strong className="text-ink ">Conversational Turns:</strong>{" "}
             {turnsCount}
           </span>
           <span>
-            <strong className="text-slate-900 dark:text-slate-100">Mean Turn Latency:</strong>{" "}
+            <strong className="text-ink ">Mean Turn Latency:</strong>{" "}
             {avgLatencyMs === null ? "–" : `${Math.round(avgLatencyMs)} ms`}
           </span>
         </div>
 
         <div className="flex items-center gap-2">
-          <span className="text-[11px] text-slate-500">
-            Shortcuts: <kbd className="rounded bg-slate-200 px-1 py-0.5 font-mono text-[10px] dark:bg-slate-800">Space</kbd> Play · <kbd className="rounded bg-slate-200 px-1 py-0.5 font-mono text-[10px] dark:bg-slate-800">⌘1</kbd> CHI · <kbd className="rounded bg-slate-200 px-1 py-0.5 font-mono text-[10px] dark:bg-slate-800">⌘2</kbd> INV · <kbd className="rounded bg-slate-200 px-1 py-0.5 font-mono text-[10px] dark:bg-slate-800">⌘L</kbd> Loop
+          <span className="text-xs text-ink-muted">
+            Shortcuts: <kbd className={kbdClass}>Space</kbd> Play · <kbd className={kbdClass}>Alt</kbd>+<kbd className={kbdClass}>1</kbd> CHI · <kbd className={kbdClass}>Alt</kbd>+<kbd className={kbdClass}>2</kbd> INV · <kbd className={kbdClass}>Alt</kbd>+<kbd className={kbdClass}>L</kbd> Loop · <kbd className={kbdClass}>Alt</kbd>+<kbd className={kbdClass}>R</kbd> Replay
           </span>
         </div>
       </div>

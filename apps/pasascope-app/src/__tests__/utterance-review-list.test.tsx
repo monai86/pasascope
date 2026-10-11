@@ -83,27 +83,27 @@ describe("useKeyboardReview", () => {
     });
     expect(onPlayPause).toHaveBeenCalledTimes(1);
 
-    // Cmd + Space: Replay active
+    // Alt + R: Replay active
     act(() => {
-      window.dispatchEvent(new KeyboardEvent("keydown", { code: "Space", metaKey: true }));
+      window.dispatchEvent(new KeyboardEvent("keydown", { code: "KeyR", altKey: true }));
     });
     expect(onReplayActive).toHaveBeenCalledTimes(1);
 
-    // Cmd + 1: Assign CHI
+    // Alt + 1: Assign CHI
     act(() => {
-      window.dispatchEvent(new KeyboardEvent("keydown", { key: "1", metaKey: true }));
+      window.dispatchEvent(new KeyboardEvent("keydown", { code: "Digit1", altKey: true }));
     });
     expect(onAssignSpeaker).toHaveBeenCalledWith("CHI");
 
-    // Cmd + 2: Assign INV
+    // Alt + 2: Assign INV
     act(() => {
-      window.dispatchEvent(new KeyboardEvent("keydown", { key: "2", metaKey: true }));
+      window.dispatchEvent(new KeyboardEvent("keydown", { code: "Digit2", altKey: true }));
     });
     expect(onAssignSpeaker).toHaveBeenCalledWith("INV");
 
-    // Cmd + L: Loop
+    // Alt + L: Loop
     act(() => {
-      window.dispatchEvent(new KeyboardEvent("keydown", { key: "l", metaKey: true }));
+      window.dispatchEvent(new KeyboardEvent("keydown", { code: "KeyL", altKey: true }));
     });
     expect(onToggleLoop).toHaveBeenCalledTimes(1);
 
@@ -112,5 +112,32 @@ describe("useKeyboardReview", () => {
       window.dispatchEvent(new KeyboardEvent("keydown", { key: "Enter", metaKey: true }));
     });
     expect(onAdvanceLine).toHaveBeenCalledTimes(1);
+  });
+
+  it("leaves the browser's own shortcuts alone", () => {
+    const onToggleLoop = vi.fn();
+    const onAssignSpeaker = vi.fn();
+    const onReplayActive = vi.fn();
+
+    renderHook(() => useKeyboardReview({ onToggleLoop, onAssignSpeaker, onReplayActive }));
+
+    // Cmd/Ctrl+1 switches tabs, Cmd/Ctrl+L focuses the address bar, and
+    // Cmd+Space opens the system search: none may be intercepted.
+    const browserShortcuts = [
+      new KeyboardEvent("keydown", { key: "1", code: "Digit1", metaKey: true, cancelable: true }),
+      new KeyboardEvent("keydown", { key: "2", code: "Digit2", ctrlKey: true, cancelable: true }),
+      new KeyboardEvent("keydown", { key: "l", code: "KeyL", metaKey: true, cancelable: true }),
+      new KeyboardEvent("keydown", { key: " ", code: "Space", metaKey: true, cancelable: true }),
+    ];
+    for (const event of browserShortcuts) {
+      act(() => {
+        window.dispatchEvent(event);
+      });
+      expect(event.defaultPrevented).toBe(false);
+    }
+
+    expect(onToggleLoop).not.toHaveBeenCalled();
+    expect(onAssignSpeaker).not.toHaveBeenCalled();
+    expect(onReplayActive).not.toHaveBeenCalled();
   });
 });

@@ -28,6 +28,12 @@
   --color-sky: #7cc8f8;
   --color-sky-strong: #2e9be6;
   --color-navy: #0f1b33;
+  /* The audio workbench is the one dark surface: controls and text on navy. */
+  --color-navy-raised: #1a2a4a;
+  --color-navy-line: #2a3d63;
+  --color-on-navy: #ffffff;
+  --color-on-navy-muted: #c7d3e8;
+  --color-on-navy-subtle: #9fb2d3;
 
   /* 10 — azure brand and coral highlight */
   --color-brand: #0a66d6;
