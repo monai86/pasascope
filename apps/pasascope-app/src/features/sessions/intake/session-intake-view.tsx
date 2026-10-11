@@ -1,23 +1,18 @@
 "use client";
 
 import type { Dispatch, SetStateAction } from "react";
-import { Gauge } from "lucide-react";
-
 import type { RecordingMetadata } from "@/components/browser-audio-recorder";
 import { SafetyNote } from "@/components/workbench-ui";
 import { SessionContextHeader, type SessionContext } from "@/features/sessions/components/session-context-header";
 import {
-  isTranscriptUnlocked,
   ReviewSummaryCard,
-  SessionResultsPreview,
+  SessionProgressCard,
   sourceSummaryLabel,
   WorkflowStatus,
 } from "@/features/sessions/intake/session-intake-components";
 import { SessionIntakeSteps } from "@/features/sessions/intake/session-intake-steps";
-import { EXTRACT_FEATURES_ACTION } from "@/lib/workflow-glossary";
 import { NON_DIAGNOSTIC_CLAIM } from "@/lib/clinical-safety-copy";
 import type { WorkflowSource, WorkflowState } from "@/lib/workflow";
-import { extractFeaturesBlockedReason } from "@/lib/workflow-gates";
 
 export type SessionIntakeStepId = "details" | "source" | "setup" | "review";
 export type SessionIntakeSource = "recording" | "audio" | "cha" | "paste";
@@ -89,7 +84,6 @@ export type SessionIntakeViewModel = {
   setIntakeWarnings: Dispatch<SetStateAction<string[]>>;
   intakeValidationIssues: string[];
   setIntakeValidationIssues: Dispatch<SetStateAction<string[]>>;
-  handleAudioUpload: () => void | Promise<void>;
   handleTranscriptSubmit: (source: Extract<WorkflowSource, "cha-upload" | "paste-transcript">) => void | Promise<void>;
   transcriptLines: string[];
   transcriptSetup: TranscriptSetupDraft;
@@ -110,17 +104,7 @@ const sessionIntakeStepLabels: Array<{ id: SessionIntakeStepId; title: string; h
 ];
 
 export function SessionIntakeView({ model }: { model: SessionIntakeViewModel }) {
-  const {
-    sessionContext,
-    intakeStep,
-    selectedSource,
-    state,
-    busy,
-    backendUnavailable,
-    handleAnalyze,
-    handleGenerateReport,
-  } = model;
-  const extractFeaturesReason = extractFeaturesBlockedReason(state);
+  const { sessionContext, intakeStep, selectedSource, state, backendUnavailable } = model;
 
   return (
     <div className="grid gap-6 xl:grid-cols-[minmax(0,1fr)_340px]">
@@ -133,36 +117,8 @@ export function SessionIntakeView({ model }: { model: SessionIntakeViewModel }) 
         />
         <SessionIntakeSteps model={model} />
 
-        <button
-          type="button"
-          onClick={handleAnalyze}
-          disabled={
-            busy ||
-            state.workflowLoading ||
-            !isTranscriptUnlocked(state) ||
-            !state.backendTranscriptId ||
-            !(state.backendTranscriptSessionId ?? state.backendSessionId)
-          }
-          aria-label={EXTRACT_FEATURES_ACTION}
-          data-testid="extract-features-button"
-          aria-describedby={extractFeaturesReason ? "extract-features-reason" : undefined}
-          className="inline-flex min-h-11 w-full items-center justify-center gap-2.5 rounded-card border border-line-strong bg-surface px-5 py-3.5 text-sm font-semibold text-ink transition-colors hover:border-brand-strong hover:bg-brand-soft hover:text-brand-strong focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-brand disabled:cursor-not-allowed disabled:opacity-50 sm:w-auto"
-        >
-          <Gauge size={18} aria-hidden="true" />
-          {busy ? "Extracting..." : EXTRACT_FEATURES_ACTION}
-        </button>
-        {extractFeaturesReason ? (
-          <p
-            id="extract-features-reason"
-            role="status"
-            className="rounded-panel border border-amber-200 bg-amber-50 p-4 text-sm font-semibold text-amber-900"
-          >
-            {extractFeaturesReason}
-          </p>
-        ) : null}
-
-          <WorkflowStatus state={state} backendUnavailable={backendUnavailable} />
-          <SafetyNote>{NON_DIAGNOSTIC_CLAIM} Transcript must be reviewed before report use.</SafetyNote>
+        <WorkflowStatus state={state} backendUnavailable={backendUnavailable} />
+        <SafetyNote>{NON_DIAGNOSTIC_CLAIM} Transcript must be reviewed before report use.</SafetyNote>
       </div>
       <div className="space-y-6">
         <ReviewSummaryCard title="Current intake" rows={[
@@ -170,7 +126,7 @@ export function SessionIntakeView({ model }: { model: SessionIntakeViewModel }) 
           { label: "Source", value: sourceSummaryLabel(selectedSource) },
           { label: "Transcript status", value: state.transcriptReady ? "Ready for review" : "Pending" },
         ]} />
-        <SessionResultsPreview state={state} onGenerateReport={handleGenerateReport} busy={busy} />
+        <SessionProgressCard state={state} />
       </div>
     </div>
   );

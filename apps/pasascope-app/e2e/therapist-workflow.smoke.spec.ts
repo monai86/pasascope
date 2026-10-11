@@ -46,10 +46,6 @@ function expectNoDuplicatedApiPrefix(state: { hasDuplicatedApiPrefix: boolean })
   expect(state.hasDuplicatedApiPrefix).toBe(false);
 }
 
-function currentWorkflowQuery(page: Page) {
-  return new URL(page.url()).searchParams;
-}
-
 async function pasteTranscript(page: Page, transcript: string, mutationResponses: MutationResponseBreadcrumb[]) {
   await page.goto("/cases?intent=start-session");
   await expect(page.getByRole("heading", { name: "Choose a case to start a session" })).toBeVisible();
@@ -87,12 +83,6 @@ async function attestTranscript(page: Page) {
   await expect(page.getByTestId("transcript-attestation-badge")).toHaveText("Attested");
 }
 
-async function openRecordStep(page: Page) {
-  const params = currentWorkflowQuery(page);
-  params.set("view", "intake");
-  await page.goto(`${new URL(page.url()).pathname}?${params.toString()}`);
-}
-
 async function openReportSummary(page: Page) {
   await expect(page.getByTestId("generate-report-button")).toBeEnabled();
   await page.getByTestId("generate-report-button").click();
@@ -117,7 +107,7 @@ test("happy path smoke flow covers transcript QA, ML readiness, evidence review,
   await pasteTranscript(page, validTranscript, mutationResponses);
   await attestTranscript(page);
 
-  await openRecordStep(page);
+  // Extraction is the next step on the Transcript view; there is no detour to Intake.
   await expect(page.getByTestId("extract-features-button")).toBeEnabled({ timeout: 20_000 });
   await page.getByTestId("extract-features-button").click();
   await expect(page).toHaveURL(/\/sessions\/[^/?]+\?view=findings/);
@@ -161,7 +151,7 @@ test("safety path smoke flow blocks diagnostic claims in edited report text", as
   await pasteTranscript(page, validTranscript, mutationResponses);
   await attestTranscript(page);
 
-  await openRecordStep(page);
+  // Extraction is the next step on the Transcript view; there is no detour to Intake.
   await expect(page.getByTestId("extract-features-button")).toBeEnabled({ timeout: 20_000 });
   await page.getByTestId("extract-features-button").click();
   await expect(page).toHaveURL(/\/sessions\/[^/?]+\?view=findings/);

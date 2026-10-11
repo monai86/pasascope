@@ -1,5 +1,30 @@
 # Changelog
 
+## [Unreleased]
+
+Therapist app redesign in progress on `feat/redesign-sky`. The version is bumped when the redesign is complete.
+
+### Changed
+- **New visual system for the therapist app** (`apps/pasascope-app/`): a light blue palette split 60 / 30 / 10 (ice-white canvas, sky and navy, azure for the primary action with a small coral highlight) replaces the pine and teal palette. There is no green anywhere; success states are blue with a check icon. Headings use Prompt, body text stays Noto Sans Thai. See `DESIGN.md`.
+- **Redrawn logo**: the speech-bubble-and-magnifier mark is now an SVG in the new palette, with a matching favicon, apple icon and Open Graph image.
+- **Thai and English interface**: a TH/EN toggle in the top bar and mobile header switches the language; Thai is the default for a first visit. Translated so far: the shell, sign-in, Today, Reports, status badges, safety notices and the dashboard header. Other screens are still in their previous language.
+- **One home and one navigation list**: the logo and mock sign-in open Today; the sidebar lists Today first.
+- **Today** is titled Today (was "Work Queue") and leads with the next item as a single prominent action.
+- **Session workflow is linear**: feature extraction moved from Intake to the Transcript view, directly after attestation. The Transcript view's Next step guide offers attest, extract, then continue to Findings as its one primary action. The step rail ticks a step only when it is actually complete.
+- **Sign-in page** states the workflow and the non-diagnostic boundary instead of marketing copy.
+
+### Fixed
+- **Printing a signed report printed a sample**: "Print / Export PDF" on a signed report, and the primary button on Reports, opened a hard-coded sample report with invented scores. Signed reports now print from `/reports/print`, which shows the report the export endpoint returns. The sample page exists only in demo mode and is labelled as invented data.
+- **Invented values removed from the session workspace**: the transcript was given a fixed 92% "readiness" when saved, and Findings showed "Pass · 100%" when no score existed. Unmeasured values are now left out.
+- **"Upload audio" no longer records an upload that did not happen**: the stub button created a session flagged as having stored audio. The option now says the feature is not available.
+- **Real users are no longer linked to a seeded demo session** from the dashboard, its unavailable state, or the retired `/assistant` page.
+- **Top bar**: the notification bell with a hard-coded count of 3 is removed, and the search field now opens Cases filtered by the query.
+- **Styling that was silently not applied**: the shell rendered in the system font instead of Noto Sans Thai; several Assessment buttons were transparent because their colour variable was never defined; `dark:` classes followed the operating system in a light-only product.
+- **Accessibility**: the mobile navigation drawer traps focus, closes on Escape and is out of the tab order while closed; dialogs trap and restore focus; the sign-in page has an h1 and no text under 12px.
+
+### Removed
+- The dashboard "workflow pillars" block, which duplicated the navigation.
+
 ## [v1.7.1] - 2026-10-10
 
 ### Changed

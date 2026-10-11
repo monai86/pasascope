@@ -37,7 +37,7 @@ export function SessionIntakeSteps({ model }: { model: SessionIntakeViewModel })
     handleUploadForTranscription, transJobStatus, transJobMessage, transJobRequestedProvider,
     transJobActualProvider, backendUnavailable, draftTranscript, setDraftTranscript,
     setSourceFilename, intakeWarnings, setIntakeWarnings, intakeValidationIssues,
-    setIntakeValidationIssues, handleAudioUpload, handleTranscriptSubmit, transcriptLines,
+    setIntakeValidationIssues, handleTranscriptSubmit, transcriptLines,
     transcriptSetup, setTranscriptSetup, sourceReadyForReview, canStartTranscriptReview,
     saveSessionIntakeDraft, router,
   } = model;
@@ -306,7 +306,6 @@ export function SessionIntakeSteps({ model }: { model: SessionIntakeViewModel })
                       setIntakeValidationIssues([]);
                     }
                   }}
-                  onAudioUpload={handleAudioUpload}
                   onTranscriptSubmit={handleTranscriptSubmit}
                 />
               )}

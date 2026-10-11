@@ -1,5 +1,6 @@
-import Link from "next/link";
 import { ArrowRight, MessageCircle } from "lucide-react";
+
+import { Button } from "@/components/ui/button";
 
 /**
  * Conversational "what's next" prompt for the session workspace.
@@ -16,6 +17,8 @@ export type SessionGuideAction = {
   onClick?: () => void;
   disabled?: boolean;
   reason?: string;
+  /** Overrides the default `<guide>-primary` test id for this action. */
+  testId?: string;
 };
 
 export type SessionGuideQuickReply = {
@@ -39,74 +42,55 @@ export function SessionGuide({
 }) {
   const primaryId = testId ? `${testId}-primary` : undefined;
   const reasonId = explicitReasonId ?? (testId ? `${testId}-reason` : undefined);
+  const primaryTestId = primaryAction?.testId ?? `${testId}-primary`;
+  const hasActions = Boolean(primaryAction) || quickReplies.length > 0;
 
   return (
     <section
       aria-label="What to do next"
       data-testid={testId}
-      className="overflow-hidden rounded-shell border border-[color:var(--color-brand-strong)]/30 bg-surface"
+      className="overflow-hidden rounded-panel border border-brand-border bg-brand-soft"
     >
-      <div className="flex gap-3 p-4 sm:p-5">
-        <span
-          aria-hidden="true"
-          className="mt-0.5 grid h-9 w-9 shrink-0 place-items-center rounded-full bg-brand-soft text-brand-strong"
-        >
+      <div className="flex gap-3 p-3 sm:p-5">
+        <span aria-hidden="true" className="mt-0.5 grid h-10 w-10 shrink-0 place-items-center rounded-control bg-surface text-brand">
           <MessageCircle size={18} />
         </span>
         <div className="min-w-0 flex-1">
-          <p className="text-xs font-semibold uppercase tracking-[0.08em] text-brand-strong">
-            Next step
-          </p>
-          <p className="mt-1.5 text-base font-medium leading-6 text-ink">{prompt}</p>
-          <div className="mt-3 flex flex-wrap items-center gap-2">
+          <p className="text-xs font-semibold uppercase tracking-[0.08em] text-brand-strong">Next step</p>
+          <p className="mt-1 text-sm font-medium leading-5 text-ink sm:mt-1.5 sm:text-base sm:leading-6">{prompt}</p>
+          <div className={hasActions ? "mt-3 flex flex-wrap items-center gap-2" : "hidden"}>
             {primaryAction && primaryAction.href ? (
-              <Link
+              <Button
                 href={primaryAction.href}
                 id={primaryId}
                 aria-describedby={primaryAction.disabled ? undefined : reasonId}
-                aria-disabled={primaryAction.disabled}
-                data-testid={`${testId}-primary`}
-                className={`inline-flex min-h-11 items-center justify-center gap-2 rounded-card bg-brand-strong px-4 py-2.5 text-sm font-semibold text-white transition-colors hover:bg-brand focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-brand ${
-                  primaryAction.disabled ? "pointer-events-none opacity-50" : ""
-                }`}
+                disabled={primaryAction.disabled}
+                data-testid={primaryTestId}
               >
                 {primaryAction.label}
                 <ArrowRight size={16} aria-hidden="true" />
-              </Link>
+              </Button>
             ) : primaryAction ? (
-              <button
-                type="button"
+              <Button
                 id={primaryId}
                 onClick={primaryAction.onClick}
                 disabled={primaryAction.disabled}
                 aria-describedby={primaryAction.disabled && primaryAction.reason ? reasonId : undefined}
-                data-testid={`${testId}-primary`}
-                className="inline-flex min-h-11 items-center justify-center gap-2 rounded-card bg-brand-strong px-4 py-2.5 text-sm font-semibold text-white transition-colors hover:bg-brand focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-brand disabled:cursor-not-allowed disabled:opacity-50"
+                data-testid={primaryTestId}
               >
                 {primaryAction.label}
                 <ArrowRight size={16} aria-hidden="true" />
-              </button>
+              </Button>
             ) : null}
             {quickReplies.map((reply) =>
               reply.href ? (
-                <Link
-                  key={reply.label}
-                  href={reply.href}
-                  data-testid={`${testId}-reply-${reply.label}`}
-                  className="inline-flex min-h-11 items-center justify-center rounded-card border border-line-strong bg-surface px-4 py-2.5 text-sm font-semibold text-ink transition-colors hover:border-brand-strong hover:text-brand-strong focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-brand"
-                >
+                <Button key={reply.label} href={reply.href} variant="secondary" data-testid={`${testId}-reply-${reply.label}`}>
                   {reply.label}
-                </Link>
+                </Button>
               ) : (
-                <button
-                  key={reply.label}
-                  type="button"
-                  onClick={reply.onClick}
-                  data-testid={`${testId}-reply-${reply.label}`}
-                  className="inline-flex min-h-11 items-center justify-center rounded-card border border-line-strong bg-surface px-4 py-2.5 text-sm font-semibold text-ink transition-colors hover:border-brand-strong hover:text-brand-strong focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-brand"
-                >
+                <Button key={reply.label} onClick={reply.onClick} variant="secondary" data-testid={`${testId}-reply-${reply.label}`}>
                   {reply.label}
-                </button>
+                </Button>
               ),
             )}
           </div>
@@ -115,7 +99,7 @@ export function SessionGuide({
               id={reasonId}
               role="status"
               data-testid={`${testId}-reason`}
-              className="mt-3 rounded-card border border-amber-200 bg-amber-50 px-3 py-2 text-sm font-semibold text-amber-900"
+              className="mt-3 rounded-control border border-[color:var(--color-warning-border)] bg-[color:var(--color-warning-bg)] px-3 py-2 text-sm font-semibold text-[color:var(--color-warning-text)]"
             >
               {primaryAction.reason}
             </p>

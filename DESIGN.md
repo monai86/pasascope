@@ -173,9 +173,13 @@ Loading, empty, and error states are humanized once and reused everywhere:
 ### Today
 
 Preserve the approved focused workbench: one backend-derived priority queue, one
-next action per row, one prominent Start session action, status grouping inside
-the queue, and a quiet contextual rail. Do not convert it to Kanban, analytics,
-or case-management split view.
+next action per row, status grouping inside the queue, and a quiet contextual
+rail. The page is titled Today, like its navigation label. The first queue item
+is shown as the hero card and carries the page's one prominent action; Start
+session is a secondary button. Count tiles stay short so at least three queue
+rows are in view at 1280×800. The queue model reports a task kind per case and
+the view renders its name, reason, and action in the interface language. Do not
+convert Today to Kanban, analytics, or a case-management split view.
 
 ### Cases
 
@@ -190,6 +194,15 @@ than stacking list, analytics, progress, and activity.
 Transcript lines remain directly editable. Selection is visually unmistakable
 and exposed with `aria-selected`; focus is preserved when scrolling to a selected
 line; secondary line actions live in an overflow menu.
+
+The session path is linear: Intake → Transcript → Findings → Report. The Next
+step guide at the top of the Transcript view names the one thing to do now and,
+once the draft is saved and QA has run, offers it as the single primary action
+in this order: attest the transcript, extract language-sample features, continue
+to Findings. Feature extraction lives here, directly after attestation; it is
+not on Intake. The step rail ticks a step only when persisted state shows it is
+done (transcript added, transcript attested, features extracted, report signed),
+never because of its position.
 
 - Desktop: editor remains at least 60% and normally about 65%; Audio/QA inspector
   is collapsible/resizable, does not clip, and never causes page overflow.
@@ -211,7 +224,11 @@ flow before audio work. The source choice is explicit (Record in browser,
 Upload audio, Upload .cha, Paste transcript); the pipeline progress bar narrows
 to the stages that actually apply to the chosen path (paste/CHA never show
 Upload or ASR). One primary action per step; disabled actions carry an inline
-reason (see Shared states).
+reason (see Shared states). Uploading an existing audio file is not built, and
+that option says so plainly instead of offering a control. The side card shows
+session progress from persisted state only; it shows no percentages or
+insights, which belong to Findings. A value that has not been measured is left
+out, never replaced with a default.
 
 ### Findings
 
@@ -230,6 +247,12 @@ collapses to a compact list on mobile. Each row carries exactly one action
 (Review draft / Regenerate report / View signed report / Find session) that
 opens the canonical Session Report workspace. Counts are workflow progress
 only, never clinical outcome scores.
+
+A signed report prints from `/reports/print?report_id=…`, which shows exactly the
+HTML the export endpoint returns for that report in a script-free sandbox. A
+refused export is reported as a failure. `/reports/preview` is a layout sample
+with invented data: it exists only in demo mode, says so on screen, and is never
+linked from a real report.
 
 ### Settings
 

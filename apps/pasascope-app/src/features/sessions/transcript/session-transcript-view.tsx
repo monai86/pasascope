@@ -1,14 +1,15 @@
 "use client";
 
 import { useState } from "react";
-import { AlertTriangle, CheckCircle2, Gauge, ShieldCheck } from "lucide-react";
+import { AlertTriangle, AudioLines, Check, CheckCircle2, FileText } from "lucide-react";
 
 import { AudioReviewWorkbench } from "@/components/audio-review/audio-review-workbench";
-import { PrimaryActionButton } from "@/components/workbench-ui";
 import { SafetyNotice } from "@/components/safety-notice";
 import { TranscriptEditorPanel } from "@/components/transcript-editor-panel";
+import { Button } from "@/components/ui/button";
+import { SegmentedControl } from "@/components/ui/segmented-control";
 import { SessionContextHeader, type SessionContext } from "@/features/sessions/components/session-context-header";
-import { SessionGuide } from "@/features/sessions/components/session-guide";
+import { SessionGuide, type SessionGuideAction } from "@/features/sessions/components/session-guide";
 import { resolveSessionHref } from "@/features/sessions/state/session-view";
 import { EXTRACT_FEATURES_ACTION, GENERATE_REPORT_ACTION } from "@/lib/workflow-glossary";
 import type { TranscriptLine, WorkflowState } from "@/lib/workflow";
@@ -51,20 +52,16 @@ export function SessionTranscriptView({
     { label: "Features extracted", complete: state.featuresExtracted },
   ];
   const reportBlockedReason = getReviewReportBlockedReason(state);
-  const canRetryAttestation = Boolean(
-    state.backendTranscriptId
-      && state.transcriptSaveStatus === "saved"
-      && state.qaStatus !== "not_run"
-      && state.qaStatus !== "fail"
-      && !state.transcriptAttested,
-  );
-  const canExtractFeatures = Boolean(
-    isTranscriptUnlocked(state) && !state.featuresExtracted && state.backendTranscriptId,
-  );
   const [reviewMode, setReviewMode] = useState<"audio" | "classic">(audioUrl ? "audio" : "classic");
+  const guide = getTranscriptGuide(state, {
+    busy,
+    findingsHref: resolveSessionHref("findings", sessionContext.sessionId),
+    onAttest,
+    onExtractFeatures,
+  });
 
   return (
-    <div className="mx-auto w-full max-w-7xl space-y-5">
+    <div className="mx-auto w-full max-w-7xl space-y-3 sm:space-y-5">
       <SessionContextHeader
         density="compact"
         title="Review Transcript"
@@ -73,25 +70,19 @@ export function SessionTranscriptView({
       />
       <SessionGuide
         testId="transcript-guide"
-        prompt={
-          state.transcriptAttested
-            ? "The transcript is reviewed and attested. Next, we'll extract the language-sample features."
-            : "Read through the transcript lines below and check the speaker labels and wording, then attest it."
-        }
-        quickReplies={[
-          { label: "Go to findings", href: resolveSessionHref("findings", sessionContext.sessionId) },
-          { label: "Go to report", href: resolveSessionHref("report", sessionContext.sessionId) },
-        ]}
+        prompt={guide.prompt}
+        primaryAction={guide.primaryAction}
+        quickReplies={state.featuresExtracted ? [{ label: "Go to report", href: resolveSessionHref("report", sessionContext.sessionId) }] : []}
       />
       <WorkflowStatus state={state} backendUnavailable={backendUnavailable} />
       {state.transcriptDraftLabel ? (
-        <div className="rounded-panel border border-amber-200 bg-amber-50 p-4 text-amber-950">
+        <div className="rounded-card border border-[color:var(--color-warning-border)] bg-[color:var(--color-warning-bg)] p-4 text-[color:var(--color-warning-text)]">
           <p className="font-bold">{state.transcriptDraftLabel}</p>
           <p className="mt-1 text-sm">Experimental ASR can be inaccurate. Verify wording, timestamps, and speaker labels before attestation.</p>
         </div>
       ) : null}
       {state.chatWarnings && state.chatWarnings.length > 0 ? (
-        <div className="rounded-panel border border-amber-200 bg-amber-50 p-4 text-amber-950" role="status">
+        <div className="rounded-card border border-[color:var(--color-warning-border)] bg-[color:var(--color-warning-bg)] p-4 text-[color:var(--color-warning-text)]" role="status">
           <p className="font-bold">Import Warnings</p>
           <ul className="mt-1 list-disc space-y-1 pl-5 text-sm">
             {state.chatWarnings.map((warning) => <li key={warning}>{warning}</li>)}
@@ -101,32 +92,15 @@ export function SessionTranscriptView({
       <div className="space-y-5">
         <section className="min-w-0 space-y-4">
           {audioUrl && (
-            <div className="flex items-center justify-between border-b border-slate-200 pb-2 dark:border-slate-800">
-              <div className="flex items-center gap-2">
-                <button
-                  type="button"
-                  onClick={() => setReviewMode("audio")}
-                  className={`rounded-md px-3 py-1.5 text-xs font-semibold transition ${
-                    reviewMode === "audio"
-                      ? "bg-blue-600 text-white shadow-sm"
-                      : "bg-slate-100 text-slate-700 hover:bg-slate-200 dark:bg-slate-800 dark:text-slate-300"
-                  }`}
-                >
-                  Audio & Diarization Workbench
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setReviewMode("classic")}
-                  className={`rounded-md px-3 py-1.5 text-xs font-semibold transition ${
-                    reviewMode === "classic"
-                      ? "bg-blue-600 text-white shadow-sm"
-                      : "bg-slate-100 text-slate-700 hover:bg-slate-200 dark:bg-slate-800 dark:text-slate-300"
-                  }`}
-                >
-                  Classic Text Editor
-                </button>
-              </div>
-            </div>
+            <SegmentedControl
+              label="Transcript review mode"
+              value={reviewMode}
+              onChange={setReviewMode}
+              options={[
+                { value: "audio", label: "Audio & Diarization Workbench", icon: AudioLines },
+                { value: "classic", label: "Classic Text Editor", icon: FileText },
+              ]}
+            />
           )}
 
           {audioUrl && reviewMode === "audio" ? (
@@ -144,19 +118,14 @@ export function SessionTranscriptView({
               />
               {/* Saving, QA and attestation live in the text editor; point to them from here. */}
               <div className="flex flex-col gap-3 rounded-panel border border-line bg-surface p-4 sm:flex-row sm:items-center sm:justify-between">
-                <p className="text-sm text-slate-700">
+                <p className="text-sm text-ink-muted">
                   {state.transcriptAttested
                     ? "This transcript is attested."
                     : "When the speakers and wording are correct, save the transcript, run QA and attest it."}
                 </p>
-                <button
-                  type="button"
-                  data-testid="continue-to-attestation-button"
-                  onClick={() => setReviewMode("classic")}
-                  className="inline-flex min-h-11 shrink-0 items-center justify-center rounded-card bg-brand px-4 py-2 text-sm font-semibold text-white"
-                >
+                <Button variant="secondary" data-testid="continue-to-attestation-button" onClick={() => setReviewMode("classic")} className="shrink-0">
                   Continue to save, QA and attestation
-                </button>
+                </Button>
               </div>
             </>
           ) : (
@@ -180,58 +149,36 @@ export function SessionTranscriptView({
         <details className="responsive-details rounded-panel border border-line bg-surface" data-testid="mobile-transcript-report-readiness">
           <summary className="flex min-h-11 cursor-pointer items-center justify-between gap-3 px-4 py-3 text-sm font-semibold text-ink">
             <span>Report readiness</span>
-            <span className={reportBlockedReason ? "text-amber-800" : "text-emerald-700"}>{reportBlockedReason ? "Locked" : "Ready"}</span>
+            <span className={reportBlockedReason ? "text-[color:var(--color-warning-text)]" : "text-brand-strong"}>{reportBlockedReason ? "Locked" : "Ready"}</span>
           </summary>
-          <section className={`border-t p-4 md:border-t-0 ${
-          reportBlockedReason
-            ? "border-amber-200 bg-amber-50 text-amber-950"
-            : "border-emerald-200 bg-emerald-50 text-emerald-950"
-        }`} aria-label="Report generation readiness">
-          <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
-            <div className="min-w-0">
-              <div className="flex items-center gap-2">
-                {reportBlockedReason ? <AlertTriangle size={18} aria-hidden="true" /> : <CheckCircle2 size={18} aria-hidden="true" />}
-                <h3 className="font-semibold">{reportBlockedReason ? "Report generation is locked" : "Ready to generate report"}</h3>
+          <section className="border-t border-line p-4 md:border-t-0" aria-label="Report generation readiness">
+            <div className="flex items-start gap-2">
+              {reportBlockedReason
+                ? <AlertTriangle size={18} aria-hidden="true" className="mt-0.5 shrink-0 text-[color:var(--color-warning-text)]" />
+                : <CheckCircle2 size={18} aria-hidden="true" className="mt-0.5 shrink-0 text-brand" />}
+              <div className="min-w-0">
+                <h3 className="font-semibold text-ink">{reportBlockedReason ? "Report generation is locked" : "Ready to generate report"}</h3>
+                <p id="generate-report-blocked-reason" className="mt-1 text-sm font-medium text-ink-muted" role={reportBlockedReason ? "status" : undefined}>
+                  {reportBlockedReason ?? "Transcript review is complete. Generate the therapist-editable draft report."}
+                </p>
               </div>
-              <p id="generate-report-blocked-reason" className="mt-2 text-sm font-medium" role={reportBlockedReason ? "status" : undefined}>
-                {reportBlockedReason ?? "Transcript review is complete. Generate the therapist-editable draft report."}
-              </p>
             </div>
-            {canRetryAttestation ? (
-              <button
-                type="button"
-                onClick={onAttest}
-                disabled={busy}
-                className="inline-flex min-h-11 shrink-0 items-center justify-center gap-2 rounded-card bg-ink px-4 py-2 text-sm font-semibold text-white transition hover:opacity-90 disabled:cursor-not-allowed disabled:bg-slate-300 disabled:text-slate-600 motion-reduce:transition-none"
-              >
-                <ShieldCheck size={17} aria-hidden="true" />
-                {busy ? "Recording attestation..." : "Record attestation"}
-              </button>
-            ) : null}
-            {canExtractFeatures ? (
-              <button
-                type="button"
-                onClick={onExtractFeatures}
-                disabled={busy}
-                className="inline-flex min-h-11 shrink-0 items-center justify-center gap-2 rounded-card bg-ink px-4 py-2 text-sm font-semibold text-white transition hover:opacity-90 disabled:cursor-not-allowed disabled:bg-slate-300 disabled:text-slate-600 motion-reduce:transition-none"
-              >
-                <Gauge size={17} aria-hidden="true" />
-                {busy ? "Extracting..." : EXTRACT_FEATURES_ACTION}
-              </button>
-            ) : null}
-          </div>
-          <ul className="mt-4 grid gap-2 text-sm sm:grid-cols-2 xl:grid-cols-4">
-            {reviewChecklist.map((item) => (
-              <li key={item.label} className="flex items-center gap-2 rounded-card border border-black/5 bg-surface px-3 py-2 font-medium">
-                <span className={`grid h-5 w-5 place-items-center rounded-full text-xs font-bold ${item.complete ? "bg-emerald-600 text-white" : "bg-slate-200 text-slate-600"}`}>
-                  {item.complete ? "✓" : "•"}
-                </span>
-                <span>{item.label}</span>
-              </li>
-            ))}
-          </ul>
-            <PrimaryActionButton
-              icon={ShieldCheck}
+            <ul className="mt-4 grid gap-2 text-sm sm:grid-cols-2 xl:grid-cols-4">
+              {reviewChecklist.map((item) => (
+                <li key={item.label} className="flex items-center gap-2 rounded-control border border-line bg-surface-soft px-3 py-2 font-medium text-ink">
+                  <span
+                    aria-hidden="true"
+                    className={`grid h-5 w-5 shrink-0 place-items-center rounded-full ${item.complete ? "bg-brand text-white" : "border border-line-strong bg-surface text-ink-subtle"}`}
+                  >
+                    {item.complete ? <Check size={12} strokeWidth={3} /> : null}
+                  </span>
+                  <span>{item.label}</span>
+                  <span className="sr-only">{item.complete ? "(done)" : "(not done)"}</span>
+                </li>
+              ))}
+            </ul>
+            <Button
+              variant="secondary"
               className="mt-4 w-full"
               onClick={onGenerateReport}
               disabled={busy || Boolean(reportBlockedReason)}
@@ -239,7 +186,7 @@ export function SessionTranscriptView({
               title={reportBlockedReason}
             >
               {GENERATE_REPORT_ACTION}
-            </PrimaryActionButton>
+            </Button>
           </section>
         </details>
         <details className="responsive-details rounded-panel border border-line bg-surface" data-testid="mobile-transcript-review-requirements">
@@ -258,8 +205,55 @@ export function SessionTranscriptView({
   );
 }
 
-function isTranscriptUnlocked(state: WorkflowState) {
-  return state.transcriptAttested && state.transcriptReviewStatus === "reviewed";
+/**
+ * The one thing to do next on this page. Saving and QA are done with the
+ * editor's own controls, so for those the guide only says so; attesting,
+ * extracting features and moving on are offered here as the single primary
+ * action, in that order.
+ */
+function getTranscriptGuide(
+  state: WorkflowState,
+  actions: { busy: boolean; findingsHref: string; onAttest: () => void; onExtractFeatures: () => void },
+): { prompt: string; primaryAction?: SessionGuideAction } {
+  // Attestation is the server's record that the saved transcript was reviewed,
+  // and any later edit clears it, so an attested transcript needs no re-check
+  // of the save and QA steps here.
+  const attested = state.transcriptAttested && state.transcriptReviewStatus === "reviewed";
+
+  if (attested && state.featuresExtracted) {
+    return {
+      prompt: "Features are extracted from the attested transcript. Review them in Findings.",
+      primaryAction: { label: "Continue to Findings", href: actions.findingsHref },
+    };
+  }
+  if (attested) {
+    return {
+      prompt: "The transcript is reviewed and attested. Next, we'll extract the language-sample features.",
+      primaryAction: state.backendTranscriptId
+        ? {
+            label: actions.busy ? "Extracting..." : EXTRACT_FEATURES_ACTION,
+            onClick: actions.onExtractFeatures,
+            disabled: actions.busy,
+            testId: "extract-features-button",
+          }
+        : undefined,
+    };
+  }
+  if (state.transcriptSaveStatus !== "saved") {
+    return { prompt: "Check the speaker labels and wording below, then save the draft." };
+  }
+  if (state.qaStatus === "not_run") {
+    return { prompt: "The draft is saved. Run QA on the transcript before attesting it." };
+  }
+  if (state.qaStatus === "fail") {
+    return { prompt: "QA found issues that block attestation. Fix them, save, and run QA again." };
+  }
+  return {
+    prompt: "The draft is saved and QA is complete. Attest the transcript to confirm your review.",
+    primaryAction: state.backendTranscriptId
+      ? { label: actions.busy ? "Recording attestation..." : "Attest this transcript", onClick: actions.onAttest, disabled: actions.busy }
+      : undefined,
+  };
 }
 
 function getReviewReportBlockedReason(state: WorkflowState) {
@@ -286,8 +280,8 @@ function WorkflowStatus({ state, backendUnavailable }: { state: WorkflowState; b
   if (routineSaveAnnouncement) return null;
   if (state.statusMessage && !isError && backendUnavailable) return null;
   const className = isError
-    ? "rounded-panel border border-red-200 bg-red-50 p-4 text-sm text-red-950 animate-fade-in"
-    : "rounded-panel border border-emerald-200 bg-emerald-50 p-4 text-sm text-emerald-950 animate-fade-in";
+    ? "rounded-card border border-[color:var(--color-danger-border)] bg-[color:var(--color-danger-bg)] p-3 text-sm text-[color:var(--color-danger-text)] animate-fade-in sm:p-4"
+    : "rounded-card border border-[color:var(--color-info-border)] bg-[color:var(--color-info-bg)] p-3 text-sm text-[color:var(--color-info-text)] animate-fade-in sm:p-4";
   return (
     <div className={className} role={isError ? "alert" : "status"} aria-live="polite">
       {state.statusMessage ? <p className="font-semibold">{state.statusMessage}</p> : null}

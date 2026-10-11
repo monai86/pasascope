@@ -876,7 +876,9 @@ describe("pasascope pages", () => {
     expect(screen.getByLabelText("Child or client")).toBeInTheDocument();
     expect(screen.getByLabelText("Session date")).toBeInTheDocument();
     expect(screen.getByRole("button", { name: "Continue to Source Material" })).toBeDisabled();
-    expect(screen.getByRole("button", { name: "Extract language-sample features" })).toBeInTheDocument();
+    // Feature extraction follows attestation, so it is offered on the
+    // Transcript view and not while the session is still being set up.
+    expect(screen.queryByRole("button", { name: "Extract language-sample features" })).not.toBeInTheDocument();
     expect(screen.getByText("Decision-support only. Not diagnostic. Transcript must be reviewed before report use.")).toBeInTheDocument();
   });
 
@@ -905,7 +907,7 @@ describe("pasascope pages", () => {
 
     expect(await screen.findByText("Backend unavailable — local workspace mode")).toBeInTheDocument();
     expect(screen.getByRole("textbox", { name: "Pasted transcript text" })).toBeEnabled();
-    expect(screen.getByRole("button", { name: "Extract language-sample features" })).toBeDisabled();
+    expect(screen.queryByRole("button", { name: "Extract language-sample features" })).not.toBeInTheDocument();
   });
 
   it("shows a useful empty result state with a working next action", async () => {
@@ -1216,13 +1218,14 @@ describe("pasascope pages", () => {
       transcriptLines: [{ lineId: "line-1", speaker: "CHI", text: "I see it." }]
     });
 
-    await renderRecordPage();
-    await waitFor(() => {
-      expect(screen.getByText("Feature extraction requires a saved, reviewed, and attested transcript.")).toBeInTheDocument();
-    });
-    const extractButton = screen.getByRole("button", { name: "Extract language-sample features" });
-    expect(extractButton).toBeDisabled();
-    expect(extractButton).toHaveAttribute("aria-describedby", "extract-features-reason");
+    await renderReviewTranscriptPage();
+    // Before attestation the Transcript view does not offer extraction at
+    // all; it says what still has to happen and keeps the report locked.
+    expect(await screen.findByText("Report generation is locked")).toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: "Extract language-sample features" })).not.toBeInTheDocument();
+    const generateReport = screen.getByRole("button", { name: "Generate report draft" });
+    expect(generateReport).toBeDisabled();
+    expect(generateReport).toHaveAttribute("aria-describedby", "generate-report-blocked-reason");
   });
 
   it("shows extracted language-sample cues on results without prediction claims", async () => {
@@ -1256,7 +1259,7 @@ describe("pasascope pages", () => {
       ]
     });
 
-    await renderRecordPage();
+    await renderReviewTranscriptPage();
     await waitFor(() => expect(screen.getByRole("button", { name: "Extract language-sample features" })).toBeEnabled());
     fireEvent.click(screen.getByRole("button", { name: "Extract language-sample features" }));
     await waitFor(() => expect(routerPush).toHaveBeenCalledWith(expect.stringMatching(/^\/sessions\/.+\?view=findings/)));
@@ -1983,9 +1986,8 @@ describe("pasascope pages", () => {
     const attestCall = fetchMock.mock.calls.find(([url]) => String(url).endsWith("/transcripts/TRANSCRIPT-NEW/attest"));
     expect(JSON.parse(String(attestCall?.[1]?.body ?? "{}"))).not.toHaveProperty("attested_by");
 
-    cleanup();
-    await renderRecordPage();
-    fireEvent.click(screen.getByRole("button", { name: "Extract language-sample features" }));
+    // Extraction is the next step on the same view once the transcript is attested.
+    fireEvent.click(await screen.findByRole("button", { name: "Extract language-sample features" }));
     await waitFor(() => expect(fetchMock).toHaveBeenCalledWith(expect.stringContaining("/transcripts/TRANSCRIPT-NEW/extract-features"), expect.objectContaining({ method: "POST" })));
     expect(routerPush).toHaveBeenCalledWith(expect.stringMatching(/^\/sessions\/.+\?view=findings/));
 
@@ -2507,9 +2509,8 @@ describe("pasascope pages", () => {
     fireEvent.click(screen.getByRole("button", { name: "Attest transcript" }));
     await waitFor(() => expect(screen.getByText("Transcript attested")).toBeInTheDocument());
 
-    cleanup();
-    await renderRecordPage();
-    const extractButton = screen.getByRole("button", { name: "Extract language-sample features" });
+    // No detour back to Intake: extraction is offered here as the next step.
+    const extractButton = await screen.findByRole("button", { name: "Extract language-sample features" });
     expect(extractButton).toBeEnabled();
     fireEvent.click(extractButton);
 

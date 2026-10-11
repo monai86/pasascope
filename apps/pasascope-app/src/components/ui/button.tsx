@@ -65,7 +65,8 @@ export function Button(props: ButtonProps) {
     return (
       <Link
         href={href}
-        className={classes}
+        // An anchor has no disabled state, so an inactive link is also made inert.
+        className={cn(classes, (disabled || loading) && "pointer-events-none")}
         aria-disabled={disabled || loading ? "true" : undefined}
         tabIndex={disabled || loading ? -1 : undefined}
         {...linkProps}

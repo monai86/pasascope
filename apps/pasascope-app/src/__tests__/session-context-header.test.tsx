@@ -87,3 +87,56 @@ describe("SessionContextHeader", () => {
     expect(screen.getByRole("link", { name: "Case C-18" })).toHaveAttribute("href", "/cases/case-compact");
   });
 });
+
+describe("SessionContextHeader step completion", () => {
+  const base = {
+    sessionId: "session-1",
+    caseId: "case-1024",
+    caseLabel: "C-1024",
+    dataMode: "backend" as const,
+  };
+
+  it("ticks only the steps the session has actually finished", () => {
+    render(
+      <SessionContextHeader
+        title="Session Results"
+        description="Review extracted features."
+        context={{ ...base, activeView: "findings", completion: { intake: true, transcript: false, findings: false, report: false } }}
+      />,
+    );
+
+    // The Transcript step sits before the active Findings step, but the
+    // transcript was never attested, so it must not look done.
+    expect(screen.getByRole("link", { name: "Intake" })).toHaveAttribute("data-step-state", "complete");
+    expect(screen.getByRole("link", { name: "Transcript" })).toHaveAttribute("data-step-state", "pending");
+    expect(screen.getByRole("link", { name: "Findings" })).toHaveAttribute("data-step-state", "current");
+    expect(screen.getByRole("link", { name: "Report" })).toHaveAttribute("data-step-state", "pending");
+  });
+
+  it("describes a finished step to assistive technology without renaming its link", () => {
+    render(
+      <SessionContextHeader
+        title="Review Transcript"
+        description="Confirm speaker labels."
+        context={{ ...base, activeView: "transcript", completion: { intake: true } }}
+      />,
+    );
+
+    expect(screen.getByRole("link", { name: "Intake" })).toHaveAccessibleDescription("Step complete");
+    expect(screen.getByRole("link", { name: "Transcript" })).not.toHaveAccessibleDescription("Step complete");
+  });
+
+  it("ticks nothing when completion is unknown", () => {
+    render(
+      <SessionContextHeader
+        title="Report Summary"
+        description="Review and sign."
+        context={{ ...base, activeView: "report" }}
+      />,
+    );
+
+    for (const name of ["Intake", "Transcript", "Findings"]) {
+      expect(screen.getByRole("link", { name })).toHaveAttribute("data-step-state", "pending");
+    }
+  });
+});

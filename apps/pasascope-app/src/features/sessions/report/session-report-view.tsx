@@ -5,6 +5,7 @@ import { Clipboard, Download, Printer, Send, ShieldCheck } from "lucide-react";
 import { PrimaryActionButton, SafetyNote, WorkspacePanel } from "@/components/workbench-ui";
 import { BackendAvailabilityBanner } from "@/components/backend-availability-banner";
 import { SessionContextHeader } from "@/features/sessions/components/session-context-header";
+import { sessionCompletion } from "@/features/sessions/state/session-completion";
 import { SessionGuide } from "@/features/sessions/components/session-guide";
 import { ReportProvenanceItem, reportSectionDefinitions, WorkflowStatus } from "@/features/sessions/report/session-report-components";
 import { useSessionReport, type SessionReportViewProps } from "@/features/sessions/report/use-session-report";
@@ -111,6 +112,7 @@ function ReportSummaryIdentityScope({ caseId, sessionId, transcriptId, reportId 
               ? "unavailable"
               : "local_draft",
           activeView: "report",
+          completion: sessionCompletion(state),
         }}
       />      <SessionGuide
         testId="report-guide"

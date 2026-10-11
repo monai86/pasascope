@@ -161,7 +161,10 @@ export function AppShell({
 
           <Topbar showSearch={active !== "Cases"} />
 
-          <main id="main-content" className="min-w-0 flex-1 overflow-y-auto p-4 max-md:pb-44 md:p-6">
+          {/* The bottom padding reserves room for the fixed mobile bars, and the
+              matching scroll padding keeps anything scrolled into view (a
+              selected transcript line, a focused field) above them. */}
+          <main id="main-content" className="min-w-0 flex-1 overflow-y-auto p-4 max-md:scroll-pb-44 max-md:pb-44 md:p-6">
             <div className="flex items-start gap-6">
               <div className="min-w-0 flex-1">{children}</div>
               {rightRail ? <RightRail>{rightRail}</RightRail> : null}

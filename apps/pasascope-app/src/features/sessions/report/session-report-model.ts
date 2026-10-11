@@ -203,7 +203,7 @@ export function reportSaveStateLabel(status: WorkflowState["reportSaveStatus"], 
 export function createDraftText(state: WorkflowState) {
   return [
     "# Draft Report Preview", "", `Child/session: ${state.childName}`, `Report period: ${state.reportPeriod}`,
-    `Transcript readiness: ${state.transcriptCompleteness || 0}%`, `Reviewed transcript status: ${state.transcriptReviewStatus}`,
+    `Transcript readiness: ${state.transcriptCompleteness ? `${state.transcriptCompleteness}%` : "not measured"}`, `Reviewed transcript status: ${state.transcriptReviewStatus}`,
     `Review-needed count: ${state.reviewNeededCount}`, "", "## Strengths",
     ...(state.featureSummary.length ? state.featureSummary.map((item) => `- ${item.label}: ${item.value}`) : ["- Feature summary pending therapist review"]),
     "", "## Therapist Notes", state.therapistNotes || "- No therapist notes recorded.", "", "## Therapy Goals",

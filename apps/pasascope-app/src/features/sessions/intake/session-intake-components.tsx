@@ -1,11 +1,11 @@
 import type { ReactNode } from "react";
 import type { LucideIcon } from "lucide-react";
-import { CheckCircle2, ClipboardPaste, FileText, ShieldCheck, Sparkles, UploadCloud } from "lucide-react";
+import { Check, CheckCircle2, ClipboardPaste, FileText, Sparkles } from "lucide-react";
 
 import { PrimaryActionButton, WorkspacePanel } from "@/components/workbench-ui";
+import { sessionCompletion } from "@/features/sessions/state/session-completion";
 import { resolveSessionHref } from "@/features/sessions/state/session-view";
 import type { SessionIntakeSource } from "@/features/sessions/intake/session-intake-view";
-import { GENERATE_REPORT_ACTION } from "@/lib/workflow-glossary";
 import type { WorkflowSource, WorkflowState } from "@/lib/workflow";
 
 export function sourceSummaryLabel(source: SessionIntakeSource): string {
@@ -128,7 +128,6 @@ export function SourceInputPanel({
   validationIssues,
   onDraftChange,
   onChaFile,
-  onAudioUpload,
   onTranscriptSubmit
 }: {
   mode?: string;
@@ -139,17 +138,17 @@ export function SourceInputPanel({
   validationIssues: string[];
   onDraftChange: (value: string) => void;
   onChaFile: (file: File) => void;
-  onAudioUpload: () => void;
   onTranscriptSubmit: (source: Extract<WorkflowSource, "cha-upload" | "paste-transcript">) => void;
 }) {
   if (mode === "audio") {
+    // Uploading an existing audio file is not built. Saying so is better than
+    // a button that records an upload which never happened.
     return (
       <WorkspacePanel className="p-5">
         <h2 className="font-bold text-ink">Upload audio</h2>
-        <p className="mt-2 text-sm text-slate-600">Experimental only. This creates a session record, but real ASR is not implemented in this step.</p>
-        <PrimaryActionButton icon={UploadCloud} className="mt-4 w-full" onClick={onAudioUpload} disabled={busy}>
-          Mark audio upload as experimental
-        </PrimaryActionButton>
+        <p className="mt-2 text-sm leading-6 text-ink-muted">
+          Uploading an existing audio file is not available yet. Record in the browser to transcribe speech, or upload a .cha file or paste a transcript you already have.
+        </p>
       </WorkspacePanel>
     );
   }
@@ -244,38 +243,45 @@ export function SourceInputPanel({
 }
 
 
-export function SessionResultsPreview({ state, onGenerateReport, busy }: { state: WorkflowState; onGenerateReport: () => void; busy: boolean }) {
+/**
+ * Where this session stands, from persisted state only: each step is marked
+ * done when its own evidence exists, with a link to the first step that is
+ * not. It shows no scores; those belong to Findings.
+ */
+export function SessionProgressCard({ state }: { state: WorkflowState }) {
+  const completion = sessionCompletion(state);
+  const steps = [
+    { view: "intake", label: "Transcript added", done: completion.intake },
+    { view: "transcript", label: "Transcript attested", done: completion.transcript },
+    { view: "findings", label: "Features extracted", done: completion.findings },
+    { view: "report", label: "Report signed", done: completion.report },
+  ] as const;
+  const next = steps.find((step) => !step.done && step.view !== "intake");
+
   return (
-    <WorkspacePanel className="hidden p-6 lg:block">
-      <div className="mb-5 flex items-center gap-3">
-        <span className="grid h-12 w-12 place-items-center rounded-full bg-brand-soft font-bold text-brand">EL</span>
-        <div>
-          <h2 className="text-xl font-bold text-ink">Session Results</h2>
-          <p className="text-sm text-slate-600">{state.childName} · {state.qaStatus ?? "Not analyzed"}</p>
-        </div>
-      </div>
-      <div className="grid gap-4 md:grid-cols-3">
-        <MiniResult value={`${state.transcriptCompleteness || 0}%`} label="Transcript Ready" />
-        <MiniResult value={`${state.featurePercent || 0}%`} label="Feature Summary" />
-        <MiniResult value={String(state.reviewNeededCount)} label="Review Needed" />
-      </div>
-      <div className="mt-6 rounded-panel border border-line bg-surface p-4">
-        <h3 className="font-bold text-ink">Key insights</h3>
-        <ul className="mt-3 space-y-3 text-sm text-slate-700">
-          {state.insights.map((insight) => <li key={insight.title}>{insight.title}: {insight.text}</li>)}
-        </ul>
-      </div>
-      <div className="mt-5 grid gap-3 sm:grid-cols-2">
-        <PrimaryActionButton href={workflowSessionHref("transcript", state)} icon={FileText}>Review Transcript</PrimaryActionButton>
-        <PrimaryActionButton icon={ShieldCheck} onClick={onGenerateReport} disabled={busy || !isResultsReportReady(state)}>{GENERATE_REPORT_ACTION}</PrimaryActionButton>
-      </div>
+    <WorkspacePanel className="hidden p-5 lg:block">
+      <h2 className="text-lg font-semibold text-ink">Session progress</h2>
+      <ol className="mt-4 space-y-2" role="list">
+        {steps.map((step) => (
+          <li key={step.view} className="flex items-center gap-3 rounded-control border border-line bg-surface-soft px-3 py-2.5 text-sm font-medium text-ink">
+            <span
+              aria-hidden="true"
+              className={`grid h-6 w-6 shrink-0 place-items-center rounded-full ${step.done ? "bg-brand text-white" : "border border-line-strong bg-surface text-ink-subtle"}`}
+            >
+              {step.done ? <Check size={13} strokeWidth={3} /> : null}
+            </span>
+            <span className="min-w-0 flex-1">{step.label}</span>
+            <span className="text-xs font-normal text-ink-subtle">{step.done ? "Done" : "Not yet"}</span>
+          </li>
+        ))}
+      </ol>
+      {completion.intake && next ? (
+        <PrimaryActionButton href={workflowSessionHref(next.view, state)} icon={FileText} className="mt-4 w-full">
+          {next.view === "transcript" ? "Review Transcript" : next.view === "findings" ? "Open Findings" : "Open Report"}
+        </PrimaryActionButton>
+      ) : null}
     </WorkspacePanel>
   );
-}
-
-function isResultsReportReady(state: WorkflowState) {
-  if (state.analysisStatus === "stale") return false;
-  return isTranscriptUnlocked(state) && state.featuresExtracted;
 }
 
 export function WorkflowStatus({ state, backendUnavailable }: { state: WorkflowState; backendUnavailable?: boolean }) {
@@ -288,10 +294,10 @@ export function WorkflowStatus({ state, backendUnavailable }: { state: WorkflowS
     return null;
   }
   const className = isError
-    ? "rounded-panel border border-red-200 bg-red-50 p-4 text-sm text-red-950 animate-fade-in"
+    ? "rounded-card border border-[color:var(--color-danger-border)] bg-[color:var(--color-danger-bg)] p-4 text-sm text-[color:var(--color-danger-text)] animate-fade-in"
     : isSuccess
-      ? "rounded-panel border border-emerald-200 bg-emerald-50 p-4 text-sm text-emerald-950 animate-fade-in"
-      : "demo-note rounded-panel p-4 text-sm";
+      ? "rounded-card border border-[color:var(--color-info-border)] bg-[color:var(--color-info-bg)] p-4 text-sm text-[color:var(--color-info-text)] animate-fade-in"
+      : "demo-note rounded-card p-4 text-sm";
   return (
     <div className={className} role={isError ? "alert" : "status"} aria-live="polite">
       {state.statusMessage ? <p className="font-semibold">{state.statusMessage}</p> : null}
@@ -300,11 +306,3 @@ export function WorkflowStatus({ state, backendUnavailable }: { state: WorkflowS
   );
 }
 
-function MiniResult({ value, label }: { value: string; label: string }) {
-  return (
-    <div className="rounded-[1.25rem] border border-line bg-surface p-4 text-center">
-      <p className="text-3xl font-bold text-ink">{value}</p>
-      <p className="mt-2 text-sm font-semibold text-slate-700">{label}</p>
-    </div>
-  );
-}

@@ -1,7 +1,11 @@
 # PasaScope UI Redesign Plan
 
-Status: Phase 1 implemented 2026-08-16 (this document is the living roadmap for
-the owner-approved redesign).
+Status: superseded on 2026-10-12. The project owner approved a new visual and
+workflow direction (light blue 60 / 30 / 10 palette with no green, Thai/English
+interface, redrawn logo, linear session workflow). The current contract is the
+root `DESIGN.md` and `apps/pasascope-app/DESIGN.md`. What follows is kept as a
+record of the earlier teal roadmap and its Phase 1; its colour and reference
+choices no longer apply.
 
 ## Owner brief
 

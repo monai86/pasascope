@@ -56,6 +56,7 @@ import {
 import { canApplyMlDecisionSupportSettlement, canApplyTranscriptSaveSettlement, canSettleWorkflowRequest, derivePipelineStatus, sessionWorkflowReducer } from "@/features/sessions/state/session-workflow-reducer";
 import { sessionWorkflowService } from "@/features/sessions/services/session-workflow-service";
 import { resolveSessionHref, resolveWorkspaceFeature, type SessionView } from "@/features/sessions/state/session-view";
+import { sessionCompletion } from "@/features/sessions/state/session-completion";
 import type { SessionIntakeSource, SessionIntakeStepId } from "@/features/sessions/intake/session-intake-view";
 import type { SessionContext } from "@/features/sessions/components/session-context-header";
 import { SessionWorkflowView, type SessionWorkflowViewModel } from "@/features/sessions/components/session-workspace-view";
@@ -568,46 +569,6 @@ export function useSessionWorkspace({ sessionId, caseId, transcriptId, reportId,
     setBusy(false);
   }
 
-  async function handleAudioUpload() {
-    setBusy(true);
-    const localSession = persist(ensureWorkflowSession(buildIntakeBackedState(state, "audio-upload"), "audio-upload", {
-      mockAudioStored: true,
-      recordingStatus: "stopped",
-      transcriptReviewStatus: "not_started",
-      qaStatus: "not_run",
-      qaIssues: [],
-      analysisStatus: "not_started",
-      reportStatus: "not_started",
-      statusMessage: "Audio upload is represented in local workflow state while the optional session service is checked.",
-      error: undefined
-    }));
-    try {
-      const session = await createBackendSession("audio-upload");
-      persist({
-        ...localSession,
-        backendSessionId: session.session_id,
-        caseId: session.case_id,
-        caseInfo: {
-          ...localSession.caseInfo,
-          caseId: session.case_id
-        },
-        mockAudioStored: true,
-        recordingStatus: "stopped",
-        statusMessage: "Audio upload is experimental. A backend session was created, but real ASR is not enabled in this UI step.",
-        error: undefined
-      });
-    } catch {
-      setBackendUnavailable(true);
-      persist({
-        ...localSession,
-        statusMessage: "Audio upload is experimental and is represented in local workflow state.",
-        error: "Backend session endpoint unavailable; no audio bytes were uploaded."
-      });
-    } finally {
-      setBusy(false);
-    }
-  }
-
   async function handleTranscriptSubmit(source: Extract<WorkflowSource, "cha-upload" | "paste-transcript">, reviewed = false) {
     let intake;
     try {
@@ -674,7 +635,7 @@ export function useSessionWorkspace({ sessionId, caseId, transcriptId, reportId,
         chatWarnings: intake.warnings,
         chatValidationIssues: intake.validationIssues,
         transcriptReady: true,
-        transcriptCompleteness: 92,
+        transcriptCompleteness: 0,
         transcriptAttested: Boolean(updated.therapist_attested),
         transcriptReviewStatus: updated.therapist_attested ? "reviewed" : "draft",
         transcriptSaveStatus: "saved",
@@ -991,6 +952,7 @@ export function useSessionWorkspace({ sessionId, caseId, transcriptId, reportId,
         ? "unavailable"
         : "local_draft",
     activeView: view,
+    completion: sessionCompletion(state),
   };
 
   if (view === "findings") {
@@ -1093,7 +1055,6 @@ export function useSessionWorkspace({ sessionId, caseId, transcriptId, reportId,
           setIntakeWarnings,
           intakeValidationIssues,
           setIntakeValidationIssues,
-          handleAudioUpload,
           handleTranscriptSubmit,
           transcriptLines,
           transcriptSetup,

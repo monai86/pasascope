@@ -26,8 +26,11 @@ export function buildLinguisticSignalCards(state: WorkflowState) {
 }
 
 export function transcriptQualityLabel(state: WorkflowState) {
-  if (state.qaStatus === "pass") return `Pass · ${state.transcriptCompleteness || 100}%`;
-  if (state.qaStatus === "warning") return `Warning · ${state.transcriptCompleteness || 0}%`;
+  // The percentage is a QA measurement. Without one, the status stands alone
+  // rather than beside a number nobody measured.
+  const measured = state.transcriptCompleteness ? ` · ${state.transcriptCompleteness}%` : "";
+  if (state.qaStatus === "pass") return `Pass${measured}`;
+  if (state.qaStatus === "warning") return `Warning${measured}`;
   if (state.qaStatus === "fail") return "Blocked";
   return "Pending";
 }

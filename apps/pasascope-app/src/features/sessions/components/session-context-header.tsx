@@ -20,6 +20,12 @@ export type SessionContext = {
   workflowStatus?: string;
   dataMode: SessionDataMode;
   activeView: SessionView;
+  /**
+   * Which steps the session has actually finished, from persisted workflow
+   * state. A step is ticked only when this says so; where it is absent
+   * nothing is ticked, because a step's position proves nothing about it.
+   */
+  completion?: Partial<Record<SessionView, boolean>>;
 };
 
 export type SessionContextHeaderProps = {
@@ -142,51 +148,51 @@ export function SessionContextHeader({
 }
 
 function SessionViewNavigation({ context, compact = false }: { context: SessionContext; compact?: boolean }) {
-  const activeIndex = sessionViews.indexOf(context.activeView);
   return (
     <nav
       aria-label="Session views"
-      className={`${compact ? "border-t px-1 py-2 sm:px-2" : "mt-4 border-t pt-4"} border-[color:var(--color-border)]/60`}
+      className={`${compact ? "border-t px-1 py-2 sm:px-2" : "mt-4 border-t pt-4"} border-line`}
     >
       <ol className="grid grid-cols-4 gap-1 sm:gap-2" role="list">
         {sessionViews.map((view, index) => {
           const active = view === context.activeView;
-          const completed = index < activeIndex;
+          const completed = Boolean(context.completion?.[view]);
+          const stateId = `session-step-${view}-state`;
           return (
             <li key={view} className="flex min-w-0 items-center">
               <Link
                 href={resolveSessionHref(view, context.sessionId)}
                 aria-current={active ? "page" : undefined}
-                className="group flex min-h-11 min-w-0 flex-1 flex-col items-center justify-center gap-1 rounded-xl px-1 text-center transition-colors motion-reduce:transition-none sm:flex-row sm:gap-2"
+                aria-describedby={completed ? stateId : undefined}
+                data-step-state={completed ? "complete" : active ? "current" : "pending"}
+                className="group flex min-h-11 min-w-0 flex-1 flex-col items-center justify-center gap-1 rounded-full px-1 text-center transition-colors hover:bg-surface-soft focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-[color:var(--color-focus-ring)] motion-reduce:transition-none sm:flex-row sm:gap-2"
               >
                 <span
                   aria-hidden="true"
-                  className={`grid h-6 w-6 shrink-0 place-items-center rounded-full text-xs font-bold transition-colors motion-reduce:transition-none ${
+                  className={`grid h-6 w-6 shrink-0 place-items-center rounded-full text-xs font-semibold transition-colors motion-reduce:transition-none sm:h-7 sm:w-7 ${
                     completed
-                      ? "bg-brand text-white shadow-2xs"
+                      ? "bg-brand text-white"
                       : active
-                        ? "border-2 border-brand bg-brand-soft text-brand shadow-2xs font-extrabold"
-                        : "border border-line bg-surface-muted text-ink-muted"
+                        ? "border-2 border-brand bg-brand-soft text-brand-strong"
+                        : "border border-line-strong bg-surface text-ink-muted"
                   }`}
                 >
-                  {completed ? <Check size={13} strokeWidth={3} aria-hidden="true" /> : index + 1}
+                  {completed ? <Check size={14} strokeWidth={3} aria-hidden="true" /> : index + 1}
                 </span>
                 <span
-                  className={`min-w-0 truncate text-xs font-bold sm:text-sm ${
-                    active
-                      ? "text-brand"
-                      : completed
-                        ? "text-ink"
-                        : "text-ink-subtle"
+                  className={`min-w-0 truncate text-xs font-semibold sm:text-sm ${
+                    active ? "text-brand-strong" : completed ? "text-ink" : "text-ink-muted"
                   }`}
                 >
                   {viewLabels[view]}
                 </span>
               </Link>
+              {/* Describes the tick without changing the link's name. */}
+              {completed ? <span id={stateId} className="sr-only">Step complete</span> : null}
               {index < sessionViews.length - 1 ? (
                 <span
                   aria-hidden="true"
-                  className={`hidden h-0.5 w-4 shrink-0 sm:block rounded-full ${completed ? "bg-brand" : "bg-[color:var(--color-border)]/60"}`}
+                  className={`hidden h-0.5 w-4 shrink-0 rounded-full sm:block ${completed ? "bg-brand" : "bg-line"}`}
                 />
               ) : null}
             </li>

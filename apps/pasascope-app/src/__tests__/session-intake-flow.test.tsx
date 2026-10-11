@@ -134,8 +134,11 @@ describe("session intake flow", () => {
     fireEvent.click(screen.getByRole("button", { name: "Upload .cha" }));
     expect(screen.getByLabelText("CHA transcript file")).toBeInTheDocument();
 
+    // Uploading an audio file is not built, and the panel says so instead of
+    // offering a button that would record an upload which never happened.
     fireEvent.click(screen.getByRole("button", { name: "Upload audio" }));
-    expect(screen.getByRole("button", { name: "Mark audio upload as experimental" })).toBeInTheDocument();
+    expect(screen.getByText(/Uploading an existing audio file is not available yet\./)).toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: "Mark audio upload as experimental" })).not.toBeInTheDocument();
 
     fireEvent.click(screen.getByRole("button", { name: "Record in browser" }));
     expect(screen.getByRole("button", { name: "Start recording" })).toBeInTheDocument();
