@@ -329,14 +329,14 @@ export function AssessmentSegmentReviewWorkspace({
             onAttestationChange={setTranscriptAttestationConfirmed}
           />
         ) : (
-          <section className="workspace-panel border-amber-300 bg-amber-50 p-5 text-amber-950" role="status">
+          <section className="workspace-panel border-[color:var(--color-attention-border)] bg-[color:var(--color-warning-bg)] p-5 text-[color:var(--color-warning-text)]" role="status">
             <h2 className="text-lg font-semibold">ยังไม่มี segment สำหรับ revision นี้</h2>
             <p className="mt-2 text-sm">ไม่สร้างเวลาเริ่ม–จบแทนระบบ เพราะจะทำให้ข้อมูลเสียงคลาดเคลื่อน กรุณาให้ pipeline ส่ง segment ที่ตรวจสอบย้อนกลับได้ แล้วโหลดข้อมูลใหม่</p>
             <p className="mt-3 text-xs">transcript revision {transcript.revision} · {transcript.id}</p>
             <button type="button" className={secondaryButtonClass} onClick={() => void loadReview()}>โหลด revision ล่าสุด</button>
           </section>
         )}
-        {notice ? <p className="text-sm text-emerald-800" role="status" aria-live="polite">{notice}</p> : null}
+        {notice ? <p className="text-sm text-[color:var(--color-success-text)]" role="status" aria-live="polite">{notice}</p> : null}
       </section>
     );
   }
@@ -351,7 +351,7 @@ export function AssessmentSegmentReviewWorkspace({
         <p className="mt-2 max-w-3xl text-sm text-ink-muted">ตรวจเฉพาะช่วงที่ไม่แน่ใจ เปิดฟังเสียงช่วงนั้นเมื่อมีสิทธิ์ แล้วบันทึก revision ใหม่ก่อนรับรอง ข้อมูลนี้เป็นหลักฐานเชิงพรรณนาเพื่อประกอบการพิจารณาของนักบำบัด ไม่ใช่การวินิจฉัยอัตโนมัติ</p>
       </header>
 
-      <div className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-sky-200 bg-sky-50 p-4 text-sky-950" role="status">
+      <div className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-[color:var(--color-info-border)] bg-brand-soft p-4 text-[color:var(--color-info-text)]" role="status">
         <div>
           <p className="font-semibold">สถานะ: {segmentStateLabel(segmentSet.review_state)}</p>
           <p className="mt-1 text-sm">transcript: <span className="font-semibold">{segmentStateLabel(transcript.review_state)}</span></p>
@@ -361,7 +361,7 @@ export function AssessmentSegmentReviewWorkspace({
       </div>
 
       {conflict ? (
-        <section className="rounded-xl border border-amber-400 bg-amber-50 p-4 text-amber-950" role="alert">
+        <section className="rounded-xl border border-[color:var(--color-warning-border)] bg-[color:var(--color-warning-bg)] p-4 text-[color:var(--color-warning-text)]" role="alert">
           <p className="font-semibold">ข้อมูล segment เปลี่ยนแปลงแล้ว</p>
           <p className="mt-1 text-sm">มี revision ใหม่จากผู้ใช้อื่นหรือจากระบบ จึงยังไม่เขียนทับข้อมูลนั้น</p>
           <button type="button" className={secondaryButtonClass} onClick={() => void loadReview()}>โหลด revision ล่าสุด</button>
@@ -400,7 +400,7 @@ export function AssessmentSegmentReviewWorkspace({
                         <div className="flex flex-wrap items-center gap-2 text-xs text-ink-muted">
                           <span>{formatTime(segment.start_ms)}–{formatTime(segment.end_ms)}</span>
                           <span className="rounded-full bg-surface-muted px-2 py-1 font-semibold">{speakerLabel(segment.speaker_role)}</span>
-                          {segment.uncertainty_reason !== "none" ? <span className="rounded-full bg-amber-100 px-2 py-1 font-semibold text-amber-900">ต้องตรวจ: {uncertaintyLabel(segment.uncertainty_reason)}</span> : null}
+                          {segment.uncertainty_reason !== "none" ? <span className="rounded-full bg-[color:var(--color-warning-bg)] px-2 py-1 font-semibold text-[color:var(--color-warning-text)]">ต้องตรวจ: {uncertaintyLabel(segment.uncertainty_reason)}</span> : null}
                         </div>
                         <p className="mt-2 whitespace-pre-wrap text-[length:var(--font-size-transcript)] leading-7 text-ink">{segment.text}</p>
                         {segment.confidence !== null ? <p className="mt-2 text-xs text-ink-muted">ความมั่นใจจากระบบ {Math.round(segment.confidence * 100)}% · ใช้เป็นสัญญาณประกอบ ไม่ใช่ผลวินิจฉัย</p> : null}
@@ -411,7 +411,7 @@ export function AssessmentSegmentReviewWorkspace({
                           </button>
                         </div>
                         {grant?.available && grant.url ? <SegmentAudioPlayer grant={grant} ordinal={segment.ordinal} /> : null}
-                        {grant && !grant.available ? <p className="mt-3 text-sm text-amber-900" role="status">เสียงของช่วงนี้ยังไม่พร้อมใช้งาน แต่ยังตรวจและบันทึกข้อความได้</p> : null}
+                        {grant && !grant.available ? <p className="mt-3 text-sm text-[color:var(--color-warning-text)]" role="status">เสียงของช่วงนี้ยังไม่พร้อมใช้งาน แต่ยังตรวจและบันทึกข้อความได้</p> : null}
                       </div>
                     </div>
                   </article>
@@ -459,7 +459,7 @@ export function AssessmentSegmentReviewWorkspace({
                 <input id={`segment-confidence-${selectedSegment.id}`} aria-label={`ความมั่นใจช่วงที่ ${selectedSegment.ordinal}`} type="number" min={0} max={1} step={0.01} value={selectedSegment.confidence ?? ""} onChange={(event) => updateSelectedSegment({ confidence: event.target.value === "" ? null : Number(event.target.value) })} disabled={busy} className={fieldClass} />
               </div>
               <button type="button" className={primaryButtonClass} disabled={busy || !segmentsDirty} onClick={() => void saveSegments()}>{busy ? "กำลังบันทึก…" : "บันทึก revision ใหม่"}</button>
-              {segmentsDirty ? <p className="text-xs text-amber-900">มีการแก้ไขในหน้านี้ที่ยังไม่บันทึก</p> : null}
+              {segmentsDirty ? <p className="text-xs text-[color:var(--color-warning-text)]">มีการแก้ไขในหน้านี้ที่ยังไม่บันทึก</p> : null}
             </div>
           ) : <p className="mt-4 text-sm text-ink-muted">เลือกช่วงจากรายการทางซ้ายเพื่อเริ่มตรวจ</p>}
         </section>
@@ -469,21 +469,21 @@ export function AssessmentSegmentReviewWorkspace({
         <section className="workspace-panel p-5" aria-labelledby="segment-attestation-heading">
           <h2 id="segment-attestation-heading" className="text-lg font-semibold">รับรอง segment revision</h2>
           <label className="mt-3 flex min-h-11 items-start gap-3 text-sm"><input type="checkbox" checked={segmentAttestationConfirmed} onChange={(event) => setSegmentAttestationConfirmed(event.target.checked)} disabled={busy || segmentsDirty} className="mt-1 h-4 w-4" /><span>ฉันได้ตรวจสอบทุกช่วง speaker เวลา และข้อความแล้ว และยืนยันว่า revision นี้พร้อมใช้เป็นหลักฐานเชิงพรรณนา</span></label>
-          {segmentsDirty ? <p className="mt-3 text-sm text-amber-900">บันทึก revision ใหม่ก่อนจึงจะรับรองได้</p> : null}
+          {segmentsDirty ? <p className="mt-3 text-sm text-[color:var(--color-warning-text)]">บันทึก revision ใหม่ก่อนจึงจะรับรองได้</p> : null}
           <button type="button" className={secondaryButtonClass} disabled={!canAttestSegments} onClick={() => void attestSegments()}>{busy ? "กำลังรับรอง…" : "รับรอง segment revision"}</button>
         </section>
       ) : null}
 
       {segmentSet.review_state === "attested" ? (
-        <section className="rounded-xl border border-emerald-300 bg-emerald-50 p-5 text-emerald-950" role="status">
+        <section className="rounded-xl border border-[color:var(--color-success-border)] bg-[color:var(--color-success-bg)] p-5 text-[color:var(--color-success-text)]" role="status">
           <p className="font-semibold">รับรอง segment revision แล้ว</p>
           <p className="mt-1 text-sm">ระบบสามารถใช้ช่วงที่ตรวจแล้วเป็น input ของ evidence worker ได้</p>
           <div className="mt-4"><AssessmentProcessingStatus assessmentId={assessmentId} client={client} canQueue={!segmentsDirty} /></div>
         </section>
       ) : null}
 
-      {notice ? <p className="text-sm text-emerald-800" role="status" aria-live="polite">{notice}</p> : null}
-      {actionError ? <p className="text-sm text-red-800" role="alert">{actionError}</p> : null}
+      {notice ? <p className="text-sm text-[color:var(--color-success-text)]" role="status" aria-live="polite">{notice}</p> : null}
+      {actionError ? <p className="text-sm text-[color:var(--color-danger-text)]" role="alert">{actionError}</p> : null}
     </section>
   );
 }

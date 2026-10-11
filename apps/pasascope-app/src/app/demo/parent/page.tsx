@@ -3,21 +3,21 @@ import { Sparkles, FileText, CalendarDays, BookOpen, Palette, MessageSquare, Arr
 
 export default function DemoParent() {
   const tips = [
-    { title: "อ่านหนังสือก่อนนอน", desc: "อ่านนิทานร่วมกับน้องเอ ชวนชี้นิ้วบอกสิ่งต่าง ๆ และถามความรู้สึกตัวละคร", icon: BookOpen, color: "text-blue-600 bg-blue-50" },
-    { title: "กิจกรรมวาดรูปและบอกคำศัพท์", desc: "ชวนน้องเอระบายสีสิ่งของรอบตัว แล้วให้บอกชื่อสิ่งของพร้อมลักษณะเด่น", icon: Palette, color: "text-purple-600 bg-purple-50" },
-    { title: "ถามคำถามปลายเปิด", desc: "เปลี่ยนการถาม 'ใช่/ไม่ใช่' เป็นคำถาม 'ทำไม' หรือ 'อย่างไร' ระหว่างกิจกรรมร่วมกัน", icon: MessageSquare, color: "text-amber-600 bg-amber-50" },
+    { title: "อ่านหนังสือก่อนนอน", desc: "อ่านนิทานร่วมกับน้องเอ ชวนชี้นิ้วบอกสิ่งต่าง ๆ และถามความรู้สึกตัวละคร", icon: BookOpen, color: "text-brand-strong bg-brand-soft" },
+    { title: "กิจกรรมวาดรูปและบอกคำศัพท์", desc: "ชวนน้องเอระบายสีสิ่งของรอบตัว แล้วให้บอกชื่อสิ่งของพร้อมลักษณะเด่น", icon: Palette, color: "text-[color:var(--color-info-text)] bg-brand-soft" },
+    { title: "ถามคำถามปลายเปิด", desc: "เปลี่ยนการถาม 'ใช่/ไม่ใช่' เป็นคำถาม 'ทำไม' หรือ 'อย่างไร' ระหว่างกิจกรรมร่วมกัน", icon: MessageSquare, color: "text-[color:var(--color-warning-text)] bg-[color:var(--color-warning-bg)]" },
   ];
 
   return (
     <div className="mx-auto max-w-4xl space-y-8">
       {/* Future Feature Banner */}
-      <div className="rounded-shell border border-amber-200 bg-amber-50 p-6 flex flex-col sm:flex-row items-center gap-4">
-        <span className="grid h-12 w-12 place-items-center rounded-xl bg-orange-100 text-orange-600 shrink-0 animate-pulse">
+      <div className="rounded-shell border border-[color:var(--color-attention-border)] bg-[color:var(--color-warning-bg)] p-6 flex flex-col sm:flex-row items-center gap-4">
+        <span className="grid h-12 w-12 place-items-center rounded-xl bg-[color:var(--color-warning-bg)] text-[color:var(--color-warning-text)] shrink-0 animate-pulse">
           <Sparkles size={24} />
         </span>
         <div>
-          <h4 className="font-bold text-orange-950 text-sm">💡 ฟีเจอร์จำลองสำหรับอนาคต (Parent Portal Mockup)</h4>
-          <p className="mt-1 text-xs text-orange-900 leading-normal">
+          <h4 className="font-bold text-[color:var(--color-warning-text)] text-sm">💡 ฟีเจอร์จำลองสำหรับอนาคต (Parent Portal Mockup)</h4>
+          <p className="mt-1 text-xs text-[color:var(--color-warning-text)] leading-normal">
             หน้าจอนี้จัดทำขึ้นเพื่อนำเสนอไอเดียบริการเสริมสำหรับผู้ปกครอง เพื่อติดตามผลลัพธ์การฝึกพูดและการบำบัดของลูกหลานจากทางบ้าน (Coming Soon)
           </p>
         </div>
@@ -27,7 +27,7 @@ export default function DemoParent() {
       <div className="flex flex-col gap-2 md:flex-row md:items-center md:justify-between">
         <div>
           <h1 className="text-3xl font-semibold tracking-[-0.03em] text-ink flex items-center gap-2">
-            <Heart className="text-rose-500 fill-rose-500" />
+            <Heart className="text-[color:var(--color-danger-text)] fill-highlight" />
             สวัสดีค่ะ คุณแม่ของน้องเอ (Ava)
           </h1>
           <p className="mt-1 text-sm text-ink-muted">
@@ -46,30 +46,30 @@ export default function DemoParent() {
             <div>
               <div className="flex justify-between text-xs text-ink-muted mb-1">
                 <span>ความตั้งใจและการโต้ตอบ (Responsiveness)</span>
-                <span className="font-bold text-emerald-600">95% (ดีมาก)</span>
+                <span className="font-bold text-[color:var(--color-success-text)]">95% (ดีมาก)</span>
               </div>
-              <div className="h-2 w-full rounded-full bg-slate-100 overflow-hidden">
-                <div className="h-full bg-emerald-500 rounded-full" style={{ width: "95%" }} />
+              <div className="h-2 w-full rounded-full bg-surface-muted overflow-hidden">
+                <div className="h-full bg-brand rounded-full" style={{ width: "95%" }} />
               </div>
             </div>
 
             <div>
               <div className="flex justify-between text-xs text-ink-muted mb-1">
                 <span>การเชื่อมโยงคำศัพท์ (Vocabulary Connection)</span>
-                <span className="font-bold text-blue-600">75% (ปกติ)</span>
+                <span className="font-bold text-brand-strong">75% (ปกติ)</span>
               </div>
-              <div className="h-2 w-full rounded-full bg-slate-100 overflow-hidden">
-                <div className="h-full bg-blue-500 rounded-full" style={{ width: "75%" }} />
+              <div className="h-2 w-full rounded-full bg-surface-muted overflow-hidden">
+                <div className="h-full bg-brand rounded-full" style={{ width: "75%" }} />
               </div>
             </div>
 
             <div>
               <div className="flex justify-between text-xs text-ink-muted mb-1">
                 <span>ความยาวรูปประโยคพูด (Sentence Length)</span>
-                <span className="font-bold text-amber-600">60% (ควรส่งเสริมเพิ่ม)</span>
+                <span className="font-bold text-[color:var(--color-warning-text)]">60% (ควรส่งเสริมเพิ่ม)</span>
               </div>
-              <div className="h-2 w-full rounded-full bg-slate-100 overflow-hidden">
-                <div className="h-full bg-amber-500 rounded-full" style={{ width: "60%" }} />
+              <div className="h-2 w-full rounded-full bg-surface-muted overflow-hidden">
+                <div className="h-full bg-[color:var(--color-warning-border)] rounded-full" style={{ width: "60%" }} />
               </div>
             </div>
           </div>
@@ -80,7 +80,7 @@ export default function DemoParent() {
           <div>
             <h3 className="font-bold text-sm text-ink">นัดหมายการฝึกพูดครั้งถัดไป</h3>
             <div className="mt-4 flex gap-3.5">
-              <span className="grid h-10 w-10 shrink-0 place-items-center rounded-xl bg-rose-50 text-rose-600">
+              <span className="grid h-10 w-10 shrink-0 place-items-center rounded-xl bg-[color:var(--color-danger-bg)] text-[color:var(--color-danger-text)]">
                 <CalendarDays size={20} />
               </span>
               <div>
@@ -99,7 +99,7 @@ export default function DemoParent() {
       <div className="grid gap-4 sm:grid-cols-2">
         <div className="rounded-panel border border-line bg-surface p-5 flex items-center justify-between transition cursor-pointer">
           <div className="flex items-center gap-3">
-            <span className="grid h-10 w-10 place-items-center rounded-xl bg-blue-50 text-blue-600">
+            <span className="grid h-10 w-10 place-items-center rounded-xl bg-brand-soft text-brand-strong">
               <FileText size={20} />
             </span>
             <div>
@@ -111,7 +111,7 @@ export default function DemoParent() {
 
         <div className="rounded-panel border border-line bg-surface p-5 flex items-center justify-between transition cursor-pointer">
           <div className="flex items-center gap-3">
-            <span className="grid h-10 w-10 place-items-center rounded-xl bg-rose-50 text-rose-600">
+            <span className="grid h-10 w-10 place-items-center rounded-xl bg-[color:var(--color-danger-bg)] text-[color:var(--color-danger-text)]">
               <CalendarDays size={20} />
             </span>
             <div>
@@ -150,7 +150,7 @@ export default function DemoParent() {
       <div className="flex items-center justify-between border-t border-line pt-6">
         <Link
           href="/demo/report"
-          className="inline-flex min-h-11 items-center justify-center gap-2 rounded-full border border-line bg-white px-5 text-sm font-semibold text-ink transition hover:bg-slate-50"
+          className="inline-flex min-h-11 items-center justify-center gap-2 rounded-full border border-line bg-white px-5 text-sm font-semibold text-ink transition hover:bg-surface-soft"
         >
           <ArrowLeft size={16} />
           ย้อนกลับ

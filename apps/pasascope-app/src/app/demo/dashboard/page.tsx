@@ -13,10 +13,10 @@ import {
 
 export default function DemoDashboard() {
   const stats = [
-    { label: "เคสทั้งหมด", value: "8", helper: "เคสเด็กในการดูแล", icon: Users, color: "text-blue-600 bg-blue-50" },
-    { label: "เซสชันวันนี้", value: "3", helper: "นัดหมายบำบัดวันนี้", icon: CalendarDays, color: "text-purple-600 bg-purple-50" },
-    { label: "รอตรวจสอบภาษา", value: "2", helper: "บทสนทนารอการตรวจทาน", icon: FileText, color: "text-amber-600 bg-amber-50" },
-    { label: "รายงานพร้อมส่ง", value: "1", helper: "สรุปผลบำบัดสมบูรณ์", icon: CheckCircle2, color: "text-emerald-600 bg-emerald-50" },
+    { label: "เคสทั้งหมด", value: "8", helper: "เคสเด็กในการดูแล", icon: Users, color: "text-brand-strong bg-brand-soft" },
+    { label: "เซสชันวันนี้", value: "3", helper: "นัดหมายบำบัดวันนี้", icon: CalendarDays, color: "text-[color:var(--color-info-text)] bg-brand-soft" },
+    { label: "รอตรวจสอบภาษา", value: "2", helper: "บทสนทนารอการตรวจทาน", icon: FileText, color: "text-[color:var(--color-warning-text)] bg-[color:var(--color-warning-bg)]" },
+    { label: "รายงานพร้อมส่ง", value: "1", helper: "สรุปผลบำบัดสมบูรณ์", icon: CheckCircle2, color: "text-[color:var(--color-success-text)] bg-[color:var(--color-success-bg)]" },
   ];
 
   const appointments = [
@@ -100,10 +100,10 @@ export default function DemoDashboard() {
                 <div className="flex items-center gap-3">
                   <span className={`rounded-full px-2.5 py-1 text-xs font-medium ${
                     appt.status === "พร้อมอัปโหลดเสียง"
-                      ? "bg-blue-50 text-blue-700 border border-blue-100"
+                      ? "bg-brand-soft text-brand-strong border border-brand-border"
                       : appt.status === "เสร็จสิ้นเซสชัน"
-                      ? "bg-emerald-50 text-emerald-700 border border-emerald-100"
-                      : "bg-slate-100 text-slate-700 border border-slate-200"
+                      ? "bg-[color:var(--color-success-bg)] text-[color:var(--color-success-text)] border border-[color:var(--color-success-border)]"
+                      : "bg-surface-muted text-ink border border-line"
                   }`}>
                     {appt.status}
                   </span>
@@ -129,17 +129,17 @@ export default function DemoDashboard() {
               <div key={index} className="flex gap-3">
                 <div className="mt-0.5 shrink-0">
                   {act.type === "report" && (
-                    <span className="flex h-6.5 w-6.5 items-center justify-center rounded-full bg-emerald-50 text-emerald-600">
+                    <span className="flex h-6.5 w-6.5 items-center justify-center rounded-full bg-[color:var(--color-success-bg)] text-[color:var(--color-success-text)]">
                       <CheckCircle2 size={14} />
                     </span>
                   )}
                   {act.type === "transcript" && (
-                    <span className="flex h-6.5 w-6.5 items-center justify-center rounded-full bg-blue-50 text-blue-600">
+                    <span className="flex h-6.5 w-6.5 items-center justify-center rounded-full bg-brand-soft text-brand-strong">
                       <FileText size={14} />
                     </span>
                   )}
                   {act.type === "upload" && (
-                    <span className="flex h-6.5 w-6.5 items-center justify-center rounded-full bg-amber-50 text-amber-600">
+                    <span className="flex h-6.5 w-6.5 items-center justify-center rounded-full bg-[color:var(--color-warning-bg)] text-[color:var(--color-warning-text)]">
                       <Loader2 size={14} className="animate-spin" />
                     </span>
                   )}

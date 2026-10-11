@@ -107,7 +107,7 @@ export function CareTeamAdministration({
         <div>
           <p className="text-xs font-bold uppercase tracking-[0.22em] text-brand">Admin only</p>
           <h2 id="care-team-admin-title" className="mt-2 text-lg font-semibold text-ink">Care-team administration</h2>
-          <p className="mt-1 max-w-2xl text-sm leading-6 text-slate-700">
+          <p className="mt-1 max-w-2xl text-sm leading-6 text-ink">
             Select a case to manage active assignments and primary sign-off ownership. Every request remains backend-authorized.
           </p>
         </div>
@@ -128,12 +128,12 @@ export function CareTeamAdministration({
             </div>
           </div>
         ) : null}
-        {!loading && activeAssignments.length === 0 ? <p className="text-sm text-slate-600">No active assignments for this case.</p> : null}
+        {!loading && activeAssignments.length === 0 ? <p className="text-sm text-ink-muted">No active assignments for this case.</p> : null}
         {activeAssignments.map((assignment) => (
           <div key={assignment.assignment_id} className="flex flex-col gap-3 rounded-md border border-line bg-field p-3 sm:flex-row sm:items-center sm:justify-between">
             <div>
               <p className="font-semibold text-ink">{membershipLabel(memberships, assignment.user_id)}</p>
-              <p className="text-sm text-slate-600">{assignment.role}{assignment.is_primary ? " · primary therapist" : ""}</p>
+              <p className="text-sm text-ink-muted">{assignment.role}{assignment.is_primary ? " · primary therapist" : ""}</p>
             </div>
             <div className="flex flex-wrap gap-2">
               {!assignment.is_primary ? <button type="button" className="min-h-11 rounded-md border border-line px-3 text-sm font-semibold" disabled={busy} onClick={() => void updateAssignment({ user_id: assignment.user_id, role: assignment.role, active: true, is_primary: true })}>Make primary therapist</button> : null}
@@ -146,7 +146,7 @@ export function CareTeamAdministration({
       <form data-testid="care-team-assignment-form" className="mt-4 grid min-w-0 gap-3 rounded-md border border-line bg-field p-3 xl:grid-cols-2 xl:items-end" onSubmit={(event) => { event.preventDefault(); void updateAssignment({ user_id: effectiveSelectedUserId, role: selectedRole, active: true, is_primary: makePrimary }); }}>
         <label className="grid min-w-0 gap-1 text-sm font-medium text-ink">Organization member<select className="min-h-11 w-full min-w-0 rounded-md border border-line bg-white px-3" value={effectiveSelectedUserId} onChange={(event) => setSelectedUserId(event.target.value)} disabled={!assignableMemberships.length || busy}>{assignableMemberships.length ? assignableMemberships.map((member) => <option key={member.user_id} value={member.user_id}>{member.display_name} · {member.role}</option>) : <option value="">No additional active memberships</option>}</select></label>
         <label className="grid min-w-0 gap-1 text-sm font-medium text-ink">Care-team role<select className="min-h-11 w-full min-w-0 rounded-md border border-line bg-white px-3" value={selectedRole} onChange={(event) => setSelectedRole(event.target.value)} disabled={busy}><option value="therapist">Therapist</option><option value="clinical_supervisor">Clinical supervisor</option><option value="org_admin">Org admin</option></select></label>
-        <label className="flex min-h-11 items-center gap-2 text-sm text-slate-700"><input type="checkbox" checked={makePrimary} onChange={(event) => setMakePrimary(event.target.checked)} disabled={busy} />Make primary</label>
+        <label className="flex min-h-11 items-center gap-2 text-sm text-ink"><input type="checkbox" checked={makePrimary} onChange={(event) => setMakePrimary(event.target.checked)} disabled={busy} />Make primary</label>
         <div className="flex gap-2"><button type="submit" className="min-h-11 rounded-md bg-brand px-4 text-sm font-semibold text-white disabled:opacity-50" disabled={busy || !effectiveSelectedUserId || !caseId}>Assign</button><button type="button" className="min-h-11 rounded-md border border-line px-3" aria-label="Refresh care-team assignments" disabled={busy || !caseId} onClick={() => void refreshAssignments()}><RefreshCw size={16} aria-hidden="true" /></button></div>
       </form>
       {message ? <p aria-live="polite" className="mt-3 rounded-xl border border-brand-border bg-brand-soft px-3.5 py-2.5 text-sm font-medium text-brand">{message}</p> : null}

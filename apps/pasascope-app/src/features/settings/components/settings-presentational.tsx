@@ -15,7 +15,7 @@ export function SettingRows({ rows }: { rows: string[][] }) {
       {rows.map(([label, value]) => (
         <div key={label} className="grid gap-1 border-b border-line px-4 py-3 text-sm last:border-b-0 md:grid-cols-[240px_1fr]">
           <div className="font-medium text-ink">{label}</div>
-          <div className="text-slate-700">{value}</div>
+          <div className="text-ink">{value}</div>
         </div>
       ))}
     </div>
@@ -59,7 +59,7 @@ export function ReadinessCockpit({
             <h2 className="text-xl font-bold text-ink">Organization readiness cockpit</h2>
             <Badge tone={summaryTone === "green" ? "green" : summaryTone === "amber" ? "amber" : "slate"}>{summaryLabel}</Badge>
           </div>
-          <p className="mt-2 max-w-3xl text-sm leading-6 text-slate-700">
+          <p className="mt-2 max-w-3xl text-sm leading-6 text-ink">
             Backend-derived status for the active organization. This does not claim production compliance; blocked items must be cleared before real SaaS rollout.
           </p>
         </div>
@@ -83,7 +83,7 @@ export function ReadinessCockpit({
 function ReadinessMetric({ label, value }: { label: string; value: string }) {
   return (
     <div className="min-w-0 rounded-md border border-line bg-field px-3 py-2">
-      <p className="text-xs text-slate-600">{label}</p>
+      <p className="text-xs text-ink-muted">{label}</p>
       <p className="mt-1 truncate text-sm font-semibold text-ink" title={value}>{value}</p>
     </div>
   );
@@ -92,10 +92,10 @@ function ReadinessMetric({ label, value }: { label: string; value: string }) {
 function ReadinessItemCard({ item }: { item: OrganizationReadinessItem }) {
   const evidence = item.evidence ?? [];
   const tone = item.status === "ready"
-    ? "border-emerald-200 bg-emerald-50 text-emerald-900"
+    ? "border-[color:var(--color-success-border)] bg-[color:var(--color-success-bg)] text-[color:var(--color-success-text)]"
     : item.status === "blocked"
-      ? "border-red-200 bg-red-50 text-red-900"
-      : "border-amber-200 bg-amber-50 text-amber-950";
+      ? "border-[color:var(--color-danger-border)] bg-[color:var(--color-danger-bg)] text-[color:var(--color-danger-text)]"
+      : "border-[color:var(--color-attention-border)] bg-[color:var(--color-warning-bg)] text-[color:var(--color-warning-text)]";
   return (
     <article className={`rounded-md border p-3 ${tone}`}>
       <div className="flex items-start justify-between gap-3">
@@ -125,7 +125,7 @@ function ReadinessItemCard({ item }: { item: OrganizationReadinessItem }) {
 export function StatusTile({ label, value }: { label: string; value: string }) {
   return (
     <div className="rounded-md border border-line bg-field p-3">
-      <p className="text-xs font-medium uppercase text-slate-500">{label}</p>
+      <p className="text-xs font-medium uppercase text-ink-muted">{label}</p>
       <p className="mt-1 text-sm font-semibold text-ink">{value}</p>
     </div>
   );
@@ -135,7 +135,7 @@ export function StatusPill({ label, value }: { label: string; value: number }) {
   return (
     <div className="min-w-20 rounded-md border border-line bg-surface px-3 py-2">
       <p className="text-lg font-semibold text-ink">{value}</p>
-      <p className="text-xs text-slate-600">{label}</p>
+      <p className="text-xs text-ink-muted">{label}</p>
     </div>
   );
 }
@@ -146,7 +146,7 @@ export function LifecycleList({ title, empty, children }: { title: string; empty
     <section aria-label={title}>
       <h3 className="mb-2 text-sm font-semibold text-ink">{title}</h3>
       <div className="grid gap-2">
-        {hasItems ? children : <p className="rounded-md border border-line bg-field p-3 text-sm text-slate-600">{empty}</p>}
+        {hasItems ? children : <p className="rounded-md border border-line bg-field p-3 text-sm text-ink-muted">{empty}</p>}
       </div>
     </section>
   );
@@ -170,11 +170,11 @@ export function InvitationRow({
       <div className="flex items-start justify-between gap-3">
         <div>
           <h4 className="text-sm font-semibold text-ink">{invitation.display_name}</h4>
-          <p className="mt-1 text-xs text-slate-600">{invitation.email}</p>
+          <p className="mt-1 text-xs text-ink-muted">{invitation.email}</p>
         </div>
         <Badge>{capitalize(invitation.status)}</Badge>
       </div>
-      <p className="mt-2 text-xs text-slate-600">
+      <p className="mt-2 text-xs text-ink-muted">
         {invitation.role} · expires {formatDate(invitation.expires_at)}
       </p>
       {invitation.status === "pending" ? (
@@ -190,12 +190,12 @@ export function InvitationRow({
       ) : null}
       {invitation.status === "accepted" ? (
         <div className="mt-3 space-y-2">
-          <p className="text-xs leading-5 text-slate-600">
+          <p className="text-xs leading-5 text-ink-muted">
             Membership is active. Prepare an AAL1 invited session to validate the post-acceptance MFA gate.
           </p>
           <button
             type="button"
-            className="inline-flex min-h-10 items-center gap-2 rounded-xl border border-amber-200 bg-surface px-3 text-sm font-semibold text-amber-900 transition hover:bg-amber-50 disabled:opacity-50"
+            className="inline-flex min-h-10 items-center gap-2 rounded-xl border border-[color:var(--color-attention-border)] bg-surface px-3 text-sm font-semibold text-[color:var(--color-warning-text)] transition hover:bg-[color:var(--color-warning-bg)] disabled:opacity-50"
             disabled={busy}
             onClick={onPrepareSession}
           >
@@ -214,13 +214,13 @@ export function MembershipRow({ member, busy, onRevoke }: { member: Organization
       <div className="flex items-start justify-between gap-3">
         <div>
           <h4 className="text-sm font-semibold text-ink">{member.display_name}</h4>
-          <p className="mt-1 text-xs text-slate-600">{member.user_id} · {member.role}</p>
+          <p className="mt-1 text-xs text-ink-muted">{member.user_id} · {member.role}</p>
         </div>
         <Badge tone={member.active ? "green" : "slate"}>{member.active ? "Active" : "Inactive"}</Badge>
       </div>
       <button
         type="button"
-        className="mt-3 inline-flex min-h-10 items-center gap-2 rounded-xl border border-red-200 bg-surface px-3 text-sm font-semibold text-red-700 transition hover:bg-red-50 disabled:opacity-50"
+        className="mt-3 inline-flex min-h-10 items-center gap-2 rounded-xl border border-[color:var(--color-danger-border)] bg-surface px-3 text-sm font-semibold text-[color:var(--color-danger-text)] transition hover:bg-[color:var(--color-danger-bg)] disabled:opacity-50"
         disabled={busy || !member.active}
         onClick={onRevoke}
       >
@@ -237,7 +237,7 @@ export function Guardrail({ icon: Icon, label, value }: { icon: LucideIcon; labe
       <Icon size={18} aria-hidden="true" className="mt-0.5 shrink-0 text-brand" />
       <div>
         <p className="text-sm font-semibold text-ink">{label}</p>
-        <p className="mt-0.5 text-xs leading-5 text-slate-600">{value}</p>
+        <p className="mt-0.5 text-xs leading-5 text-ink-muted">{value}</p>
       </div>
     </div>
   );
@@ -245,11 +245,11 @@ export function Guardrail({ icon: Icon, label, value }: { icon: LucideIcon; labe
 
 function Badge({ children, tone = "cyan" }: { children: ReactNode; tone?: "cyan" | "green" | "slate" | "amber" }) {
   const className = tone === "green"
-    ? "border-emerald-200 bg-emerald-50 text-emerald-800"
+    ? "border-[color:var(--color-success-border)] bg-[color:var(--color-success-bg)] text-[color:var(--color-success-text)]"
     : tone === "amber"
-      ? "border-amber-200 bg-amber-50 text-amber-900"
+      ? "border-[color:var(--color-attention-border)] bg-[color:var(--color-warning-bg)] text-[color:var(--color-warning-text)]"
       : tone === "slate"
-        ? "border-slate-200 bg-slate-50 text-slate-700"
+        ? "border-line bg-surface-soft text-ink"
         : "border-brand-border bg-brand-soft text-brand";
   return <span className={`rounded-md border px-2 py-1 text-xs font-semibold ${className}`}>{children}</span>;
 }

@@ -176,7 +176,7 @@ export function SupabaseMfaPanel({
 
   return (
     <div className="mt-5 grid gap-4">
-      <div className="rounded-panel border border-line bg-slate-50 p-4 text-sm text-slate-700">
+      <div className="rounded-panel border border-line bg-surface-soft p-4 text-sm text-ink">
         <div className="flex items-start gap-3">
           <ShieldCheck size={18} aria-hidden="true" className="mt-0.5 shrink-0 text-brand" />
           <div>
@@ -192,7 +192,7 @@ export function SupabaseMfaPanel({
       </div>
 
       {verifiedFactor ? (
-        <div className="rounded-panel border border-emerald-200 bg-emerald-50 p-4 text-sm text-emerald-950">
+        <div className="rounded-panel border border-[color:var(--color-success-border)] bg-[color:var(--color-success-bg)] p-4 text-sm text-[color:var(--color-success-text)]">
           <div className="flex items-start gap-3">
             <KeyRound size={18} aria-hidden="true" className="mt-0.5 shrink-0" />
             <div>
@@ -244,7 +244,7 @@ export function SupabaseMfaPanel({
       ) : null}
 
       {!verifiedFactor && !enrollment && pendingFactor ? (
-        <div className="rounded-panel border border-amber-200 bg-amber-50 p-4 text-sm text-amber-950">
+        <div className="rounded-panel border border-[color:var(--color-attention-border)] bg-[color:var(--color-warning-bg)] p-4 text-sm text-[color:var(--color-warning-text)]">
           <div className="flex items-start gap-3">
             <RefreshCw size={18} aria-hidden="true" className="mt-0.5 shrink-0" />
             <div>
@@ -263,7 +263,7 @@ export function SupabaseMfaPanel({
           type="button"
           onClick={() => void handleStartEnrollment()}
           disabled={isSubmitting || isLoadingFactors}
-          className="inline-flex min-h-11 items-center justify-center rounded-full bg-brand px-5 text-sm font-semibold text-white transition hover:bg-brand-hover disabled:cursor-not-allowed disabled:bg-slate-300"
+          className="inline-flex min-h-11 items-center justify-center rounded-full bg-brand px-5 text-sm font-semibold text-white transition hover:bg-brand-hover disabled:cursor-not-allowed disabled:bg-surface-muted"
         >
           {isSubmitting ? "Starting TOTP enrollment..." : "Start TOTP enrollment"}
         </button>
@@ -289,7 +289,7 @@ export function SupabaseMfaPanel({
               type="button"
               onClick={() => void handleVerifyCode()}
               disabled={isSubmitting || !code.trim()}
-              className="inline-flex min-h-11 items-center justify-center rounded-full bg-brand px-5 text-sm font-semibold text-white transition hover:bg-brand-hover disabled:cursor-not-allowed disabled:bg-slate-300"
+              className="inline-flex min-h-11 items-center justify-center rounded-full bg-brand px-5 text-sm font-semibold text-white transition hover:bg-brand-hover disabled:cursor-not-allowed disabled:bg-surface-muted"
             >
               {isSubmitting ? "Verifying code..." : verifiedFactor ? "Verify TOTP and continue" : "Complete TOTP enrollment"}
             </button>
@@ -298,7 +298,7 @@ export function SupabaseMfaPanel({
               type="button"
               onClick={() => void refreshFactors()}
               disabled={isSubmitting || isLoadingFactors}
-              className="inline-flex min-h-11 items-center justify-center rounded-full border border-line bg-white px-5 text-sm font-semibold text-ink-muted hover:bg-surface-soft disabled:cursor-not-allowed disabled:bg-slate-100"
+              className="inline-flex min-h-11 items-center justify-center rounded-full border border-line bg-white px-5 text-sm font-semibold text-ink-muted hover:bg-surface-soft disabled:cursor-not-allowed disabled:bg-surface-muted"
             >
               Refresh factors
             </button>
@@ -307,13 +307,13 @@ export function SupabaseMfaPanel({
       ) : null}
 
       {statusMessage ? (
-        <p className="rounded-xl border border-emerald-200 bg-emerald-50 px-3 py-2 text-xs text-emerald-900" aria-live="polite">
+        <p className="rounded-xl border border-[color:var(--color-success-border)] bg-[color:var(--color-success-bg)] px-3 py-2 text-xs text-[color:var(--color-success-text)]" aria-live="polite">
           {statusMessage}
         </p>
       ) : null}
 
       {errorMessage ? (
-        <p className="rounded-xl border border-rose-200 bg-rose-50 px-3 py-2 text-xs text-rose-900" role="alert">
+        <p className="rounded-xl border border-[color:var(--color-danger-border)] bg-[color:var(--color-danger-bg)] px-3 py-2 text-xs text-[color:var(--color-danger-text)]" role="alert">
           {errorMessage}
         </p>
       ) : null}

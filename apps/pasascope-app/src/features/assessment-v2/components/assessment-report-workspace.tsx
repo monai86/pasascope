@@ -150,11 +150,11 @@ export function AssessmentReportWorkspace({
   if (loading) {
     return (
       <section
-        className="workspace-panel rounded-xl border border-slate-200 bg-white p-6 shadow-sm dark:border-slate-800 dark:bg-slate-900"
+        className="workspace-panel rounded-xl border border-line bg-white p-6 shadow-sm  "
         aria-busy="true"
       >
-        <div className="flex items-center space-x-3 text-slate-500">
-          <div className="h-5 w-5 animate-spin rounded-full border-2 border-indigo-600 border-t-transparent" />
+        <div className="flex items-center space-x-3 text-ink-muted">
+          <div className="h-5 w-5 animate-spin rounded-full border-2 border-brand border-t-transparent" />
           <p className="text-sm font-medium">กำลังโหลดข้อมูลรายงานทางคลินิก…</p>
         </div>
       </section>
@@ -163,18 +163,18 @@ export function AssessmentReportWorkspace({
 
   if (!report) {
     return (
-      <section className="workspace-panel rounded-xl border border-slate-200 bg-white p-6 shadow-sm dark:border-slate-800 dark:bg-slate-900">
+      <section className="workspace-panel rounded-xl border border-line bg-white p-6 shadow-sm  ">
         <div className="text-center">
-          <h3 className="text-base font-bold text-slate-900 dark:text-white">
+          <h3 className="text-base font-bold text-ink ">
             ยังไม่พบร่างรายงาน (No Report Draft Available)
           </h3>
-          <p className="mt-2 text-xs text-slate-500">
+          <p className="mt-2 text-xs text-ink-muted">
             กรุณาไปที่หน้าการตรวจทานทางคลินิก (Clinical Review) เพื่อตรวจทานข้อสังเกตและสร้างร่างรายงานฉบับแรก
           </p>
           <div className="mt-4">
             <Link
               href={`/assessments/${encodeURIComponent(assessmentId)}/review`}
-              className="inline-flex items-center rounded-lg bg-indigo-600 px-4 py-2 text-xs font-semibold text-white shadow-sm hover:bg-indigo-500"
+              className="inline-flex items-center rounded-lg bg-brand px-4 py-2 text-xs font-semibold text-white shadow-sm hover:bg-brand"
             >
               ← ไปยังหน้าตรวจทานข้อสังเกต (Clinical Review)
             </Link>
@@ -189,27 +189,27 @@ export function AssessmentReportWorkspace({
   const isReady = report.readiness.is_ready;
 
   return (
-    <section className="workspace-panel space-y-6 rounded-xl border border-slate-200 bg-white p-6 shadow-sm dark:border-slate-800 dark:bg-slate-900">
+    <section className="workspace-panel space-y-6 rounded-xl border border-line bg-white p-6 shadow-sm  ">
       {/* Header & Status */}
-      <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between border-b border-slate-100 pb-4 dark:border-slate-800">
+      <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between border-b border-line pb-4 ">
         <div>
           <div className="flex items-center space-x-2">
-            <span className="rounded bg-indigo-50 px-2 py-0.5 text-xs font-semibold uppercase text-indigo-600 dark:bg-indigo-950/50 dark:text-indigo-400">
+            <span className="rounded bg-brand-soft px-2 py-0.5 text-xs font-semibold uppercase text-brand-strong  ">
               Clinical Report (Slice C2)
             </span>
-            <h2 className="text-lg font-bold text-slate-900 dark:text-white">
+            <h2 className="text-lg font-bold text-ink ">
               รายงานการประเมินและการลงนามรับรอง
             </h2>
           </div>
-          <p className="mt-1 text-xs text-slate-500">
+          <p className="mt-1 text-xs text-ink-muted">
             Report ID: <span className="font-mono">{report.report_id}</span> | สถานะ:{" "}
             <span
               className={`font-bold ${
                 report.status === "signed_off"
-                  ? "text-emerald-600"
+                  ? "text-[color:var(--color-success-text)]"
                   : report.status === "draft"
-                  ? "text-amber-600"
-                  : "text-slate-600"
+                  ? "text-[color:var(--color-warning-text)]"
+                  : "text-ink-muted"
               }`}
             >
               {report.status === "signed_off"
@@ -225,7 +225,7 @@ export function AssessmentReportWorkspace({
         <div className="flex items-center space-x-2">
           <Link
             href={`/assessments/${encodeURIComponent(assessmentId)}/review`}
-            className="inline-flex items-center rounded-lg border border-slate-300 bg-white px-3 py-1.5 text-xs font-semibold text-slate-700 shadow-sm hover:bg-slate-50 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-200"
+            className="inline-flex items-center rounded-lg border border-line-strong bg-white px-3 py-1.5 text-xs font-semibold text-ink shadow-sm hover:bg-surface-soft   "
           >
             ← หน้าตรวจทานข้อสังเกต
           </Link>
@@ -234,7 +234,7 @@ export function AssessmentReportWorkspace({
               href={client.getReportExportPdfUrl(assessmentId, report.report_id)}
               target="_blank"
               rel="noopener noreferrer"
-              className="inline-flex items-center rounded-lg bg-indigo-600 px-3 py-1.5 text-xs font-semibold text-white shadow-sm hover:bg-indigo-500"
+              className="inline-flex items-center rounded-lg bg-brand px-3 py-1.5 text-xs font-semibold text-white shadow-sm hover:bg-brand"
             >
               ดาวน์โหลด PDF ภาษาไทย 📄
             </a>
@@ -245,7 +245,7 @@ export function AssessmentReportWorkspace({
       {error && (
         <div
           role="alert"
-          className="rounded-lg bg-rose-50 p-4 text-xs font-medium text-rose-800 dark:bg-rose-950/40 dark:text-rose-300"
+          className="rounded-lg bg-[color:var(--color-danger-bg)] p-4 text-xs font-medium text-[color:var(--color-danger-text)]  "
         >
           {error}
         </div>
@@ -254,7 +254,7 @@ export function AssessmentReportWorkspace({
       {successMessage && (
         <div
           role="status"
-          className="rounded-lg bg-emerald-50 p-4 text-xs font-medium text-emerald-800 dark:bg-emerald-950/40 dark:text-emerald-300"
+          className="rounded-lg bg-[color:var(--color-success-bg)] p-4 text-xs font-medium text-[color:var(--color-success-text)]  "
         >
           {successMessage}
         </div>
@@ -265,8 +265,8 @@ export function AssessmentReportWorkspace({
         <div
           className={`rounded-lg border p-4 text-xs ${
             isReady
-              ? "border-emerald-200 bg-emerald-50 text-emerald-900 dark:border-emerald-900/50 dark:bg-emerald-950/30 dark:text-emerald-200"
-              : "border-amber-200 bg-amber-50 text-amber-900 dark:border-amber-900/50 dark:bg-amber-950/30 dark:text-amber-200"
+              ? "border-[color:var(--color-success-border)] bg-[color:var(--color-success-bg)] text-[color:var(--color-success-text)]   "
+              : "border-[color:var(--color-attention-border)] bg-[color:var(--color-warning-bg)] text-[color:var(--color-warning-text)]   "
           }`}
         >
           <div className="flex items-center justify-between">
@@ -281,7 +281,7 @@ export function AssessmentReportWorkspace({
               <button
                 type="button"
                 onClick={() => setShowSignModal(true)}
-                className="inline-flex items-center rounded-lg bg-emerald-600 px-3 py-1.5 text-xs font-semibold text-white shadow-sm hover:bg-emerald-500"
+                className="inline-flex items-center rounded-lg bg-brand px-3 py-1.5 text-xs font-semibold text-white shadow-sm hover:bg-brand"
               >
                 ลงนามรับรองรายงาน (Sign-off Report)
               </button>
@@ -289,7 +289,7 @@ export function AssessmentReportWorkspace({
           </div>
 
           {!isReady && report.readiness.blockers.length > 0 && (
-            <ul className="mt-2 list-inside list-disc space-y-1 text-[11px] text-amber-800 dark:text-amber-300">
+            <ul className="mt-2 list-inside list-disc space-y-1 text-[11px] text-[color:var(--color-warning-text)] ">
               {report.readiness.blockers.map((b, idx) => (
                 <li key={idx}>{b}</li>
               ))}
@@ -300,18 +300,18 @@ export function AssessmentReportWorkspace({
 
       {/* Signed Snapshot Metadata Card */}
       {isSigned && (
-        <div className="rounded-lg border border-emerald-200 bg-emerald-50/50 p-4 text-xs dark:border-emerald-900/60 dark:bg-emerald-950/20">
+        <div className="rounded-lg border border-[color:var(--color-success-border)] bg-[color:var(--color-success-bg)] p-4 text-xs  ">
           <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
             <div>
-              <span className="font-bold text-emerald-900 dark:text-emerald-200">
+              <span className="font-bold text-[color:var(--color-success-text)] ">
                 ข้อมูลการลงนามรับรอง (Immutable Signed Snapshot)
               </span>
-              <p className="mt-1 text-slate-700 dark:text-slate-300">
+              <p className="mt-1 text-ink ">
                 ผู้ลงนาม: <strong>{report.signer_name || report.signer_id}</strong> (
                 {report.signer_role || "assigned_clinician"}) | เวลาที่ลงนาม:{" "}
                 {report.signed_at ? new Date(report.signed_at).toLocaleString() : "—"}
               </p>
-              <p className="mt-1 font-mono text-[11px] text-slate-600 dark:text-slate-400">
+              <p className="mt-1 font-mono text-[11px] text-ink-muted ">
                 SHA-256 Hash: {report.snapshot_sha256}
               </p>
             </div>
@@ -319,7 +319,7 @@ export function AssessmentReportWorkspace({
             <button
               type="button"
               onClick={() => setShowAmendModal(true)}
-              className="inline-flex items-center rounded-lg border border-slate-300 bg-white px-3 py-1.5 text-xs font-semibold text-slate-700 shadow-sm hover:bg-slate-50 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-200"
+              className="inline-flex items-center rounded-lg border border-line-strong bg-white px-3 py-1.5 text-xs font-semibold text-ink shadow-sm hover:bg-surface-soft   "
             >
               แก้ไขเพิ่มเติม (Amend Report) ✏️
             </button>
@@ -330,7 +330,7 @@ export function AssessmentReportWorkspace({
       {/* Draft Content Form / Preview */}
       <div className="space-y-4">
         <div>
-          <label htmlFor="report-title-input" className="block text-xs font-semibold text-slate-700 dark:text-slate-300">
+          <label htmlFor="report-title-input" className="block text-xs font-semibold text-ink ">
             ชื่อรายงาน (Report Title):
           </label>
           <input
@@ -339,12 +339,12 @@ export function AssessmentReportWorkspace({
             disabled={!isDraft}
             value={reportTitle}
             onChange={(e) => setReportTitle(e.target.value)}
-            className="mt-1 w-full rounded-lg border border-slate-300 p-2 text-xs font-medium text-slate-900 focus:outline-none focus:ring-1 focus:ring-indigo-500 disabled:bg-slate-100 dark:border-slate-700 dark:bg-slate-800 dark:text-white dark:disabled:bg-slate-900"
+            className="mt-1 w-full rounded-lg border border-line-strong p-2 text-xs font-medium text-ink focus:outline-none focus:ring-1 focus:ring-[color:var(--color-focus-ring)] disabled:bg-surface-muted    "
           />
         </div>
 
         <div>
-          <label htmlFor="clinical-summary-text" className="block text-xs font-semibold text-slate-700 dark:text-slate-300">
+          <label htmlFor="clinical-summary-text" className="block text-xs font-semibold text-ink ">
             บทสรุปทางคลินิก (Clinical Summary):
           </label>
           <textarea
@@ -353,12 +353,12 @@ export function AssessmentReportWorkspace({
             disabled={!isDraft}
             value={clinicalSummary}
             onChange={(e) => setClinicalSummary(e.target.value)}
-            className="mt-1 w-full rounded-lg border border-slate-300 p-2 text-xs text-slate-900 focus:outline-none focus:ring-1 focus:ring-indigo-500 disabled:bg-slate-100 dark:border-slate-700 dark:bg-slate-800 dark:text-white dark:disabled:bg-slate-900"
+            className="mt-1 w-full rounded-lg border border-line-strong p-2 text-xs text-ink focus:outline-none focus:ring-1 focus:ring-[color:var(--color-focus-ring)] disabled:bg-surface-muted    "
           />
         </div>
 
         <div>
-          <label htmlFor="markdown-content-text" className="block text-xs font-semibold text-slate-700 dark:text-slate-300">
+          <label htmlFor="markdown-content-text" className="block text-xs font-semibold text-ink ">
             เนื้อหารายงาน Markdown (Markdown Content):
           </label>
           <textarea
@@ -367,7 +367,7 @@ export function AssessmentReportWorkspace({
             disabled={!isDraft}
             value={markdownContent}
             onChange={(e) => setMarkdownContent(e.target.value)}
-            className="mt-1 w-full rounded-lg border border-slate-300 font-mono p-3 text-xs text-slate-900 focus:outline-none focus:ring-1 focus:ring-indigo-500 disabled:bg-slate-100 dark:border-slate-700 dark:bg-slate-800 dark:text-white dark:disabled:bg-slate-900"
+            className="mt-1 w-full rounded-lg border border-line-strong font-mono p-3 text-xs text-ink focus:outline-none focus:ring-1 focus:ring-[color:var(--color-focus-ring)] disabled:bg-surface-muted    "
           />
         </div>
 
@@ -377,7 +377,7 @@ export function AssessmentReportWorkspace({
               type="button"
               onClick={() => void handleSaveDraft()}
               disabled={saving}
-              className="inline-flex items-center rounded-lg bg-indigo-600 px-4 py-2 text-xs font-semibold text-white shadow-sm hover:bg-indigo-500 disabled:opacity-50"
+              className="inline-flex items-center rounded-lg bg-brand px-4 py-2 text-xs font-semibold text-white shadow-sm hover:bg-brand disabled:opacity-50"
             >
               {saving ? "กำลังบันทึก…" : "บันทึกการแก้ไขร่างรายงาน (Save Draft)"}
             </button>
@@ -387,45 +387,45 @@ export function AssessmentReportWorkspace({
 
       {/* Amendment Lineage Section */}
       {lineage.length > 0 && (
-        <div className="space-y-3 border-t border-slate-100 pt-4 dark:border-slate-800">
-          <h3 className="text-sm font-bold text-slate-900 dark:text-white">
+        <div className="space-y-3 border-t border-line pt-4 ">
+          <h3 className="text-sm font-bold text-ink ">
             ประวัติการแก้ไขและสายวิวัฒนาการรายงาน (Amendment Lineage)
           </h3>
 
-          <div className="divide-y divide-slate-200 rounded-lg border border-slate-200 bg-white text-xs dark:divide-slate-800 dark:border-slate-800 dark:bg-slate-900">
+          <div className="divide-y divide-line rounded-lg border border-line bg-white text-xs   ">
             {lineage.map((item) => (
               <div key={item.report_id} className="p-3">
                 <div className="flex items-center justify-between">
                   <div className="flex items-center space-x-2">
-                    <span className="font-semibold text-slate-900 dark:text-white">
+                    <span className="font-semibold text-ink ">
                       ฉบับที่ {item.amendment_sequence === 0 ? "ตั้งต้น (Original)" : `แก้ไข ${item.amendment_sequence}`}
                     </span>
                     <span
                       className={`rounded px-1.5 py-0.5 text-[10px] font-bold ${
                         item.status === "signed_off"
-                          ? "bg-emerald-100 text-emerald-800 dark:bg-emerald-950 dark:text-emerald-300"
+                          ? "bg-[color:var(--color-success-bg)] text-[color:var(--color-success-text)]  "
                           : item.status === "amended"
-                          ? "bg-slate-100 text-slate-600 dark:bg-slate-800 dark:text-slate-400"
-                          : "bg-amber-100 text-amber-800 dark:bg-amber-950 dark:text-amber-300"
+                          ? "bg-surface-muted text-ink-muted  "
+                          : "bg-[color:var(--color-warning-bg)] text-[color:var(--color-warning-text)]  "
                       }`}
                     >
                       {item.status}
                     </span>
                   </div>
-                  <span className="text-[11px] text-slate-500">
+                  <span className="text-[11px] text-ink-muted">
                     {item.signed_at ? new Date(item.signed_at).toLocaleString() : "ยังไม่ลงนาม"}
                   </span>
                 </div>
 
                 {item.amendment_reason && (
-                  <p className="mt-1 text-slate-600 dark:text-slate-300">
+                  <p className="mt-1 text-ink-muted ">
                     <span className="font-semibold">เหตุผลการแก้ไข: </span>
                     {item.amendment_reason}
                   </p>
                 )}
 
                 {item.snapshot_sha256 && (
-                  <p className="mt-1 font-mono text-[10px] text-slate-500">
+                  <p className="mt-1 font-mono text-[10px] text-ink-muted">
                     SHA-256: {item.snapshot_sha256.slice(0, 24)}…
                   </p>
                 )}
@@ -443,16 +443,16 @@ export function AssessmentReportWorkspace({
           aria-labelledby="sign-modal-title"
           className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4"
         >
-          <div className="w-full max-w-md rounded-xl bg-white p-6 shadow-xl dark:bg-slate-900">
-            <h3 id="sign-modal-title" className="text-base font-bold text-slate-900 dark:text-white">
+          <div className="w-full max-w-md rounded-xl bg-white p-6 shadow-xl ">
+            <h3 id="sign-modal-title" className="text-base font-bold text-ink ">
               ยืนยันการลงนามรับรองรายงาน (Sign-off Confirmation)
             </h3>
-            <div className="mt-3 text-xs text-slate-600 dark:text-slate-300 space-y-2">
+            <div className="mt-3 text-xs text-ink-muted space-y-2">
               <p>
                 การลงนามรับรองจะบันทึก Snapshot รายงานอย่างถาวร (Immutable Snapshot) พร้อมสร้าง Deterministic SHA-256
                 Hash ซึ่งไม่สามารถเปลี่ยนแปลงได้
               </p>
-              <p className="font-medium text-amber-800 dark:text-amber-300">
+              <p className="font-medium text-[color:var(--color-warning-text)] ">
                 หากจำเป็นต้องปรับปรุงข้อความในอนาคต จะต้องดำเนินการผ่านกระบวนการออกฉบับแก้ไขเพิ่มเติม (Amendment Lineage)
                 เท่านั้น
               </p>
@@ -461,7 +461,7 @@ export function AssessmentReportWorkspace({
               <button
                 type="button"
                 onClick={() => setShowSignModal(false)}
-                className="rounded-lg px-3 py-1.5 text-xs text-slate-600 hover:text-slate-900 dark:text-slate-400"
+                className="rounded-lg px-3 py-1.5 text-xs text-ink-muted hover:text-ink "
               >
                 ยกเลิก
               </button>
@@ -469,7 +469,7 @@ export function AssessmentReportWorkspace({
                 type="button"
                 disabled={signing}
                 onClick={() => void handleSignOff()}
-                className="rounded-lg bg-emerald-600 px-4 py-2 text-xs font-semibold text-white shadow-sm hover:bg-emerald-500 disabled:opacity-50"
+                className="rounded-lg bg-brand px-4 py-2 text-xs font-semibold text-white shadow-sm hover:bg-brand disabled:opacity-50"
               >
                 {signing ? "กำลังลงนาม…" : "ยืนยันการลงนามรับรอง"}
               </button>
@@ -486,15 +486,15 @@ export function AssessmentReportWorkspace({
           aria-labelledby="amend-modal-title"
           className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4"
         >
-          <div className="w-full max-w-md rounded-xl bg-white p-6 shadow-xl dark:bg-slate-900">
-            <h3 id="amend-modal-title" className="text-base font-bold text-slate-900 dark:text-white">
+          <div className="w-full max-w-md rounded-xl bg-white p-6 shadow-xl ">
+            <h3 id="amend-modal-title" className="text-base font-bold text-ink ">
               สร้างฉบับแก้ไขเพิ่มเติม (Create Report Amendment)
             </h3>
-            <p className="mt-2 text-xs text-slate-600 dark:text-slate-300">
+            <p className="mt-2 text-xs text-ink-muted ">
               การแก้ไขเพิ่มเติมจะคัดลอกเนื้อหาเดิมไปเป็นร่างใหม่ (Draft) และคง Snapshot ฉบับเดิมไว้ในประวัติ
             </p>
             <div className="mt-3">
-              <label htmlFor="amend-reason-input" className="block text-xs font-semibold text-slate-700 dark:text-slate-300">
+              <label htmlFor="amend-reason-input" className="block text-xs font-semibold text-ink ">
                 ระบุเหตุผลในการแก้ไข (Amendment Reason):
               </label>
               <textarea
@@ -503,14 +503,14 @@ export function AssessmentReportWorkspace({
                 value={amendmentReason}
                 onChange={(e) => setAmendmentReason(e.target.value)}
                 placeholder="เช่น ปรับปรุงข้อความตามหลักฐานเพิ่มเติมจากการสังเกตในห้องตรวจ..."
-                className="mt-1 w-full rounded-lg border border-slate-300 p-2 text-xs text-slate-900 focus:outline-none focus:ring-1 focus:ring-indigo-500 dark:border-slate-700 dark:bg-slate-800 dark:text-white"
+                className="mt-1 w-full rounded-lg border border-line-strong p-2 text-xs text-ink focus:outline-none focus:ring-1 focus:ring-[color:var(--color-focus-ring)]   "
               />
             </div>
             <div className="mt-5 flex justify-end space-x-3">
               <button
                 type="button"
                 onClick={() => setShowAmendModal(false)}
-                className="rounded-lg px-3 py-1.5 text-xs text-slate-600 hover:text-slate-900 dark:text-slate-400"
+                className="rounded-lg px-3 py-1.5 text-xs text-ink-muted hover:text-ink "
               >
                 ยกเลิก
               </button>
@@ -518,7 +518,7 @@ export function AssessmentReportWorkspace({
                 type="button"
                 disabled={!amendmentReason.trim() || amending}
                 onClick={() => void handleCreateAmendment()}
-                className="rounded-lg bg-indigo-600 px-4 py-2 text-xs font-semibold text-white shadow-sm hover:bg-indigo-500 disabled:opacity-50"
+                className="rounded-lg bg-brand px-4 py-2 text-xs font-semibold text-white shadow-sm hover:bg-brand disabled:opacity-50"
               >
                 {amending ? "กำลังดำเนินการ…" : "สร้างร่างฉบับแก้ไข"}
               </button>

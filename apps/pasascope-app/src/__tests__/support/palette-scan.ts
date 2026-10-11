@@ -12,6 +12,13 @@ const TOKENS_FILE = "src/design-system/tokens.css";
 // Custom properties declared at runtime rather than in tokens.css.
 const RUNTIME_PROPERTIES = new Set(["--font-noto-thai", "--font-noto", "--font-prompt"]);
 
+// Another company's logo keeps its own colours. The "Continue with Google"
+// button draws Google's four-colour G, one segment of which is green; that is
+// their mark, not part of this product's palette.
+const THIRD_PARTY_MARK_COLOURS: Readonly<Record<string, readonly string[]>> = {
+  "src/components/supabase-login-form-client.tsx": ["#34A853"],
+};
+
 const GREEN_PALETTES = ["green", "emerald", "teal", "lime", "cyan"];
 const OTHER_PALETTES = [
   "slate", "gray", "zinc", "neutral", "stone", "red", "orange", "amber", "yellow",
@@ -99,7 +106,9 @@ export function findGreen(path: string, text: string): string[] {
   // A three-digit hex is only unambiguous in a stylesheet or SVG; in TSX the
   // same shape is usually a URL fragment.
   if (path.endsWith(".css") || path.endsWith(".svg")) hexLiterals.push(...matches(text, HEX_SHORT));
+  const thirdPartyMark = (THIRD_PARTY_MARK_COLOURS[path] ?? []).map((colour) => colour.toLowerCase());
   for (const literal of hexLiterals) {
+    if (thirdPartyMark.includes(literal.toLowerCase())) continue;
     if (isGreenish(parseHex(literal))) offenders.push(literal);
   }
 

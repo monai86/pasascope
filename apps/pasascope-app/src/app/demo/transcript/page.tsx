@@ -39,7 +39,7 @@ export default function DemoTranscript() {
           </p>
         </div>
         <div className="flex items-center gap-2">
-          <span className="inline-flex items-center gap-1.5 rounded-full bg-emerald-50 px-3 py-1 text-xs font-semibold text-emerald-700 border border-emerald-100">
+          <span className="inline-flex items-center gap-1.5 rounded-full bg-[color:var(--color-success-bg)] px-3 py-1 text-xs font-semibold text-[color:var(--color-success-text)] border border-[color:var(--color-success-border)]">
             <CheckCircle2 size={12} />
             ผ่านการตรวจสอบโดยนักบำบัด
           </span>
@@ -81,7 +81,7 @@ export default function DemoTranscript() {
         </div>
 
         {/* Message bubbles */}
-        <div className="p-6 space-y-4 max-h-[500px] overflow-y-auto bg-slate-50/30">
+        <div className="p-6 space-y-4 max-h-[500px] overflow-y-auto bg-surface-soft">
           {lines.map((line, index) => {
             const isChi = line.speaker === "CHI";
             return (
@@ -91,7 +91,7 @@ export default function DemoTranscript() {
               >
                 {/* Speaker Avatar/Badge */}
                 <div className={`h-8 w-8 shrink-0 rounded-full flex items-center justify-center font-bold text-xs ${
-                  isChi ? "bg-amber-100 text-amber-700" : "bg-blue-100 text-blue-700"
+                  isChi ? "bg-[color:var(--color-warning-bg)] text-[color:var(--color-warning-text)]" : "bg-brand-soft text-brand-strong"
                 }`}>
                   {line.speaker}
                 </div>
@@ -119,7 +119,7 @@ export default function DemoTranscript() {
       <div className="flex items-center justify-between border-t border-line pt-6">
         <Link
           href="/demo/upload"
-          className="inline-flex min-h-11 items-center justify-center rounded-full border border-line bg-white px-5 text-sm font-semibold text-ink transition hover:bg-slate-50"
+          className="inline-flex min-h-11 items-center justify-center rounded-full border border-line bg-white px-5 text-sm font-semibold text-ink transition hover:bg-surface-soft"
         >
           ย้อนกลับ
         </Link>

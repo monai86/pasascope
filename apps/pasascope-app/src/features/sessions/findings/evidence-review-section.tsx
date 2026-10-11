@@ -69,7 +69,7 @@ export function EvidenceReviewSection({
         <div className="mt-5 space-y-3" data-testid="evidence-review-panel">
           <div className="flex flex-wrap items-center gap-2">
             <h3 className="text-sm font-semibold uppercase tracking-[0.18em] text-ink-muted">{EVIDENCE_REVIEW_NOUN}</h3>
-            <span className="rounded-full bg-amber-100 px-3 py-1 text-xs font-bold text-amber-900">{NOT_DIAGNOSTIC_BADGE}</span>
+            <span className="rounded-full bg-[color:var(--color-warning-bg)] px-3 py-1 text-xs font-bold text-[color:var(--color-warning-text)]">{NOT_DIAGNOSTIC_BADGE}</span>
           </div>
           <p className="text-sm text-ink-muted">
             {mlDecisionSupport.providerName} v{mlDecisionSupport.providerVersion} · schema {mlDecisionSupport.featureSchemaVersion}
@@ -129,7 +129,7 @@ export function EvidenceReviewSection({
                         </button>
                       </>
                     ) : (
-                      <span className="rounded-full bg-slate-100 px-3 py-1 text-xs font-semibold text-slate-700" data-testid={`cue-status-${cue.cueCode}`}>
+                      <span className="rounded-full bg-surface-muted px-3 py-1 text-xs font-semibold text-ink" data-testid={`cue-status-${cue.cueCode}`}>
                         {cue.reviewStatus === "acknowledged" ? "Confirmed by therapist" : cue.reviewStatus === "dismissed" ? "Dismissed by therapist" : "Not yet reviewed"}
                       </span>
                     )}
@@ -208,8 +208,8 @@ export function EvidenceReviewSection({
                   </button>
                 </div>
                 {disagreementProfile === profile.profileCode ? (
-                  <div className="mt-3 rounded-panel border border-amber-200 bg-amber-50 p-3">
-                    <p className="text-xs text-amber-900">
+                  <div className="mt-3 rounded-panel border border-[color:var(--color-attention-border)] bg-[color:var(--color-warning-bg)] p-3">
+                    <p className="text-xs text-[color:var(--color-warning-text)]">
                       This records clinical disagreement and preserves the original provider output.
                     </p>
                     <textarea

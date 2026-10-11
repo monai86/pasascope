@@ -113,7 +113,7 @@ export function AssessmentEvidenceWorkspace({
         <div>
           <Link
             href={`/assessments/${encodeURIComponent(assessmentId)}/history`}
-            className="inline-flex items-center rounded-lg border border-indigo-200 bg-indigo-50 px-3.5 py-2 text-xs font-semibold text-indigo-700 hover:bg-indigo-100 dark:border-indigo-900 dark:bg-indigo-950/60 dark:text-indigo-300"
+            className="inline-flex items-center rounded-lg border border-brand-border bg-brand-soft px-3.5 py-2 text-xs font-semibold text-brand-strong hover:bg-brand-soft   "
           >
             เปรียบเทียบประวัติพัฒนาการ (History) →
           </Link>
@@ -121,19 +121,19 @@ export function AssessmentEvidenceWorkspace({
       </header>
 
       {isStale ? (
-        <div className="rounded-xl border border-amber-300 bg-amber-50 p-4 text-amber-950" role="alert">
+        <div className="rounded-xl border border-[color:var(--color-attention-border)] bg-[color:var(--color-warning-bg)] p-4 text-[color:var(--color-warning-text)]" role="alert">
           <p className="font-semibold">ข้อมูลเดิมไม่เป็นปัจจุบัน</p>
           <p className="mt-1 text-sm">ต้องทบทวน transcript หรือประมวลผลใหม่ก่อนใช้ผลนี้ประกอบการพิจารณา</p>
           <Link
             href={`/assessments/${encodeURIComponent(assessmentId)}/transcript`}
-            className="mt-3 inline-flex rounded-lg border border-amber-800 px-3 py-2 text-sm font-semibold"
+            className="mt-3 inline-flex rounded-lg border border-[color:var(--color-warning-text)] px-3 py-2 text-sm font-semibold"
           >
             เปิดหน้า transcript review
           </Link>
         </div>
       ) : null}
 
-      <div className="rounded-xl border border-sky-200 bg-sky-50 p-4 text-sky-950" role="status">
+      <div className="rounded-xl border border-[color:var(--color-info-border)] bg-brand-soft p-4 text-[color:var(--color-info-text)]" role="status">
         <p className="font-semibold">สถานะข้อมูล: {evidenceStateLabel(profile.state)}</p>
         <p className="mt-1 text-sm">ผลนี้เป็น decision support เท่านั้น และต้องอ่านร่วมกับข้อมูลทางคลินิกอื่น</p>
       </div>
@@ -198,7 +198,7 @@ function DomainCard({ domain }: { domain: AssessmentV2DomainProfile }) {
         <p className="mt-3 text-xs">ข้อมูลสนับสนุน: {domain.supporting_features.join(", ")}</p>
       ) : null}
       {domain.conflicting_features.length > 0 ? (
-        <p className="mt-1 text-xs text-amber-800">ข้อมูลที่ต้องพิจารณาร่วม: {domain.conflicting_features.join(", ")}</p>
+        <p className="mt-1 text-xs text-[color:var(--color-warning-text)]">ข้อมูลที่ต้องพิจารณาร่วม: {domain.conflicting_features.join(", ")}</p>
       ) : null}
       {domain.limitations.length > 0 ? (
         <p className="mt-2 text-xs text-ink-muted">ข้อจำกัด: {domain.limitations.join(" ")}</p>

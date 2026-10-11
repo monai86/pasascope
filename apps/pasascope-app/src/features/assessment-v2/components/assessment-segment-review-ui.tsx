@@ -38,7 +38,7 @@ export function TranscriptDraftPanel({
       <header><p className="text-sm font-semibold text-brand">ขั้นตอนที่ 5 จาก 5</p><h1 className="mt-1 text-2xl font-semibold">{createMode ? "สร้าง transcript ฉบับแรก" : "ตรวจ transcript ก่อนสร้าง segment"}</h1><p className="mt-2 text-sm text-ink-muted">ตรวจข้อความต้นฉบับและรับรองก่อนให้ระบบผูก segment กับ revision ที่แน่นอน</p></header>
       <section className="workspace-panel p-5" aria-labelledby="transcript-prerequisite-heading"><h2 id="transcript-prerequisite-heading" className="text-lg font-semibold">ข้อความ transcript</h2><textarea aria-label="เนื้อหา transcript" value={content} onChange={(event) => onChange(event.target.value)} disabled={busy} rows={12} className={`${fieldClass} mt-4 min-h-64 font-mono leading-7`} /><button type="button" className={primaryButtonClass} disabled={busy || !content.trim()} onClick={onSave}>{busy ? "กำลังบันทึก…" : createMode ? "สร้างฉบับร่าง" : "บันทึกฉบับร่าง"}</button></section>
       {onAttest ? <section className="workspace-panel p-5"><h2 className="text-lg font-semibold">รับรอง transcript</h2><label className="mt-3 flex min-h-11 items-start gap-3 text-sm"><input type="checkbox" checked={attestationConfirmed} onChange={(event) => onAttestationChange?.(event.target.checked)} disabled={busy} className="mt-1 h-4 w-4" /><span>ฉันได้ตรวจสอบข้อความและยืนยันว่า transcript พร้อมให้ระบบสร้าง segment</span></label><button type="button" className={secondaryButtonClass} disabled={busy || !attestationConfirmed} onClick={onAttest}>รับรอง transcript</button></section> : null}
-      {error ? <p className="text-sm text-red-800" role="alert">{error}</p> : null}
+      {error ? <p className="text-sm text-[color:var(--color-danger-text)]" role="alert">{error}</p> : null}
     </section>
   );
 }
@@ -54,7 +54,7 @@ export function SegmentAudioPlayer({ grant, ordinal }: { grant: AssessmentV2Tran
       audio.currentTime = grant.start_ms / 1000;
     }
   }
-  return <div className="mt-3 rounded-lg border border-emerald-200 bg-emerald-50 p-3"><p className="text-xs font-semibold text-emerald-900">เสียงช่วงที่ {ordinal} พร้อมเล่น · ลิงก์ชั่วคราว {grant.expires_in_seconds ?? 0} วินาที</p><audio ref={audioRef} role="audio" aria-label={`เสียงช่วงที่ ${ordinal}`} controls preload="metadata" src={grant.url ?? undefined} onLoadedMetadata={boundPlayback} onTimeUpdate={boundPlayback} className="mt-2 w-full" /></div>;
+  return <div className="mt-3 rounded-lg border border-[color:var(--color-success-border)] bg-[color:var(--color-success-bg)] p-3"><p className="text-xs font-semibold text-[color:var(--color-success-text)]">เสียงช่วงที่ {ordinal} พร้อมเล่น · ลิงก์ชั่วคราว {grant.expires_in_seconds ?? 0} วินาที</p><audio ref={audioRef} role="audio" aria-label={`เสียงช่วงที่ ${ordinal}`} controls preload="metadata" src={grant.url ?? undefined} onLoadedMetadata={boundPlayback} onTimeUpdate={boundPlayback} className="mt-2 w-full" /></div>;
 }
 
 export function toDraftSegments(segments: AssessmentV2TranscriptSegment[]): SegmentDraft[] {

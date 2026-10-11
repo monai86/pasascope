@@ -292,49 +292,49 @@ export function SupabaseLoginFormClient({
         : "Supabase browser config invalid";
 
   return (
-    <div className="rounded-3xl border border-slate-200/90 bg-white p-6 sm:p-8 lg:p-9 shadow-xl shadow-slate-900/5 transition-all">
+    <div className="rounded-3xl border border-line bg-white p-6 sm:p-8 lg:p-9 shadow-xl transition-all">
       {/* Header Badge & Security Status */}
-      <div className="flex items-center justify-between pb-3 mb-4 border-b border-slate-100">
+      <div className="flex items-center justify-between pb-3 mb-4 border-b border-line">
         <div className="flex items-center gap-2">
           <span className="relative flex h-2 w-2">
-            <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
-            <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500"></span>
+            <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-tint opacity-75"></span>
+            <span className="relative inline-flex rounded-full h-2 w-2 bg-brand"></span>
           </span>
-          <h2 className="text-xs font-bold uppercase tracking-wider text-emerald-800">
+          <h2 className="text-xs font-bold uppercase tracking-wider text-[color:var(--color-success-text)]">
             Secure sign in
           </h2>
-          <span className="text-xs text-slate-400 font-medium hidden sm:inline">
+          <span className="text-xs text-ink-subtle font-medium hidden sm:inline">
             • Clinical Workstation Auth
           </span>
         </div>
-        <span className="inline-flex items-center gap-1.5 text-xs font-semibold text-slate-600 bg-slate-100/80 px-2.5 py-0.5 rounded-full border border-slate-200/60">
-          <ShieldCheck size={13} className="text-emerald-600 shrink-0" />
+        <span className="inline-flex items-center gap-1.5 text-xs font-semibold text-ink-muted bg-surface-muted px-2.5 py-0.5 rounded-full border border-line">
+          <ShieldCheck size={13} className="text-[color:var(--color-success-text)] shrink-0" />
           <span>TLS 1.3 Strict</span>
         </span>
       </div>
 
       {/* Main Title & Subtitle */}
       <div className="mb-5">
-        <h1 className="text-2xl sm:text-[1.7rem] font-extrabold tracking-tight text-slate-900 leading-snug">
-          Welcome Clinician <span className="text-[#F05A77] font-normal">●</span> เข้าสู่ระบบคลินิกบำบัด
+        <h1 className="text-2xl sm:text-[1.7rem] font-extrabold tracking-tight text-ink leading-snug">
+          Welcome Clinician <span aria-hidden="true" className="font-normal text-highlight">●</span> เข้าสู่ระบบคลินิกบำบัด
         </h1>
-        <p className="mt-1.5 text-xs sm:text-sm text-slate-500 leading-relaxed">
+        <p className="mt-1.5 text-xs sm:text-sm text-ink-muted leading-relaxed">
           Sign in to access pediatric case records, acoustic transcripts, and individualized therapy plans.
         </p>
       </div>
 
       {/* Role Tabs (Clinician / Admin / Parent) */}
-      <div className="mb-5 grid grid-cols-3 gap-1 rounded-xl border border-slate-200 bg-slate-100/70 p-1 text-xs font-semibold">
+      <div className="mb-5 grid grid-cols-3 gap-1 rounded-xl border border-line bg-surface-muted p-1 text-xs font-semibold">
         <button
           type="button"
           onClick={() => setRoleTab("slp")}
           className={`flex items-center justify-center gap-1.5 rounded-lg py-2 transition-all ${
             roleTab === "slp"
-              ? "bg-white text-emerald-900 shadow-xs font-bold"
-              : "text-slate-600 hover:text-slate-900"
+              ? "bg-white text-[color:var(--color-success-text)] shadow-xs font-bold"
+              : "text-ink-muted hover:text-ink"
           }`}
         >
-          <ShieldCheck size={14} className={roleTab === "slp" ? "text-emerald-700" : "text-slate-400"} />
+          <ShieldCheck size={14} className={roleTab === "slp" ? "text-[color:var(--color-success-text)]" : "text-ink-subtle"} />
           <span>Clinician / SLP</span>
         </button>
         <button
@@ -342,11 +342,11 @@ export function SupabaseLoginFormClient({
           onClick={() => setRoleTab("admin")}
           className={`flex items-center justify-center gap-1.5 rounded-lg py-2 transition-all ${
             roleTab === "admin"
-              ? "bg-white text-emerald-900 shadow-xs font-bold"
-              : "text-slate-600 hover:text-slate-900"
+              ? "bg-white text-[color:var(--color-success-text)] shadow-xs font-bold"
+              : "text-ink-muted hover:text-ink"
           }`}
         >
-          <Building2 size={14} className={roleTab === "admin" ? "text-emerald-700" : "text-slate-400"} />
+          <Building2 size={14} className={roleTab === "admin" ? "text-[color:var(--color-success-text)]" : "text-ink-subtle"} />
           <span>Clinic Admin</span>
         </button>
         <button
@@ -354,8 +354,8 @@ export function SupabaseLoginFormClient({
           onClick={() => setRoleTab("parent")}
           className={`flex items-center justify-center gap-1.5 rounded-lg py-2 transition-all ${
             roleTab === "parent"
-              ? "bg-white text-emerald-900 shadow-xs font-bold"
-              : "text-slate-600 hover:text-slate-900"
+              ? "bg-white text-[color:var(--color-success-text)] shadow-xs font-bold"
+              : "text-ink-muted hover:text-ink"
           }`}
         >
           <span>Parent / ผู้ปกครอง</span>
@@ -374,13 +374,13 @@ export function SupabaseLoginFormClient({
             }}
             className={`font-semibold pb-1 border-b-2 transition ${
               mode === "signin"
-                ? "border-[#F05A77] text-slate-900"
-                : "border-transparent text-slate-400 hover:text-slate-600"
+                ? "border-brand text-ink"
+                : "border-transparent text-ink-subtle hover:text-ink-muted"
             }`}
           >
             เข้าสู่ระบบ (Sign In)
           </button>
-          <span className="text-slate-300">|</span>
+          <span className="text-line-strong">|</span>
           <button
             type="button"
             onClick={() => {
@@ -390,14 +390,14 @@ export function SupabaseLoginFormClient({
             }}
             className={`font-semibold pb-1 border-b-2 transition ${
               mode === "signup"
-                ? "border-[#F05A77] text-slate-900"
-                : "border-transparent text-slate-400 hover:text-slate-600"
+                ? "border-brand text-ink"
+                : "border-transparent text-ink-subtle hover:text-ink-muted"
             }`}
           >
             สร้างบัญชีใหม่ (Create Account)
           </button>
         </div>
-        <span className="text-xs text-slate-400 font-medium">Invitation-only</span>
+        <span className="text-xs text-ink-subtle font-medium">Invitation-only</span>
       </div>
 
       {/* Form */}
@@ -407,12 +407,12 @@ export function SupabaseLoginFormClient({
         className="space-y-4"
       >
         {mode === "signup" && (
-          <label className="block text-xs font-bold uppercase tracking-wider text-slate-700">
+          <label className="block text-xs font-bold uppercase tracking-wider text-ink">
             <span className="block mb-1.5">
               ชื่อ-นามสกุล (Display Name)
             </span>
             <input
-              className="min-h-11 w-full rounded-xl border border-slate-200 bg-slate-50/60 px-3.5 py-2 text-sm text-slate-900 placeholder:text-slate-400 focus:bg-white focus:border-emerald-600 focus:ring-2 focus:ring-emerald-600/20 outline-none transition"
+              className="min-h-11 w-full rounded-xl border border-line bg-surface-soft px-3.5 py-2 text-sm text-ink placeholder:text-ink-subtle focus:bg-white focus:border-brand focus:ring-2 focus:ring-[color:var(--color-focus-ring)] outline-none transition"
               type="text"
               autoComplete="name"
               placeholder="เช่น พญ. ปาริฉัตร หรือชื่อ-นามสกุลของคุณ"
@@ -425,18 +425,18 @@ export function SupabaseLoginFormClient({
         {/* Email Field with exact accessible name "Email" for test assertions */}
         <div>
           <div className="flex items-center justify-between mb-1.5">
-            <label htmlFor="clinical-email-input" className="block text-xs font-bold uppercase tracking-wider text-slate-700">
+            <label htmlFor="clinical-email-input" className="block text-xs font-bold uppercase tracking-wider text-ink">
               Email
             </label>
-            <span className="text-xs font-normal text-slate-400 normal-case">
+            <span className="text-xs font-normal text-ink-subtle normal-case">
               Clinic Email or SLP License ID / อีเมลหรือเลขที่ใบอนุญาต
             </span>
           </div>
           <div className="relative">
-            <Mail className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400 pointer-events-none" />
+            <Mail className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-ink-subtle pointer-events-none" />
             <input
               id="clinical-email-input"
-              className="min-h-11 w-full rounded-xl border border-slate-200 bg-slate-50/60 pl-10 pr-3.5 py-2 text-sm text-slate-900 placeholder:text-slate-400 focus:bg-white focus:border-emerald-600 focus:ring-2 focus:ring-emerald-600/20 outline-none transition font-sans"
+              className="min-h-11 w-full rounded-xl border border-line bg-surface-soft pl-10 pr-3.5 py-2 text-sm text-ink placeholder:text-ink-subtle focus:bg-white focus:border-brand focus:ring-2 focus:ring-[color:var(--color-focus-ring)] outline-none transition font-sans"
               type="email"
               inputMode="email"
               autoComplete="username"
@@ -450,23 +450,23 @@ export function SupabaseLoginFormClient({
         {/* Password Field with exact accessible name "Password" for test assertions */}
         <div>
           <div className="flex items-center justify-between mb-1.5">
-            <label htmlFor="clinical-password-input" className="block text-xs font-bold uppercase tracking-wider text-slate-700">
+            <label htmlFor="clinical-password-input" className="block text-xs font-bold uppercase tracking-wider text-ink">
               Password
             </label>
             <button
               type="button"
               onClick={handlePasswordRecovery}
               disabled={!browserClient || isSendingRecovery}
-              className="text-xs font-medium text-emerald-700 hover:text-emerald-900 hover:underline transition disabled:opacity-50"
+              className="text-xs font-medium text-[color:var(--color-success-text)] hover:text-[color:var(--color-success-text)] hover:underline transition disabled:opacity-50"
             >
               {isSendingRecovery ? "Sending recovery email..." : "Send recovery email"}
             </button>
           </div>
           <div className="relative">
-            <LockKeyhole className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400 pointer-events-none" />
+            <LockKeyhole className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-ink-subtle pointer-events-none" />
             <input
               id="clinical-password-input"
-              className="min-h-11 w-full rounded-xl border border-slate-200 bg-slate-50/60 pl-10 pr-10 py-2 text-sm text-slate-900 placeholder:text-slate-400 focus:bg-white focus:border-emerald-600 focus:ring-2 focus:ring-emerald-600/20 outline-none transition font-sans"
+              className="min-h-11 w-full rounded-xl border border-line bg-surface-soft pl-10 pr-10 py-2 text-sm text-ink placeholder:text-ink-subtle focus:bg-white focus:border-brand focus:ring-2 focus:ring-[color:var(--color-focus-ring)] outline-none transition font-sans"
               type={showPassword ? "text" : "password"}
               autoComplete={mode === "signup" ? "new-password" : "current-password"}
               placeholder="••••••••••••••••"
@@ -476,7 +476,7 @@ export function SupabaseLoginFormClient({
             <button
               type="button"
               onClick={() => setShowPassword(!showPassword)}
-              className="absolute right-3.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-700 transition"
+              className="absolute right-3.5 top-1/2 -translate-y-1/2 text-ink-subtle hover:text-ink transition"
               aria-label={showPassword ? "Hide password" : "Show password"}
             >
               {showPassword ? <EyeOff size={16} /> : <Eye size={16} />}
@@ -486,18 +486,18 @@ export function SupabaseLoginFormClient({
 
         {/* Trust workstation for 30 days checkbox */}
         <div className="flex items-center justify-between pt-0.5">
-          <label className="inline-flex items-center gap-2.5 text-xs text-slate-600 cursor-pointer select-none">
+          <label className="inline-flex items-center gap-2.5 text-xs text-ink-muted cursor-pointer select-none">
             <input
               type="checkbox"
               checked={trustDevice}
               onChange={(e) => setTrustDevice(e.target.checked)}
-              className="h-4 w-4 rounded border-slate-300 text-[#F05A77] focus:ring-[#F05A77] transition"
+              className="h-4 w-4 rounded border-line-strong text-brand focus:ring-[color:var(--color-focus-ring)] transition"
             />
             <span>Trust workstation for 30 days (บันทึกเครื่องนี้)</span>
           </label>
         </div>
 
-        {/* Primary Action CTA: Warm Watermelon Coral Button (#F05A77) */}
+        {/* Primary action */}
         <div className="pt-1">
           {mode === "signin" ? (
             <button
@@ -505,7 +505,7 @@ export function SupabaseLoginFormClient({
               disabled={!browserClient || isSubmitting || !email.trim() || !password}
               aria-disabled={!browserClient || isSubmitting || !email.trim() || !password}
               aria-label={buttonAriaLabel}
-              className="group relative inline-flex min-h-12 w-full items-center justify-center rounded-xl bg-[#F05A77] px-5 py-3 text-sm font-bold text-white shadow-lg shadow-[#F05A77]/25 transition hover:bg-[#E04363] active:scale-[0.99] disabled:cursor-not-allowed disabled:bg-slate-300 disabled:text-slate-500 disabled:shadow-none"
+              className="group relative inline-flex min-h-12 w-full items-center justify-center rounded-xl bg-brand px-5 py-3 text-sm font-bold text-white shadow-soft transition hover:bg-brand-hover active:scale-[0.99] disabled:cursor-not-allowed disabled:bg-surface-muted disabled:text-ink-muted disabled:shadow-none"
             >
               <span className="flex items-center justify-center gap-2">
                 <span>
@@ -522,7 +522,7 @@ export function SupabaseLoginFormClient({
               disabled={!browserClient || isSubmitting || !email.trim() || !password}
               aria-disabled={!browserClient || isSubmitting || !email.trim() || !password}
               aria-label={isSubmitting ? "Signing in..." : "Create Account"}
-              className="group relative inline-flex min-h-12 w-full items-center justify-center rounded-xl bg-emerald-800 px-5 py-3 text-sm font-bold text-white shadow-lg shadow-emerald-950/20 transition hover:bg-emerald-900 active:scale-[0.99] disabled:cursor-not-allowed disabled:bg-slate-300 disabled:text-slate-500"
+              className="group relative inline-flex min-h-12 w-full items-center justify-center rounded-xl bg-brand px-5 py-3 text-sm font-bold text-white shadow-lg transition hover:bg-brand-hover active:scale-[0.99] disabled:cursor-not-allowed disabled:bg-surface-muted disabled:text-ink-muted"
             >
               <span className="flex items-center justify-center gap-2">
                 <span>
@@ -538,13 +538,13 @@ export function SupabaseLoginFormClient({
 
         {/* Error and Status messages */}
         {errorMessage ? (
-          <p className="rounded-xl border border-rose-200 bg-rose-50 px-3.5 py-2.5 text-xs font-medium text-rose-700 leading-relaxed" role="alert">
+          <p className="rounded-xl border border-[color:var(--color-danger-border)] bg-[color:var(--color-danger-bg)] px-3.5 py-2.5 text-xs font-medium text-[color:var(--color-danger-text)] leading-relaxed" role="alert">
             {errorMessage}
           </p>
         ) : null}
 
         {statusMessage ? (
-          <p className="rounded-xl border border-emerald-200 bg-emerald-50 px-3.5 py-2.5 text-xs font-medium text-emerald-800 leading-relaxed" aria-live="polite">
+          <p className="rounded-xl border border-[color:var(--color-success-border)] bg-[color:var(--color-success-bg)] px-3.5 py-2.5 text-xs font-medium text-[color:var(--color-success-text)] leading-relaxed" aria-live="polite">
             {statusMessage}
           </p>
         ) : null}
@@ -553,10 +553,10 @@ export function SupabaseLoginFormClient({
       {/* Divider */}
       <div className="relative my-6 text-center">
         <div className="absolute inset-0 flex items-center" aria-hidden="true">
-          <div className="w-full border-t border-slate-200/80" />
+          <div className="w-full border-t border-line" />
         </div>
         <div className="relative flex justify-center">
-          <span className="bg-white px-3 text-xs font-semibold uppercase tracking-wider text-slate-400">
+          <span className="bg-white px-3 text-xs font-semibold uppercase tracking-wider text-ink-subtle">
             Or Authenticate with Hospital Identity Provider
           </span>
         </div>
@@ -569,9 +569,9 @@ export function SupabaseLoginFormClient({
           onClick={() => {
             setStatusMessage("Hospital SSO / Active Directory: โปรดใช้อีเมลประจำหน่วยงานแพทย์ของโรงพยาบาลในเครือข่าย หรือติดต่อแผนกเวชระเบียน");
           }}
-          className="inline-flex min-h-11 items-center justify-center gap-2 rounded-xl border border-slate-200 bg-white px-3.5 py-2 text-xs font-semibold text-slate-700 shadow-2xs transition hover:bg-slate-50 hover:border-slate-300"
+          className="inline-flex min-h-11 items-center justify-center gap-2 rounded-xl border border-line bg-white px-3.5 py-2 text-xs font-semibold text-ink shadow-2xs transition hover:bg-surface-soft hover:border-line-strong"
         >
-          <Building2 size={16} className="text-emerald-700 shrink-0" />
+          <Building2 size={16} className="text-[color:var(--color-success-text)] shrink-0" />
           <span>Hospital SSO / Active Directory</span>
         </button>
 
@@ -579,7 +579,7 @@ export function SupabaseLoginFormClient({
           type="button"
           onClick={handleGoogleSignIn}
           disabled={isGoogleSubmitting || isSubmitting}
-          className="inline-flex min-h-11 items-center justify-center gap-2.5 rounded-xl border border-slate-200 bg-white px-3.5 py-2 text-xs font-semibold text-slate-700 shadow-2xs transition hover:bg-slate-50 hover:border-slate-300 disabled:opacity-50"
+          className="inline-flex min-h-11 items-center justify-center gap-2.5 rounded-xl border border-line bg-white px-3.5 py-2 text-xs font-semibold text-ink shadow-2xs transition hover:bg-surface-soft hover:border-line-strong disabled:opacity-50"
         >
           <svg className="h-4 w-4 shrink-0" viewBox="0 0 24 24" aria-hidden="true">
             <path
@@ -606,25 +606,25 @@ export function SupabaseLoginFormClient({
       </div>
 
       {/* Helpline & Session encryption footer */}
-      <div className="mt-5 pt-4 border-t border-slate-100 flex flex-wrap items-center justify-between text-xs text-slate-500 gap-2">
+      <div className="mt-5 pt-4 border-t border-line flex flex-wrap items-center justify-between text-xs text-ink-muted gap-2">
         <span className="flex items-center gap-1.5 font-medium">
-          <span className="text-emerald-700 font-semibold">Clinic IT Line:</span> 02-419-7000 ext. 8412
+          <span className="text-[color:var(--color-success-text)] font-semibold">Clinic IT Line:</span> 02-419-7000 ext. 8412
         </span>
-        <span className="inline-flex items-center gap-1 text-slate-400 font-mono">
-          <LockKeyhole size={11} className="text-emerald-700" />
+        <span className="inline-flex items-center gap-1 text-ink-subtle font-mono">
+          <LockKeyhole size={11} className="text-[color:var(--color-success-text)]" />
           256-bit Encrypted Session
         </span>
       </div>
 
       {/* Collapsible Clinical Security & Access Protocol (maintaining all test contracts) */}
-      <div className="mt-4 pt-3 border-t border-slate-100">
+      <div className="mt-4 pt-3 border-t border-line">
         <button
           type="button"
           onClick={() => setShowPolicy(!showPolicy)}
-          className="flex min-h-10 w-full items-center justify-between text-xs font-semibold text-slate-500 hover:text-slate-800 transition"
+          className="flex min-h-10 w-full items-center justify-between text-xs font-semibold text-ink-muted hover:text-ink transition"
         >
           <span className="flex items-center gap-1.5">
-            <ShieldCheck size={13} className="text-emerald-700" />
+            <ShieldCheck size={13} className="text-[color:var(--color-success-text)]" />
             Clinical Security &amp; Access Protocol Details
           </span>
           <ChevronDown
@@ -633,9 +633,9 @@ export function SupabaseLoginFormClient({
           />
         </button>
 
-        <div className={`mt-3 space-y-2 text-xs leading-relaxed text-slate-600 ${showPolicy ? "block" : "sr-only sm:not-sr-only"}`}>
-          <div className="rounded-xl border border-amber-200/80 bg-amber-50/60 p-3 text-amber-900">
-            <p className="font-semibold text-xs uppercase tracking-wider text-amber-800">
+        <div className={`mt-3 space-y-2 text-xs leading-relaxed text-ink-muted ${showPolicy ? "block" : "sr-only sm:not-sr-only"}`}>
+          <div className="rounded-xl border border-[color:var(--color-attention-border)] bg-[color:var(--color-warning-bg)] p-3 text-[color:var(--color-warning-text)]">
+            <p className="font-semibold text-xs uppercase tracking-wider text-[color:var(--color-warning-text)]">
               Invitation-only access
             </p>
             <p className="mt-0.5 text-xs">
@@ -645,8 +645,8 @@ export function SupabaseLoginFormClient({
             </p>
           </div>
 
-          <div className="rounded-xl border border-emerald-200/80 bg-emerald-50/60 p-3 text-emerald-950">
-            <p className="font-semibold text-xs uppercase tracking-wider text-emerald-800">
+          <div className="rounded-xl border border-[color:var(--color-success-border)] bg-[color:var(--color-success-bg)] p-3 text-[color:var(--color-success-text)]">
+            <p className="font-semibold text-xs uppercase tracking-wider text-[color:var(--color-success-text)]">
               MFA and app access
             </p>
             <p className="mt-0.5 text-xs">
@@ -654,8 +654,8 @@ export function SupabaseLoginFormClient({
             </p>
           </div>
 
-          <div className="rounded-xl border border-slate-200 bg-slate-50/80 p-3 text-slate-700">
-            <p className="font-semibold text-xs uppercase tracking-wider text-slate-800">
+          <div className="rounded-xl border border-line bg-surface-soft p-3 text-ink">
+            <p className="font-semibold text-xs uppercase tracking-wider text-ink">
               Organization session selection
             </p>
             <p className="mt-0.5 text-xs">
@@ -663,8 +663,8 @@ export function SupabaseLoginFormClient({
             </p>
           </div>
 
-          <div className="rounded-xl border border-slate-200 bg-white p-3 text-slate-600">
-            <p className="font-semibold text-xs uppercase tracking-wider text-slate-800">
+          <div className="rounded-xl border border-line bg-white p-3 text-ink-muted">
+            <p className="font-semibold text-xs uppercase tracking-wider text-ink">
               Recovery and current runtime status
             </p>
             <p className="mt-0.5 text-xs">
@@ -673,7 +673,7 @@ export function SupabaseLoginFormClient({
             <p className="mt-1 text-xs">
               Browser sign-in now depends on the configured Supabase project and claim contract. Workspace access still fails closed until invitation, membership, MFA, and active organization requirements are satisfied.
             </p>
-            <p className="mt-1 text-xs font-mono text-slate-400">
+            <p className="mt-1 text-xs font-mono text-ink-subtle">
               Browser config: {configStatusLabel}
             </p>
           </div>

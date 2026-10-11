@@ -81,8 +81,8 @@ export function ReviewSummaryCard({
       <dl className="mt-4 space-y-3">
         {rows.map((row) => (
           <div key={`${title}-${row.label}`} className="grid gap-1 border-b border-line/70 pb-3 last:border-b-0 last:pb-0">
-            <dt className="text-xs font-semibold uppercase tracking-wide text-slate-500">{row.label}</dt>
-            <dd className="text-sm text-slate-700">{row.value}</dd>
+            <dt className="text-xs font-semibold uppercase tracking-wide text-ink-muted">{row.label}</dt>
+            <dd className="text-sm text-ink">{row.value}</dd>
           </div>
         ))}
       </dl>
@@ -164,11 +164,11 @@ export function SourceInputPanel({
           </div>
           {mode === "paste" && (
             <div className="flex items-center gap-2 text-xs">
-              <span className="text-slate-500 font-medium">Quick Demo:</span>
+              <span className="text-ink-muted font-medium">Quick Demo:</span>
               <button
                 type="button"
                 onClick={() => onDraftChange(SAMPLE_THAI_TRANSCRIPT)}
-                className="inline-flex items-center gap-1 px-2.5 py-1 rounded-md border border-emerald-300 bg-emerald-50 text-emerald-800 font-semibold hover:bg-emerald-100 transition shadow-sm"
+                className="inline-flex items-center gap-1 px-2.5 py-1 rounded-md border border-[color:var(--color-success-border)] bg-[color:var(--color-success-bg)] text-[color:var(--color-success-text)] font-semibold hover:bg-[color:var(--color-success-bg)] transition shadow-sm"
                 title="Load sample Thai conversation for demonstration"
               >
                 <Sparkles size={13} aria-hidden="true" />
@@ -177,7 +177,7 @@ export function SourceInputPanel({
               <button
                 type="button"
                 onClick={() => onDraftChange(SAMPLE_ENG_TRANSCRIPT)}
-                className="inline-flex items-center gap-1 px-2.5 py-1 rounded-md border border-slate-300 bg-slate-50 text-slate-700 font-semibold hover:bg-slate-100 transition"
+                className="inline-flex items-center gap-1 px-2.5 py-1 rounded-md border border-line-strong bg-surface-soft text-ink font-semibold hover:bg-surface-muted transition"
                 title="Load sample English conversation"
               >
                 English Sample
@@ -209,18 +209,18 @@ export function SourceInputPanel({
           data-testid="transcript-input"
         />
         {error ? (
-          <p id="source-transcript-error" className="mt-3 rounded-card border border-red-200 bg-red-50 p-3 text-sm font-semibold text-red-900 animate-fade-in" role="alert">
+          <p id="source-transcript-error" className="mt-3 rounded-card border border-[color:var(--color-danger-border)] bg-[color:var(--color-danger-bg)] p-3 text-sm font-semibold text-[color:var(--color-danger-text)] animate-fade-in" role="alert">
             {error}
           </p>
         ) : null}
         {warnings.length > 0 ? (
-          <div className="mt-3 rounded-card border border-amber-200 bg-amber-50 p-3 text-sm text-amber-900" role="status">
+          <div className="mt-3 rounded-card border border-[color:var(--color-attention-border)] bg-[color:var(--color-warning-bg)] p-3 text-sm text-[color:var(--color-warning-text)]" role="status">
             <p className="font-semibold">Import warnings</p>
             <ul className="mt-1 list-disc space-y-1 pl-5">{warnings.map((warning) => <li key={warning}>{warning}</li>)}</ul>
           </div>
         ) : null}
         {validationIssues.length > 0 ? (
-          <div className="mt-3 rounded-card border border-orange-200 bg-orange-50 p-3 text-sm text-orange-900" role="alert">
+          <div className="mt-3 rounded-card border border-[color:var(--color-attention-border)] bg-[color:var(--color-warning-bg)] p-3 text-sm text-[color:var(--color-warning-text)]" role="alert">
             <p className="font-semibold">CHAT validation</p>
             <ul className="mt-1 list-disc space-y-1 pl-5">{validationIssues.map((issue) => <li key={issue}>{issue}</li>)}</ul>
           </div>

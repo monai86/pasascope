@@ -30,7 +30,8 @@ export function StatTile({
     <section className={cn("rounded-card border border-line bg-surface p-4 shadow-soft", className)}>
       <div className="flex items-start justify-between gap-3">
         <div className="min-w-0">
-          <p className="font-display text-3xl font-semibold leading-none text-ink">{value}</p>
+          {/* The large numeral is for counts; a status in words reads at heading size. */}
+          <p className={cn("font-display font-semibold text-ink", isNumeric(value) ? "text-3xl leading-none" : "text-xl leading-snug")}>{value}</p>
           <p className="mt-2 text-sm font-medium text-ink-muted">{label}</p>
         </div>
         {Icon ? (
@@ -42,4 +43,8 @@ export function StatTile({
       {helper ? <p className="mt-3 text-xs leading-5 text-ink-subtle">{helper}</p> : null}
     </section>
   );
+}
+
+function isNumeric(value: string | number): boolean {
+  return typeof value === "number" || /^[\d.,%\s-]+$/.test(value);
 }

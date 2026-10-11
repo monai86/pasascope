@@ -52,7 +52,7 @@ export function TherapistSettings({ section }: { section: SharedSettingsSection 
             <SettingLine label="Production MFA" value="Not configured" tone="muted" />
             <SettingLine label="Session storage" value="Browser UI cache only" />
           </SettingsCard>
-          <section className="rounded-card border border-amber-200 bg-amber-50 p-5 text-amber-950" aria-labelledby="owned-privacy-requests-title">
+          <section className="rounded-card border border-[color:var(--color-attention-border)] bg-[color:var(--color-warning-bg)] p-5 text-[color:var(--color-warning-text)]" aria-labelledby="owned-privacy-requests-title">
             <div className="flex items-start gap-3">
               <ShieldCheck size={22} aria-hidden="true" className="mt-0.5 shrink-0" />
               <div>
@@ -117,7 +117,7 @@ function SettingsCard({
         </span>
         <div>
           <h2 className="text-xl font-semibold text-ink">{title}</h2>
-          <p className="mt-1 text-sm leading-6 text-slate-600">{description}</p>
+          <p className="mt-1 text-sm leading-6 text-ink-muted">{description}</p>
         </div>
       </div>
       <div className="mt-5 divide-y divide-line/70 rounded-control border border-line bg-field">
@@ -128,10 +128,10 @@ function SettingsCard({
 }
 
 function SettingLine({ label, tone = "default", value }: { label: string; tone?: "default" | "muted" | "warning"; value: string }) {
-  const valueClassName = tone === "warning" ? "text-amber-800" : tone === "muted" ? "text-slate-600" : "text-ink";
+  const valueClassName = tone === "warning" ? "text-[color:var(--color-warning-text)]" : tone === "muted" ? "text-ink-muted" : "text-ink";
   return (
     <div className="grid gap-1 px-4 py-3 text-sm sm:grid-cols-[180px_1fr]">
-      <span className="font-medium text-slate-600">{label}</span>
+      <span className="font-medium text-ink-muted">{label}</span>
       <span className={`font-semibold ${valueClassName}`}>{value}</span>
     </div>
   );

@@ -333,8 +333,8 @@ export function BrowserAudioRecorder({
 
   return (
     <div>
-      <div className={`mb-4 flex items-center justify-center gap-2 text-lg font-bold ${status === "recording" ? "text-red-600" : "text-brand"}`}>
-        <span className={`h-3 w-3 rounded-full ${status === "recording" ? "animate-pulse bg-red-500" : "bg-brand"}`} />
+      <div className={`mb-4 flex items-center justify-center gap-2 text-lg font-bold ${status === "recording" ? "text-[color:var(--color-danger-text)]" : "text-brand"}`}>
+        <span className={`h-3 w-3 rounded-full ${status === "recording" ? "animate-pulse bg-highlight" : "bg-brand"}`} />
         {statusText}
       </div>
       <p className="text-5xl font-bold tracking-normal text-ink">{formatDuration(durationSeconds)}</p>
@@ -360,7 +360,7 @@ export function BrowserAudioRecorder({
             <Play size={32} fill="currentColor" aria-hidden="true" />
           </button>
         ) : null}
-        <button type="button" className="grid h-14 w-14 place-items-center rounded-full border border-line bg-surface text-slate-600 disabled:opacity-35" aria-label="Stop recording" onClick={stopRecording} disabled={status !== "recording" && status !== "paused"}>
+        <button type="button" className="grid h-14 w-14 place-items-center rounded-full border border-line bg-surface text-ink-muted disabled:opacity-35" aria-label="Stop recording" onClick={stopRecording} disabled={status !== "recording" && status !== "paused"}>
           <Square size={20} fill="currentColor" aria-hidden="true" />
         </button>
       </div>
@@ -373,7 +373,7 @@ export function BrowserAudioRecorder({
               <RotateCcw size={17} aria-hidden="true" />
               Re-record
             </button>
-            <button type="button" className="inline-flex min-h-11 items-center gap-2 rounded-xl border border-red-200 px-4 py-2 text-sm font-semibold text-red-700" onClick={deleteRecording} aria-label="Delete recording">
+            <button type="button" className="inline-flex min-h-11 items-center gap-2 rounded-xl border border-[color:var(--color-danger-border)] px-4 py-2 text-sm font-semibold text-[color:var(--color-danger-text)]" onClick={deleteRecording} aria-label="Delete recording">
               <Trash2 size={17} aria-hidden="true" />
               Delete
             </button>
@@ -381,10 +381,10 @@ export function BrowserAudioRecorder({
         </div>
       ) : null}
 
-      {privacyNotice ? <p className="mt-4 rounded-xl border border-amber-200 bg-amber-50 p-3 text-sm font-semibold text-amber-900">Unsaved recording was cleared for privacy. Please record again.</p> : null}
-      {error ? <p className="mt-4 rounded-xl border border-red-200 bg-red-50 p-3 text-sm font-semibold text-red-800" role="alert">{error}</p> : null}
+      {privacyNotice ? <p className="mt-4 rounded-xl border border-[color:var(--color-attention-border)] bg-[color:var(--color-warning-bg)] p-3 text-sm font-semibold text-[color:var(--color-warning-text)]">Unsaved recording was cleared for privacy. Please record again.</p> : null}
+      {error ? <p className="mt-4 rounded-xl border border-[color:var(--color-danger-border)] bg-[color:var(--color-danger-bg)] p-3 text-sm font-semibold text-[color:var(--color-danger-text)]" role="alert">{error}</p> : null}
       <p className="mt-3 text-sm font-semibold text-brand">Transcription is experimental. After you upload, the recording is transcribed on this server and the draft must be reviewed.</p>
-      <p className="mt-1 text-xs text-slate-600">Audio stays in memory only while this page is open. It is not uploaded automatically.</p>
+      <p className="mt-1 text-xs text-ink-muted">Audio stays in memory only while this page is open. It is not uploaded automatically.</p>
     </div>
   );
 }

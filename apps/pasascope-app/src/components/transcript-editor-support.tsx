@@ -61,7 +61,7 @@ export function LineMenuItem({
       disabled={disabled}
       onClick={onClick}
       className={`flex min-h-11 w-full items-center gap-2 rounded-md px-3 py-2 text-left text-sm font-semibold disabled:opacity-40 ${
-        tone === "danger" ? "text-red-700 hover:bg-red-50" : "text-slate-700 hover:bg-surface-muted"
+        tone === "danger" ? "text-[color:var(--color-danger-text)] hover:bg-[color:var(--color-danger-bg)]" : "text-ink hover:bg-surface-muted"
       }`}
     >
       {children}
@@ -72,10 +72,10 @@ export function LineMenuItem({
 
 export function QaBadge({ status }: { status: TranscriptQaStatus }) {
   const styles: Record<TranscriptQaStatus, string> = {
-    not_run: "bg-slate-100 text-slate-600",
-    pass: "bg-emerald-100 text-emerald-700",
-    warning: "bg-orange-100 text-orange-700",
-    fail: "bg-red-100 text-red-700"
+    not_run: "bg-surface-muted text-ink-muted",
+    pass: "bg-[color:var(--color-success-bg)] text-[color:var(--color-success-text)]",
+    warning: "bg-[color:var(--color-warning-bg)] text-[color:var(--color-warning-text)]",
+    fail: "bg-[color:var(--color-danger-bg)] text-[color:var(--color-danger-text)]"
   };
   const labels: Record<TranscriptQaStatus, string> = {
     not_run: "Not checked",
@@ -119,12 +119,12 @@ function lineHasPossibleError(line: TranscriptLine) {
 
 export function getLineConfidence(line: TranscriptLine) {
   if (line.unclear || line.speaker === "UNK") {
-    return { label: "Low", className: "bg-red-100 text-red-700" };
+    return { label: "Low", className: "bg-[color:var(--color-danger-bg)] text-[color:var(--color-danger-text)]" };
   }
   if (lineHasPossibleError(line) || line.startMs === undefined || line.endMs === undefined) {
-    return { label: "Review", className: "bg-orange-100 text-orange-700" };
+    return { label: "Review", className: "bg-[color:var(--color-warning-bg)] text-[color:var(--color-warning-text)]" };
   }
-  return { label: "High", className: "bg-emerald-100 text-emerald-700" };
+  return { label: "High", className: "bg-[color:var(--color-success-bg)] text-[color:var(--color-success-text)]" };
 }
 
 export function buildWaveformHeights(lines: TranscriptLine[]) {
@@ -159,12 +159,12 @@ function parseTimestamp(value: string): number | undefined {
 
 export function getRowStatus(line: TranscriptLine, qaStatus: TranscriptQaStatus) {
   if (line.unclear || !line.text.trim() || line.speaker === "UNK") {
-    return { label: line.unclear ? "Unclear" : "Review", className: "bg-orange-100 text-orange-700" };
+    return { label: line.unclear ? "Unclear" : "Review", className: "bg-[color:var(--color-warning-bg)] text-[color:var(--color-warning-text)]" };
   }
   if (qaStatus === "not_run") {
-    return { label: "Not checked", className: "bg-slate-100 text-slate-600" };
+    return { label: "Not checked", className: "bg-surface-muted text-ink-muted" };
   }
-  return { label: "Checked", className: "bg-emerald-100 text-emerald-700" };
+  return { label: "Checked", className: "bg-[color:var(--color-success-bg)] text-[color:var(--color-success-text)]" };
 }
 
 export function findSplitPoint(text: string) {

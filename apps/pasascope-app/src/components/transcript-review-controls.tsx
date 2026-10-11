@@ -57,17 +57,17 @@ export function TranscriptQaDetails({
           <QaBadge status={qaStatus} />
         </div>
         {qaIssues.length > 0 ? (
-          <ul className="mt-3 list-disc space-y-1 pl-5 text-sm text-orange-800">
+          <ul className="mt-3 list-disc space-y-1 pl-5 text-sm text-[color:var(--color-warning-text)]">
             {qaIssues.map((issue) => <li key={issue}>{issue}</li>)}
           </ul>
         ) : (
-          <p className="mt-2 text-sm text-slate-600">
+          <p className="mt-2 text-sm text-ink-muted">
             {qaStatus === "not_run" ? "Run QA after saving your edits." : "No QA issues were found."}
           </p>
         )}
-        <p className="mt-3 text-xs text-slate-500">{QA_INTERPRETATION_NOTE}</p>
+        <p className="mt-3 text-xs text-ink-muted">{QA_INTERPRETATION_NOTE}</p>
         {qaBlockedReason ? (
-          <p id="transcript-qa-blocked-reason" className="mt-3 rounded-card border border-amber-200 bg-amber-50 px-3 py-2 text-sm font-semibold text-amber-900" role="status">
+          <p id="transcript-qa-blocked-reason" className="mt-3 rounded-card border border-[color:var(--color-attention-border)] bg-[color:var(--color-warning-bg)] px-3 py-2 text-sm font-semibold text-[color:var(--color-warning-text)]" role="status">
             {qaBlockedReason}
           </p>
         ) : null}
@@ -128,10 +128,10 @@ export function TranscriptReviewControls({
     <div className={`mt-5 grid gap-3 rounded-shell border border-line bg-surface p-3 max-md:pb-[calc(0.75rem+env(safe-area-inset-bottom,0px))] lg:grid-cols-[minmax(0,1fr)_auto] lg:items-end ${inspectorOpen ? "lg:col-span-2 lg:row-start-5" : ""}`}>
       <div className="min-w-0">
         <div className="flex flex-wrap items-center justify-between gap-2 px-1">
-          <p className="text-xs font-semibold text-slate-600" role="status" aria-live="polite" aria-label="Transcript save status">
+          <p className="text-xs font-semibold text-ink-muted" role="status" aria-live="polite" aria-label="Transcript save status">
             {saveStatus === "saving" ? "Saving transcript" : saveStatus === "saved" ? "Transcript saved" : saveStatus === "failed" ? "Failed to save transcript" : saveStatus === "unsaved" ? "Unsaved transcript changes" : "Transcript not saved"}
           </p>
-          <p className="text-xs text-slate-500">
+          <p className="text-xs text-ink-muted">
             {selectedLineIndex >= 0 ? `Selected line ${selectedLineIndex + 1}` : "Select a line to use speaker tools and notes."}
           </p>
         </div>
@@ -168,7 +168,7 @@ export function TranscriptReviewControls({
               type="button"
               onClick={onAttest}
               disabled={busy || !canAttest || attested}
-              className="inline-flex min-h-11 items-center gap-2 rounded-card bg-ink px-3 py-2 text-sm font-semibold text-white disabled:bg-slate-300"
+              className="inline-flex min-h-11 items-center gap-2 rounded-card bg-ink px-3 py-2 text-sm font-semibold text-white disabled:bg-surface-muted"
               data-testid="attest-transcript-button"
               aria-describedby={attestBlockedReason ? "transcript-attest-reason" : undefined}
             >
@@ -190,7 +190,7 @@ export function TranscriptReviewControls({
             <p
               id="transcript-attest-reason"
               role="status"
-              className="mt-3 rounded-card border border-amber-200 bg-amber-50 px-3 py-2 text-sm font-semibold text-amber-900"
+              className="mt-3 rounded-card border border-[color:var(--color-attention-border)] bg-[color:var(--color-warning-bg)] px-3 py-2 text-sm font-semibold text-[color:var(--color-warning-text)]"
             >
               {attestBlockedReason}
             </p>
@@ -199,7 +199,7 @@ export function TranscriptReviewControls({
             <p
               id="transcript-export-reason"
               role="status"
-              className="mt-3 rounded-card border border-amber-200 bg-amber-50 px-3 py-2 text-sm font-semibold text-amber-900"
+              className="mt-3 rounded-card border border-[color:var(--color-attention-border)] bg-[color:var(--color-warning-bg)] px-3 py-2 text-sm font-semibold text-[color:var(--color-warning-text)]"
             >
               {exportBlockedReason}
             </p>
@@ -227,7 +227,7 @@ export function TranscriptReviewControls({
           disabled={busy || Boolean(qaBlockedReason)}
           title={qaBlockedReason}
           aria-describedby={qaBlockedReason ? "transcript-qa-blocked-reason" : undefined}
-          className="inline-flex min-h-11 items-center justify-center gap-2 rounded-card bg-brand px-4 py-2 text-sm font-semibold text-white disabled:bg-slate-300 disabled:text-slate-600"
+          className="inline-flex min-h-11 items-center justify-center gap-2 rounded-card bg-brand px-4 py-2 text-sm font-semibold text-white disabled:bg-surface-muted disabled:text-ink-muted"
           data-testid="run-transcript-qa-button"
         >
           <FileCheck2 size={17} aria-hidden="true" />

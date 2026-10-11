@@ -6,13 +6,13 @@ export const reportSectionDefinitions = [
   {
     icon: Star,
     title: "Strengths",
-    tone: "bg-emerald-100 text-emerald-700",
+    tone: "bg-[color:var(--color-success-bg)] text-[color:var(--color-success-text)]",
     items: ["Reviewed transcript available", "Feature summary prepared for therapist interpretation"],
   },
   {
     icon: Heart,
     title: "Needs Support",
-    tone: "bg-orange-100 text-orange-600",
+    tone: "bg-[color:var(--color-warning-bg)] text-[color:var(--color-warning-text)]",
     items: ["Confirm transcript wording", "Review suggested next steps before sharing"],
   },
   {
@@ -29,9 +29,9 @@ export function WorkflowStatus({ state, backendUnavailable }: { state: WorkflowS
   const isSuccess = Boolean(state.statusMessage && !isError);
   if (isSuccess && backendUnavailable) return null;
   const className = isError
-    ? "rounded-panel border border-red-200 bg-red-50 p-4 text-sm text-red-950 animate-fade-in"
+    ? "rounded-panel border border-[color:var(--color-danger-border)] bg-[color:var(--color-danger-bg)] p-4 text-sm text-[color:var(--color-danger-text)] animate-fade-in"
     : isSuccess
-      ? "rounded-panel border border-emerald-200 bg-emerald-50 p-4 text-sm text-emerald-950 animate-fade-in"
+      ? "rounded-panel border border-[color:var(--color-success-border)] bg-[color:var(--color-success-bg)] p-4 text-sm text-[color:var(--color-success-text)] animate-fade-in"
       : "demo-note rounded-panel p-4 text-sm";
   return (
     <div className={className} role={isError ? "alert" : "status"} aria-live="polite">
@@ -44,7 +44,7 @@ export function WorkflowStatus({ state, backendUnavailable }: { state: WorkflowS
 export function ReportProvenanceItem({ label, value }: { label: string; value: string }) {
   return (
     <div className="rounded-card border border-line bg-surface-muted p-3">
-      <dt className="text-xs font-semibold uppercase tracking-[0.1em] text-slate-500">{label}</dt>
+      <dt className="text-xs font-semibold uppercase tracking-[0.1em] text-ink-muted">{label}</dt>
       <dd className="mt-1 [overflow-wrap:anywhere] text-sm font-bold text-ink">{value}</dd>
     </div>
   );

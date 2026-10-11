@@ -100,7 +100,7 @@ function SettingsWorkspaceClientIdentity({
   return (
     <div className="grid gap-4">
       {notice === "not-authorized" || unauthorizedAdminRequest ? (
-        <p role="status" className="rounded-md border border-line bg-surface px-4 py-3 text-sm text-slate-700">
+        <p role="status" className="rounded-md border border-line bg-surface px-4 py-3 text-sm text-ink">
           You do not have access to that settings section. Account settings are shown instead.
         </p>
       ) : null}

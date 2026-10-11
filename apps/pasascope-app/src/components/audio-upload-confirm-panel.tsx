@@ -22,15 +22,15 @@ export function AudioUploadConfirmPanel({
 
   return (
     <div role="region" aria-label="Audio upload confirmation"
-      className="rounded-panel border border-amber-200 bg-amber-50 p-5 space-y-4">
+      className="rounded-panel border border-[color:var(--color-attention-border)] bg-[color:var(--color-warning-bg)] p-5 space-y-4">
       <div className="flex items-start gap-3">
-        <AlertTriangle className="mt-0.5 shrink-0 text-amber-600" size={20} aria-hidden="true" />
+        <AlertTriangle className="mt-0.5 shrink-0 text-[color:var(--color-warning-text)]" size={20} aria-hidden="true" />
         <div>
-          <p className="font-semibold text-amber-900">Ready to upload for transcription</p>
-          <p className="mt-1 text-sm text-amber-800">Recording: {duration} · {sizeMb} MB</p>
+          <p className="font-semibold text-[color:var(--color-warning-text)]">Ready to upload for transcription</p>
+          <p className="mt-1 text-sm text-[color:var(--color-warning-text)]">Recording: {duration} · {sizeMb} MB</p>
         </div>
       </div>
-      <div className="rounded-card border border-amber-300 bg-surface p-4 text-sm text-amber-900 space-y-2">
+      <div className="rounded-card border border-[color:var(--color-attention-border)] bg-surface p-4 text-sm text-[color:var(--color-warning-text)] space-y-2">
         <p>
           <strong>Privacy notice:</strong> Audio will be sent to the backend for transcription.
           The transcript must be reviewed by a therapist before any features are extracted.
@@ -41,7 +41,7 @@ export function AudioUploadConfirmPanel({
         </p>
       </div>
       {!backendAvailable && (
-        <p className="rounded-card border border-red-200 bg-red-50 px-4 py-3 text-sm font-semibold text-red-800" role="alert">
+        <p className="rounded-card border border-[color:var(--color-danger-border)] bg-[color:var(--color-danger-bg)] px-4 py-3 text-sm font-semibold text-[color:var(--color-danger-text)]" role="alert">
           Backend unavailable — upload disabled. Use manual paste or .cha import instead.
         </p>
       )}
@@ -54,7 +54,7 @@ export function AudioUploadConfirmPanel({
           {uploading ? "Uploading…" : "Upload for transcription"}
         </button>
         <button type="button" onClick={onCancel} disabled={uploading}
-          className="inline-flex items-center gap-2 rounded-card border border-slate-300 bg-surface px-5 py-2.5 text-sm font-semibold text-slate-700 disabled:opacity-40">
+          className="inline-flex items-center gap-2 rounded-card border border-line-strong bg-surface px-5 py-2.5 text-sm font-semibold text-ink disabled:opacity-40">
           <X size={16} aria-hidden="true" /> Cancel
         </button>
       </div>

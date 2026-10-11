@@ -228,11 +228,11 @@ export function TranscriptEditorPanel({
       <div className={inspectorOpen ? "flex items-center justify-between gap-3 lg:col-span-2" : "flex items-center justify-between gap-3"}>
         <div className="min-w-0">
           <h2 id="transcript-editor-title" className="text-lg font-bold text-ink">Transcript editor</h2>
-          <p className="text-xs text-slate-600">{lines.length} {lines.length === 1 ? "line" : "lines"} · directly editable</p>
+          <p className="text-xs text-ink-muted">{lines.length} {lines.length === 1 ? "line" : "lines"} · directly editable</p>
         </div>
         <div className="flex shrink-0 items-center justify-end gap-2">
           <span
-            className={`inline-flex min-h-8 items-center rounded-card border px-2.5 text-xs font-semibold ${attested ? "border-emerald-200 bg-emerald-50 text-emerald-800" : "border-amber-200 bg-amber-50 text-amber-900"}`}
+            className={`inline-flex min-h-8 items-center rounded-card border px-2.5 text-xs font-semibold ${attested ? "border-[color:var(--color-success-border)] bg-[color:var(--color-success-bg)] text-[color:var(--color-success-text)]" : "border-[color:var(--color-attention-border)] bg-[color:var(--color-warning-bg)] text-[color:var(--color-warning-text)]"}`}
             data-testid="transcript-attestation-badge"
             aria-label={attested ? "Transcript attested" : TRANSCRIPT_REVIEW_REQUIRED_LABEL}
           >
@@ -323,11 +323,11 @@ export function TranscriptEditorPanel({
         </button>
       </div>
 
-      <div className={`mt-4 overflow-hidden rounded-panel border border-line bg-ink p-3 text-white max-md:sticky max-md:top-0 max-md:z-20 lg:col-start-2 lg:row-start-3 lg:self-start lg:bg-slate-50 lg:p-4 lg:text-ink ${!inspectorOpen ? "hidden" : inspectorView === "qa" ? "md:hidden" : ""}`} data-testid="transcript-audio-inspector">
+      <div className={`mt-4 overflow-hidden rounded-panel border border-line bg-ink p-3 text-white max-md:sticky max-md:top-0 max-md:z-20 lg:col-start-2 lg:row-start-3 lg:self-start lg:bg-surface-soft lg:p-4 lg:text-ink ${!inspectorOpen ? "hidden" : inspectorView === "qa" ? "md:hidden" : ""}`} data-testid="transcript-audio-inspector">
         <div className="flex flex-wrap items-center justify-between gap-4">
           <div>
             <h3 className="font-semibold">Session audio</h3>
-            <p className="hidden text-xs text-slate-500 md:block">
+            <p className="hidden text-xs text-ink-muted md:block">
               {audioUrl ? "Waveform review bar with timestamp-based line sync." : "Waveform preview only. Audio playback becomes interactive when a linked recording is available."}
             </p>
           </div>
@@ -341,12 +341,12 @@ export function TranscriptEditorPanel({
               aria-label="Workspace audio playback"
             />
           ) : (
-            <span className="rounded-full border border-white/25 px-3 py-1 text-xs font-semibold text-white lg:border-line lg:bg-surface lg:text-slate-600">
+            <span className="rounded-full border border-white/25 px-3 py-1 text-xs font-semibold text-white lg:border-line lg:bg-surface lg:text-ink-muted">
               Audio not linked
             </span>
           )}
         </div>
-        <div className="mt-4 hidden h-20 grid-cols-24 items-end gap-1 rounded-card border border-slate-100 bg-surface px-3 py-3 md:grid">
+        <div className="mt-4 hidden h-20 grid-cols-24 items-end gap-1 rounded-card border border-line bg-surface px-3 py-3 md:grid">
           {waveformHeights.map((height, index) => (
             <span
               key={`wave-${index}`}
@@ -399,12 +399,12 @@ export function TranscriptEditorPanel({
         />
 
         {lines.length === 0 ? (
-          <div className="mt-4 rounded-panel border border-dashed border-line bg-slate-50 p-5 text-center text-sm text-slate-600">
+          <div className="mt-4 rounded-panel border border-dashed border-line bg-surface-soft p-5 text-center text-sm text-ink-muted">
             Add a transcript line to begin review.
           </div>
         ) : null}
         {lines.length > 0 && visibleLines.length === 0 ? (
-          <div className="mt-4 rounded-panel border border-dashed border-line bg-slate-50 p-5 text-center text-sm text-slate-600">
+          <div className="mt-4 rounded-panel border border-dashed border-line bg-surface-soft p-5 text-center text-sm text-ink-muted">
             No lines match the current review filter.
           </div>
         ) : null}

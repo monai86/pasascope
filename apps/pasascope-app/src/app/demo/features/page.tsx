@@ -115,8 +115,8 @@ export default function DemoFeatures() {
       {/* Strengths & Observations Summary */}
       <div className="grid gap-6 md:grid-cols-2">
         {/* Strengths */}
-        <div className="rounded-panel border-l-4 border-emerald-500 bg-surface p-6 space-y-3">
-          <h3 className="text-lg font-bold text-emerald-800 flex items-center gap-2">
+        <div className="rounded-panel border-l-4 border-brand bg-surface p-6 space-y-3">
+          <h3 className="text-lg font-bold text-[color:var(--color-success-text)] flex items-center gap-2">
             <CheckCircle2 size={20} />
             รูปแบบที่สังเกตได้ (Observed Patterns)
           </h3>
@@ -128,8 +128,8 @@ export default function DemoFeatures() {
         </div>
 
         {/* Observations */}
-        <div className="rounded-panel border-l-4 border-amber-500 bg-surface p-6 space-y-3">
-          <h3 className="text-lg font-bold text-amber-800 flex items-center gap-2">
+        <div className="rounded-panel border-l-4 border-[color:var(--color-warning-border)] bg-surface p-6 space-y-3">
+          <h3 className="text-lg font-bold text-[color:var(--color-warning-text)] flex items-center gap-2">
             <AlertCircle size={20} />
             ข้อสังเกตและโอกาสพัฒนา (Observations)
           </h3>
@@ -144,7 +144,7 @@ export default function DemoFeatures() {
       <div className="flex items-center justify-between border-t border-line pt-6">
         <Link
           href="/demo/transcript"
-          className="inline-flex min-h-11 items-center justify-center rounded-full border border-line bg-white px-5 text-sm font-semibold text-ink transition hover:bg-slate-50"
+          className="inline-flex min-h-11 items-center justify-center rounded-full border border-line bg-white px-5 text-sm font-semibold text-ink transition hover:bg-surface-soft"
         >
           ย้อนกลับ
         </Link>

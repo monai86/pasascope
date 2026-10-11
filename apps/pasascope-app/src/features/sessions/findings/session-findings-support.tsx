@@ -134,13 +134,13 @@ const evidenceStateTitle = {
 
 export function EvidenceAvailabilityView({ availability }: { availability: NonNullable<WorkflowState["mlDecisionSupport"]>["profileEvidence"][number]["availability"] }) {
   return (
-    <div className="mt-2 text-sm text-slate-700">
+    <div className="mt-2 text-sm text-ink">
       <p className="font-semibold">{evidenceStateTitle[availability.state]}</p>
       <p>{availability.message}</p>
       <p className="mt-1 text-xs font-semibold">
         {availability.workflowCanContinue ? "Feature and report workflow can continue." : "Workflow action is required before continuing."}
       </p>
-      {availability.nextStep ? <p className="mt-1 text-xs text-slate-600">Next: {availability.nextStep}</p> : null}
+      {availability.nextStep ? <p className="mt-1 text-xs text-ink-muted">Next: {availability.nextStep}</p> : null}
     </div>
   );
 }
@@ -179,9 +179,9 @@ export function WorkflowStatus({ state, backendUnavailable }: { state: WorkflowS
     return null;
   }
   const className = isError
-    ? "rounded-panel border border-red-200 bg-red-50 p-4 text-sm text-red-950 animate-fade-in"
+    ? "rounded-panel border border-[color:var(--color-danger-border)] bg-[color:var(--color-danger-bg)] p-4 text-sm text-[color:var(--color-danger-text)] animate-fade-in"
     : isSuccess
-      ? "rounded-panel border border-emerald-200 bg-emerald-50 p-4 text-sm text-emerald-950 animate-fade-in"
+      ? "rounded-panel border border-[color:var(--color-success-border)] bg-[color:var(--color-success-bg)] p-4 text-sm text-[color:var(--color-success-text)] animate-fade-in"
       : "demo-note rounded-panel p-4 text-sm";
   return (
     <div className={className} role={isError ? "alert" : "status"} aria-live="polite">

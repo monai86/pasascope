@@ -3,12 +3,12 @@ import { ShieldCheck, Download, Star, Heart, ArrowRight, AlertCircle, CheckCircl
 
 export default function DemoReport() {
   const tableData = [
-    { name: "Turn Count", value: "12 รอบ", status: "บันทึกได้", color: "text-emerald-700 bg-emerald-50 border-emerald-100" },
-    { name: "Total Words", value: "28 คำ", status: "ข้อมูลเชิงพรรณนา", color: "text-amber-700 bg-amber-50 border-amber-100" },
-    { name: "MLU (Mean Length)", value: "2.3", status: "ข้อมูลเชิงพรรณนา", color: "text-amber-700 bg-amber-50 border-amber-100" },
-    { name: "TTR (Vocab Diversity)", value: "0.71", status: "ข้อมูลเชิงพรรณนา", color: "text-emerald-700 bg-emerald-50 border-emerald-100" },
-    { name: "Vocabulary Size", value: "20 คำ", status: "ข้อมูลเชิงพรรณนา", color: "text-amber-700 bg-amber-50 border-amber-100" },
-    { name: "Response Rate", value: "100%", status: "ตอบครบในตัวอย่าง", color: "text-emerald-700 bg-emerald-50 border-emerald-100" },
+    { name: "Turn Count", value: "12 รอบ", status: "บันทึกได้", color: "text-[color:var(--color-success-text)] bg-[color:var(--color-success-bg)] border-[color:var(--color-success-border)]" },
+    { name: "Total Words", value: "28 คำ", status: "ข้อมูลเชิงพรรณนา", color: "text-[color:var(--color-warning-text)] bg-[color:var(--color-warning-bg)] border-[color:var(--color-attention-border)]" },
+    { name: "MLU (Mean Length)", value: "2.3", status: "ข้อมูลเชิงพรรณนา", color: "text-[color:var(--color-warning-text)] bg-[color:var(--color-warning-bg)] border-[color:var(--color-attention-border)]" },
+    { name: "TTR (Vocab Diversity)", value: "0.71", status: "ข้อมูลเชิงพรรณนา", color: "text-[color:var(--color-success-text)] bg-[color:var(--color-success-bg)] border-[color:var(--color-success-border)]" },
+    { name: "Vocabulary Size", value: "20 คำ", status: "ข้อมูลเชิงพรรณนา", color: "text-[color:var(--color-warning-text)] bg-[color:var(--color-warning-bg)] border-[color:var(--color-attention-border)]" },
+    { name: "Response Rate", value: "100%", status: "ตอบครบในตัวอย่าง", color: "text-[color:var(--color-success-text)] bg-[color:var(--color-success-bg)] border-[color:var(--color-success-border)]" },
   ];
 
   return (
@@ -17,7 +17,7 @@ export default function DemoReport() {
       <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
         <div>
           <div className="flex items-center gap-2">
-            <span className="inline-flex items-center gap-1 rounded-full bg-amber-100 px-3 py-1 text-xs font-semibold text-amber-800 border border-amber-200">
+            <span className="inline-flex items-center gap-1 rounded-full bg-[color:var(--color-warning-bg)] px-3 py-1 text-xs font-semibold text-[color:var(--color-warning-text)] border border-[color:var(--color-attention-border)]">
               <FileText size={12} />
               DRAFT — รอการลงนามรับรองจากนักบำบัด
             </span>
@@ -30,7 +30,7 @@ export default function DemoReport() {
           </p>
         </div>
         <div className="flex flex-wrap gap-2 shrink-0">
-          <button className="inline-flex min-h-11 items-center justify-center gap-2 rounded-full border border-line bg-white px-4 text-sm font-semibold text-ink transition hover:bg-slate-50">
+          <button className="inline-flex min-h-11 items-center justify-center gap-2 rounded-full border border-line bg-white px-4 text-sm font-semibold text-ink transition hover:bg-surface-soft">
             <Download size={16} />
             ส่งออก PDF
           </button>
@@ -77,9 +77,9 @@ export default function DemoReport() {
 
           {/* Strengths & Areas to monitor */}
           <div className="grid gap-6 md:grid-cols-2">
-            <div className="rounded-panel border-l-4 border-emerald-500 bg-surface p-6 space-y-3">
-              <h4 className="font-bold text-emerald-800 flex items-center gap-1.5 text-sm">
-                <Star size={16} className="fill-emerald-800" />
+            <div className="rounded-panel border-l-4 border-brand bg-surface p-6 space-y-3">
+              <h4 className="font-bold text-[color:var(--color-success-text)] flex items-center gap-1.5 text-sm">
+                <Star size={16} className="fill-[color:var(--color-success-text)]" />
                 รูปแบบที่สังเกตได้ (Observed Patterns)
               </h4>
               <ul className="space-y-2 text-xs text-ink-muted list-disc pl-4 leading-relaxed">
@@ -89,9 +89,9 @@ export default function DemoReport() {
               </ul>
             </div>
 
-            <div className="rounded-panel border-l-4 border-amber-500 bg-surface p-6 space-y-3">
-              <h4 className="font-bold text-amber-800 flex items-center gap-1.5 text-sm">
-                <Heart size={16} className="fill-amber-800" />
+            <div className="rounded-panel border-l-4 border-[color:var(--color-warning-border)] bg-surface p-6 space-y-3">
+              <h4 className="font-bold text-[color:var(--color-warning-text)] flex items-center gap-1.5 text-sm">
+                <Heart size={16} className="fill-[color:var(--color-warning-text)]" />
                 ประเด็นสำหรับนักบำบัดทบทวน (Review Prompts)
               </h4>
               <ul className="space-y-2 text-xs text-ink-muted list-disc pl-4 leading-relaxed">
@@ -102,8 +102,8 @@ export default function DemoReport() {
           </div>
 
           {/* Recommendations */}
-          <div className="rounded-panel border-l-4 border-blue-500 bg-surface p-6 space-y-3">
-            <h3 className="text-sm font-bold text-blue-800 flex items-center gap-2">
+          <div className="rounded-panel border-l-4 border-brand bg-surface p-6 space-y-3">
+            <h3 className="text-sm font-bold text-brand-strong flex items-center gap-2">
               <ArrowRight size={16} />
               ตัวอย่างกิจกรรมสำหรับพิจารณา (Activities for Therapist Review)
             </h3>
@@ -118,7 +118,7 @@ export default function DemoReport() {
         {/* Feature Table (Right rail style) */}
         <div className="rounded-panel border border-line bg-surface p-5 space-y-4 h-fit">
           <h3 className="font-semibold text-sm text-ink border-b border-line pb-2 flex items-center gap-1.5">
-            <CheckCircle2 size={16} className="text-emerald-500" />
+            <CheckCircle2 size={16} className="text-[color:var(--color-success-text)]" />
             สรุปผลตัวแปรทางภาษา (Linguistic Profile)
           </h3>
           <div className="overflow-hidden">
@@ -149,7 +149,7 @@ export default function DemoReport() {
       </div>
 
       {/* Footer */}
-      <div className="rounded-xl border border-slate-200 bg-slate-50 p-4 text-xs text-slate-500 text-center leading-normal">
+      <div className="rounded-xl border border-line bg-surface-soft p-4 text-xs text-ink-muted text-center leading-normal">
         🛡️ <strong>Clinical Safety Gate:</strong> หน้านี้เป็นข้อมูลตัวอย่างจาก PasaScope Therapist Workspace สำหรับสนับสนุนการทบทวนโดยนักบำบัดเท่านั้น ไม่ใช่เครื่องมือวินิจฉัยและห้ามใช้เพื่อวินิจฉัย การลงนามไม่เปลี่ยนข้อจำกัดนี้
       </div>
 
@@ -157,7 +157,7 @@ export default function DemoReport() {
       <div className="flex items-center justify-between border-t border-line pt-6">
         <Link
           href="/demo/features"
-          className="inline-flex min-h-11 items-center justify-center rounded-full border border-line bg-white px-5 text-sm font-semibold text-ink transition hover:bg-slate-50"
+          className="inline-flex min-h-11 items-center justify-center rounded-full border border-line bg-white px-5 text-sm font-semibold text-ink transition hover:bg-surface-soft"
         >
           ย้อนกลับ
         </Link>

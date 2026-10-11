@@ -158,7 +158,7 @@ const TranscriptLineRow = memo(function TranscriptLineRow({
         onClick={() => selectLine(line.lineId)}
       >
         <div className="grid min-w-0 grid-cols-2 gap-2 md:grid-cols-[7rem_6rem_minmax(0,1fr)] min-[1380px]:grid-cols-[7rem_6rem_minmax(16rem,1fr)_5.5rem_5.5rem] min-[1380px]:items-start">
-          <label className="col-span-2 grid gap-1 text-xs font-semibold uppercase tracking-wide text-slate-500 md:col-span-1">
+          <label className="col-span-2 grid gap-1 text-xs font-semibold uppercase tracking-wide text-ink-muted md:col-span-1">
             <span className="min-[1380px]:sr-only">Time</span>
             <input
               value={formatTimestampRange(line)}
@@ -169,10 +169,10 @@ const TranscriptLineRow = memo(function TranscriptLineRow({
               onFocus={() => selectLine(line.lineId)}
               aria-label={`Timestamp for line ${index + 1}`}
               placeholder="00:00.000 – 00:01.000"
-              className="min-h-11 rounded-card border border-line bg-surface px-3 text-sm font-normal normal-case tracking-normal text-slate-700"
+              className="min-h-11 rounded-card border border-line bg-surface px-3 text-sm font-normal normal-case tracking-normal text-ink"
             />
           </label>
-          <label className="grid gap-1 text-xs font-semibold uppercase tracking-wide text-slate-500">
+          <label className="grid gap-1 text-xs font-semibold uppercase tracking-wide text-ink-muted">
             <span className="min-[1380px]:sr-only">Speaker</span>
             <select
               value={line.speaker}
@@ -186,7 +186,7 @@ const TranscriptLineRow = memo(function TranscriptLineRow({
               ))}
             </select>
           </label>
-          <label className="grid gap-1 text-xs font-semibold uppercase tracking-wide text-slate-500">
+          <label className="grid gap-1 text-xs font-semibold uppercase tracking-wide text-ink-muted">
             <span className="min-[1380px]:sr-only">Utterance</span>
             <textarea
               value={line.text}
@@ -218,7 +218,7 @@ const TranscriptLineRow = memo(function TranscriptLineRow({
                   event.stopPropagation();
                   toggleLineMenu(line.lineId);
                 }}
-                className="inline-flex min-h-11 min-w-11 items-center justify-center rounded-lg border border-line bg-surface text-slate-700"
+                className="inline-flex min-h-11 min-w-11 items-center justify-center rounded-lg border border-line bg-surface text-ink"
               >
                 <MoreHorizontal size={18} aria-hidden="true" />
               </button>

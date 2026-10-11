@@ -128,7 +128,7 @@ export function CaregiverConsentForm({
       </div>
 
       {submitBlockedReason && reasonId ? (
-        <p id={reasonId} role="status" className="rounded-card border border-amber-200 bg-amber-50 px-3 py-2 text-sm font-semibold text-amber-900">
+        <p id={reasonId} role="status" className="rounded-card border border-[color:var(--color-attention-border)] bg-[color:var(--color-warning-bg)] px-3 py-2 text-sm font-semibold text-[color:var(--color-warning-text)]">
           {submitBlockedReason}
         </p>
       ) : null}

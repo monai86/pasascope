@@ -325,13 +325,13 @@ function AdminSettings({ section, organizationId, initialCaseId }: { section: Ad
           <div className="flex flex-wrap items-start justify-between gap-3">
             <div>
               <h3 className="text-lg font-semibold text-ink">Pilot access lifecycle</h3>
-              <p className="mt-1 max-w-2xl text-sm leading-6 text-slate-700">
+              <p className="mt-1 max-w-2xl text-sm leading-6 text-ink">
                 Real delivery, MFA enrollment, and Supabase custom-claim sync remain external production work.
               </p>
             </div>
             <StatusPill label="Pending" value={pendingCount} />
           </div>
-          <div className="mt-4 rounded-md border border-amber-200 bg-amber-50 p-3 text-sm leading-6 text-amber-950">
+          <div className="mt-4 rounded-md border border-[color:var(--color-attention-border)] bg-[color:var(--color-warning-bg)] p-3 text-sm leading-6 text-[color:var(--color-warning-text)]">
             <p className="font-semibold">Pilot-only boundary</p>
             <p className="mt-1">This panel does not send real invitation emails or provision production MFA enrollment.</p>
           </div>
@@ -372,7 +372,7 @@ function AdminSettings({ section, organizationId, initialCaseId }: { section: Ad
       <div className="grid gap-4">
         <AdminSectionHeader title="Audit" description="Review the scope and guarantees of backend audit records." />
         <section className="rounded-card border border-line bg-surface p-4">
-          <div className="flex h-11 w-11 items-center justify-center rounded-md bg-amber-50 text-amber-700"><FileCheck2 size={22} aria-hidden="true" /></div>
+          <div className="flex h-11 w-11 items-center justify-center rounded-md bg-[color:var(--color-warning-bg)] text-[color:var(--color-warning-text)]"><FileCheck2 size={22} aria-hidden="true" /></div>
           <h3 className="mt-4 text-base font-semibold text-ink">Audit & break-glass</h3>
           <div className="mt-4 grid gap-3 md:grid-cols-2">
             <Guardrail icon={ShieldCheck} label="Break-glass access" value="Scoped backend workflow with audit events" />
@@ -440,7 +440,7 @@ function AdminSectionHeader({ title, description }: { title: string; description
     <section className="rounded-card border border-line bg-surface p-5">
       <p className="text-xs font-bold uppercase tracking-[0.14em] text-brand">Organization administration</p>
       <h2 className="mt-2 text-xl font-semibold text-ink">{title}</h2>
-      <p className="mt-2 max-w-3xl text-sm leading-6 text-slate-700">{description}</p>
+      <p className="mt-2 max-w-3xl text-sm leading-6 text-ink">{description}</p>
     </section>
   );
 }

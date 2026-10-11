@@ -84,7 +84,7 @@ export function SupabaseWorkspaceAccessGate({
           </p>
 
           {suggestedOrganization ? (
-            <div className="mt-5 rounded-panel border border-amber-200 bg-amber-50 p-4 text-sm text-amber-950">
+            <div className="mt-5 rounded-panel border border-[color:var(--color-attention-border)] bg-[color:var(--color-warning-bg)] p-4 text-sm text-[color:var(--color-warning-text)]">
               <p className="font-semibold">Last active organization hint</p>
               <p className="mt-1">
                 The previous session used <strong>{suggestedOrganization.label}</strong>. This is a hint only. Review
@@ -147,7 +147,7 @@ export function SupabaseWorkspaceAccessGate({
           <div className="mb-6">
             <PasaScopeLogo size="md" />
           </div>
-          <p className="inline-flex min-h-8 items-center rounded-full border border-amber-200 bg-amber-50 px-3 text-xs font-semibold text-amber-900">
+          <p className="inline-flex min-h-8 items-center rounded-full border border-[color:var(--color-attention-border)] bg-[color:var(--color-warning-bg)] px-3 text-xs font-semibold text-[color:var(--color-warning-text)]">
             AAL1 session detected
           </p>
           <h1 className="mt-4 text-2xl font-bold tracking-[-0.03em] text-ink sm:text-3xl">Additional verification required</h1>

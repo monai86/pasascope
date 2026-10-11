@@ -100,9 +100,9 @@ export function AssessmentLongitudinalWorkspace({
 
   if (loading) {
     return (
-      <section className="workspace-panel rounded-xl border border-slate-200 bg-white p-6 shadow-sm dark:border-slate-800 dark:bg-slate-900" aria-busy="true">
-        <div className="flex items-center space-x-3 text-slate-500">
-          <div className="h-5 w-5 animate-spin rounded-full border-2 border-indigo-600 border-t-transparent" />
+      <section className="workspace-panel rounded-xl border border-line bg-white p-6 shadow-sm  " aria-busy="true">
+        <div className="flex items-center space-x-3 text-ink-muted">
+          <div className="h-5 w-5 animate-spin rounded-full border-2 border-brand border-t-transparent" />
           <p className="text-sm font-medium">กำลังโหลดประวัติการประเมินและการเปรียบเทียบ…</p>
         </div>
       </section>
@@ -112,20 +112,20 @@ export function AssessmentLongitudinalWorkspace({
   // Frame H14-NoHistory
   if (priorAssessments.length === 0) {
     return (
-      <section className="workspace-panel rounded-xl border border-slate-200 bg-white p-6 shadow-sm dark:border-slate-800 dark:bg-slate-900" aria-labelledby="no-history-heading">
-        <div className="flex items-center space-x-2 text-indigo-600 dark:text-indigo-400">
-          <span className="rounded bg-indigo-50 px-2 py-0.5 text-xs font-semibold uppercase tracking-wider dark:bg-indigo-950/50">
+      <section className="workspace-panel rounded-xl border border-line bg-white p-6 shadow-sm  " aria-labelledby="no-history-heading">
+        <div className="flex items-center space-x-2 text-brand-strong ">
+          <span className="rounded bg-brand-soft px-2 py-0.5 text-xs font-semibold uppercase tracking-wider ">
             H14-NoHistory
           </span>
-          <h2 id="no-history-heading" className="text-lg font-bold text-slate-900 dark:text-white">
+          <h2 id="no-history-heading" className="text-lg font-bold text-ink ">
             การประเมินตั้งต้น (Baseline Visit)
           </h2>
         </div>
-        <div className="mt-4 rounded-lg bg-slate-50 p-4 border border-slate-200 text-sm text-slate-700 dark:bg-slate-800/60 dark:border-slate-700 dark:text-slate-300">
-          <p className="font-medium text-slate-900 dark:text-white">
+        <div className="mt-4 rounded-lg bg-surface-soft p-4 border border-line text-sm text-ink   ">
+          <p className="font-medium text-ink ">
             This is the child&apos;s initial recorded assessment. Longitudinal comparison will be available on subsequent assessments under matching protocols.
           </p>
-          <p className="mt-1 text-xs text-slate-500">
+          <p className="mt-1 text-xs text-ink-muted">
             การประเมินนี้เป็นครั้งแรกของเด็ก การเปรียบเทียบเชิงพัฒนาการจะเปิดให้ใช้งานในครั้งถัดไปเมื่อใช้ชุดเครื่องมือและภาษาที่เข้ากันได้
           </p>
         </div>
@@ -134,32 +134,32 @@ export function AssessmentLongitudinalWorkspace({
   }
 
   return (
-    <section className="workspace-panel space-y-6 rounded-xl border border-slate-200 bg-white p-6 shadow-sm dark:border-slate-800 dark:bg-slate-900">
+    <section className="workspace-panel space-y-6 rounded-xl border border-line bg-white p-6 shadow-sm  ">
       {/* Header & Safety Disclaimer */}
-      <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between border-b border-slate-100 pb-4 dark:border-slate-800">
+      <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between border-b border-line pb-4 ">
         <div>
           <div className="flex items-center space-x-2">
-            <span className="rounded bg-indigo-50 px-2 py-0.5 text-xs font-semibold uppercase text-indigo-600 dark:bg-indigo-950/50 dark:text-indigo-400">
+            <span className="rounded bg-brand-soft px-2 py-0.5 text-xs font-semibold uppercase text-brand-strong  ">
               Longitudinal Analysis
             </span>
-            <h2 className="text-lg font-bold text-slate-900 dark:text-white">
+            <h2 className="text-lg font-bold text-ink ">
               ประวัติการติดตามและการเปรียบเทียบเชิงตัวเลข
             </h2>
           </div>
-          <p className="mt-1 text-xs text-slate-500">
+          <p className="mt-1 text-xs text-ink-muted">
             {LONGITUDINAL_DELTA_CAUTION}
           </p>
         </div>
 
         {/* Baseline Selector */}
         <div className="flex items-center space-x-3">
-          <label htmlFor="baseline-select" className="text-xs font-medium text-slate-700 dark:text-slate-300">
+          <label htmlFor="baseline-select" className="text-xs font-medium text-ink ">
             เลือกการประเมินพื้นฐาน:
           </label>
           <select
             id="baseline-select"
             aria-label="เลือกการประเมินพื้นฐาน"
-            className="rounded-lg border border-slate-300 bg-white px-3 py-1.5 text-xs font-medium text-slate-900 shadow-sm focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500 dark:border-slate-700 dark:bg-slate-800 dark:text-white"
+            className="rounded-lg border border-line-strong bg-white px-3 py-1.5 text-xs font-medium text-ink shadow-sm focus:border-brand focus:outline-none focus:ring-1 focus:ring-[color:var(--color-focus-ring)]   "
             value={selectedBaselineId}
             onChange={(e) => setSelectedBaselineId(e.target.value)}
           >
@@ -173,7 +173,7 @@ export function AssessmentLongitudinalWorkspace({
             type="button"
             onClick={() => void handleCompare()}
             disabled={comparing || !selectedBaselineId}
-            className="inline-flex items-center rounded-lg bg-indigo-600 px-3 py-1.5 text-xs font-semibold text-white shadow-sm hover:bg-indigo-500 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600 disabled:opacity-50"
+            className="inline-flex items-center rounded-lg bg-brand px-3 py-1.5 text-xs font-semibold text-white shadow-sm hover:bg-brand focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[color:var(--color-focus-ring)] disabled:opacity-50"
           >
             {comparing ? "กำลังคำนวณ…" : "เปรียบเทียบ"}
           </button>
@@ -181,14 +181,14 @@ export function AssessmentLongitudinalWorkspace({
       </div>
 
       {error && (
-        <div role="alert" className="rounded-lg bg-rose-50 p-4 text-xs font-medium text-rose-800 dark:bg-rose-950/40 dark:text-rose-300">
+        <div role="alert" className="rounded-lg bg-[color:var(--color-danger-bg)] p-4 text-xs font-medium text-[color:var(--color-danger-text)]  ">
           {error}
         </div>
       )}
 
       {/* Stale Warning Banner */}
       {currentComparison?.is_stale && (
-        <div role="alert" className="rounded-lg border border-amber-300 bg-amber-50 p-4 text-xs font-medium text-amber-900 dark:border-amber-800 dark:bg-amber-950/40 dark:text-amber-300">
+        <div role="alert" className="rounded-lg border border-[color:var(--color-attention-border)] bg-[color:var(--color-warning-bg)] p-4 text-xs font-medium text-[color:var(--color-warning-text)]   ">
           <div className="flex items-center space-x-2">
             <span className="font-bold">คำเตือน:</span>
             <span>ข้อมูลต้นทางมีการอัปเดตใหม่ (Stale Source) ผลการเปรียบเทียบนี้สร้างขึ้นจากรุ่นก่อนหน้า กรุณากดเปรียบเทียบใหม่เพื่อผลล่าสุด</span>
@@ -201,32 +201,32 @@ export function AssessmentLongitudinalWorkspace({
         <div className="space-y-4">
           {currentComparison.status === "not_comparable" ? (
             /* Frame H14-Incompatible */
-            <div className="rounded-lg border border-amber-200 bg-amber-50/70 p-5 dark:border-amber-900/60 dark:bg-amber-950/30">
+            <div className="rounded-lg border border-[color:var(--color-attention-border)] bg-[color:var(--color-warning-bg)] p-5  ">
               <div className="flex items-center space-x-2">
-                <span className="rounded bg-amber-200 px-2 py-0.5 text-xs font-bold text-amber-900 dark:bg-amber-900 dark:text-amber-200">
+                <span className="rounded bg-[color:var(--color-attention-bg)] px-2 py-0.5 text-xs font-bold text-[color:var(--color-warning-text)]  ">
                   H14-Incompatible
                 </span>
-                <h3 className="text-sm font-bold text-amber-900 dark:text-amber-200">
+                <h3 className="text-sm font-bold text-[color:var(--color-warning-text)] ">
                   ชุดข้อมูลไม่สามารถเปรียบเทียบได้ (Incompatible Comparison)
                 </h3>
               </div>
-              <p className="mt-2 text-xs text-amber-800 dark:text-amber-300">
+              <p className="mt-2 text-xs text-[color:var(--color-warning-text)] ">
                 Notice: Comparisons are not permitted across differing protocol structures, languages, or missing evidence. Delta cannot be clinically interpreted.
               </p>
 
-              <div className="mt-4 divide-y divide-amber-200 rounded-md border border-amber-200 bg-white text-xs dark:divide-amber-900/50 dark:border-amber-900/50 dark:bg-slate-900">
+              <div className="mt-4 divide-y divide-[color:var(--color-attention-border)] rounded-md border border-[color:var(--color-attention-border)] bg-white text-xs   ">
                 {currentComparison.features.map((feat) => (
                   <div key={feat.feature_key} className="flex items-center justify-between p-3">
-                    <span className="font-mono font-medium text-slate-800 dark:text-slate-200">
+                    <span className="font-mono font-medium text-ink ">
                       {feat.feature_key}
                     </span>
                     <div className="flex items-center space-x-2">
                       {feat.incompatibility_reasons.map((r) => (
-                        <span key={r} className="rounded bg-rose-100 px-2 py-0.5 text-[11px] font-semibold text-rose-800 dark:bg-rose-950 dark:text-rose-300">
+                        <span key={r} className="rounded bg-[color:var(--color-danger-bg)] px-2 py-0.5 text-[11px] font-semibold text-[color:var(--color-danger-text)]  ">
                           {r}
                         </span>
                       ))}
-                      <span className="rounded bg-slate-100 px-2 py-0.5 text-[11px] text-slate-600 dark:bg-slate-800 dark:text-slate-400">
+                      <span className="rounded bg-surface-muted px-2 py-0.5 text-[11px] text-ink-muted  ">
                         status: {feat.status}
                       </span>
                     </div>
@@ -238,17 +238,17 @@ export function AssessmentLongitudinalWorkspace({
             /* Frame H14-Compatible */
             <div className="space-y-4">
               <div className="flex items-center space-x-2">
-                <span className="rounded bg-emerald-100 px-2 py-0.5 text-xs font-bold text-emerald-800 dark:bg-emerald-950 dark:text-emerald-300">
+                <span className="rounded bg-[color:var(--color-success-bg)] px-2 py-0.5 text-xs font-bold text-[color:var(--color-success-text)]  ">
                   H14-Compatible
                 </span>
-                <h3 className="text-sm font-bold text-slate-900 dark:text-white">
+                <h3 className="text-sm font-bold text-ink ">
                   การเปรียบเทียบเชิงตัวเลขที่เข้ากันได้ (Compatible Comparison)
                 </h3>
               </div>
 
-              <div className="overflow-hidden rounded-lg border border-slate-200 dark:border-slate-800">
-                <table className="min-w-full divide-y divide-slate-200 text-left text-xs dark:divide-slate-800">
-                  <thead className="bg-slate-50 font-semibold text-slate-700 dark:bg-slate-800 dark:text-slate-300">
+              <div className="overflow-hidden rounded-lg border border-line ">
+                <table className="min-w-full divide-y divide-line text-left text-xs ">
+                  <thead className="bg-surface-soft font-semibold text-ink  ">
                     <tr>
                       <th className="px-4 py-3">Feature (ตัวแปร)</th>
                       <th className="px-4 py-3">Baseline</th>
@@ -259,44 +259,44 @@ export function AssessmentLongitudinalWorkspace({
                       <th className="px-4 py-3">Clinical Interpretation</th>
                     </tr>
                   </thead>
-                  <tbody className="divide-y divide-slate-100 bg-white dark:divide-slate-800/60 dark:bg-slate-900">
+                  <tbody className="divide-y divide-line bg-white  ">
                     {currentComparison.features.map((f) => (
-                      <tr key={f.feature_key} className="hover:bg-slate-50/50 dark:hover:bg-slate-800/50">
-                        <td className="px-4 py-3 font-mono font-medium text-slate-900 dark:text-white">
+                      <tr key={f.feature_key} className="hover:bg-surface-soft ">
+                        <td className="px-4 py-3 font-mono font-medium text-ink ">
                           {f.feature_key}
                           {f.unit && (
-                            <span className="block text-[10px] text-slate-400 font-sans">
+                            <span className="block text-[10px] text-ink-subtle font-sans">
                               unit: {f.unit}
                             </span>
                           )}
                         </td>
-                        <td className="px-4 py-3 text-slate-600 dark:text-slate-300">
+                        <td className="px-4 py-3 text-ink-muted ">
                           {f.baseline_value !== null ? f.baseline_value.toFixed(2) : "—"}
                         </td>
-                        <td className="px-4 py-3 text-slate-600 dark:text-slate-300">
+                        <td className="px-4 py-3 text-ink-muted ">
                           {f.current_value !== null ? f.current_value.toFixed(2) : "—"}
                         </td>
-                        <td className="px-4 py-3 font-semibold text-slate-900 dark:text-white">
+                        <td className="px-4 py-3 font-semibold text-ink ">
                           {formatDelta(f.absolute_delta)}
                         </td>
-                        <td className="px-4 py-3 text-slate-700 dark:text-slate-300">
+                        <td className="px-4 py-3 text-ink ">
                           {formatPercent(f)}
                         </td>
                         <td className="px-4 py-3">
                           <span
                             className={`inline-flex rounded-full px-2 py-0.5 text-[10px] font-semibold ${
                               f.numerical_trend === "increased"
-                                ? "bg-blue-50 text-blue-700 dark:bg-blue-950/60 dark:text-blue-300"
+                                ? "bg-brand-soft text-brand-strong  "
                                 : f.numerical_trend === "decreased"
-                                ? "bg-orange-50 text-orange-700 dark:bg-orange-950/60 dark:text-orange-300"
-                                : "bg-slate-100 text-slate-700 dark:bg-slate-800 dark:text-slate-300"
+                                ? "bg-[color:var(--color-warning-bg)] text-[color:var(--color-warning-text)]  "
+                                : "bg-surface-muted text-ink  "
                             }`}
                           >
                             {f.numerical_trend}
                           </span>
                         </td>
                         <td className="px-4 py-3">
-                          <span className="inline-flex rounded bg-slate-100 px-2 py-0.5 text-[11px] font-medium text-slate-700 dark:bg-slate-800 dark:text-slate-300">
+                          <span className="inline-flex rounded bg-surface-muted px-2 py-0.5 text-[11px] font-medium text-ink  ">
                             {f.clinical_interpretation}
                           </span>
                         </td>

@@ -71,7 +71,7 @@ export function ProgressSummaryCard({
             {busy ? "Generating..." : "Generate AI-assisted review"}
           </button>
           {aiReviewReason ? (
-            <p id="generate-ai-review-reason" role="status" className="mt-2 rounded-card border border-amber-200 bg-amber-50 px-3 py-2 text-sm font-semibold text-amber-900">
+            <p id="generate-ai-review-reason" role="status" className="mt-2 rounded-card border border-[color:var(--color-attention-border)] bg-[color:var(--color-warning-bg)] px-3 py-2 text-sm font-semibold text-[color:var(--color-warning-text)]">
               {aiReviewReason}
             </p>
           ) : null}

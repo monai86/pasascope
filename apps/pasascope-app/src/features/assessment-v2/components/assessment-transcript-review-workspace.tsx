@@ -159,7 +159,7 @@ export function AssessmentTranscriptReviewWorkspace({
             {busy ? "กำลังบันทึก…" : "สร้างฉบับร่าง"}
           </button>
         </section>
-        {actionError ? <p className="text-sm text-red-700" role="alert">{actionError}</p> : null}
+        {actionError ? <p className="text-sm text-[color:var(--color-danger-text)]" role="alert">{actionError}</p> : null}
       </section>
     );
   }
@@ -178,7 +178,7 @@ export function AssessmentTranscriptReviewWorkspace({
         </p>
       </header>
 
-      <div className="rounded-xl border border-sky-200 bg-sky-50 p-4 text-sky-950" role="status">
+      <div className="rounded-xl border border-[color:var(--color-info-border)] bg-brand-soft p-4 text-[color:var(--color-info-text)]" role="status">
         <div className="flex flex-wrap items-center justify-between gap-3">
           <p className="font-semibold">สถานะ: {transcriptStateLabel(transcript.review_state)}</p>
           <span className="text-sm">revision {transcript.revision} · version {transcript.version}</span>
@@ -192,7 +192,7 @@ export function AssessmentTranscriptReviewWorkspace({
             <h2 id="transcript-editor-heading" className="text-lg font-semibold">ข้อความ transcript</h2>
             <p className="mt-1 text-sm text-ink-muted">แก้ไขได้โดยตรง ระบบจะเก็บ revision ใหม่เมื่อกดบันทึก</p>
           </div>
-          {isDirty ? <span className="rounded-full bg-amber-100 px-3 py-1 text-xs font-semibold text-amber-900">มีการแก้ไขที่ยังไม่บันทึก</span> : null}
+          {isDirty ? <span className="rounded-full bg-[color:var(--color-warning-bg)] px-3 py-1 text-xs font-semibold text-[color:var(--color-warning-text)]">มีการแก้ไขที่ยังไม่บันทึก</span> : null}
         </div>
         <label className="sr-only" htmlFor="assessment-transcript-content">เนื้อหา transcript</label>
         <textarea
@@ -230,7 +230,7 @@ export function AssessmentTranscriptReviewWorkspace({
             />
             <span>ฉันได้ตรวจสอบข้อความและ speaker label แล้ว และยืนยันว่า transcript ฉบับนี้พร้อมให้ระบบประมวลผลเชิงพรรณนา</span>
           </label>
-          {isDirty ? <p className="mt-3 text-sm text-amber-800">บันทึกฉบับร่างก่อนจึงจะรับรองได้</p> : null}
+          {isDirty ? <p className="mt-3 text-sm text-[color:var(--color-warning-text)]">บันทึกฉบับร่างก่อนจึงจะรับรองได้</p> : null}
           <button
             type="button"
             disabled={!canAttest}
@@ -243,7 +243,7 @@ export function AssessmentTranscriptReviewWorkspace({
       ) : null}
 
       {transcript.review_state === "attested" ? (
-        <section className="rounded-xl border border-emerald-300 bg-emerald-50 p-5 text-emerald-950" role="status">
+        <section className="rounded-xl border border-[color:var(--color-success-border)] bg-[color:var(--color-success-bg)] p-5 text-[color:var(--color-success-text)]" role="status">
           <p className="font-semibold">รับรองแล้ว</p>
           <p className="mt-1 text-sm">ระบบสามารถใช้ revision นี้เป็น input ของ evidence worker ได้</p>
           <div className="mt-4">
@@ -253,11 +253,11 @@ export function AssessmentTranscriptReviewWorkspace({
               canQueue={!isDirty}
             />
           </div>
-          {isDirty ? <p className="mt-3 text-sm text-amber-800">บันทึกฉบับร่างก่อนสร้างหลักฐาน</p> : null}
+          {isDirty ? <p className="mt-3 text-sm text-[color:var(--color-warning-text)]">บันทึกฉบับร่างก่อนสร้างหลักฐาน</p> : null}
         </section>
       ) : null}
 
-      {actionError ? <p className="text-sm text-red-700" role="alert">{actionError}</p> : null}
+      {actionError ? <p className="text-sm text-[color:var(--color-danger-text)]" role="alert">{actionError}</p> : null}
     </section>
   );
 }

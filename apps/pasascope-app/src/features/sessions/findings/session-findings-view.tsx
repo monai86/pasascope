@@ -112,10 +112,10 @@ export function SessionFindingsView({
         <WorkspacePanel className="p-8 text-center">
           <FileSearch className="mx-auto text-brand" size={38} aria-hidden="true" />
           <h2 className="mt-3 text-xl font-bold text-ink">No analysis results yet</h2>
-          <p className="mx-auto mt-2 max-w-lg text-sm leading-6 text-slate-600">
+          <p className="mx-auto mt-2 max-w-lg text-sm leading-6 text-ink-muted">
             Add a transcript, complete therapist review and attestation, then extract language-sample features.
           </p>
-          <div className="mt-3 flex flex-wrap justify-center gap-2 text-sm text-slate-600">
+          <div className="mt-3 flex flex-wrap justify-center gap-2 text-sm text-ink-muted">
             <span>Transcript Ready</span>
             <span>Feature Summary</span>
             <span>Review Needed</span>
@@ -197,7 +197,7 @@ export function SessionFindingsView({
                   {busy ? "Generating..." : GENERATE_EVIDENCE_REVIEW_ACTION}
                 </PrimaryActionButton>
                 {evidenceReviewReason ? (
-                  <p id="generate-evidence-review-reason" role="status" className="rounded-card border border-amber-200 bg-amber-50 px-3 py-2 text-sm font-semibold text-amber-900">
+                  <p id="generate-evidence-review-reason" role="status" className="rounded-card border border-[color:var(--color-attention-border)] bg-[color:var(--color-warning-bg)] px-3 py-2 text-sm font-semibold text-[color:var(--color-warning-text)]">
                     {evidenceReviewReason}
                   </p>
                 ) : null}
@@ -245,7 +245,7 @@ export function SessionFindingsView({
               <span className="block font-semibold text-ink">Technical provenance</span>
               <span className="mt-0.5 block text-sm text-ink-muted">Versions and backend source identifiers</span>
             </span>
-            <span className={`rounded-full px-3 py-1 text-xs font-semibold ${findingsCurrent ? "bg-emerald-100 text-emerald-900" : "bg-amber-100 text-amber-950"}`}>
+            <span className={`rounded-full px-3 py-1 text-xs font-semibold ${findingsCurrent ? "bg-[color:var(--color-success-bg)] text-[color:var(--color-success-text)]" : "bg-[color:var(--color-warning-bg)] text-[color:var(--color-warning-text)]"}`}>
               {analysisDispositionLabel(state.analysisStatus)}
             </span>
           </summary>
@@ -294,7 +294,7 @@ export function SessionFindingsView({
                   Approve reviewed cues
                 </button>
                 {approveCuesReason ? (
-                  <p id="approve-reviewed-cues-reason" role="status" className="rounded-card border border-amber-200 bg-amber-50 px-3 py-2 text-sm font-semibold text-amber-900">
+                  <p id="approve-reviewed-cues-reason" role="status" className="rounded-card border border-[color:var(--color-attention-border)] bg-[color:var(--color-warning-bg)] px-3 py-2 text-sm font-semibold text-[color:var(--color-warning-text)]">
                     {approveCuesReason}
                   </p>
                 ) : null}

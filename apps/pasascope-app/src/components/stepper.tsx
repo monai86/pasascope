@@ -18,7 +18,7 @@ export function SessionStepper() {
                 </span>
                 <div>
                   <h2 className="text-base font-semibold">{index + 1}. {step.name}</h2>
-                  <p className="mt-1 text-sm text-slate-600">{step.action}</p>
+                  <p className="mt-1 text-sm text-ink-muted">{step.action}</p>
                   <p className="mt-2 flex items-start gap-2 text-xs text-[color:var(--color-warning-text)]">
                     <ClipboardCheck size={14} aria-hidden="true" />
                     {step.warning}

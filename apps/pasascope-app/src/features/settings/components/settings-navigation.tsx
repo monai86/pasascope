@@ -59,7 +59,7 @@ export function SettingsNavigation({
       ) : null}
       <div className={`${mobileIndexOpen ? "block" : "hidden md:block"} sticky top-24 rounded-card border border-line bg-surface p-2`}>
         <div className="md:hidden">
-          <p className="px-3 pb-3 pt-1 text-sm leading-6 text-slate-600">Choose one category to open its settings page.</p>
+          <p className="px-3 pb-3 pt-1 text-sm leading-6 text-ink-muted">Choose one category to open its settings page.</p>
         </div>
           <SettingsNavGroup label="Workspace settings" sections={sharedSections} selected={selected} onSelect={onSelect} />
           {adminSections.length > 0 ? (
@@ -80,7 +80,7 @@ function SettingsNavGroup({
 }: Pick<SettingsNavigationProps, "sections" | "selected" | "onSelect"> & { label: string }) {
   return (
     <div>
-      <p className="px-3 pb-2 text-xs font-semibold uppercase tracking-[0.12em] text-slate-500">{label}</p>
+      <p className="px-3 pb-2 text-xs font-semibold uppercase tracking-[0.12em] text-ink-muted">{label}</p>
       <ul className="grid gap-1">
         {sections.map((section) => {
           const isSelected = section === selected;
@@ -92,7 +92,7 @@ function SettingsNavGroup({
                 className={`flex min-h-11 items-center rounded-xl border-l-3 px-3.5 py-2 text-sm font-semibold transition ${
                   isSelected
                     ? "border-brand bg-brand-soft text-brand"
-                    : "border-transparent text-slate-700 hover:bg-slate-50 hover:text-ink"
+                    : "border-transparent text-ink hover:bg-surface-soft hover:text-ink"
                 }`}
                 onClick={(event) => {
                   event.preventDefault();
@@ -100,7 +100,7 @@ function SettingsNavGroup({
                 }}
               >
                 <span className="flex-1">{SECTION_LABELS[section]}</span>
-                <ChevronRight size={16} aria-hidden="true" className="text-slate-400 md:hidden" />
+                <ChevronRight size={16} aria-hidden="true" className="text-ink-subtle md:hidden" />
               </a>
             </li>
           );

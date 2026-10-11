@@ -21,13 +21,13 @@ type Props = {
 };
 
 const CFG: Record<TranscriptionJobDisplayStatus, { icon: React.ReactNode; label: string; color: string }> = {
-  queued:       { icon: <Clock size={18} />, label: "Queued", color: "text-slate-600" },
-  processing:   { icon: <Loader2 size={18} className="animate-spin" />, label: "Processing", color: "text-blue-600" },
-  completed:    { icon: <CheckCircle2 size={18} />, label: "Draft transcript ready", color: "text-green-700" },
-  needs_review: { icon: <CheckCircle2 size={18} />, label: DRAFT_TRANSCRIPT_READY_LABEL, color: "text-green-700" },
-  failed:       { icon: <XCircle size={18} />, label: "Transcription failed", color: "text-red-700" },
-  cancelled:    { icon: <XCircle size={18} />, label: "Cancelled", color: "text-slate-500" },
-  unavailable:  { icon: <AlertTriangle size={18} />, label: "Provider unavailable", color: "text-amber-700" },
+  queued:       { icon: <Clock size={18} />, label: "Queued", color: "text-ink-muted" },
+  processing:   { icon: <Loader2 size={18} className="animate-spin" />, label: "Processing", color: "text-brand-strong" },
+  completed:    { icon: <CheckCircle2 size={18} />, label: "Draft transcript ready", color: "text-[color:var(--color-success-text)]" },
+  needs_review: { icon: <CheckCircle2 size={18} />, label: DRAFT_TRANSCRIPT_READY_LABEL, color: "text-[color:var(--color-success-text)]" },
+  failed:       { icon: <XCircle size={18} />, label: "Transcription failed", color: "text-[color:var(--color-danger-text)]" },
+  cancelled:    { icon: <XCircle size={18} />, label: "Cancelled", color: "text-ink-muted" },
+  unavailable:  { icon: <AlertTriangle size={18} />, label: "Provider unavailable", color: "text-[color:var(--color-warning-text)]" },
 };
 
 const PROVIDER_LABELS: Record<string, string> = {
@@ -46,24 +46,24 @@ export function TranscriptionJobStatusPanel({
 
   return (
     <div role="region" aria-label="Transcription job status" aria-live="polite"
-      className="rounded-panel border border-slate-200 bg-surface p-5 space-y-4">
+      className="rounded-panel border border-line bg-surface p-5 space-y-4">
       <div className={`flex items-center gap-2 font-semibold ${cfg.color}`}>
         {cfg.icon}<span>{cfg.label}</span>
       </div>
-      <p className="text-sm text-slate-700">{message}</p>
+      <p className="text-sm text-ink">{message}</p>
       {fallbackReason && (
-        <p className="rounded-lg border border-amber-200 bg-amber-50 px-4 py-2 text-sm text-amber-800">
+        <p className="rounded-lg border border-[color:var(--color-attention-border)] bg-[color:var(--color-warning-bg)] px-4 py-2 text-sm text-[color:var(--color-warning-text)]">
           ⚠️ Fallback: {fallbackReason}
         </p>
       )}
       {actualProvider && requestedProvider && actualProvider !== requestedProvider && (
-        <p className="text-xs text-slate-500">Requested: {requestedProvider} · Used: {actualProvider}</p>
+        <p className="text-xs text-ink-muted">Requested: {requestedProvider} · Used: {actualProvider}</p>
       )}
       {actualProvider && (
-        <p className="text-xs text-slate-500">Transcribed by: {PROVIDER_LABELS[actualProvider] ?? actualProvider}</p>
+        <p className="text-xs text-ink-muted">Transcribed by: {PROVIDER_LABELS[actualProvider] ?? actualProvider}</p>
       )}
       {isSuccess && (
-        <div className="rounded-card border border-amber-200 bg-amber-50 p-3 text-sm text-amber-900">
+        <div className="rounded-card border border-[color:var(--color-attention-border)] bg-[color:var(--color-warning-bg)] p-3 text-sm text-[color:var(--color-warning-text)]">
           <strong>Draft ASR transcript.</strong> {THERAPIST_REVIEW_REQUIRED_CLAUSE} before feature extraction.
         </div>
       )}
@@ -76,7 +76,7 @@ export function TranscriptionJobStatusPanel({
         )}
         {isError && onRetry && (
           <button type="button" onClick={onRetry}
-            className="inline-flex items-center gap-2 rounded-card border border-slate-300 bg-surface px-4 py-2 text-sm font-semibold text-slate-700">
+            className="inline-flex items-center gap-2 rounded-card border border-line-strong bg-surface px-4 py-2 text-sm font-semibold text-ink">
             <RefreshCw size={15} /> Retry
           </button>
         )}

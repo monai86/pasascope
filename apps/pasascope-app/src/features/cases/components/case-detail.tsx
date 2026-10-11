@@ -196,14 +196,14 @@ export function CaseDetail({ model }: { model: CaseDetailViewModel }) {
         <div className="min-w-0 space-y-6">
           {!isConsentGranted ? (
             <div className="grid gap-4">
-              <section className="grid gap-3 rounded-2xl border border-amber-200 bg-amber-50/80 p-5 shadow-2xs">
+              <section className="grid gap-3 rounded-2xl border border-[color:var(--color-attention-border)] bg-[color:var(--color-warning-bg)] p-5 shadow-2xs">
                 <div className="flex items-start gap-3">
-                  <CircleDot className="mt-1 h-5 w-5 shrink-0 text-amber-600" aria-hidden="true" />
+                  <CircleDot className="mt-1 h-5 w-5 shrink-0 text-[color:var(--color-warning-text)]" aria-hidden="true" />
                   <div className="grid gap-1">
-                    <h2 className="text-base font-bold text-amber-900">
+                    <h2 className="text-base font-bold text-[color:var(--color-warning-text)]">
                       Caregiver Consent Verification Required
                     </h2>
-                    <p className="text-xs leading-relaxed text-amber-800">
+                    <p className="text-xs leading-relaxed text-[color:var(--color-warning-text)]">
                       This case requires verified caregiver consent. Session recording, audio processing, and clinical observation workflows are locked until consent is obtained and verified.
                     </p>
                   </div>
@@ -255,7 +255,7 @@ export function CaseDetail({ model }: { model: CaseDetailViewModel }) {
                   tone="secondary"
                   onClick={handleWithdrawConsent}
                   disabled={consentBusy}
-                  className="hover:border-rose-400 hover:bg-rose-50 hover:text-rose-700"
+                  className="hover:border-[color:var(--color-danger-text)] hover:bg-[color:var(--color-danger-bg)] hover:text-[color:var(--color-danger-text)]"
                 >
                   Withdraw Consent
                 </ActionButton>
@@ -266,7 +266,7 @@ export function CaseDetail({ model }: { model: CaseDetailViewModel }) {
           {consentMsg && (
             <p className={`rounded-xl border px-4 py-3 text-xs font-semibold ${
               consentMsg.includes("Failed") || consentMsg.includes("Could not")
-                ? "border-rose-200 bg-rose-50 text-rose-950"
+                ? "border-[color:var(--color-danger-border)] bg-[color:var(--color-danger-bg)] text-[color:var(--color-danger-text)]"
                 : "border-brand-border bg-brand-soft text-brand"
             }`}>
               {consentMsg}

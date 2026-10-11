@@ -170,7 +170,7 @@ export function AssessmentProcessingStatus({
 
   if (loading) {
     return (
-      <section className="rounded-xl border border-sky-200 bg-sky-50 p-4 text-sky-950" role="status" aria-live="polite" aria-busy="true">
+      <section className="rounded-xl border border-[color:var(--color-info-border)] bg-brand-soft p-4 text-[color:var(--color-info-text)]" role="status" aria-live="polite" aria-busy="true">
         <p className="font-semibold">กำลังอ่านสถานะการประมวลผล…</p>
       </section>
     );
@@ -179,8 +179,8 @@ export function AssessmentProcessingStatus({
   const status = run ? processingStatusCopy(run) : null;
 
   return (
-    <section className="rounded-xl border border-sky-200 bg-sky-50 p-4 text-sky-950" role="status" aria-live="polite">
-      {error ? <p className="mb-3 text-sm text-red-800" role="alert">{error}</p> : null}
+    <section className="rounded-xl border border-[color:var(--color-info-border)] bg-brand-soft p-4 text-[color:var(--color-info-text)]" role="status" aria-live="polite">
+      {error ? <p className="mb-3 text-sm text-[color:var(--color-danger-text)]" role="alert">{error}</p> : null}
       {!run ? (
         <>
           <p className="font-semibold">ยังไม่มีงานประมวลผลหลักฐาน</p>
@@ -224,7 +224,7 @@ export function AssessmentProcessingStatus({
           {run.can_cancel ? (
             <button
               type="button"
-              className="ml-2 mt-4 min-h-11 rounded-lg border border-sky-800 px-4 py-2 text-sm font-semibold text-sky-950 disabled:cursor-not-allowed disabled:opacity-50"
+              className="ml-2 mt-4 min-h-11 rounded-lg border border-[color:var(--color-info-border)] px-4 py-2 text-sm font-semibold text-[color:var(--color-info-text)] disabled:cursor-not-allowed disabled:opacity-50"
               disabled={busy}
               onClick={() => void cancelProcessing()}
             >
@@ -234,7 +234,7 @@ export function AssessmentProcessingStatus({
           {run.state === "succeeded" && run.result_available ? (
             <Link
               href={`/assessments/${encodeURIComponent(assessmentId)}/evidence`}
-              className="mt-4 inline-flex min-h-11 items-center rounded-lg border border-sky-800 px-4 py-2 text-sm font-semibold text-sky-950"
+              className="mt-4 inline-flex min-h-11 items-center rounded-lg border border-[color:var(--color-info-border)] px-4 py-2 text-sm font-semibold text-[color:var(--color-info-text)]"
             >
               เปิดผลหลักฐาน
             </Link>
@@ -242,7 +242,7 @@ export function AssessmentProcessingStatus({
           {run.state === "cancelled" && !run.can_retry ? (
             <Link
               href={`/assessments/${encodeURIComponent(assessmentId)}/transcript`}
-              className="mt-4 inline-flex min-h-11 items-center rounded-lg border border-sky-800 px-4 py-2 text-sm font-semibold text-sky-950"
+              className="mt-4 inline-flex min-h-11 items-center rounded-lg border border-[color:var(--color-info-border)] px-4 py-2 text-sm font-semibold text-[color:var(--color-info-text)]"
             >
               กลับไปตรวจ transcript
             </Link>

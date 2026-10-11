@@ -139,11 +139,11 @@ function ReportSummaryIdentityScope({ caseId, sessionId, transcriptId, reportId 
       <div className="grid min-w-0 gap-6 lg:grid-cols-[minmax(18rem,26rem)_minmax(0,1fr)]">
       <div className="min-w-0 space-y-5">
         {isStale ? (
-          <div className="rounded-panel border border-amber-300 bg-amber-50 p-4 text-sm text-amber-950" role="alert">
+          <div className="rounded-panel border border-[color:var(--color-attention-border)] bg-[color:var(--color-warning-bg)] p-4 text-sm text-[color:var(--color-warning-text)]" role="alert">
             <p className="font-semibold">This report is stale because the transcript changed.</p>
             <p className="mt-1" id="stale-report-explanation">The prior draft is read-only and cannot be saved, signed, exported, or shared as current.</p>
             <Link
-              className="mt-3 inline-flex min-h-11 items-center rounded-card bg-amber-900 px-4 font-semibold text-white"
+              className="mt-3 inline-flex min-h-11 items-center rounded-card bg-[color:var(--color-warning-text)] px-4 font-semibold text-white"
               href={state.backendSessionId ? `/sessions/${state.backendSessionId}?view=findings` : "/cases?intent=start-session"}
             >
               Regenerate findings
@@ -152,7 +152,7 @@ function ReportSummaryIdentityScope({ caseId, sessionId, transcriptId, reportId 
         ) : null}
 
         {hasSnapshotIntegrityError ? (
-          <div className="rounded-panel border border-red-300 bg-red-50 p-4 text-sm text-red-950" role="alert">
+          <div className="rounded-panel border border-[color:var(--color-danger-border)] bg-[color:var(--color-danger-bg)] p-4 text-sm text-[color:var(--color-danger-text)]" role="alert">
             <p className="font-semibold">Signed snapshot integrity error.</p>
             <p className="mt-1">{snapshotIntegrity.status === "invalid" ? snapshotIntegrity.reason : ""} The mutable report row is hidden, and export, revision, or sharing is blocked until the persisted signed snapshot is repaired and verified.</p>
           </div>
@@ -173,20 +173,20 @@ function ReportSummaryIdentityScope({ caseId, sessionId, transcriptId, reportId 
             <div className="flex flex-wrap items-start justify-between gap-3">
               <div>
                 <h2 className="text-lg font-bold text-ink">Report provenance</h2>
-                <p className="mt-1 text-sm leading-6 text-slate-600">Persisted versions are shown exactly as returned by the workflow API.</p>
+                <p className="mt-1 text-sm leading-6 text-ink-muted">Persisted versions are shown exactly as returned by the workflow API.</p>
               </div>
               {signedSnapshotVerified ? (
-                <span className="rounded-full bg-emerald-100 px-3 py-1 text-xs font-bold text-emerald-900">Signed snapshot · immutable</span>
+                <span className="rounded-full bg-[color:var(--color-success-bg)] px-3 py-1 text-xs font-bold text-[color:var(--color-success-text)]">Signed snapshot · immutable</span>
               ) : isSnapshotIntegrityChecking ? (
                 <span className="rounded-full border border-brand-border bg-brand-soft px-3 py-1 text-xs font-bold text-brand">Verifying signed snapshot</span>
               ) : hasSnapshotIntegrityError ? (
-                <span className="rounded-full bg-red-100 px-3 py-1 text-xs font-bold text-red-900">Snapshot integrity error</span>
+                <span className="rounded-full bg-[color:var(--color-danger-bg)] px-3 py-1 text-xs font-bold text-[color:var(--color-danger-text)]">Snapshot integrity error</span>
               ) : isStale ? (
-                <span className="rounded-full bg-amber-100 px-3 py-1 text-xs font-bold text-amber-950">Stale · regeneration required</span>
+                <span className="rounded-full bg-[color:var(--color-warning-bg)] px-3 py-1 text-xs font-bold text-[color:var(--color-warning-text)]">Stale · regeneration required</span>
               ) : isFailedSafety ? (
-                <span className="rounded-full bg-red-100 px-3 py-1 text-xs font-bold text-red-900">Safety validation failed</span>
+                <span className="rounded-full bg-[color:var(--color-danger-bg)] px-3 py-1 text-xs font-bold text-[color:var(--color-danger-text)]">Safety validation failed</span>
               ) : isNotStarted ? (
-                <span className="rounded-full bg-slate-100 px-3 py-1 text-xs font-bold text-slate-700">Never generated</span>
+                <span className="rounded-full bg-surface-muted px-3 py-1 text-xs font-bold text-ink">Never generated</span>
               ) : (
                 <span className="rounded-full bg-brand-soft px-3 py-1 text-xs font-bold text-brand-strong">Editable draft</span>
               )}
@@ -221,7 +221,7 @@ function ReportSummaryIdentityScope({ caseId, sessionId, transcriptId, reportId 
         {identityLoaded && canRenderReportMetadata ? (
           <section aria-label="Report source and safety" className="rounded-shell border border-line bg-surface p-5">
             <h2 className="text-lg font-bold text-ink">Report source and safety</h2>
-            <p className="mt-1 text-sm leading-6 text-slate-600">Persisted provider and validation metadata. Missing values are shown as unavailable.</p>
+            <p className="mt-1 text-sm leading-6 text-ink-muted">Persisted provider and validation metadata. Missing values are shown as unavailable.</p>
             <dl className="mt-4 grid gap-3 sm:grid-cols-2">
               <ReportProvenanceItem label="Requested provider" value={reportMetadataString(backendReport, "requested_provider") ?? "Unavailable"} />
               <ReportProvenanceItem label="Actual provider" value={reportMetadataString(backendReport, "actual_provider") ?? "Unavailable"} />
@@ -255,7 +255,7 @@ function ReportSummaryIdentityScope({ caseId, sessionId, transcriptId, reportId 
                 <Icon size={22} aria-hidden="true" className="mt-1 shrink-0 text-brand" />
                 <div>
                   <h3 className="text-lg font-bold text-ink">{section.title}</h3>
-                  <ul className="mt-2 space-y-1 text-sm text-slate-700">
+                  <ul className="mt-2 space-y-1 text-sm text-ink">
                     {section.items.map((item) => <li key={item}>• {item}</li>)}
                   </ul>
                 </div>
@@ -309,7 +309,7 @@ function ReportSummaryIdentityScope({ caseId, sessionId, transcriptId, reportId 
                 disabled={isEditorLocked}
                 onChange={(e) => setAllowFallback(e.target.checked)}
               />
-              <span className="text-slate-700 font-medium">
+              <span className="text-ink font-medium">
                 Allow safe template fallback if LLM fails
               </span>
             </label>
@@ -322,13 +322,13 @@ function ReportSummaryIdentityScope({ caseId, sessionId, transcriptId, reportId 
             <h2 className="text-lg font-bold text-ink">Sign-off Confirmation</h2>
             <div className="rounded-panel border border-line bg-surface p-4">
               <p className="text-sm font-semibold text-ink">Primary assigned therapist</p>
-              <p className="mt-2 text-sm text-slate-700">{primaryTherapistLabel}</p>
-              <p className="mt-2 text-xs leading-5 text-slate-600">
+              <p className="mt-2 text-sm text-ink">{primaryTherapistLabel}</p>
+              <p className="mt-2 text-xs leading-5 text-ink-muted">
                 Report sign-off uses the authenticated therapist identity from the active session. The client does not choose or override the signer.
               </p>
             </div>
             {!primaryTherapistAssigned ? (
-              <p className="rounded-card border border-amber-200 bg-amber-50 p-3 text-sm font-semibold text-amber-900">
+              <p className="rounded-card border border-[color:var(--color-attention-border)] bg-[color:var(--color-warning-bg)] p-3 text-sm font-semibold text-[color:var(--color-warning-text)]">
                 Assign a primary therapist before finalizing this report.
               </p>
             ) : null}
@@ -339,7 +339,7 @@ function ReportSummaryIdentityScope({ caseId, sessionId, transcriptId, reportId 
                 checked={confirmationChecked}
                 onChange={(e) => setConfirmationChecked(e.target.checked)}
               />
-              <span className="text-slate-700 font-medium">
+              <span className="text-ink font-medium">
                 I check and confirm that this report does not contain diagnostic assertions, and is for clinical decision-support only.
               </span>
             </label>
@@ -348,7 +348,7 @@ function ReportSummaryIdentityScope({ caseId, sessionId, transcriptId, reportId 
 
         <WorkspacePanel className="p-5">
           <h2 className="text-lg font-bold text-ink">Share with caregiver</h2>
-          <p className="mt-2 text-sm leading-6 text-slate-600">
+          <p className="mt-2 text-sm leading-6 text-ink-muted">
             Local/demo status only. This does not send a message, create a production delivery channel, or claim secure caregiver sharing.
           </p>
           <p className="mt-2 font-bold text-brand">{state.shareStatus}</p>
@@ -392,7 +392,7 @@ function ReportSummaryIdentityScope({ caseId, sessionId, transcriptId, reportId 
             <h2 className="text-xl font-bold text-ink">
               {isSnapshotIntegrityChecking ? "Verifying signed report" : hasSnapshotIntegrityError ? "Signed report unavailable" : isFinalized ? "Signed report snapshot" : isStale ? "Stale report draft" : isNotStarted ? "Report not generated" : "Draft report preview"}
             </h2>
-            <p className="mt-2 text-sm leading-6 text-slate-600">
+            <p className="mt-2 text-sm leading-6 text-ink-muted">
               {isSnapshotIntegrityChecking
                 ? "The signed payload is hidden until its canonical SHA-256 hash is verified."
                 : hasSnapshotIntegrityError
@@ -416,34 +416,34 @@ function ReportSummaryIdentityScope({ caseId, sessionId, transcriptId, reportId 
           </button>
         </div>
         {!transcriptUnlocked ? (
-          <p className="mt-4 rounded-card border border-amber-200 bg-amber-50 p-3 text-sm font-semibold text-amber-900">
+          <p className="mt-4 rounded-card border border-[color:var(--color-attention-border)] bg-[color:var(--color-warning-bg)] p-3 text-sm font-semibold text-[color:var(--color-warning-text)]">
             Transcript review and attestation are required before report generation.
           </p>
         ) : null}
 
         {/* Failed Safety Warning Banner */}
         {!isFinalized && isFailedSafety && (
-          <div className="mt-4 rounded-panel border border-red-200 bg-red-50 p-5 text-red-950 animate-fade-in" data-testid="report-safety-failed">
-            <h3 className="text-lg font-bold text-red-900">Safety Validation Failed</h3>
-            <p className="mt-1 text-sm text-red-800">
+          <div className="mt-4 rounded-panel border border-[color:var(--color-danger-border)] bg-[color:var(--color-danger-bg)] p-5 text-[color:var(--color-danger-text)] animate-fade-in" data-testid="report-safety-failed">
+            <h3 className="text-lg font-bold text-[color:var(--color-danger-text)]">Safety Validation Failed</h3>
+            <p className="mt-1 text-sm text-[color:var(--color-danger-text)]">
               The drafted report contains prohibited diagnostic wording or fails required safety disclaimers. 
               The draft has been locked from editing and finalization for clinical safety.
             </p>
             <ul className="mt-3 space-y-2 text-sm">
               {backendReport?.safety_validation_result?.issues.map((issue: any) => (
-                <li key={issue.issue_id} className="flex items-start gap-2 bg-surface-muted p-3 rounded-card border border-red-100">
-                  <span className="font-bold text-red-700 uppercase tracking-wide text-xs bg-red-100 px-2 py-0.5 rounded shrink-0 mt-0.5">
+                <li key={issue.issue_id} className="flex items-start gap-2 bg-surface-muted p-3 rounded-card border border-[color:var(--color-danger-border)]">
+                  <span className="font-bold text-[color:var(--color-danger-text)] uppercase tracking-wide text-xs bg-[color:var(--color-danger-bg)] px-2 py-0.5 rounded shrink-0 mt-0.5">
                     {issue.severity}
                   </span>
                   <div>
-                    <p className="font-semibold text-red-900">{issue.message}</p>
+                    <p className="font-semibold text-[color:var(--color-danger-text)]">{issue.message}</p>
                     {issue.detected_text && (
-                      <p className="mt-1 text-xs text-slate-700">
-                        Detected: <code className="bg-red-100/50 px-1 py-0.5 rounded text-red-800 font-mono">&quot;{issue.detected_text}&quot;</code>
+                      <p className="mt-1 text-xs text-ink">
+                        Detected: <code className="bg-[color:var(--color-danger-bg)] px-1 py-0.5 rounded text-[color:var(--color-danger-text)] font-mono">&quot;{issue.detected_text}&quot;</code>
                       </p>
                     )}
                     {issue.suggested_fix && (
-                      <p className="mt-1 text-xs text-slate-600 italic">
+                      <p className="mt-1 text-xs text-ink-muted italic">
                         Fix: {issue.suggested_fix}
                       </p>
                     )}
@@ -463,26 +463,26 @@ function ReportSummaryIdentityScope({ caseId, sessionId, transcriptId, reportId 
 
         {/* Non-blocking Safety Warnings (Yellow Alert) */}
         {!isFinalized && !isFailedSafety && backendReport?.safety_validation_result?.issues && backendReport.safety_validation_result.issues.length > 0 && (
-          <div className="mt-4 rounded-panel border border-amber-200 bg-amber-50 p-5 text-amber-950 animate-fade-in" data-testid="report-safety-warning">
-            <h3 className="text-lg font-bold text-amber-900">Clinical Safety Warnings</h3>
-            <p className="mt-1 text-sm text-amber-800">
+          <div className="mt-4 rounded-panel border border-[color:var(--color-attention-border)] bg-[color:var(--color-warning-bg)] p-5 text-[color:var(--color-warning-text)] animate-fade-in" data-testid="report-safety-warning">
+            <h3 className="text-lg font-bold text-[color:var(--color-warning-text)]">Clinical Safety Warnings</h3>
+            <p className="mt-1 text-sm text-[color:var(--color-warning-text)]">
               Please address the following safety rules in your draft. Finalization is blocked until they are resolved.
             </p>
             <ul className="mt-3 space-y-2 text-sm">
               {backendReport.safety_validation_result.issues.map((issue: any) => (
-                <li key={issue.issue_id} className="flex items-start gap-2 bg-surface-muted p-3 rounded-card border border-amber-100">
-                  <span className="font-bold text-amber-700 uppercase tracking-wide text-xs bg-amber-100 px-2 py-0.5 rounded shrink-0 mt-0.5">
+                <li key={issue.issue_id} className="flex items-start gap-2 bg-surface-muted p-3 rounded-card border border-[color:var(--color-attention-border)]">
+                  <span className="font-bold text-[color:var(--color-warning-text)] uppercase tracking-wide text-xs bg-[color:var(--color-warning-bg)] px-2 py-0.5 rounded shrink-0 mt-0.5">
                     {issue.severity}
                   </span>
                   <div>
-                    <p className="font-semibold text-amber-900">{issue.message}</p>
+                    <p className="font-semibold text-[color:var(--color-warning-text)]">{issue.message}</p>
                     {issue.detected_text && (
-                      <p className="mt-1 text-xs text-slate-700">
-                        Detected: <code className="bg-amber-100/50 px-1 py-0.5 rounded text-amber-800 font-mono">&quot;{issue.detected_text}&quot;</code>
+                      <p className="mt-1 text-xs text-ink">
+                        Detected: <code className="bg-[color:var(--color-warning-bg)] px-1 py-0.5 rounded text-[color:var(--color-warning-text)] font-mono">&quot;{issue.detected_text}&quot;</code>
                       </p>
                     )}
                     {issue.suggested_fix && (
-                      <p className="mt-1 text-xs text-slate-600 italic">
+                      <p className="mt-1 text-xs text-ink-muted italic">
                         Fix: {issue.suggested_fix}
                       </p>
                     )}
@@ -498,7 +498,7 @@ function ReportSummaryIdentityScope({ caseId, sessionId, transcriptId, reportId 
           setReportText(event.target.value);
           persist({ ...state, reportMarkdown: event.target.value, reportSaveStatus: "unsaved", statusMessage: "Unsaved report edits.", error: undefined });
         }} aria-label={isStale ? "Stale read-only report" : isFinalized ? "Finalized report" : isNotStarted ? "Report not generated" : "Editable draft report preview"} aria-describedby={isStale ? "stale-report-explanation" : undefined} data-testid="report-preview" />
-        <p className="mt-2 text-sm font-semibold text-slate-600" role="status">
+        <p className="mt-2 text-sm font-semibold text-ink-muted" role="status">
           {state.reportSaveStatus === "saving" ? "Saving..." : state.reportSaveStatus === "saved" ? "Saved" : state.reportSaveStatus === "failed" ? "Failed to save" : state.reportSaveStatus === "unsaved" ? "Unsaved changes" : "Not saved"}
         </p>
         <div className="mt-4 flex flex-wrap gap-2">
@@ -512,7 +512,7 @@ function ReportSummaryIdentityScope({ caseId, sessionId, transcriptId, reportId 
           </button>
         </div>
         <div className="mt-4 border-t border-line pt-4">
-          <p className="text-xs font-semibold uppercase tracking-[0.12em] text-slate-500">Export</p>
+          <p className="text-xs font-semibold uppercase tracking-[0.12em] text-ink-muted">Export</p>
           <div className="mt-2 flex flex-wrap gap-2">
             <button className="inline-flex items-center gap-2 rounded-card border border-line bg-surface px-4 py-3 text-sm font-bold text-brand disabled:opacity-50" disabled={!isFinalized || signedActionsBlocked} onClick={() => void handleExport("markdown")}><Download size={18} aria-hidden="true" />Export Markdown</button>
             <button className="inline-flex items-center gap-2 rounded-card border border-line bg-surface px-4 py-3 text-sm font-bold text-brand disabled:opacity-50" disabled={!isFinalized || signedActionsBlocked} onClick={() => void handleExport("html")}><Download size={18} aria-hidden="true" />Export HTML</button>
@@ -528,7 +528,7 @@ function ReportSummaryIdentityScope({ caseId, sessionId, transcriptId, reportId 
               </Link>
             ) : (
               <button
-                className="inline-flex items-center gap-2 rounded-card border border-line bg-surface px-4 py-3 text-sm font-bold text-slate-500 disabled:opacity-60"
+                className="inline-flex items-center gap-2 rounded-card border border-line bg-surface px-4 py-3 text-sm font-bold text-ink-muted disabled:opacity-60"
                 disabled
               >
                 Export PDF later

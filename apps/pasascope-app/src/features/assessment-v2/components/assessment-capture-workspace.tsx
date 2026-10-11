@@ -512,7 +512,7 @@ export function AssessmentCaptureWorkspace({ client = defaultAssessmentV2Client 
         </header>
 
         {!hasActiveConsent ? (
-          <div className="rounded-xl border border-amber-300 bg-amber-50 p-4 text-amber-950" role="alert">
+          <div className="rounded-xl border border-[color:var(--color-attention-border)] bg-[color:var(--color-warning-bg)] p-4 text-[color:var(--color-warning-text)]" role="alert">
             <p className="font-semibold">ยังไม่มี consent สำหรับการประเมิน</p>
             <p className="mt-1 text-sm">ต้องยืนยันว่าได้รับ consent ที่เหมาะสมก่อนจึงจะสร้าง assessment ได้</p>
             <label className="mt-4 flex items-start gap-3 text-sm">
@@ -521,7 +521,7 @@ export function AssessmentCaptureWorkspace({ client = defaultAssessmentV2Client 
             </label>
           </div>
         ) : (
-          <div className="rounded-xl border border-emerald-300 bg-emerald-50 p-4 text-emerald-950" role="status">
+          <div className="rounded-xl border border-[color:var(--color-success-border)] bg-[color:var(--color-success-bg)] p-4 text-[color:var(--color-success-text)]" role="status">
             <p className="font-semibold">มี consent สำหรับการประเมินแล้ว</p>
             <p className="mt-1 text-sm">ขอบเขต {latestClinicalConsent?.scope_version} · เวอร์ชัน {latestClinicalConsent?.version}</p>
           </div>
@@ -535,7 +535,7 @@ export function AssessmentCaptureWorkspace({ client = defaultAssessmentV2Client 
           <p className="mt-2 text-sm text-ink-muted">{selectedPurpose.description}</p>
         </div>
 
-        {error ? <p className="text-sm text-red-700" role="alert">{error}</p> : null}
+        {error ? <p className="text-sm text-[color:var(--color-danger-text)]" role="alert">{error}</p> : null}
         <button type="button" disabled={busy || (!hasActiveConsent && !consentConfirmed)} onClick={() => void createAssessment()} className="rounded-lg bg-brand px-5 py-3 text-sm font-semibold text-white disabled:cursor-not-allowed disabled:opacity-50">
           {busy ? "กำลังเตรียมการประเมิน…" : hasActiveConsent ? "เริ่มการประเมิน" : "บันทึก consent และเริ่มการประเมิน"}
         </button>
@@ -590,7 +590,7 @@ export function AssessmentCaptureWorkspace({ client = defaultAssessmentV2Client 
             ))}
           </ul>
         </div>
-        {error ? <p className="text-sm text-red-700" role="alert">{error}</p> : null}
+        {error ? <p className="text-sm text-[color:var(--color-danger-text)]" role="alert">{error}</p> : null}
         <button type="button" disabled={busy} onClick={() => void beginCapture()} className="rounded-lg bg-brand px-5 py-3 text-sm font-semibold text-white disabled:opacity-50">
           {busy ? "กำลังเตรียมเครื่องบันทึก…" : "เริ่มบันทึกเสียง"}
         </button>
@@ -606,7 +606,7 @@ export function AssessmentCaptureWorkspace({ client = defaultAssessmentV2Client 
           <h1 className="mt-1 text-2xl font-semibold">ส่งข้อมูลครบแล้ว</h1>
           <p className="mt-2 text-sm text-ink-muted">ระบบกำลังเตรียมผลการวิเคราะห์เชิงพัฒนาการสำหรับการพิจารณาของนักบำบัด</p>
         </header>
-        <div className="rounded-xl border border-emerald-300 bg-emerald-50 p-5 text-emerald-950" role="status">
+        <div className="rounded-xl border border-[color:var(--color-success-border)] bg-[color:var(--color-success-bg)] p-5 text-[color:var(--color-success-text)]" role="status">
           <p className="font-semibold">Assessment อยู่ระหว่าง processing</p>
           <p className="mt-1 text-sm">ผลลัพธ์จะต้องผ่านการตรวจสอบและตีความโดยนักบำบัด ไม่ใช่การวินิจฉัยอัตโนมัติ</p>
           <p className="mt-3 text-sm">สถานะปัจจุบัน: {stateLabel(completedAssessment.state)}</p>
@@ -669,7 +669,7 @@ export function AssessmentCaptureWorkspace({ client = defaultAssessmentV2Client 
           ) : null}
 
           {uploadStatus === "uploaded" ? (
-            <div className="rounded-xl border border-emerald-300 bg-emerald-50 p-4 text-emerald-950" role="status">
+            <div className="rounded-xl border border-[color:var(--color-success-border)] bg-[color:var(--color-success-bg)] p-4 text-[color:var(--color-success-text)]" role="status">
               <p className="font-semibold">อัปโหลดแล้ว รอตรวจสอบคุณภาพ</p>
               <p className="mt-1 text-sm">ไฟล์ถูกส่งเข้ากระบวนการตรวจสอบของระบบแล้ว นักบำบัดจะเห็นผลเมื่อระบบประมวลผลเสร็จ</p>
               {qualityStatus === "ready" && quality ? <p className="mt-3 font-semibold">{qualityLabel(quality.status)}</p> : null}
@@ -687,11 +687,11 @@ export function AssessmentCaptureWorkspace({ client = defaultAssessmentV2Client 
             </div>
           ) : null}
 
-          {uploadError ? <p className="text-sm text-red-700" role="alert">{uploadError}</p> : null}
-          {error ? <p className="text-sm text-red-700" role="alert">{error}</p> : null}
+          {uploadError ? <p className="text-sm text-[color:var(--color-danger-text)]" role="alert">{uploadError}</p> : null}
+          {error ? <p className="text-sm text-[color:var(--color-danger-text)]" role="alert">{error}</p> : null}
         </>
       ) : (
-        <div className="rounded-xl border border-emerald-300 bg-emerald-50 p-4 text-emerald-950" role="status">
+        <div className="rounded-xl border border-[color:var(--color-success-border)] bg-[color:var(--color-success-bg)] p-4 text-[color:var(--color-success-text)]" role="status">
           <p className="font-semibold">บันทึกกิจกรรมครบแล้ว</p>
           <p className="mt-1 text-sm">ตัวอย่างเสียงทั้งหมดกำลังรอการตรวจสอบคุณภาพจากระบบ</p>
         </div>

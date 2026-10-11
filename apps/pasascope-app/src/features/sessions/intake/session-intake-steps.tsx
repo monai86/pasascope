@@ -59,12 +59,12 @@ export function SessionIntakeSteps({ model }: { model: SessionIntakeViewModel })
             <WorkspacePanel className="space-y-5 p-5 sm:p-6" role="region" aria-label="Consent Intake Gate">
               <div>
                 <h2 className="text-xl font-semibold text-ink">Consent Verification Required</h2>
-                <p className="mt-2 text-sm leading-6 text-slate-600">
+                <p className="mt-2 text-sm leading-6 text-ink-muted">
                   Audio processing, recording, and clinical observation suggested reviews are locked until parental/caregiver consent is verified.
                 </p>
               </div>
               {intakeError && (
-                <p className="rounded-card border border-rose-100 bg-rose-50 px-4 py-3 text-sm font-medium text-rose-950">
+                <p className="rounded-card border border-[color:var(--color-danger-border)] bg-[color:var(--color-danger-bg)] px-4 py-3 text-sm font-medium text-[color:var(--color-danger-text)]">
                   {intakeError}
                 </p>
               )}
@@ -92,7 +92,7 @@ export function SessionIntakeSteps({ model }: { model: SessionIntakeViewModel })
             <WorkspacePanel className="space-y-5 p-5 sm:p-6">
               <div>
                 <h2 className="text-xl font-semibold text-ink">Session Details</h2>
-                <p className="mt-2 text-sm leading-6 text-slate-600">
+                <p className="mt-2 text-sm leading-6 text-ink-muted">
                   Set the session context first so the transcript workflow carries the correct child label, timing, and therapist-entered goals.
                 </p>
               </div>
@@ -191,7 +191,7 @@ export function SessionIntakeSteps({ model }: { model: SessionIntakeViewModel })
                 <p
                   id="continue-to-source-material-reason"
                   role="status"
-                  className="rounded-card border border-amber-200 bg-amber-50 px-3 py-2 text-sm font-semibold text-amber-900"
+                  className="rounded-card border border-[color:var(--color-attention-border)] bg-[color:var(--color-warning-bg)] px-3 py-2 text-sm font-semibold text-[color:var(--color-warning-text)]"
                 >
                   {continueToSourceMaterialReason}
                 </p>
@@ -203,7 +203,7 @@ export function SessionIntakeSteps({ model }: { model: SessionIntakeViewModel })
             <WorkspacePanel className="space-y-5 p-5 sm:p-6">
               <div>
                 <h2 className="text-xl font-semibold text-ink">Source Material</h2>
-                <p className="mt-2 text-sm leading-6 text-slate-600">
+                <p className="mt-2 text-sm leading-6 text-ink-muted">
                   Preserve the existing quick-start workflows while making the source choice explicit. Audio upload and ASR remain clearly labeled experimental.
                 </p>
               </div>
@@ -263,7 +263,7 @@ export function SessionIntakeSteps({ model }: { model: SessionIntakeViewModel })
 
                   {uploadStep === "idle" && recordedAudio ? (
                     <WorkspacePanel className="p-5 text-center">
-                      <p className="mb-3 text-sm text-slate-600">Recording captured. Ready for explicit upload confirmation.</p>
+                      <p className="mb-3 text-sm text-ink-muted">Recording captured. Ready for explicit upload confirmation.</p>
                       <PrimaryActionButton icon={UploadCloud} className="w-full" onClick={() => setUploadStep("confirm")}>
                         Upload for transcription
                       </PrimaryActionButton>
@@ -313,12 +313,12 @@ export function SessionIntakeSteps({ model }: { model: SessionIntakeViewModel })
               <WorkspacePanel className="p-5">
                 <div className="mb-3 flex items-center justify-between gap-3">
                   <h3 className="font-bold text-ink">Transcript preview</h3>
-                  <span className="inline-flex items-center gap-2 rounded-full bg-slate-100 px-3 py-1 text-xs font-semibold text-slate-700">
-                    <span className={`h-2 w-2 rounded-full ${state.transcriptReady ? "bg-emerald-500" : "bg-amber-500"}`} />
+                  <span className="inline-flex items-center gap-2 rounded-full bg-surface-muted px-3 py-1 text-xs font-semibold text-ink">
+                    <span className={`h-2 w-2 rounded-full ${state.transcriptReady ? "bg-brand" : "bg-[color:var(--color-warning-border)]"}`} />
                     {state.transcriptReady ? "Ready for review" : "Preview only"}
                   </span>
                 </div>
-                <div className="space-y-2 text-sm text-slate-700">
+                <div className="space-y-2 text-sm text-ink">
                   {state.transcriptReady && transcriptLines.length > 0
                     ? transcriptLines.slice(0, 6).map((line) => <p key={line}>{line}</p>)
                     : draftTranscript.trim()
@@ -326,7 +326,7 @@ export function SessionIntakeSteps({ model }: { model: SessionIntakeViewModel })
                       : (
                         <div className="rounded-card border border-dashed border-line bg-surface-muted p-4 text-center">
                           <p className="font-semibold text-ink">No transcript available yet</p>
-                          <p className="mt-1 text-sm text-slate-600">Add source material, then continue into transcript setup and therapist review.</p>
+                          <p className="mt-1 text-sm text-ink-muted">Add source material, then continue into transcript setup and therapist review.</p>
                         </div>
                       )}
                 </div>
@@ -347,7 +347,7 @@ export function SessionIntakeSteps({ model }: { model: SessionIntakeViewModel })
             <WorkspacePanel className="space-y-5 p-5 sm:p-6">
               <div>
                 <h2 className="text-xl font-semibold text-ink">Transcript Setup</h2>
-                <p className="mt-2 text-sm leading-6 text-slate-600">
+                <p className="mt-2 text-sm leading-6 text-ink-muted">
                   Define how the transcript should be reviewed. These fields do not unlock analysis on their own; QA and therapist attestation are still required later.
                 </p>
               </div>
@@ -399,7 +399,7 @@ export function SessionIntakeSteps({ model }: { model: SessionIntakeViewModel })
               </div>
               <div className="space-y-3 rounded-panel border border-line bg-surface p-4">
                 <p className="text-sm font-semibold text-ink">Review requirements</p>
-                <label className="flex min-h-11 items-start gap-3 text-sm text-slate-700">
+                <label className="flex min-h-11 items-start gap-3 text-sm text-ink">
                   <input
                     type="checkbox"
                     checked={transcriptSetup.reviewSpeakerLabels}
@@ -409,7 +409,7 @@ export function SessionIntakeSteps({ model }: { model: SessionIntakeViewModel })
                   />
                   <span>I will review speaker labels and transcript wording before attestation.</span>
                 </label>
-                <label className="flex min-h-11 items-start gap-3 text-sm text-slate-700">
+                <label className="flex min-h-11 items-start gap-3 text-sm text-ink">
                   <input
                     type="checkbox"
                     checked={transcriptSetup.reviewFeatureLock}
@@ -435,7 +435,7 @@ export function SessionIntakeSteps({ model }: { model: SessionIntakeViewModel })
             <WorkspacePanel className="space-y-5 p-5 sm:p-6">
               <div>
                 <h2 className="text-xl font-semibold text-ink">Review & Start</h2>
-                <p className="mt-2 text-sm leading-6 text-slate-600">
+                <p className="mt-2 text-sm leading-6 text-ink-muted">
                   Confirm the summary, keep the privacy notice visible, and route into the existing transcript review workflow.
                 </p>
               </div>
@@ -460,7 +460,7 @@ export function SessionIntakeSteps({ model }: { model: SessionIntakeViewModel })
                 {DECISION_SUPPORT_ONLY} Audio bytes are not stored in browser persistent storage. Experimental ASR output must be reviewed by a therapist before transcript attestation, feature extraction, or report use.
               </SafetyNotice>
               {selectedSource === "audio" || selectedSource === "recording" ? (
-                <div className="rounded-panel border border-amber-200 bg-amber-50 p-4 text-sm text-amber-900">
+                <div className="rounded-panel border border-[color:var(--color-attention-border)] bg-[color:var(--color-warning-bg)] p-4 text-sm text-[color:var(--color-warning-text)]">
                   Audio upload and ASR remain experimental in this workflow. Start transcript review only after a draft transcript is actually available.
                 </div>
               ) : null}
@@ -494,7 +494,7 @@ export function SessionIntakeSteps({ model }: { model: SessionIntakeViewModel })
                   <p
                     id="start-transcript-review-reason"
                     role="status"
-                    className="rounded-card border border-amber-200 bg-amber-50 px-3 py-2 text-sm font-semibold text-amber-900"
+                    className="rounded-card border border-[color:var(--color-attention-border)] bg-[color:var(--color-warning-bg)] px-3 py-2 text-sm font-semibold text-[color:var(--color-warning-text)]"
                   >
                     {startTranscriptReviewBlockedReasonText}
                   </p>

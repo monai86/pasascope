@@ -75,7 +75,7 @@ export function StartSessionSelector({ cases, preselectedCaseId }: { cases: Back
             </p>
           ) : null}
           {!hasConsentedCase ? (
-            <div className="mt-4 rounded-card border border-amber-200 bg-amber-50 p-4 text-amber-950">
+            <div className="mt-4 rounded-card border border-[color:var(--color-attention-border)] bg-[color:var(--color-warning-bg)] p-4 text-[color:var(--color-warning-text)]">
               <h2 className="font-semibold">No consented cases available</h2>
               <p className="mt-1 text-sm leading-6">
                 Confirm consent from the case record before starting a session.
