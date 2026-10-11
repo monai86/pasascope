@@ -134,6 +134,80 @@
     padding: 0.5rem 1rem 0.75rem;
   }
 
+  /*
+   * Frosted chrome. Only navigation and sticky action surfaces use it; reading
+   * surfaces stay opaque white. The fill falls back to opaque wherever a blur
+   * is unavailable or the visitor asked for less transparency.
+   */
+  .glass-chrome {
+    border: var(--border-hairline) solid var(--color-border);
+    background: var(--color-surface-strong);
+  }
+
+  @supports (backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px)) {
+    .glass-chrome {
+      border-color: var(--glass-border);
+      background: var(--glass-fill);
+      -webkit-backdrop-filter: blur(var(--glass-blur)) saturate(1.4);
+      backdrop-filter: blur(var(--glass-blur)) saturate(1.4);
+    }
+  }
+
+  @media (prefers-reduced-transparency: reduce), (forced-colors: active) {
+    .glass-chrome {
+      border-color: var(--color-border);
+      background: var(--color-surface-strong);
+      -webkit-backdrop-filter: none;
+      backdrop-filter: none;
+    }
+  }
+
+  /*
+   * Hero card: azure field with two soft wave shapes. The gradient stays within
+   * the azure range so white text keeps 4.5:1 across the whole card.
+   */
+  .hero-wave {
+    position: relative;
+    isolation: isolate;
+    overflow: hidden;
+    border-radius: var(--radius-panel);
+    background: linear-gradient(120deg, var(--color-brand-strong) 0%, var(--color-brand) 100%);
+    color: #ffffff;
+  }
+
+  .hero-wave::before,
+  .hero-wave::after {
+    content: "";
+    position: absolute;
+    z-index: -1;
+    border-radius: 50%;
+    background: rgba(124, 200, 248, 0.14);
+    pointer-events: none;
+  }
+
+  .hero-wave::before {
+    inset: auto -12% -70% 28%;
+    height: 130%;
+  }
+
+  .hero-wave::after {
+    inset: -60% -20% auto 55%;
+    height: 110%;
+  }
+
+  @media (forced-colors: active) {
+    .hero-wave {
+      border: 1px solid CanvasText;
+      background: Canvas;
+      color: CanvasText;
+    }
+
+    .hero-wave::before,
+    .hero-wave::after {
+      display: none;
+    }
+  }
+
   .app-shell-frame {
     width: min(100%, var(--shell-max));
     margin-inline: auto;

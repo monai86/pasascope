@@ -2,7 +2,12 @@ import "@testing-library/jest-dom/vitest";
 import { render, type RenderResult } from "@testing-library/react";
 import { beforeEach, vi } from "vitest";
 
+import { setLocaleWithoutProviderForTests } from "@/i18n/locale-provider";
 import { resetApiRuntimeSettingsCacheForTests } from "@/lib/api";
+
+// The suites assert English copy. Thai is the product default, so the language
+// is pinned here; a test that needs Thai renders through renderWithLocale.
+setLocaleWithoutProviderForTests("en");
 
 export const routerPush = vi.fn();
 export const routerReplace = vi.fn();
@@ -44,6 +49,13 @@ beforeEach(() => {
   routerReplace.mockReset();
   routerRefresh.mockReset();
 });
+
+// Server components read the language from the request cookie, which does not
+// exist outside a request.
+vi.mock("@/i18n/server", () => ({
+  getRequestLocale: async () => "en",
+  getMessages: async <T,>(catalog: { en: T }) => catalog.en,
+}));
 
 vi.mock("next/navigation", () => ({
   redirect: redirectMock,

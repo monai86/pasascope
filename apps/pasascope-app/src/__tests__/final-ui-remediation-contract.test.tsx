@@ -40,13 +40,15 @@ function appSourceFiles(): string[] {
 }
 
 describe("final UI remediation contracts", () => {
-  it("keeps the selected-state accent family clinical teal and separate from warning amber", () => {
+  it("keeps the selected-state accent family azure and separate from warning amber", () => {
     const tokens = appFile("src/design-system/tokens.css");
 
-    expect(tokens).toContain("--color-accent: #0f766e;");
-    expect(tokens).toContain("--color-accent-subtle: #0d9488;");
+    expect(tokens).toContain("--color-brand: #0a66d6;");
     expect(tokens).toContain("--color-warning-text: #92400e;");
-    expect(tokens).not.toContain("--color-accent-subtle: #b7791f;");
+    // The previous clinical-teal accent must not come back under any name.
+    expect(tokens).not.toContain("#0f766e");
+    expect(tokens).not.toContain("#0d9488");
+    expect(tokens).not.toContain("#b7791f");
   });
 
   it("uses only the PasaScope design system and Tailwind in the active app foundation", () => {

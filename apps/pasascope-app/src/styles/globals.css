@@ -1,4 +1,3 @@
-@import url("https://fonts.googleapis.com/css2?family=Noto+Sans+Thai:wght@300;400;500;600;700&family=Noto+Sans:ital,wght@0,400;0,500;0,600;0,700;1,400&display=swap");
 @import "../design-system/tokens.css";
 @import "../design-system/typography.css";
 @import "../design-system/components.css";
@@ -10,7 +9,7 @@
 body {
   margin: 0;
   background: var(--color-page-bg);
-  color: var(--ink);
+  color: var(--color-text-strong);
   font-family: var(--font-product);
   text-rendering: optimizeLegibility;
 }
@@ -56,12 +55,12 @@ button:disabled {
 }
 
 ::selection {
-  background: rgba(98, 98, 111, 0.15);
+  background: rgba(10, 102, 214, 0.18);
 }
 
 :focus-visible {
   outline: 3px solid var(--color-focus-ring);
-  outline-offset: 3px;
+  outline-offset: 2px;
 }
 
 /* Native closed-<details> behavior: Tailwind preflight's display resets

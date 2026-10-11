@@ -2,9 +2,19 @@ h1,
 h2,
 h3,
 h4 {
-  font-family: inherit;
   letter-spacing: 0;
   text-wrap: balance;
+}
+
+/* Prompt carries page and section headings; h4 and below stay in the reading face. */
+h1,
+h2,
+h3 {
+  font-family: var(--font-display);
+}
+
+h4 {
+  font-family: inherit;
 }
 
 .type-page-title {

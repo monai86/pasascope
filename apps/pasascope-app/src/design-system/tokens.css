@@ -1,96 +1,87 @@
 :root {
   color-scheme: light;
 
-  /* Canvas and reading surfaces (PasaScope clean clinical pine-neutral) */
-  --color-page-bg: #f7faf8;
-  --color-surface: #f0f4f2;
+  /*
+   * Colour follows a 60 / 30 / 10 split.
+   * 60: ice-white canvas and white reading surfaces.
+   * 30: the sky family and navy ink.
+   * 10: azure for the single primary action, selection and focus, plus coral
+   *     as a small highlight. Coral never carries white body text.
+   * There is no green anywhere in the palette, semantic states included.
+   */
+
+  /* 60 — canvas and surfaces */
+  --color-page-bg: #f4f8fd;
+  --color-surface: #eef4fb;
   --color-surface-strong: #ffffff;
-  --color-surface-muted: #e7eeea;
+  --color-surface-muted: #e4edf8;
   --color-surface-reading: #ffffff;
-  --color-surface-control: #f0f4f2;
+  --color-surface-control: #f1f6fc;
+  --color-border: #d9e6f5;
+  --color-border-strong: #bcd0e8;
 
-  /* Ink and hairlines (deep pine-slate body per WCAG AAA; muted pine secondary) */
-  --color-text-strong: #142520;
-  --color-text-muted: #384f48;
-  --color-text-subtle: #5a736b;
-  --color-border: #dbe4e0;
-  --color-border-strong: #c0d0cb;
+  /* 30 — navy ink and the sky family */
+  --color-text-strong: #16233f;
+  --color-text-muted: #42527a;
+  --color-text-subtle: #586890;
+  --color-sky-soft: #dceeff;
+  --color-sky: #7cc8f8;
+  --color-sky-strong: #2e9be6;
+  --color-navy: #0f1b33;
 
-  /* PasaScope Signature Brand Colors (from official visual brand identity) */
-  --color-pasa-teal: #265347;
-  --color-pasa-teal-hover: #1b3d34;
-  --color-pasa-teal-soft: #edf5f2;
-  --color-pasa-teal-border: #c9ddd5;
-  --color-pasa-pine-dark: #12362c;
+  /* 10 — azure brand and coral highlight */
+  --color-brand: #0a66d6;
+  --color-brand-hover: #0957b8;
+  --color-brand-strong: #0a56b5;
+  --color-brand-soft: #e7f1ff;
+  --color-brand-border: #b5d2f7;
+  --color-highlight: #f0566a;
+  --color-highlight-soft: #feeff1;
+  --color-highlight-border: #f9c2ca;
+  --color-highlight-text: #c22f47;
 
-  --color-scope-coral: #f45b69;
-  --color-scope-coral-hover: #e04453;
-  --color-scope-coral-soft: #fef1f3;
-  --color-scope-coral-border: #fcccd2;
-
-  --color-warm-butter: #f9c74f;
-  --color-warm-butter-soft: #fef9e7;
-  --color-warm-butter-border: #fde68a;
-
-  /* PasaScope interaction identity: clinical teal (#0f766e / #0d9488 retained for test contract) */
-  --color-accent: #0f766e;
-  --color-accent-strong: #265347;
-  --color-accent-soft: #edf5f2;
-  --color-accent-subtle: #0d9488;
-
-  /* Semantic state */
-  --color-success-bg: #ecfdf5;
-  --color-success-border: #10b981;
-  --color-success-text: #047857;
+  /* Semantic state. Success is blue with a check icon, never colour alone. */
+  --color-success-bg: #e7f1ff;
+  --color-success-border: #9cc4f5;
+  --color-success-text: #0a56b5;
   --color-warning-bg: #fffbeb;
   --color-warning-border: #f59e0b;
   --color-warning-text: #92400e;
-  --color-danger-bg: #fef2f2;
-  --color-danger-border: #f87171;
-  --color-danger-text: #b91c1c;
-  --color-info-bg: #f0f7f5;
-  --color-info-border: #52a393;
-  --color-info-text: #265347;
-  --color-focus-ring: rgba(38, 83, 71, 0.28);
+  --color-danger-bg: #fef3f2;
+  --color-danger-border: #fda29b;
+  --color-danger-text: #b42318;
+  --color-info-bg: #eaf6fe;
+  --color-info-border: #7cc8f8;
+  --color-info-text: #0b4f86;
+  --color-attention-bg: #fef9e7;
+  --color-attention-border: #fcd98a;
+  --color-focus-ring: rgba(10, 102, 214, 0.45);
 
-  /* Modern Flat Design Tokens (Synchronized with PasaScope Brand Identity) */
-  --color-flat-bg: #f7faf8;
-  --color-flat-surface: #ffffff;
-  --color-flat-surface-alt: #edf5f2;
-  --color-flat-indigo: #265347;
-  --color-flat-iris: #265347;
-  --color-flat-iris-hover: #1b3d34;
-  --color-flat-coral: #f45b69;
-  --color-flat-coral-hover: #e04453;
-  --color-flat-lilac: #edf5f2;
-  --color-flat-border: #dbe4e0;
-  --color-flat-cyan: #0f766e;
+  /* Frosted chrome (sidebar, top bar, bottom nav, sticky action bars) only. */
+  --glass-fill: rgba(255, 255, 255, 0.72);
+  --glass-border: rgba(255, 255, 255, 0.6);
+  --glass-blur: 16px;
 
-  /* Geometry and elevation (Friendly rounded modern clinical geometry) */
+  /* Geometry and elevation */
   --border-hairline: 1px;
-  --shadow-soft: 0 1px 3px rgba(20, 37, 32, 0.05);
-  --shadow-lift: 0 4px 12px rgba(20, 37, 32, 0.07);
-  --shadow-floating: 0 8px 24px rgba(20, 37, 32, 0.10);
-  --radius-card: 0.75rem;
-  --radius-panel: 1rem;
-  --radius-shell: 1.25rem;
+  --shadow-soft: 0 1px 2px rgba(22, 35, 63, 0.04), 0 2px 8px rgba(30, 80, 160, 0.06);
+  --shadow-lift: 0 8px 24px rgba(30, 80, 160, 0.1);
+  --shadow-floating: 0 16px 40px rgba(30, 80, 160, 0.16);
+  --radius-control: 0.75rem;
+  --radius-card: 1.25rem;
+  --radius-panel: 1.5rem;
+  --radius-shell: 1.75rem;
   --radius-pill: 9999px;
 
-  /* Spacing and layout */
-  --space-1: 0.25rem;
-  --space-2: 0.5rem;
-  --space-3: 0.75rem;
-  --space-4: 1rem;
-  --space-5: 1.25rem;
-  --space-6: 1.5rem;
-  --space-8: 2rem;
+  /* Layout */
   --space-gutter: clamp(1rem, 2.5vw, 2.5rem);
   --shell-max: 96rem;
   --content-max: 78rem;
   --rail-width: clamp(17rem, 22vw, 21rem);
 
-  /* Clinical-grade Bilingual Typography: Noto Sans Thai (TH) + Noto Sans (Latin/EN) per DESIGN.md & Blueprint */
-  --font-product: "Noto Sans Thai", "Noto Sans", system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  /* Type: Noto Sans Thai + Noto Sans for reading, Prompt for display. */
+  --font-product: var(--font-noto-thai, "Noto Sans Thai"), var(--font-noto, "Noto Sans"), system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  --font-display: var(--font-prompt, "Prompt"), var(--font-noto-thai, "Noto Sans Thai"), var(--font-noto, "Noto Sans"), system-ui, sans-serif;
   --font-size-page-title: clamp(1.75rem, 2vw, 2rem);
   --font-size-section-title: clamp(1.25rem, 1.6vw, 1.5rem);
   --font-size-panel-title: clamp(1rem, 1.2vw, 1.125rem);
@@ -100,10 +91,10 @@
   --line-height-body: 1.6;
   --line-height-transcript: 1.65;
 
-  /* Interaction motion (uniform ease per spec; state changes stay under 400ms for tactility) */
-  --motion-selection: 200ms;
-  --motion-popover: 400ms;
-  --motion-panel: 400ms;
+  /* Interaction motion */
+  --motion-selection: 120ms;
+  --motion-popover: 180ms;
+  --motion-panel: 220ms;
   --motion-resize: 0ms;
   --motion-ease: ease;
 
@@ -113,13 +104,25 @@
   --z-drawer: 60;
   --z-modal: 70;
 
-  /* Compatibility aliases; remove only with a deliberate Tailwind migration. */
-  --surface: var(--color-surface);
-  --surface-strong: var(--color-surface-strong);
-  --ink: var(--color-text-strong);
-  --muted: var(--color-text-muted);
-  --line: var(--color-border);
-  --clinical: var(--color-accent);
-  --clinical-strong: var(--color-accent-strong);
-  --field: var(--color-surface-strong);
+  /*
+   * Migration aliases. Screens written against the previous palette keep
+   * rendering while they are moved to the names above; the palette contract
+   * test tracks the remaining users and these are deleted with the last one.
+   */
+  --color-pasa-teal: var(--color-brand);
+  --color-pasa-teal-hover: var(--color-brand-hover);
+  --color-pasa-teal-soft: var(--color-brand-soft);
+  --color-pasa-teal-border: var(--color-brand-border);
+  --color-accent: var(--color-brand);
+  --color-accent-strong: var(--color-brand-strong);
+  --color-accent-soft: var(--color-brand-soft);
+  --color-accent-subtle: var(--color-sky-strong);
+  --color-primary: var(--color-brand);
+  --color-scope-coral: var(--color-highlight);
+  --color-scope-coral-hover: var(--color-highlight-text);
+  --color-scope-coral-soft: var(--color-highlight-soft);
+  --color-scope-coral-border: var(--color-highlight-border);
+  --color-warm-butter-soft: var(--color-attention-bg);
+  --color-warm-butter-border: var(--color-attention-border);
+  --color-warm-butter-strong: var(--color-warning-border);
 }
