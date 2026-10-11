@@ -34,7 +34,7 @@
 | Task | Command |
 |------|---------|
 | Python test file | `pytest tests/test_name.py -q` |
-| Python core tests | `pytest -m "not audio"` |
+| Python core tests | `pytest -m "not audio"` (Linux/CI). On macOS run `tests/test_gui*.py` in a separate pytest process from the rest, as `scripts/check_project.sh` does; a single process crashes or hangs at `tests/test_run_training.py`. |
 | Python audio tests | `pytest -m audio` |
 | Therapist app test file | `cd apps/lingualens-app && npm test -- src/__tests__/file.test.tsx` |
 
