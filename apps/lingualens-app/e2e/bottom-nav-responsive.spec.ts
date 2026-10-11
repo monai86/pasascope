@@ -94,7 +94,12 @@ test.describe("mobile bottom navigation", () => {
       const main = document.querySelector<HTMLElement>("main")!;
       main.scrollTo(0, main.scrollHeight);
     });
-    await page.waitForTimeout(100);
+    // Scrolling is animated, and a longer queue takes longer to reach the end:
+    // wait for the scroll position itself rather than a fixed delay.
+    await expect.poll(() => page.evaluate(() => {
+      const main = document.querySelector<HTMLElement>("main")!;
+      return main.scrollTop + main.clientHeight >= main.scrollHeight - 1;
+    })).toBe(true);
     const clearance = await page.evaluate(() => {
       const main = document.querySelector<HTMLElement>("main")!;
       const nav = document.querySelector<HTMLElement>("nav[aria-label='Bottom navigation']")!;
