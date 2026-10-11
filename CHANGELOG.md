@@ -2,9 +2,18 @@
 
 ## [v1.7.1] - 2026-10-10
 
+### Changed
+- **Project renamed from LinguaLens to PasaScope throughout maintained code and docs**:
+  - The therapist app lives in `apps/pasascope-app/`.
+  - Environment variables are `PASASCOPE_*`. The previous `LINGUALENS_*` names are still read, so existing deployments and `.env` files keep working.
+  - Python classes are `PasaScopeClient`, `PasaScope*Error` and `PasaScopeGUIApp`; the `LinguaLens*` aliases, `scripts/lingualens_gui.py`, `scripts/lingualens_tui.py` and the `lingualens` launcher are removed. Use `./pasascope`, `./run_gui.sh` or `./run_tui.sh`.
+  - Browser storage keys and the local JSON repository file use the new name; data stored under the old name is carried over or still read.
+  - External resource names (Cloudflare worker, database and role names, staging project names) are unchanged; see `docs/RENAME_FOLLOWUP.md`.
+  - `scripts/check_repo_consistency.py` now fails if the old name reappears outside historical records and those external names.
+
 ### Added
-- **On-device transcription in the therapist app** (`apps/api/`, `apps/lingualens-app/`):
-  - `local_whisper` now runs the Whisper + speaker-separation pipeline on the stored recording instead of being a stub. Opt-in with `LINGUALENS_ASR_LOCAL_WHISPER_ENABLED=true`; the remote `api_openai` strategy is refused.
+- **On-device transcription in the therapist app** (`apps/api/`, `apps/pasascope-app/`):
+  - `local_whisper` now runs the Whisper + speaker-separation pipeline on the stored recording instead of being a stub. Opt-in with `PASASCOPE_ASR_LOCAL_WHISPER_ENABLED=true`; the remote `api_openai` strategy is refused.
   - The web app selects `local_whisper` when available, verifies the upload before transcription, and waits in proportion to clip length. It no longer requests the synthetic mock provider.
   - Browser recording types (`audio/webm`, `audio/ogg`) are accepted at upload.
 - **Thai ASR evaluation** (`scripts/evaluate_thai_asr.py`, `scripts/report_transcript_review_time.py`): draft-versus-gold error rates, child-speech attribution, feature drift, processing time, and draft-to-attestation review time. See `data/evaluation/README.md`.
@@ -24,7 +33,7 @@
 - **Thai transcript text** (`src/audio_pipeline/`): multi-utterance Thai drafts no longer have spaces inserted between characters, and exported CHAT no longer splits Thai words into fragments.
 - **Feature word counts** (`apps/api/`): CHAT annotation codes are no longer counted as words.
 - **Browser recordings could not be transcribed** (`src/audio_pipeline/`): WebM/Opus and other non-WAV recordings are decoded to WAV before speaker separation, which previously failed without a system ffmpeg.
-- **Web findings and transcript review** (`apps/lingualens-app/`):
+- **Web findings and transcript review** (`apps/pasascope-app/`):
   - Removed the findings radar chart, which showed fixed sample values and "age-appropriate" labels for every session.
   - The audio workbench no longer shows 35% child talk time and 450 ms latency when nothing was measured, counts every adult speaker code, and takes its duration from the transcript.
   - Review cues are generated with the rule-based provider when reference evidence is not installed, are listed in the evidence panel, and readiness is refreshed after feature extraction; the step was permanently blocked before.
@@ -40,7 +49,7 @@
   - Exported `PREREGISTERED_GATE_CHECKS` as a single authoritative registry for Gate 1 reference criteria, refusing evaluation of misaligned check sets.
 
 ### Changed
-- **Workflow & Dashboard Streamlining** (`apps/lingualens-app/`):
+- **Workflow & Dashboard Streamlining** (`apps/pasascope-app/`):
   - Streamlined therapist interface around 4 core workflow pillars: Executive Dashboard, Cases Management, Assessment Studio, and Reports / Clinical PDF Export.
   - Reorganized sidebar navigation into clean, logical sections (Core Workflow vs Workspace Management) with bilingual indicators.
   - Added robust demo fallback handling for Dashboard and Assessment V2 workspaces, preventing blank error screens when backend services are offline.
@@ -50,7 +59,7 @@
   - Switched bundle budget measurements to direct build artifact analysis (covering dynamic routes and gzip sizes).
 
 ### Security
-- **Case, session and evaluation authorization** (`apps/api/`, `apps/lingualens-app/`):
+- **Case, session and evaluation authorization** (`apps/api/`, `apps/pasascope-app/`):
   - `PATCH /api/v1/cases/{case_id}` no longer accepts `care_team_user_ids`, `primary_therapist_user_id` or `consent_status` (422). Care-team changes stay on the organization-admin care-team route; the route now also requires a clinical role and active consent, and audits the acting user.
   - Added `POST /api/v1/cases/{case_id}/grant-consent` for the audited `pending -> granted` transition. Withdrawn consent is final for a case (409); the frontend consent forms use this endpoint.
   - `PATCH /api/v1/sessions/{session_id}` no longer accepts `status` or cue-acknowledgement fields (422).
@@ -64,21 +73,21 @@
 ### Fixed
 - **Database built from migrations could not run the API** (`apps/api/app/db/`): `sessions.findings_stale` / `report_stale` and the membership unique constraint existed on the models but in no migration, and the migration runner failed on a fresh PostgreSQL database because a revision id exceeded `alembic_version`'s default length. Migrations `0014` and `0015` add the missing schema, the runner creates the version table wide enough, and the migration smoke check now derives its expectations from the models.
 - **Consent and access rules**: outside demo mode a case always starts with pending consent and initial consent values are validated; the consent-withdrawal reason is kept on a completed privacy record; v1 audio upload answers 400 instead of 500 when the configured storage has no upload path.
-- **Sign-in without organization access** (`apps/lingualens-app/`): the app no longer assumes a therapist role and a default organization for a Supabase account that carries no access claims; sign-in reports that the account has not been added to an organization.
-- **Today work queue** (`apps/lingualens-app/`): tighter layout keeps three to four queue rows above the fold on desktop.
+- **Sign-in without organization access** (`apps/pasascope-app/`): the app no longer assumes a therapist role and a default organization for a Supabase account that carries no access claims; sign-in reports that the account has not been added to an organization.
+- **Today work queue** (`apps/pasascope-app/`): tighter layout keeps three to four queue rows above the fold on desktop.
 
 ### Removed
-- **Fabricated audio outputs** (`apps/lingualens-app/`, `apps/api/`):
+- **Fabricated audio outputs** (`apps/pasascope-app/`, `apps/api/`):
   - Removed the unused recording handler that carried a canned "Mock ASR transcript" and the in-browser mock transcription service behind it.
   - The audio review workbench no longer shows hard-coded SNR and diarization-confidence figures.
   - The mock ASR provider, and fallback to it, is refused outside local demo mode, so synthetic transcript text cannot be attached to a recording in a production-like runtime.
 
 ### Fixed
 - **Deployment and CI**:
-  - `render.yaml` and the cloud runbook set `LINGUALENS_SUPABASE_STORAGE_SERVICE_ROLE_KEY`, the name the API reads; the previous name left the storage key empty.
+  - `render.yaml` and the cloud runbook set `PASASCOPE_SUPABASE_STORAGE_SERVICE_ROLE_KEY`, the name the API reads; the previous name left the storage key empty.
   - CI runs the assessment v2 migration smoke check and enforces bundle budgets (`verify:bundle`). `pyproject.toml` is at `1.7.0` and the consistency check now verifies it.
   - The reference-evidence "manifest is missing" reason no longer includes a server filesystem path.
-- **Therapist frontend** (`apps/lingualens-app/`):
+- **Therapist frontend** (`apps/pasascope-app/`):
   - The dashboard loads its summary in the browser, where the session token is; the previous server-side fetch could not authenticate in Supabase mode. A 401/403 now says the session is not authorized instead of "Backend Offline".
   - API error messages show the readable `detail` text instead of the raw JSON payload.
   - When the backend is unreachable the client assumes the strictest access model (`aal2`, invitation only) and marks audio upload and transcription unavailable.
@@ -90,7 +99,7 @@
   - Waveform peaks are marked `X-Waveform-Source: synthetic`, and the audio review workbench states that its waveform and signal metrics are illustrative.
 - **API edge hardening** (`apps/api/app/core/`, `apps/api/app/auth/`):
   - Middleware order changed so 429 and origin-guard 403 responses carry CORS headers and an `x-request-id`.
-  - The rate limiter ignores `X-Forwarded-For` unless `LINGUALENS_RATE_LIMIT_TRUSTED_PROXY_COUNT` declares trusted proxies, bounds the number of tracked clients, and does not count CORS preflight.
+  - The rate limiter ignores `X-Forwarded-For` unless `PASASCOPE_RATE_LIMIT_TRUSTED_PROXY_COUNT` declares trusted proxies, bounds the number of tracked clients, and does not count CORS preflight.
   - Malformed HS256 tokens answer 401 instead of 500; an unknown JWKS key id triggers at most one forced refetch per 30 seconds.
   - Caller-supplied `x-request-id` values that are not opaque identifiers are replaced; production URL checks recognise `127.0.0.1` and `::1` as loopback.
 - **SQL repository data loss** (`apps/api/app/repositories/`):

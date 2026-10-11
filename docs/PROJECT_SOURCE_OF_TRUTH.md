@@ -203,6 +203,11 @@ persistence layer หลักของ pasascope.
     link ต้องเป็นคำบรรยายสิ่งที่นับได้ ไม่ใช่คำตัดสินเทียบเกณฑ์
 34. ขอบเขต term paper อยู่ใน `SCOPE_AND_DELIVERABLES.md` และการจับคู่หัวข้อกับหลักฐาน
     อยู่ใน `docs/TERM_PAPER_MAPPING.md`
+35. ชื่อโครงการในโค้ด config และเอกสารที่ใช้งานอยู่คือ PasaScope เท่านั้น:
+    path `apps/pasascope-app/`, ตัวแปร `PASASCOPE_*`, class `PasaScope*`.
+    ชื่อเดิมอนุญาตเฉพาะในบันทึกย้อนหลัง ชื่อทรัพยากรภายนอก ตัวระบุที่บันทึกไปกับข้อมูล
+    และโค้ดที่อ่านข้อมูลชื่อเดิม ตามรายการใน `docs/RENAME_FOLLOWUP.md`;
+    `scripts/check_repo_consistency.py` บังคับกฎนี้
 
 ## ML status
 

@@ -7,6 +7,7 @@ import sys
 
 sys.dont_write_bytecode = True
 
+from project_name_guard import previous_name_violations
 from release_scope import consistency_violations
 
 
@@ -40,6 +41,7 @@ def main() -> int:
         require_path(path, errors)
 
     errors.extend(consistency_violations(ROOT, ignore_local_runtime=True))
+    errors.extend(previous_name_violations(ROOT))
     for retired_surface in ("therapist-clinician-app", "public-screening", "presentation-dashboard"):
         surface_path = ROOT / retired_surface
         if surface_path.exists():
