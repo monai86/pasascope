@@ -4,7 +4,7 @@ Date: 2026-06-27
 
 This backlog turns the agreed first-launch decisions into an execution order for
 the current repository. It assumes the canonical product stays in
-`apps/lingualens-app/` and `apps/api/`.
+`apps/pasascope-app/` and `apps/api/`.
 
 Linked decision:
 [docs/adr/0017-launch-controlled-single-clinic-supabase-rollout.md](/Users/porschecaa/lingualens/docs/adr/0017-launch-controlled-single-clinic-supabase-rollout.md)

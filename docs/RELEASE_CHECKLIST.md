@@ -5,7 +5,7 @@ not for a public self-serve SaaS release.
 
 ## Preflight
 
-- `npm test`, `npm run typecheck`, and `npm run build` pass in `apps/lingualens-app/`.
+- `npm test`, `npm run typecheck`, and `npm run build` pass in `apps/pasascope-app/`.
 - `/` redirects to `/today`; `/today`, `/cases`, `/sessions/{sessionId}?view=intake|transcript|findings|report`, `/reports`, and `/settings` render.
 - The CI candidate is green for repository/secret and dependency audits, every
   Python 3.11–3.13 backend matrix run, therapist frontend verification, the UI

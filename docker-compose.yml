@@ -66,7 +66,7 @@ services:
       retries: 3
   frontend:
     image: node:22-slim
-    working_dir: /workspace/apps/lingualens-app
+    working_dir: /workspace/apps/pasascope-app
     volumes:
       - .:/workspace
     command: sh -c "npm ci && npm run dev -- --hostname 0.0.0.0"

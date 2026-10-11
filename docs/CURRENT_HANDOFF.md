@@ -12,7 +12,7 @@ before relying on them.
 
 ## Current operating baseline
 
-- Canonical product surfaces are `apps/lingualens-app/` and `apps/api/`.
+- Canonical product surfaces are `apps/pasascope-app/` and `apps/api/`.
 - Canonical routes are `/today`, `/cases`, `/sessions/{sessionId}?view=...`,
   `/reports`, and `/settings`; `/` redirects to `/today`.
 - Node.js 22.x and Python 3.11–3.13 (3.12 preferred) are supported. The default
@@ -27,7 +27,7 @@ before relying on them.
 
 LinguaLens มี canonical therapist product เพียงชุดเดียว:
 
-- Next.js frontend: `apps/lingualens-app/`
+- Next.js frontend: `apps/pasascope-app/`
 - FastAPI workflow and clinical-policy API: `apps/api/`
 - Supabase: Auth/PostgreSQL/private Storage target
 - Scientific/research code: `packages/` และ `src/`
@@ -269,7 +269,7 @@ cd apps/api
 PYTHONPATH=.:../..:../../src uvicorn app.main:app --reload --port 8000
 
 # Active frontend
-cd apps/lingualens-app
+cd apps/pasascope-app
 npm ci
 NEXT_PUBLIC_API_BASE_URL=http://localhost:8000/api/v1 npm run dev
 ```

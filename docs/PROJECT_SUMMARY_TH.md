@@ -127,7 +127,7 @@ LinguaLens วิเคราะห์ทักษะการสื่อสา
   - `tests/test_export_engine.py`: 3/3 ผ่าน (รวม Normative Cohort Radar & PDF Generation)
   - `tests/test_gui.py`: 95/95 ผ่าน (รวม Stepper, Discrete VU Meter, TD Corridor, Tab 1-5 Navigation)
   - **รวมทดสอบ Python: 105 tests ผ่าน 100%**
-- **Next.js Web App Test Suites (`apps/lingualens-app`):**
+- **Next.js Web App Test Suites (`apps/pasascope-app`):**
   - `src/__tests__/longitudinal-trend-card.test.tsx`: 4/4 ผ่าน
   - `src/__tests__/navigation-routes.test.tsx`: 17/17 ผ่าน
   - **TypeScript Typecheck (`tsc --noEmit`): 0 errors**

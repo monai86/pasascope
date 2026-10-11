@@ -4,7 +4,7 @@
 
 **Goal:** Continue the original production SaaS roadmap until lingualens can realistically support 5–10 clinics and roughly 100 users with real tenant isolation, production auth, private audio processing, reviewed transcripts, signed reports, operational monitoring, and controlled rollout.
 
-**Architecture:** Keep the production product in `apps/lingualens-app/` and `apps/api/`. Treat `src/therapist_backend/` and `src/clinical_workflow/` as legacy/research compatibility surfaces only. The target architecture remains a modular-monolith FastAPI policy boundary backed by Supabase Postgres/Auth/private Storage, durable workers, managed Redis, and responsive web/PWA frontend.
+**Architecture:** Keep the production product in `apps/pasascope-app/` and `apps/api/`. Treat `src/therapist_backend/` and `src/clinical_workflow/` as legacy/research compatibility surfaces only. The target architecture remains a modular-monolith FastAPI policy boundary backed by Supabase Postgres/Auth/private Storage, durable workers, managed Redis, and responsive web/PWA frontend.
 
 **Tech Stack:** FastAPI, Pydantic, SQLAlchemy/Alembic, Supabase Postgres/Auth/Storage, Next.js/React/TypeScript, Celery/Redis, GitHub Actions, Terraform, managed container hosting, Sentry/CloudWatch/OTLP-class observability.
 
@@ -16,7 +16,7 @@
 - Current branch: `main`.
 - Current version in docs: `v1.7.0`.
 - Source-of-truth file: `docs/PROJECT_SOURCE_OF_TRUTH.md`.
-- Canonical frontend: `apps/lingualens-app/`.
+- Canonical frontend: `apps/pasascope-app/`.
 - Canonical backend: `apps/api/`.
 - Legacy surfaces: `src/therapist_backend/` and `src/clinical_workflow/`; do not add new product endpoints there.
 - Latest observed API verification before this handoff:
@@ -285,7 +285,7 @@ Co-Authored-By: GPT-5 Codex <codex@openai.com>
 
 - Responsive web/PWA is the product direction.
 - Do not recreate Vite/Capacitor/native shell app.
-- Next.js app in `apps/lingualens-app/` remains canonical.
+- Next.js app in `apps/pasascope-app/` remains canonical.
 
 - [ ] **Step 2: Create threat model**
 
@@ -490,7 +490,7 @@ evidence.
 - Create: `apps/api/app/auth/authorization.py`
 - Modify: `apps/api/app/core/security.py`
 - Create: `apps/api/tests/test_authorization_matrix.py`
-- Modify frontend pages under `apps/lingualens-app/`.
+- Modify frontend pages under `apps/pasascope-app/`.
 
 Required roles:
 
@@ -721,8 +721,8 @@ Start with variables and modules for:
 
 **Files:**
 
-- Modify: `apps/lingualens-app/`
-- Create tests under `apps/lingualens-app/src/__tests__/`
+- Modify: `apps/pasascope-app/`
+- Create tests under `apps/pasascope-app/src/__tests__/`
 
 Remaining pages/flows:
 
@@ -807,7 +807,7 @@ git diff --check
 Frontend commands:
 
 ```bash
-cd /Users/porschecaa/Desktop/asd-project/apps/lingualens-app
+cd /Users/porschecaa/Desktop/asd-project/apps/pasascope-app
 npm test
 npm run build
 ```

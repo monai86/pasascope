@@ -5,7 +5,7 @@ Term paper: "การประยุกต์ใช้ปัญญาประ�
 
 ## Primary Deliverable
 
-The therapist web app (`apps/lingualens-app` + `apps/api`, `/api/v1`) is the
+The therapist web app (`apps/pasascope-app` + `apps/api`, `/api/v1`) is the
 primary deliverable. It demonstrates one human-reviewed workflow:
 
 1. Open case and record consent

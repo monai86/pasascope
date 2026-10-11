@@ -184,7 +184,7 @@ Backend verifier inputs for `apps/api`:
 - `LINGUALENS_SUPABASE_JWT_JWKS_JSON` only if using injected JWKS
 - secret-store location for the service role and any HS256 secret if used
 
-Frontend browser inputs for `apps/lingualens-app`:
+Frontend browser inputs for `apps/pasascope-app`:
 
 - `NEXT_PUBLIC_SUPABASE_URL`
 - `NEXT_PUBLIC_SUPABASE_ANON_KEY`

@@ -5,7 +5,7 @@ Date: 2026-06-28
 This is the canonical deployment entrypoint for the maintained lingualens
 product surfaces:
 
-- frontend: `apps/lingualens-app/`
+- frontend: `apps/pasascope-app/`
 - backend: `apps/api/`
 
 Use this guide with the more specific rollout documents:

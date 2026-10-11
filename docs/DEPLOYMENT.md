@@ -12,12 +12,12 @@ Cloudflare edge function.
 
 | App | Directory | Tech | Target |
 |-----|-----------|------|--------|
-| Therapist App | `apps/lingualens-app/` | Next.js + React + TypeScript | Vercel (standard Next.js build); Cloudflare Workers for staging |
+| Therapist App | `apps/pasascope-app/` | Next.js + React + TypeScript | Vercel (standard Next.js build); Cloudflare Workers for staging |
 | Therapist Workflow API | `apps/api/` | FastAPI / Python 3.11–3.13 (3.12 preferred) | Server-side deployment target |
 
 ---
 
-## 1. Therapist / Clinician App (`apps/lingualens-app/`)
+## 1. Therapist / Clinician App (`apps/pasascope-app/`)
 
 A clinical decision-support prototype for speech therapists and clinicians.
 This is the only active therapist frontend. It uses the local FastAPI workflow
@@ -35,7 +35,7 @@ upload.
 ### Local development
 
 ```bash
-cd apps/lingualens-app
+cd apps/pasascope-app
 npm ci
 npm run dev
 npm test
@@ -66,7 +66,7 @@ Configure the Vercel project as follows:
 
 | Setting | Value |
 |---------|-------|
-| Root Directory | `apps/lingualens-app` |
+| Root Directory | `apps/pasascope-app` |
 | Framework Preset | Next.js (auto-detected) |
 | Install Command | `npm ci` (or Vercel's default lockfile-aware install) |
 | Build Command | `npm run build` |
@@ -99,7 +99,7 @@ the Vercel project's normal Git integration.
 The maintained frontend can deploy through OpenNext for Cloudflare:
 
 ```bash
-cd apps/lingualens-app
+cd apps/pasascope-app
 npm ci
 npm run build:cf
 npm run deploy:cf

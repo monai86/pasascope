@@ -6,7 +6,7 @@ This project is an AI-assisted speech-language clinical decision-support prototy
 
 ## Current Deliverable Status
 
-- lingualens (`apps/lingualens-app` + `apps/api`): primary deliverable
+- lingualens (`apps/pasascope-app` + `apps/api`): primary deliverable
   and main demo surface.
 - Python ML and audio pipeline: research and prototype support code, not a
   deployed clinical system.

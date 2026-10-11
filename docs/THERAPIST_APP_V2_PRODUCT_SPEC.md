@@ -1,7 +1,7 @@
 # lingualens Product Spec
 
 lingualens is a new case-centered workflow surface at
-`apps/lingualens-app/` backed by the `apps/api/` FastAPI boundary. It is a
+`apps/pasascope-app/` backed by the `apps/api/` FastAPI boundary. It is a
 human-in-the-loop clinical decision-support prototype for speech therapists and
 clinicians. It does not diagnose ASD, does not claim Thai clinical validation,
 and does not replace qualified clinical judgment.
@@ -316,7 +316,7 @@ Start v2 implementation with a parallel MVP:
 
 1. Create `apps/api/` with mock repository mode, service boundaries, and the
    case/session/transcript/features/AI-review/report/consent routes.
-2. Create `apps/lingualens-app/` with Next.js App Router, TypeScript,
+2. Create `apps/pasascope-app/` with Next.js App Router, TypeScript,
    Tailwind CSS, accessible components, and a calm clinical interface.
 3. Make Today / Work Queue the post-login landing view.
 4. Limit main navigation to Today / Work Queue, Cases, Session Workspace,

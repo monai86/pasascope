@@ -8,7 +8,7 @@ Accepted
 
 The repository previously explored Vite, Capacitor, and native-shell paths for a
 therapist application. The maintained product surface has since converged on the
-Next.js lingualens in `apps/lingualens-app/`, backed by the FastAPI
+Next.js lingualens in `apps/pasascope-app/`, backed by the FastAPI
 boundary in `apps/api/`.
 
 Production work now needs focus on tenant isolation, authentication, private
@@ -22,7 +22,7 @@ lingualens will be delivered as responsive web/PWA only.
 
 The canonical frontend remains:
 
-- `apps/lingualens-app/`
+- `apps/pasascope-app/`
 
 The canonical backend remains:
 

@@ -17,7 +17,7 @@ readonly NC='\033[0m'
 
 ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 BACKEND_DIR="$ROOT_DIR/apps/api"
-FRONTEND_DIR="$ROOT_DIR/apps/lingualens-app"
+FRONTEND_DIR="$ROOT_DIR/apps/pasascope-app"
 LOG_DIR="$ROOT_DIR/.local/logs"
 mkdir -p "$LOG_DIR"
 

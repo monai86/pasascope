@@ -25,7 +25,7 @@ flowchart LR
 
 ### Next.js application
 
-`apps/lingualens-app/` owns the browser-facing product surface:
+`apps/pasascope-app/` owns the browser-facing product surface:
 
 - UI, routing, navigation, and responsive behavior;
 - browser authentication/session integration and MFA gating;

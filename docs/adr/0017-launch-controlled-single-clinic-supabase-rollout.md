@@ -34,7 +34,7 @@ The first launch will use:
 - one staging and one production Supabase project in `ap-southeast-1`;
 - Supabase Auth, Postgres, and private Storage;
 - `apps/api/` as the required clinical policy boundary;
-- `apps/lingualens-app/` as the only maintained product frontend.
+- `apps/pasascope-app/` as the only maintained product frontend.
 
 The first launch access model is frozen as follows:
 

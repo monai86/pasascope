@@ -4,7 +4,7 @@
 
 - Read `docs/PROJECT_SOURCE_OF_TRUTH.md` before changing architecture,
   runtime paths, ML behavior, deployment, or project status.
-- `apps/lingualens-app/` and `apps/api/` are the canonical therapist product.
+- `apps/pasascope-app/` and `apps/api/` are the canonical therapist product.
 - `src/therapist_backend/` and `src/clinical_workflow/` are legacy research
   compatibility surfaces. Do not add new product endpoints there.
 - Do not recreate the removed `therapist-clinician-app/` Vite/Capacitor app.
@@ -20,7 +20,7 @@
 
 ## Project Surfaces
 - `src/`: Python ML/audio research code and legacy compatibility workflows.
-- `apps/lingualens-app/`: the only active therapist frontend; Next.js + React + TypeScript.
+- `apps/pasascope-app/`: the only active therapist frontend; Next.js + React + TypeScript.
 - `apps/api/`: FastAPI backend for the lingualens therapist workflow.
 - `shared/`: shared JavaScript models/services used by app surfaces.
 
@@ -36,11 +36,11 @@
 | Python test file | `pytest tests/test_name.py -q` |
 | Python core tests | `pytest -m "not audio"` (Linux/CI). On macOS run `tests/test_gui*.py` in a separate pytest process from the rest, as `scripts/check_project.sh` does; a single process crashes or hangs at `tests/test_run_training.py`. |
 | Python audio tests | `pytest -m audio` |
-| Therapist app test file | `cd apps/lingualens-app && npm test -- src/__tests__/file.test.tsx` |
+| Therapist app test file | `cd apps/pasascope-app && npm test -- src/__tests__/file.test.tsx` |
 
 ## Build And Run
 - Backend API: `cd apps/api && PYTHONPATH=.:../..:../../src uvicorn app.main:app --reload --port 8000`.
-- Therapist app: `cd apps/lingualens-app && npm run dev`.
+- Therapist app: `cd apps/pasascope-app && npm run dev`.
 - Focused local verification: `bash scripts/check_project.sh`. It does not run
   dependency audits, the Python version matrix, frontend lint/typecheck, the UI
   audit, full Playwright suites, or the benchmark gate; use complete CI

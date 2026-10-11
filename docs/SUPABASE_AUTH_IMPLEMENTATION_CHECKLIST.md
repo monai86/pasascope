@@ -4,7 +4,7 @@ Date: 2026-06-28
 
 This checklist maps the remaining Supabase Auth launch work to concrete files,
 components, routes, and tests in the current repository. Use it when assigning
-implementation work in `apps/lingualens-app/` and `apps/api/`.
+implementation work in `apps/pasascope-app/` and `apps/api/`.
 
 Contract:
 [docs/SUPABASE_AUTH_CONTRACT.md](/Users/porschecaa/lingualens/docs/SUPABASE_AUTH_CONTRACT.md)
@@ -21,11 +21,11 @@ Staging verifier runbook:
 
 Primary files:
 
-- [supabase-auth-runtime-bridge.tsx](/Users/porschecaa/lingualens/apps/lingualens-app/src/components/supabase-auth-runtime-bridge.tsx)
-- [supabase-browser-auth.ts](/Users/porschecaa/lingualens/apps/lingualens-app/src/lib/supabase-browser-auth.ts)
-- [supabase-access-session.ts](/Users/porschecaa/lingualens/apps/lingualens-app/src/lib/supabase-access-session.ts)
-- [supabase-session-source.ts](/Users/porschecaa/lingualens/apps/lingualens-app/src/lib/supabase-session-source.ts)
-- [supabase-session-token.ts](/Users/porschecaa/lingualens/apps/lingualens-app/src/lib/supabase-session-token.ts)
+- [supabase-auth-runtime-bridge.tsx](/Users/porschecaa/lingualens/apps/pasascope-app/src/components/supabase-auth-runtime-bridge.tsx)
+- [supabase-browser-auth.ts](/Users/porschecaa/lingualens/apps/pasascope-app/src/lib/supabase-browser-auth.ts)
+- [supabase-access-session.ts](/Users/porschecaa/lingualens/apps/pasascope-app/src/lib/supabase-access-session.ts)
+- [supabase-session-source.ts](/Users/porschecaa/lingualens/apps/pasascope-app/src/lib/supabase-session-source.ts)
+- [supabase-session-token.ts](/Users/porschecaa/lingualens/apps/pasascope-app/src/lib/supabase-session-token.ts)
 
 Checklist:
 
@@ -58,9 +58,9 @@ Checklist:
 
 Primary files:
 
-- [supabase-login-form-client.tsx](/Users/porschecaa/lingualens/apps/lingualens-app/src/components/supabase-login-form-client.tsx)
-- [supabase-browser-client.ts](/Users/porschecaa/lingualens/apps/lingualens-app/src/lib/supabase-browser-client.ts)
-- [supabase-browser-client-config.ts](/Users/porschecaa/lingualens/apps/lingualens-app/src/lib/supabase-browser-client-config.ts)
+- [supabase-login-form-client.tsx](/Users/porschecaa/lingualens/apps/pasascope-app/src/components/supabase-login-form-client.tsx)
+- [supabase-browser-client.ts](/Users/porschecaa/lingualens/apps/pasascope-app/src/lib/supabase-browser-client.ts)
+- [supabase-browser-client-config.ts](/Users/porschecaa/lingualens/apps/pasascope-app/src/lib/supabase-browser-client-config.ts)
 
 Checklist:
 
@@ -85,9 +85,9 @@ Checklist:
 
 Primary files:
 
-- [supabase-mfa-panel.tsx](/Users/porschecaa/lingualens/apps/lingualens-app/src/components/supabase-mfa-panel.tsx)
-- [supabase-workspace-access-gate.tsx](/Users/porschecaa/lingualens/apps/lingualens-app/src/components/supabase-workspace-access-gate.tsx)
-- [app-shell.tsx](/Users/porschecaa/lingualens/apps/lingualens-app/src/components/app-shell.tsx)
+- [supabase-mfa-panel.tsx](/Users/porschecaa/lingualens/apps/pasascope-app/src/components/supabase-mfa-panel.tsx)
+- [supabase-workspace-access-gate.tsx](/Users/porschecaa/lingualens/apps/pasascope-app/src/components/supabase-workspace-access-gate.tsx)
+- [app-shell.tsx](/Users/porschecaa/lingualens/apps/pasascope-app/src/components/app-shell.tsx)
 
 Checklist:
 
@@ -116,10 +116,10 @@ Checklist:
 
 Primary files:
 
-- [supabase-workspace-access-gate.tsx](/Users/porschecaa/lingualens/apps/lingualens-app/src/components/supabase-workspace-access-gate.tsx)
-- [active-organization-summary.tsx](/Users/porschecaa/lingualens/apps/lingualens-app/src/components/active-organization-summary.tsx)
-- [supabase-browser-auth.ts](/Users/porschecaa/lingualens/apps/lingualens-app/src/lib/supabase-browser-auth.ts)
-- [api.ts](/Users/porschecaa/lingualens/apps/lingualens-app/src/lib/api.ts)
+- [supabase-workspace-access-gate.tsx](/Users/porschecaa/lingualens/apps/pasascope-app/src/components/supabase-workspace-access-gate.tsx)
+- [active-organization-summary.tsx](/Users/porschecaa/lingualens/apps/pasascope-app/src/components/active-organization-summary.tsx)
+- [supabase-browser-auth.ts](/Users/porschecaa/lingualens/apps/pasascope-app/src/lib/supabase-browser-auth.ts)
+- [api.ts](/Users/porschecaa/lingualens/apps/pasascope-app/src/lib/api.ts)
 
 Checklist:
 
@@ -148,7 +148,7 @@ Checklist:
 
 Primary files:
 
-- [settings-workspace-client.tsx](/Users/porschecaa/lingualens/apps/lingualens-app/src/components/settings-workspace-client.tsx)
+- [settings-workspace-client.tsx](/Users/porschecaa/lingualens/apps/pasascope-app/src/components/settings-workspace-client.tsx)
 
 Checklist:
 
@@ -319,11 +319,11 @@ Checklist:
 
 Frontend tests to extend or keep current:
 
-- [supabase-browser-auth.test.ts](/Users/porschecaa/lingualens/apps/lingualens-app/src/__tests__/supabase-browser-auth.test.ts)
-- [supabase-workspace-access-gate.test.tsx](/Users/porschecaa/lingualens/apps/lingualens-app/src/__tests__/supabase-workspace-access-gate.test.tsx)
-- [supabase-login-form-client.test.tsx](/Users/porschecaa/lingualens/apps/lingualens-app/src/__tests__/supabase-login-form-client.test.tsx)
-- [session-workspace-audio-auth.test.tsx](/Users/porschecaa/lingualens/apps/lingualens-app/src/__tests__/session-workspace-audio-auth.test.tsx)
-- [api-auth.test.ts](/Users/porschecaa/lingualens/apps/lingualens-app/src/__tests__/api-auth.test.ts)
+- [supabase-browser-auth.test.ts](/Users/porschecaa/lingualens/apps/pasascope-app/src/__tests__/supabase-browser-auth.test.ts)
+- [supabase-workspace-access-gate.test.tsx](/Users/porschecaa/lingualens/apps/pasascope-app/src/__tests__/supabase-workspace-access-gate.test.tsx)
+- [supabase-login-form-client.test.tsx](/Users/porschecaa/lingualens/apps/pasascope-app/src/__tests__/supabase-login-form-client.test.tsx)
+- [session-workspace-audio-auth.test.tsx](/Users/porschecaa/lingualens/apps/pasascope-app/src/__tests__/session-workspace-audio-auth.test.tsx)
+- [api-auth.test.ts](/Users/porschecaa/lingualens/apps/pasascope-app/src/__tests__/api-auth.test.ts)
 
 Backend tests to extend or keep current:
 

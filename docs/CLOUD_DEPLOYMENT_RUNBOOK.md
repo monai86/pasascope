@@ -12,7 +12,7 @@
 ┌────────────────────────────────────────────────────────┐
 │  Vercel (Frontend Next.js 16)                          │
 │  • URL: https://lingualens.vercel.app                  │
-│  • Code: apps/lingualens-app                           │
+│  • Code: apps/pasascope-app                           │
 └────────────────────────────────────────────────────────┘
                            │
              REST API Calls (/api/v1)
@@ -94,7 +94,7 @@
 1. เข้าสู่ระบบ [Vercel Dashboard](https://vercel.com/)
 2. กด **Add New...** > **Project** > เลือก repository `monai86/lingualens`
 3. ในส่วน **Framework Preset**: เลือก `Next.js`
-4. ในส่วน **Root Directory**: กด **Edit** แล้วเลือก `apps/lingualens-app`
+4. ในส่วน **Root Directory**: กด **Edit** แล้วเลือก `apps/pasascope-app`
 5. ในส่วน **Environment Variables** ให้กรอกค่าดังนี้:
    ```env
    NEXT_PUBLIC_API_BASE_URL=https://lingualens-api.onrender.com/api/v1

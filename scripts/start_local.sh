@@ -12,7 +12,7 @@ NC='\033[0m'
 echo -e "${BLUE}=== Starting Local PasaScope App (Frontend + Backend) ===${NC}"
 
 # 1. Setup local environment file for React App
-FRONTEND_DIR="apps/lingualens-app"
+FRONTEND_DIR="apps/pasascope-app"
 ENV_FILE="$FRONTEND_DIR/.env.local"
 
 echo -e "${BLUE}[1/4] Configuring local environment variables...${NC}"

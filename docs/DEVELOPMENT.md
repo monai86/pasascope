@@ -18,7 +18,7 @@ Read these files before changing the project:
 
 ## Canonical paths
 
-- Product frontend: `apps/lingualens-app`
+- Product frontend: `apps/pasascope-app`
 - Product API: `apps/api`
 - Research ML/audio: `packages`, `src`, `scripts`
 - Legacy compatibility only: `src/therapist_backend`,
@@ -39,7 +39,7 @@ pip install -r apps/api/requirements.txt
 Frontend dependencies are installed independently:
 
 ```bash
-cd apps/lingualens-app && npm ci
+cd apps/pasascope-app && npm ci
 ```
 
 Use Node.js 22.x. Supported Python versions are 3.11–3.13; Python 3.12 is
@@ -53,7 +53,7 @@ cd apps/api
 PYTHONPATH=.:../..:../../src uvicorn app.main:app --reload --port 8000
 
 # Terminal 2
-cd apps/lingualens-app
+cd apps/pasascope-app
 NEXT_PUBLIC_API_BASE_URL=http://localhost:8000/api/v1 npm run dev
 ```
 
@@ -156,17 +156,17 @@ Targeted checks and candidate-lane reproductions:
 ```bash
 PYTHONPATH=apps/api:src pytest tests/test_name.py -q
 cd apps/api && PYTHONPATH=.:../..:../../src pytest tests/test_workflow.py -q
-cd apps/lingualens-app && npm test
+cd apps/pasascope-app && npm test
 # Frontend verification lane
-cd apps/lingualens-app && npm run typecheck && npm run lint && npm run build
+cd apps/pasascope-app && npm run typecheck && npm run lint && npm run build
 # Focused browser smoke
-cd apps/lingualens-app && npx playwright install chromium && npm run e2e:smoke
-cd apps/lingualens-app && PLAYWRIGHT_BACKEND_PORT=8001 PLAYWRIGHT_FRONTEND_PORT=3101 npm run e2e:smoke
+cd apps/pasascope-app && npx playwright install chromium && npm run e2e:smoke
+cd apps/pasascope-app && PLAYWRIGHT_BACKEND_PORT=8001 PLAYWRIGHT_FRONTEND_PORT=3101 npm run e2e:smoke
 # Full browser, UI-audit, and benchmark candidate lanes (not run by check_project.sh)
-cd apps/lingualens-app && npx playwright test
-cd apps/lingualens-app && npx playwright test -c playwright.demo.config.ts
-cd apps/lingualens-app && npm run audit:ui
-cd apps/lingualens-app && npm run bench:transcript && npm run bench:check
+cd apps/pasascope-app && npx playwright test
+cd apps/pasascope-app && npx playwright test -c playwright.demo.config.ts
+cd apps/pasascope-app && npm run audit:ui
+cd apps/pasascope-app && npm run bench:transcript && npm run bench:check
 ```
 
 ### Compose

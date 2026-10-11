@@ -37,7 +37,7 @@ class MemoryJobQueue:
 class RedisJobQueue:
     """Redis-backed queue boundary for pilot deployment wiring."""
 
-    key = "lingualens-app:jobs"
+    key = "pasascope-app:jobs"
 
     def __init__(self, redis_url: str) -> None:
         try:

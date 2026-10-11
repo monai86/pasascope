@@ -17,7 +17,7 @@ selection), **Notion** (calm neutral shell, sidebar hierarchy, quiet focus),
 ## Design direction (DFII)
 
 Direction name: **Calm clinical workbench, execution-realized**. Building on the
-existing authoritative `apps/lingualens-app/DESIGN.md` (Airtable structural
+existing authoritative `apps/pasascope-app/DESIGN.md` (Airtable structural
 restraint, clinical teal, 8px rhythm) — the gap is not the design language but
 its execution:
 

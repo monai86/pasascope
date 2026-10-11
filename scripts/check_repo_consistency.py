@@ -33,7 +33,7 @@ def main() -> int:
 
     for path in (
         "apps/api/app/main.py",
-        "apps/lingualens-app/package.json",
+        "apps/pasascope-app/package.json",
         "docs/PROJECT_SOURCE_OF_TRUTH.md",
         "docs/REPO_STRUCTURE.md",
     ):

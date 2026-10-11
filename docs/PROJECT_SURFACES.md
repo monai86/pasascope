@@ -7,7 +7,7 @@ The canonical architecture is defined in
 
 ### lingualens
 
-- Frontend: `apps/lingualens-app/`
+- Frontend: `apps/pasascope-app/`
 - API: `apps/api/`
 - Technology: Next.js/React/TypeScript + FastAPI
 - Audience: therapists and qualified reviewers

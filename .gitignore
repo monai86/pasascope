@@ -35,8 +35,8 @@ data/ml/canonical_features_v2.xlsx
 data/ml/LinguaLens_ML_Features_and_Results_Summary.xlsx
 
 # Playwright
-apps/lingualens-app/test-results/
-apps/lingualens-app/playwright-report/
+apps/pasascope-app/test-results/
+apps/pasascope-app/playwright-report/
 
 # Virtual envs
 .venv/

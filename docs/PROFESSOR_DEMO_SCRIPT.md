@@ -16,7 +16,7 @@ PYTHONPATH=. uvicorn app.main:app --reload --port 8000
 In a second terminal:
 
 ```bash
-cd apps/lingualens-app
+cd apps/pasascope-app
 npm ci
 NEXT_PUBLIC_API_BASE_URL=http://localhost:8000/api/v1 npm run dev
 ```
@@ -35,7 +35,7 @@ PYTHONPATH=. pytest -q
 ```
 
 ```bash
-cd apps/lingualens-app
+cd apps/pasascope-app
 npm run typecheck
 npm run lint
 npm test
@@ -88,6 +88,6 @@ PYTHONPATH=. uvicorn app.main:app --reload --port 8001
 Then start the frontend with the matching API base:
 
 ```bash
-cd apps/lingualens-app
+cd apps/pasascope-app
 NEXT_PUBLIC_API_BASE_URL=http://localhost:8001/api/v1 npm run dev
 ```

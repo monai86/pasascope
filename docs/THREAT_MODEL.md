@@ -7,7 +7,7 @@ does not claim the current local prototype is production-ready.
 
 In scope:
 
-- `apps/lingualens-app/` browser/PWA frontend;
+- `apps/pasascope-app/` browser/PWA frontend;
 - `apps/api/` FastAPI policy boundary;
 - Supabase Auth, Postgres, and private Storage;
 - durable workers, Redis/job queues, ASR providers, report export, audit,

@@ -60,9 +60,9 @@ def test_forbidden_cases_are_independent_of_git_tracking(tmp_path):
 def test_local_consistency_mode_ignores_runtime_caches_but_not_release_content(tmp_path):
     write(tmp_path, ".venv/bin/python")
     write(tmp_path, ".venv313/lib/python3.13/site-packages/package/data.json.gz")
-    write(tmp_path, "apps/lingualens-app/node_modules/pkg/index.js")
-    write(tmp_path, "apps/lingualens-app/.next/types/app.d.ts")
-    write(tmp_path, "apps/lingualens-app/tsconfig.tsbuildinfo")
+    write(tmp_path, "apps/pasascope-app/node_modules/pkg/index.js")
+    write(tmp_path, "apps/pasascope-app/.next/types/app.d.ts")
+    write(tmp_path, "apps/pasascope-app/tsconfig.tsbuildinfo")
     write(tmp_path, "apps/tracked.zip")
 
     errors = consistency_violations(tmp_path, ignore_local_runtime=True)
@@ -84,9 +84,9 @@ def test_source_archive_skips_local_runtime_artifacts_below_approved_roots(tmp_p
     write(tmp_path, "apps/api/app/main.py")
     write(tmp_path, "apps/api/.local/repository.json")
     write(tmp_path, "apps/api/app/__pycache__/main.pyc")
-    write(tmp_path, "apps/lingualens-app/node_modules/pkg/index.js")
-    write(tmp_path, "apps/lingualens-app/.next/server/app.js")
-    write(tmp_path, "apps/lingualens-app/tsconfig.tsbuildinfo")
+    write(tmp_path, "apps/pasascope-app/node_modules/pkg/index.js")
+    write(tmp_path, "apps/pasascope-app/.next/server/app.js")
+    write(tmp_path, "apps/pasascope-app/tsconfig.tsbuildinfo")
 
     selected = {relative.as_posix() for _, relative in source_files(tmp_path)}
 
@@ -95,8 +95,8 @@ def test_source_archive_skips_local_runtime_artifacts_below_approved_roots(tmp_p
 
 def test_source_archive_includes_root_design_authority(tmp_path):
     write(tmp_path, "DESIGN.md")
-    write(tmp_path, "apps/lingualens-app/DESIGN.md")
+    write(tmp_path, "apps/pasascope-app/DESIGN.md")
 
     selected = {relative.as_posix() for _, relative in source_files(tmp_path)}
 
-    assert selected == {"DESIGN.md", "apps/lingualens-app/DESIGN.md"}
+    assert selected == {"DESIGN.md", "apps/pasascope-app/DESIGN.md"}

@@ -9,7 +9,7 @@
 - รุ่นโครงการ: `v1.7.0`
 - active user-facing surfaces และ API ใช้ version `v1.7.0`
 - branch หลัก: `main`
-- Therapist frontend หลัก: `apps/lingualens-app/`
+- Therapist frontend หลัก: `apps/pasascope-app/`
 - Therapist frontend runtime: Next.js `^16.3.8` / React 19 / Node.js `22.x`
 - Therapist workflow API หลัก: `apps/api/`
 - ML/audio/research libraries: `packages/` และ `src/`
@@ -22,7 +22,7 @@
 
 | Surface | Canonical path | สถานะ |
 |---|---|---|
-| Therapist web app | `apps/lingualens-app/` | Active |
+| Therapist web app | `apps/pasascope-app/` | Active |
 | Therapist workflow API | `apps/api/` | Active |
 | Research ML/audio | `packages/`, `src/`, `scripts/` | Active research tooling |
 | Analysis-only transcript boundary | `packages/analysis_contract/`, `packages/cha/` | Active research contract; not a product API |
@@ -40,7 +40,7 @@ Shell navigation ใช้ canonical routes ชุดเดียวคือ To
 Session, Reports และ Settings; `/` redirect ไป `/today`. Dashboard เป็น clinic
 overview ของ desktop sidebar เท่านั้น และต้องไม่ปรากฏใน mobile bottom nav ซึ่งคง
 5 รายการ; ถ้าจะเพิ่ม ถอด หรือสลับลำดับ destination ต้องแก้ canonical route-set
-assertion ใน `apps/lingualens-app/src/__tests__/navigation-routes.test.tsx`
+assertion ใน `apps/pasascope-app/src/__tests__/navigation-routes.test.tsx`
 พร้อมกันเสมอ. ถ้ายังไม่มี safe active session identifier, Session navigation
 ต้องไป `/cases?intent=start-session`.
 Presentation-only `/demo/*` routes ต้อง fail closed เว้นแต่ build/runtime ตั้ง
@@ -242,7 +242,7 @@ cd apps/api
 PYTHONPATH=.:../..:../../src uvicorn app.main:app --reload --port 8000
 
 # Active therapist frontend
-cd apps/lingualens-app
+cd apps/pasascope-app
 npm ci
 NEXT_PUBLIC_API_BASE_URL=http://localhost:8000/api/v1 npm run dev
 

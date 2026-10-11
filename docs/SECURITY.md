@@ -65,7 +65,7 @@ separate security review before any real child data or audio is entered.
 ```bash
 python scripts/security_scan.py
 pip-audit -r requirements.txt -r apps/api/requirements.txt
-cd apps/lingualens-app && npm audit --audit-level=high
+cd apps/pasascope-app && npm audit --audit-level=high
 ```
 
 The secret scanner reports only file path, line number, and finding category. It

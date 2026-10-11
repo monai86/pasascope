@@ -39,7 +39,7 @@ Important:
 
 ## Done
 
-- Canonical product boundary stays in `apps/lingualens-app/` and `apps/api/`.
+- Canonical product boundary stays in `apps/pasascope-app/` and `apps/api/`.
 - Production platform direction is Supabase Auth/Postgres/private Storage plus
   FastAPI as the clinical policy boundary.
 - Responsive web/PWA-only direction is accepted.

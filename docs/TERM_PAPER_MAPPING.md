@@ -16,7 +16,7 @@
 | ส่วนในเล่ม | ส่วนของระบบ | หลักฐาน |
 |---|---|---|
 | ที่มาและปัญหา | การถอดเสียงและวิเคราะห์ language sample ด้วยมือใช้เวลามาก | วรรณกรรมใน `docs/REFERENCES.md` |
-| การออกแบบระบบ | Web app + API (`apps/lingualens-app`, `apps/api`) และ GUI offline (`packages/gui`) | `docs/PROJECT_SOURCE_OF_TRUTH.md`, `docs/DATA_FLOW_DIAGRAM.md` |
+| การออกแบบระบบ | Web app + API (`apps/pasascope-app`, `apps/api`) และ GUI offline (`packages/gui`) | `docs/PROJECT_SOURCE_OF_TRUTH.md`, `docs/DATA_FLOW_DIAGRAM.md` |
 | AI ส่วนที่ 1: ถอดเสียง | Whisper บนเครื่อง + แยกผู้พูดเด็ก/ผู้ใหญ่ (`src/audio_pipeline`, provider `local_whisper`) | `reports/metrics/thai_asr_public.md`, `reports/metrics/thai_asr_evaluation.md` |
 | AI ส่วนที่ 2: ตัวชี้วัดภาษา | MLU-w, TTR, การผลัดกันพูด, echolalia cue, pronoun cue (`src/clinical_speech/thai_lsa.py`) | `reports/metrics/feature_agreement_clan.md`, `reports/metrics/echolalia_cue_check.md` |
 | Human-in-the-loop | แก้ transcript, attest, ยืนยันหรือปัดตก cue, sign-off รายงาน | `reports/metrics/transcript_review_time.csv`, audit log |

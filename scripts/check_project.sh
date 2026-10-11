@@ -98,7 +98,7 @@ PYTHONPATH=apps/api:src "$PYTHON_BIN" -m pytest apps/api/tests/assessment_v2 -m 
 
 # 3. Maintained Frontend App Checks
 apps=(
-    "apps/lingualens-app"
+    "apps/pasascope-app"
 )
 
 for app in "${apps[@]}"; do

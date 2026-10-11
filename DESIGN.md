@@ -1,7 +1,7 @@
 # LinguaLens design language
 
 Status: authoritative for the canonical therapist product in
-`apps/lingualens-app/`.
+`apps/pasascope-app/`.
 
 LinguaLens is a calm, precise clinical workbench for therapist-reviewed
 language-sample workflows. It borrows structural restraint from data-oriented
@@ -26,13 +26,13 @@ role-gated organization administration.
 
 The executable design system has one source per responsibility:
 
-- `apps/lingualens-app/src/design-system/tokens.css` — colors, spacing, radii,
+- `apps/pasascope-app/src/design-system/tokens.css` — colors, spacing, radii,
   borders, shadows, type sizes, motion, layout dimensions, and z-index;
-- `apps/lingualens-app/src/design-system/typography.css` — shared type hierarchy;
-- `apps/lingualens-app/src/design-system/components.css` — reusable workbench
+- `apps/pasascope-app/src/design-system/typography.css` — shared type hierarchy;
+- `apps/pasascope-app/src/design-system/components.css` — reusable workbench
   panels, reading surfaces, controls, sticky bars, motion helpers, and the
   restrained transcript/wave ruler motif;
-- `apps/lingualens-app/src/styles/globals.css` — imports, reset, body/app defaults,
+- `apps/pasascope-app/src/styles/globals.css` — imports, reset, body/app defaults,
   generic interaction timing, and global accessibility behavior only.
 
 Feature code must consume semantic tokens. It must not redefine a second palette

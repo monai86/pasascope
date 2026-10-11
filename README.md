@@ -72,7 +72,7 @@ This project is a **research prototype and educational demo**. It supports trans
 
 ## Maintained Application
 
-### 🩺 Therapist App (`apps/lingualens-app/` + `apps/api/`)
+### 🩺 Therapist App (`apps/pasascope-app/` + `apps/api/`)
 
 The only active therapist frontend is the Next.js/React/TypeScript app. The
 stable path is manual-first: create/open case, create session, upload reviewed
@@ -211,7 +211,7 @@ Unauthorized section requests resolve safely to `profile`, and admin data
 effects are not mounted for therapists.
 The maintained frontend is aligned to React 19 / Next.js 16 on Node.js 22 so the
 Astryx UI packages can be used without peer-version fallbacks. Astryx agent
-docs live under `apps/lingualens-app/.claude/CLAUDE.md`, and the app imports
+docs live under `apps/pasascope-app/.claude/CLAUDE.md`, and the app imports
 `@astryxdesign/core/reset.css`, `@astryxdesign/core/astryx.css`, and
 `@astryxdesign/theme-neutral/theme.css` from `src/styles/globals.css`.
 
@@ -219,7 +219,7 @@ docs live under `apps/lingualens-app/.claude/CLAUDE.md`, and the app imports
 cd apps/api
 PYTHONPATH=.:../..:../../src uvicorn app.main:app --reload --port 8000
 
-cd ../../apps/lingualens-app
+cd ../../apps/pasascope-app
 npm ci
 NEXT_PUBLIC_API_BASE_URL=http://localhost:8000/api/v1 npm run dev
 ```
@@ -240,7 +240,7 @@ https://lingualens-web.monai-yut.workers.dev
 Deploy the maintained frontend through OpenNext for Cloudflare:
 
 ```bash
-cd apps/lingualens-app
+cd apps/pasascope-app
 npm ci
 npm run build:cf
 npm run deploy:cf
@@ -253,7 +253,7 @@ requests are blocked by browser CORS.
 Useful Astryx commands in the therapist app:
 
 ```bash
-cd apps/lingualens-app
+cd apps/pasascope-app
 npx astryx build
 npx astryx search "dashboard"
 npx astryx component Button
@@ -564,7 +564,7 @@ pytest tests/test_feature_schema.py -q          # 14-feature schema alignment
 pytest tests/test_transcript_reviewer.py -q     # CHAT transcript QA
 pytest tests/test_clinical_workflow.py -q       # therapist app mock backend
 pytest tests/test_clinical_pilot_backend_contract.py -q
-cd apps/lingualens-app && npx playwright install chromium && npm run e2e:smoke # therapist workflow browser smoke test
+cd apps/pasascope-app && npx playwright install chromium && npm run e2e:smoke # therapist workflow browser smoke test
 PLAYWRIGHT_BACKEND_PORT=8001 PLAYWRIGHT_FRONTEND_PORT=3101 npm run e2e:smoke # use alternate local ports if 8000/3100 are already in use
 ```
 
@@ -585,7 +585,7 @@ benchmark baseline gate.
 ```
 asd-project/
 ├── apps/
-│   ├── lingualens-app/          # 🩺 Active Next.js therapist frontend
+│   ├── pasascope-app/          # 🩺 Active Next.js therapist frontend
 │   └── api/                       # Therapist workflow FastAPI
 ├── src/
 │   ├── audio_pipeline/            # .wav → .cha (Whisper + diarization + CHAT)
