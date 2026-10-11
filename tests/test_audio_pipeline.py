@@ -768,3 +768,35 @@ def main() -> int:
 
 if __name__ == "__main__":
     raise SystemExit(main())
+
+
+def test_split_at_silence_keeps_thai_text_unspaced():
+    """Thai word pieces must not be re-joined with spaces when a segment is split."""
+    from src.audio_pipeline.segmentation import _split_at_long_silences
+    from src.audio_pipeline.whisper_transcribe import UtteranceSegment, WordSegment
+
+    pieces = [("ว", 0.0, 0.1), ("ัน", 0.1, 0.2), ("นี้", 0.2, 0.4), ("เล่น", 2.0, 2.3), ("รถ", 2.3, 2.6), ("ok", 2.7, 2.9), ("now", 2.9, 3.1)]
+    segment = UtteranceSegment(
+        start=0.0, end=3.1, text="วันนี้ เล่นรถ ok now",
+        words=[WordSegment(text, start, end, 0.9) for text, start, end in pieces],
+    )
+
+    parts = _split_at_long_silences(segment)
+
+    assert [part.text for part in parts] == ["วันนี้", "เล่นรถ ok now"]
+
+
+def test_chat_output_joins_thai_word_pieces_before_segmenting():
+    """Thai sub-word pieces from Whisper must not appear as fragments in CHAT."""
+    from src.audio_pipeline.chat_formatter import utterances_to_chat
+    from src.audio_pipeline.whisper_transcribe import UtteranceSegment, WordSegment
+
+    pieces = [("ว", 0.0, 0.1, 0.9), ("ัน", 0.1, 0.2, 0.9), ("นี้", 0.2, 0.4, 0.9), ("เล", 0.4, 0.5, 0.9), ("่น", 0.5, 0.6, 0.9), ("รถ", 0.6, 0.8, 0.9), ("แดง", 0.8, 1.0, 0.1)]
+    utterance = UtteranceSegment(
+        start=0.0, end=1.0, text="วันนี้เล่นรถแดง", speaker="CHI",
+        words=[WordSegment(text, start, end, probability) for text, start, end, probability in pieces],
+    )
+
+    main_tier = next(line for line in utterances_to_chat([utterance]).splitlines() if line.startswith("*CHI:"))
+
+    assert main_tier == "*CHI:\tวันนี้ เล่น รถ xxx ."

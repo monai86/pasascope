@@ -572,11 +572,17 @@ def _tokens(text: str) -> list[str]:
         except Exception:
             pass
 
-    return [
-        tok.lower()
-        for tok in re.findall(r"[\w']+", text)
-        if tok.lower() not in _STOPWORDS
-    ]
+    # CHAT annotation codes ([/], &-um, +..., (be)cause) are not words. Strip
+    # them with the shared CHAT cleaner so counts track CLAN on coded input.
+    try:
+        from packages.cha.parser import cleaned_tokens
+    except Exception:
+        return [
+            tok.lower()
+            for tok in re.findall(r"[\w']+", text)
+            if tok.lower() not in _STOPWORDS
+        ]
+    return [tok for tok in cleaned_tokens(text) if tok not in _STOPWORDS]
 
 
 _THAI_CHARS = re.compile(r"[\u0e00-\u0e7f]")

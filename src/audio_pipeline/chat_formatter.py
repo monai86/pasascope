@@ -286,6 +286,42 @@ def _detect_repetition(tokens: List[str]) -> List[str]:
     return out
 
 
+def _has_thai(text: str) -> bool:
+    return any("\u0e00" <= char <= "\u0e7f" for char in text)
+
+
+def _merge_thai_pieces(words: List[WordSegment], unintelligible_threshold: float) -> List[WordSegment]:
+    """Join neighbouring Thai sub-word pieces into runs before word segmentation.
+
+    Whisper returns Thai as pieces that often split a word ("เล" + "่น").
+    Segmenting each piece alone yields fragments, so confident Thai pieces are
+    joined first. A low-confidence piece stays separate so it can still be
+    marked unintelligible on its own.
+    """
+    merged: List[WordSegment] = []
+    for w in words:
+        piece = w.text.strip()
+        confident = w.probability >= unintelligible_threshold
+        previous = merged[-1] if merged else None
+        if (
+            previous is not None
+            and confident
+            and _has_thai(piece)
+            and _has_thai(previous.text)
+            and previous.probability >= unintelligible_threshold
+        ):
+            merged[-1] = WordSegment(
+                text=previous.text + piece,
+                start=previous.start,
+                end=w.end,
+                probability=min(previous.probability, w.probability),
+                language=previous.language,
+            )
+        else:
+            merged.append(WordSegment(piece, w.start, w.end, w.probability, w.language))
+    return merged
+
+
 def _render_utterance_body(
     u: UtteranceSegment,
     unintelligible_threshold: float,
@@ -306,7 +342,7 @@ def _render_utterance_body(
 
     raw_tokens: List[str] = []
     timings: List[Tuple[float, float]] = []
-    for w in u.words:
+    for w in _merge_thai_pieces(u.words, unintelligible_threshold):
         word = _WHITESPACE_RE.sub(" ", w.text.strip())
         word = _STRIP_PUNCT_RE.sub("", word)
         if not word:

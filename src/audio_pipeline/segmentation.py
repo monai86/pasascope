@@ -41,6 +41,30 @@ def _merge_segments(a: UtteranceSegment, b: UtteranceSegment) -> UtteranceSegmen
     )
 
 
+def _is_thai(text: str) -> bool:
+    return any("\u0e00" <= char <= "\u0e7f" for char in text)
+
+
+def _join_word_pieces(words: Sequence[WordSegment]) -> str:
+    """Rebuild utterance text from Whisper word pieces.
+
+    Thai is written without spaces and Whisper returns it as sub-word pieces,
+    so neighbouring Thai pieces are joined directly; everything else keeps a
+    space between words.
+    """
+    text = ""
+    previous = ""
+    for word in words:
+        piece = word.text.strip()
+        if not piece:
+            continue
+        if text and not (_is_thai(previous) and _is_thai(piece)):
+            text += " "
+        text += piece
+        previous = piece
+    return text
+
+
 def _split_at_long_silences(
     seg: UtteranceSegment,
     min_gap: float = MIN_GAP_FOR_SPLIT,
@@ -64,7 +88,7 @@ def _split_at_long_silences(
     for grp in groups:
         if not grp:
             continue
-        text = " ".join(w.text for w in grp).strip()
+        text = _join_word_pieces(grp)
         out.append(UtteranceSegment(
             start=grp[0].start,
             end=grp[-1].end,
