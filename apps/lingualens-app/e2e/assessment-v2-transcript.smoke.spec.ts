@@ -274,6 +274,8 @@ test("processing assessment can review a transcript and follow durable evidence 
   await expect(page.evaluate(() => Object.keys(localStorage))).resolves.toEqual([]);
 
   await page.getByRole("link", { name: "เปิดผลหลักฐาน" }).click();
-  await expect(page.getByRole("heading", { name: "โปรไฟล์พัฒนาการเชิงพรรณนา" })).toBeVisible();
+  // First visit to the evidence route: the dev server compiles it on demand,
+  // which regularly takes longer than the default 10s on a busy CI runner.
+  await expect(page.getByRole("heading", { name: "โปรไฟล์พัฒนาการเชิงพรรณนา" })).toBeVisible({ timeout: 45_000 });
   await expect(page.getByText("มีข้อมูลเชิงพรรณนาในช่องภาษาแสดงออก")).toBeVisible();
 });
