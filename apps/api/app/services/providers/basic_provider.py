@@ -40,7 +40,7 @@ _CAUTION = (
 _SCHEMA_VERSION = "features-basic-v1"
 _PROVIDER_ID = "basic_feature_provider"
 _PROVIDER_NAME = "BasicFeatureProvider"
-_PROVIDER_VERSION = "v1.7.0"
+_PROVIDER_VERSION = "v1.7.1"
 
 # Minimum child utterances below which we set insufficient_data=True
 _MIN_CHILD_UTTS = 3
@@ -202,20 +202,34 @@ _DEFINITIONS: list[FeatureDefinition] = [
         description="Review cue count for atypical pronoun usage patterns in CHI utterances.",
         value_type="integer",
         unit="review cues",
-        calculation_method="Regex match for patterns like 'you am', 'me am', 'my want', 'i are'.",
+        calculation_method=(
+            "English: regex match for patterns like 'you am', 'me am', 'my want', 'i are'. "
+            "Thai: CHI utterances where a second-person pronoun is followed by a desire or "
+            "state verb (for example เธออยาก), counted once per utterance."
+        ),
         required_inputs=["utterances"],
-        limitations=["Simple heuristic; high false-negative rate. Review cue only."],
+        limitations=[
+            "Simple heuristic; high false-negative rate. Review cue only.",
+            "Thai children often refer to themselves by name or kin term; that is not flagged.",
+        ],
         clinical_interpretation_caution="Review cue only; not diagnostic. Therapist context required.",
     ),
     FeatureDefinition(
         feature_name="echolalia_cue_count",
         display_name="Echolalia Cue Count",
-        description="Count of CHI utterances that immediately echo the preceding adult utterance verbatim.",
+        description="Count of CHI utterances that immediately echo the preceding adult utterance.",
         value_type="integer",
         unit="review cues",
-        calculation_method="Count CHI utterances that match the preceding non-CHI utterance (lowercased, stripped).",
+        calculation_method=(
+            "English: CHI utterances that match the preceding non-CHI utterance (lowercased, stripped). "
+            "Thai: a CHI utterance directly after an adult utterance that repeats it verbatim, "
+            "with or without a polite particle, or repeats most of its words."
+        ),
         required_inputs=["utterances"],
-        limitations=["Detects only immediate verbatim echoes; delayed echolalia not captured."],
+        limitations=[
+            "Detects only immediate echoes; delayed echolalia not captured.",
+            "A natural answer that reuses the adult's words can be flagged; check each one in context.",
+        ],
         clinical_interpretation_caution="Review cue only; therapist context required.",
     ),
     FeatureDefinition(
@@ -363,6 +377,9 @@ class BasicFeatureProvider(BaseFeatureProvider):
                 "Speaker diarization may be unreliable."
             )
 
+        # None means "not computed", which is different from "none found".
+        pronoun_cues = _pronoun_cue_count(child)
+
         # ---- Build FeatureValue list ----------------------------------------
         def fv(
             name: str,
@@ -474,10 +491,15 @@ class BasicFeatureProvider(BaseFeatureProvider):
             ),
             fv(
                 "pronoun_reversal_cue_count",
-                sum(_pronoun_cue(u.text) for u in child),
+                pronoun_cues,
                 unit="review cues",
                 value_type="integer",
                 hint="Review cue only; not diagnostic. Therapist context required.",
+                extra_warnings=(
+                    ["Thai pronoun cues could not be computed; the Thai language module is unavailable."]
+                    if pronoun_cues is None
+                    else None
+                ),
             ),
             fv(
                 "echolalia_cue_count",
@@ -557,22 +579,55 @@ def _tokens(text: str) -> list[str]:
     ]
 
 
-def _pronoun_cue(text: str) -> int:
-    """Count atypical pronoun usage patterns in a single utterance."""
+_THAI_CHARS = re.compile(r"[\u0e00-\u0e7f]")
+
+
+def _thai_lsa():
+    """Thai language-sample helpers, or None when the research package is absent."""
+    try:
+        from src.clinical_speech import thai_lsa
+    except Exception:
+        return None
+    return thai_lsa
+
+
+def _pronoun_cue(text: str) -> int | None:
+    """Atypical pronoun-use cues in one utterance; None if it cannot be assessed."""
+    if _THAI_CHARS.search(text):
+        thai = _thai_lsa()
+        if thai is None:
+            return None
+        return 1 if thai.detect_thai_pronoun_reversal(text, thai.tokenize_thai_words(text)) else 0
     return len(re.findall(r"\b(?:you am|me am|my want|i are)\b", text, re.I))
+
+
+def _pronoun_cue_count(child: Sequence[Utterance]) -> int | None:
+    cues = [_pronoun_cue(u.text) for u in child]
+    return None if any(cue is None for cue in cues) else sum(cues)
 
 
 def _echolalia_cues(utterances: Sequence[Utterance]) -> int:
     """
-    Count CHI utterances that are verbatim copies of the immediately
-    preceding non-CHI utterance (lowercased, whitespace-stripped).
+    Count CHI utterances that echo the preceding adult utterance.
+
+    English keeps the verbatim rule (lowercased, whitespace-stripped). Thai
+    uses the shared Thai rule, which also accepts an added polite particle or
+    a mostly repeated utterance, and only looks at the directly preceding turn.
     """
+    thai = _thai_lsa()
     count = 0
     previous_adult = ""
+    previous_was_adult = False
     for utt in utterances:
         speaker = str(utt.speaker).upper()
-        if speaker == "CHI" and previous_adult and utt.text.strip().lower() == previous_adult:
-            count += 1
-        elif speaker != "CHI":
+        if speaker != "CHI":
             previous_adult = utt.text.strip().lower()
+            previous_was_adult = True
+            continue
+        if thai is not None and _THAI_CHARS.search(utt.text):
+            if previous_was_adult and thai.detect_echolalia(previous_adult, utt.text)[0]:
+                count += 1
+        elif previous_adult and utt.text.strip().lower() == previous_adult:
+            count += 1
+        previous_was_adult = False
     return count
