@@ -63,6 +63,7 @@ def main() -> int:
     require_text("Dockerfile", "FROM python:3.11-slim", errors)
     require_text("Dockerfile", 'CMD ["uvicorn", "app.main:app"', errors)
     require_text("pyproject.toml", 'requires-python = ">=3.11,<3.14"', errors)
+    require_text("pyproject.toml", f'version = "{PROJECT_VERSION.removeprefix("v")}"', errors)
     require_text(".python-version", "3.12", errors)
     require_text(".github/workflows/deploy.yml", '["3.11", "3.12", "3.13"]', errors)
     require_text(

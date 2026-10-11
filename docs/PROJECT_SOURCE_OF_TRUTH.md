@@ -119,7 +119,7 @@ persistence layer หลักของ lingualens.
     consent bypass, audit loss หรือ fabricated ASR output และต้องทำตาม
     `docs/INCIDENT_RESPONSE_RUNBOOK.md` โดยไม่คัดลอก clinical content ลง
     operational tools
-16. In-app notifications และ email ต้องเป็น generic operational messages เท่านั้น
+16a. In-app notifications และ email ต้องเป็น generic operational messages เท่านั้น
     และต้องไม่ใส่ child identifiers, transcript text, audio content, storage keys,
     raw filenames, report excerpts หรือ clinical content
 17. Audit events ต้องมี actor, action, target, outcome, timestamp และ correlation
@@ -204,13 +204,19 @@ Gate 1 artifact ล่าสุดมีสถานะ `promoted_candidate` ใ
 - ECE: `0.0332`
 - abstention: `0.3166`
 
+Reference evidence เป็น opt-in และ fail-closed: ค่าเริ่มต้นของ
+`LINGUALENS_REFERENCE_ARTIFACT_DIR` (`artifacts/reference_evidence/current`)
+ไม่มีอยู่ใน repository และ `candidate-v1` ที่ commit ไว้มี `reference_cells.csv`
+เฉพาะบรรทัดหัวตาราง provider จึงรายงาน `unavailable` จนกว่าจะชี้ไปยัง artifact
+ที่ผ่านการอนุมัติตาม `docs/ML_REFERENCE_EVIDENCE_OPERATIONS.md`
+
 คำว่า `promoted_candidate` ไม่ได้หมายถึง clinical validation หรืออนุญาตให้แสดง
 diagnosis/probability. Runtime therapist workflow ยังคงแสดงเฉพาะ evidence/review
 cues แบบ fail-closed และไม่ใส่ผลลงรายงานอัตโนมัติ
 
 ## Version policy
 
-- รุ่นผลิตภัณฑ์รวมใช้สาย `v1.6.x`
+- รุ่นผลิตภัณฑ์รวมใช้สาย `v1.7.x`
 - component/schema/provider version tags ต้องสอดคล้องกับ maintained runtime ปัจจุบัน
 - `README.md`, `PROJECT_STATUS.md` และหัวบนสุดของ `CHANGELOG.md` ต้องตรงกัน
 - เอกสาร phase/spec/plan เก่าเป็น historical record ไม่ใช่คำสั่ง runtime
@@ -220,7 +226,7 @@ cues แบบ fail-closed และไม่ใส่ผลลงรายง�
 ```bash
 # Active API
 cd apps/api
-PYTHONPATH=. uvicorn app.main:app --reload --port 8000
+PYTHONPATH=.:../..:../../src uvicorn app.main:app --reload --port 8000
 
 # Active therapist frontend
 cd apps/lingualens-app
@@ -228,7 +234,7 @@ npm ci
 NEXT_PUBLIC_API_BASE_URL=http://localhost:8000/api/v1 npm run dev
 
 # Focused local verification (not a complete CI candidate)
-cd /path/to/asd-project
+cd /path/to/pasascope
 bash scripts/check_project.sh
 ```
 

@@ -158,7 +158,9 @@ LINGUALENS_STORAGE_MODE=supabase_private
 LINGUALENS_SUPABASE_STORAGE_URL=https://<project-ref>.supabase.co
 LINGUALENS_SUPABASE_STORAGE_SERVICE_ROLE_KEY=<managed-secret>
 LINGUALENS_SUPABASE_STORAGE_BUCKET=clinical-audio
-LINGUALENS_REFERENCE_ARTIFACT_DIR=artifacts/reference_evidence/reference-core-14-v1
+# Optional. Point at an approved artifact directory; none ships in the repository,
+# so the reference-evidence provider reports unavailable until this is set.
+# LINGUALENS_REFERENCE_ARTIFACT_DIR=/approved/path/reference-evidence-vN
 ```
 
 Redis is not a baseline deployment dependency. The repository does not provide

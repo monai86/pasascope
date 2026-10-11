@@ -49,5 +49,5 @@ services:
         sync: false
       - key: LINGUALENS_DATABASE_URL
         sync: false
-      - key: LINGUALENS_SUPABASE_SERVICE_ROLE_KEY
+      - key: LINGUALENS_SUPABASE_STORAGE_SERVICE_ROLE_KEY
         sync: false

@@ -82,7 +82,7 @@
    - **Health Check Path:** `/health`
 5. กรอก Environment Variables ที่ต้องใส่เพิ่ม (Secret):
    - `LINGUALENS_DATABASE_URL`: URI จาก Supabase (ขั้นตอนที่ 1.3)
-   - `LINGUALENS_SUPABASE_SERVICE_ROLE_KEY`: Service role secret จาก Supabase
+   - `LINGUALENS_SUPABASE_STORAGE_SERVICE_ROLE_KEY`: Service role secret จาก Supabase
    - `LINGUALENS_CORS_ALLOWED_ORIGINS`: ใส่โดเมนของ Frontend บน Vercel เช่น `https://lingualens.vercel.app,http://localhost:3000`
 6. กด **Apply** เพื่อเริ่มการ Build และ Deploy
 

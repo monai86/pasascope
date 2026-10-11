@@ -330,7 +330,7 @@ class ReferenceEvidenceProvider(BaseMLProvider):
     def _load_and_validate(self) -> None:
         manifest_path = self.artifact_dir / "manifest.json"
         if not manifest_path.is_file():
-            raise ValueError(f"Reference artifact manifest is missing: {manifest_path}")
+            raise ValueError("Reference artifact manifest is missing.")
         manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
         if manifest.get("artifact_type") != ARTIFACT_TYPE:
             raise ValueError("Reference artifact manifest has an unsupported artifact type.")

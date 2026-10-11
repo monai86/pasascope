@@ -32,6 +32,7 @@ from app.services.ml_providers.base import (
     MLProviderResult,
 )
 from app.services.ml_providers.reference_evidence import ReferenceEvidenceProvider
+from tests.path_helpers import repo_root
 from app.services.ml_providers.reference_feature_adapter import adapt_runtime_features
 from app.services.ml_providers.registry import ml_provider_registry
 from app.services.consent_service import withdraw_consent
@@ -709,3 +710,22 @@ def test_report_draft_does_not_include_reference_evidence_automatically(tmp_path
     assert "comparable patterns observed" not in text
     assert "public-corpus profile" not in text
     assert "reference evidence" not in text
+
+
+def test_default_reference_artifact_configuration_fails_closed_without_leaking_paths():
+    """No approved artifact ships in the repository; the provider must say so safely."""
+
+    default_dir = repo_root() / "artifacts" / "reference_evidence" / "current"
+    committed_candidate = repo_root() / "artifacts" / "reference_evidence" / "candidate-v1"
+
+    default_availability = ReferenceEvidenceProvider(default_dir).check_availability()
+    candidate_availability = ReferenceEvidenceProvider(committed_candidate).check_availability()
+
+    assert not default_dir.exists()
+    assert bool(default_availability) is False
+    assert default_availability.reason == "Reference artifact manifest is missing."
+    assert str(repo_root()) not in default_availability.reason
+    # The committed candidate carries a header-only reference_cells.csv, so it
+    # is not a runtime artifact. If this starts passing, update the docs.
+    assert bool(candidate_availability) is False
+    assert candidate_availability.reason == "Reference cells file is empty or has an incompatible schema."

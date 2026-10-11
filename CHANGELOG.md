@@ -28,6 +28,10 @@
   - Evaluation helper routes now require an authenticated user and are closed whenever auth mode is not `mock`, including staging deployments that keep mock mode on.
 
 ### Fixed
+- **Deployment and CI**:
+  - `render.yaml` and the cloud runbook set `LINGUALENS_SUPABASE_STORAGE_SERVICE_ROLE_KEY`, the name the API reads; the previous name left the storage key empty.
+  - CI runs the assessment v2 migration smoke check and enforces bundle budgets (`verify:bundle`). `pyproject.toml` is at `1.7.0` and the consistency check now verifies it.
+  - The reference-evidence "manifest is missing" reason no longer includes a server filesystem path.
 - **Therapist frontend** (`apps/lingualens-app/`):
   - The dashboard loads its summary in the browser, where the session token is; the previous server-side fetch could not authenticate in Supabase mode. A 401/403 now says the session is not authorized instead of "Backend Offline".
   - API error messages show the readable `detail` text instead of the raw JSON payload.

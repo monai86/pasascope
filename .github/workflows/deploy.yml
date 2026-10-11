@@ -76,6 +76,9 @@ jobs:
         run: |
           PYTHONPATH=apps/api:src python scripts/check_api_migrations.py
 
+      - name: Run assessment v2 migration smoke check
+        run: |
+          PYTHONPATH=apps/api:src python scripts/check_assessment_v2_migrations.py
 
 
   verify-therapist-frontend:
@@ -104,7 +107,7 @@ jobs:
           npm run typecheck
           npm run lint
           npm test
-          npm run build
+          npm run verify:bundle
 
       # The standard Next.js build above is the Vercel deployment contract.
       # Cloudflare staging remains an explicit, separate OpenNext path.
