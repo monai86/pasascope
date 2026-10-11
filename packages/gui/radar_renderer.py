@@ -192,8 +192,12 @@ class RadarChartRenderer:
                 self.summary_widget.config(state=tk.DISABLED)
 
     @staticmethod
-    def render_svg(metrics: dict[str, Any], width: int = 400, height: int = 340) -> str:
-        """Generate a standalone SVG of the session profile for printable HTML reports."""
+    def render_svg(metrics: dict[str, Any], width: int = 520, height: int = 340) -> str:
+        """Generate a standalone SVG of the session profile for printable HTML reports.
+
+        The default width leaves room for the side axis labels, which are
+        anchored outward from the chart and were clipped at 400.
+        """
         cx, cy = width / 2, height / 2 - 12
         radius = max(60, min(cx, cy) - 45)
 

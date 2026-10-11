@@ -367,7 +367,7 @@ class PasaScopeGUIApp:
 
         tk.Label(
             title_frame,
-            text="v1.7.0",
+            text="v1.7.1",
             font=(self.font_sys, 8, "bold"),
             fg=self.primary_color,
             bg="#eff6ff",

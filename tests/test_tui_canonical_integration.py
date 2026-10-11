@@ -490,8 +490,14 @@ def test_client_audio_waveform_peaks_and_playback_grant_in_memory():
     assert "not found" in str(exc_info.value).lower()
 
 
-def test_client_audio_waveform_peaks_and_playback_grant_canonical(canonical_client):
+def test_client_audio_waveform_peaks_and_playback_grant_canonical(canonical_client, tmp_path, monkeypatch):
     """Verify canonical HTTP client adapter fetches binary waveform peaks and playback grant."""
+    np = pytest.importorskip("numpy")
+    soundfile = pytest.importorskip("soundfile")
+    pytest.importorskip("faster_whisper")
+    from app.core.config import Settings
+    from app.services import audio_job_service
+
     client, _ = canonical_client
     from app.api.v1.dependencies import get_repository
     from app.repositories.mock_repository import MockRepository
@@ -515,6 +521,11 @@ def test_client_audio_waveform_peaks_and_playback_grant_canonical(canonical_clie
         checksum_sha256="4a7d1ed414474e4033ac29ccb8653d9b",
     )
     repo.audio_files[audio.audio_file_id] = audio
+    # The waveform is computed from the stored recording, so store one second of tone.
+    recording = tmp_path / audio.object_key
+    recording.parent.mkdir(parents=True)
+    soundfile.write(str(recording), (0.5 * np.sin(np.arange(16000) / 8)).astype("float32"), 16000)
+    monkeypatch.setattr(audio_job_service, "get_settings", lambda: Settings(local_storage_root=str(tmp_path)))
     app.dependency_overrides[get_repository] = lambda: repo
     try:
         # Set authenticated session
@@ -523,7 +534,7 @@ def test_client_audio_waveform_peaks_and_playback_grant_canonical(canonical_clie
         # 1. Binary waveform peaks
         peaks = client.get_waveform_peaks("session_demo_001")
         assert isinstance(peaks, bytes)
-        assert len(peaks) > 0
+        assert len(peaks) == 50
 
         # 2. Playback grant
         grant = client.get_playback_grant("session_demo_001")

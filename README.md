@@ -3,8 +3,8 @@
 Research prototype for extracting speech-language features from Thai language samples, CHAT (`.cha`) transcripts, and audio recordings to support pediatric therapist assessment workflows. Developed as an educational/research decision-support system — **not a diagnostic tool**.
 
 ## Project Version Mapping
-- **Project version:** `v1.7.0`
-- **Therapist product version:** `v1.7.0`
+- **Project version:** `v1.7.1`
+- **Therapist product version:** `v1.7.1`
 
 > Start with [`docs/PROJECT_SOURCE_OF_TRUTH.md`](./docs/PROJECT_SOURCE_OF_TRUTH.md).
 > It defines which paths are active, legacy, generated, or research-only.

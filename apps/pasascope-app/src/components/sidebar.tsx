@@ -190,7 +190,7 @@ export function Sidebar({
         ) : null}
 
         <div className="px-3.5 py-1 text-xs text-[color:var(--color-text-subtle)]">
-          <span>PasaScope v1.7.0</span>
+          <span>PasaScope v1.7.1</span>
         </div>
       </div>
     </aside>

@@ -39,8 +39,8 @@ def test_radar_positions_depend_only_on_the_measured_value():
     # Age used to pick a different "norm" and move the same value on the chart.
     assert child_polygon(base) == child_polygon({**base, "age_months": 30}) == child_polygon({**base, "age_months": 58})
     assert child_polygon(base) != child_polygon({**base, "mlu_words": 4.0})
-    # MLU 3.0 on a 0-6 axis sits halfway up the top spoke (centre y=158, radius 113).
-    assert child_polygon(base).split()[0] == "200.0,101.5"
+    # MLU 3.0 on a 0-6 axis sits halfway up the top spoke (centre 260,158; radius 113).
+    assert child_polygon(base).split()[0] == "260.0,101.5"
 
 
 def test_bilingual_clinical_html_report_generation():

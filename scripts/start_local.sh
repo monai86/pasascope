@@ -11,16 +11,14 @@ NC='\033[0m'
 
 echo -e "${BLUE}=== Starting Local PasaScope App (Frontend + Backend) ===${NC}"
 
-# 1. Setup local environment file for React App
+# 1. Point the frontend at the local API.
+# Passed as an environment variable rather than written to .env.local, which
+# the repository consistency check treats as a local secret file.
 FRONTEND_DIR="apps/pasascope-app"
-ENV_FILE="$FRONTEND_DIR/.env.local"
+export NEXT_PUBLIC_API_BASE_URL="${NEXT_PUBLIC_API_BASE_URL:-http://localhost:8000/api/v1}"
 
 echo -e "${BLUE}[1/4] Configuring local environment variables...${NC}"
-cat <<EOT > "$ENV_FILE"
-# Configured by start_local.sh
-NEXT_PUBLIC_API_BASE_URL=http://localhost:8000/api/v1
-EOT
-echo -e "${GREEN}✓ Local environment configured at $ENV_FILE${NC}"
+echo -e "${GREEN}✓ Frontend will call $NEXT_PUBLIC_API_BASE_URL${NC}"
 
 # 2. Check Node dependencies
 echo -e "${BLUE}[2/4] Checking Node dependencies...${NC}"

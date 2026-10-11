@@ -17,6 +17,9 @@
   - The web app selects `local_whisper` when available, verifies the upload before transcription, and waits in proportion to clip length. It no longer requests the synthetic mock provider.
   - Browser recording types (`audio/webm`, `audio/ogg`) are accepted at upload.
 - **Thai ASR evaluation** (`scripts/evaluate_thai_asr.py`, `scripts/report_transcript_review_time.py`): draft-versus-gold error rates, child-speech attribution, feature drift, processing time, and draft-to-attestation review time. See `data/evaluation/README.md`.
+- **Review cues show their evidence** (`apps/api/`, `apps/pasascope-app/`): echolalia and pronoun cues carry the ids of the utterances they came from; the evidence panel shows each adult/child pair and lets the therapist confirm or dismiss the cue.
+- **Waveform from the recording** (`apps/api/`, `apps/pasascope-app/`): the audio workbench draws the peak envelope of the stored recording instead of a generated pattern, and shows nothing when the recording cannot be decoded.
+- **Recording-flow e2e tests** (`apps/pasascope-app/e2e/audio-transcription.spec.ts`): the switched-off case runs everywhere; the real transcription case runs when `PASASCOPE_E2E_ASR_AUDIO` names a speech WAV and the API has local Whisper enabled.
 - **Evaluation without own recordings** (`scripts/`, `reports/metrics/`): feature agreement with CLAN on 1,961 TalkBank transcripts, Thai recognition accuracy by model size on FLEURS, scripted text-to-speech Thai dialogues, and a labelled check of the Thai echolalia rule.
 
 ### Changed
@@ -32,6 +35,8 @@
   - Engine-named placeholder ASR providers (`whisper`, `faster_whisper`, `whisperx`, `batchalign`) are unregistered.
 - **Thai transcript text** (`src/audio_pipeline/`): multi-utterance Thai drafts no longer have spaces inserted between characters, and exported CHAT no longer splits Thai words into fragments.
 - **Feature word counts** (`apps/api/`): CHAT annotation codes are no longer counted as words.
+- **Draft utterance boundaries** (`src/audio_pipeline/`): recogniser segments are cut at pauses over 0.25 s before speakers are assigned, so an exchange returned as one segment becomes one utterance per turn (8 of 8 on the scripted dialogues, previously 1-3). A pause of 0.3 s or more inside one speaker's turn now also starts a new utterance.
+- **Exported radar SVG** (`packages/gui/`): side axis labels are no longer clipped.
 - **Browser recordings could not be transcribed** (`src/audio_pipeline/`): WebM/Opus and other non-WAV recordings are decoded to WAV before speaker separation, which previously failed without a system ffmpeg.
 - **Web findings and transcript review** (`apps/pasascope-app/`):
   - Removed the findings radar chart, which showed fixed sample values and "age-appropriate" labels for every session.

@@ -14,7 +14,7 @@
 
 - Date: 2026-06-24 Asia/Bangkok.
 - Current branch: `main`.
-- Current version in docs: `v1.7.0`.
+- Current version in docs: `v1.7.1`.
 - Source-of-truth file: `docs/PROJECT_SOURCE_OF_TRUTH.md`.
 - Canonical frontend: `apps/pasascope-app/`.
 - Canonical backend: `apps/api/`.
