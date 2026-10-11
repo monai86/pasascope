@@ -37,7 +37,9 @@ import {
   getSessionAudioFiles,
   uploadAudioBlobToBackend,
   startBackendTranscriptionJob,
-  pollTranscriptionJob
+  pollTranscriptionJob,
+  findAvailableTranscriptionProvider,
+  transcriptionWaitBudgetMs
 } from "@/lib/workflow";
 import {
   acknowledgeSessionCues,
@@ -454,17 +456,30 @@ export function useSessionWorkspace({ sessionId, caseId, transcriptId, reportId,
     setUploadStep("uploading");
     setBusy(true);
     try {
+      const provider = await findAvailableTranscriptionProvider();
+      if (!provider) {
+        setTransJobRequestedProvider(undefined);
+        setTransJobActualProvider(undefined);
+        setTransJobStatus("unavailable");
+        setTransJobMessage(
+          "Speech recognition is not enabled on this server, so the recording was not uploaded. Paste or import the transcript instead."
+        );
+        setUploadStep("error");
+        setBusy(false);
+        return;
+      }
       const { audioFileId } = await uploadAudioBlobToBackend(
         state.sessionId, recordedAudio.blob,
         { durationSeconds: recordedAudio.metadata.durationSeconds,
           mimeType: recordedAudio.metadata.mimeType ?? "audio/webm" }
       );
-      const { jobId } = await startBackendTranscriptionJob(state.sessionId, audioFileId, "mock");
+      const { jobId } = await startBackendTranscriptionJob(state.sessionId, audioFileId, provider);
       setTransJobId(jobId);
+      setTransJobRequestedProvider(provider);
       setUploadStep("polling");
       setTransJobStatus("queued");
       setTransJobMessage("Audio processing queued...");
-      void pollUntilComplete(jobId);
+      void pollUntilComplete(jobId, transcriptionWaitBudgetMs(recordedAudio.metadata.durationSeconds));
     } catch (err) {
       setTransJobMessage(err instanceof Error ? err.message : "Upload failed.");
       setTransJobStatus("failed");
@@ -491,10 +506,11 @@ export function useSessionWorkspace({ sessionId, caseId, transcriptId, reportId,
     }
   }
 
-  async function pollUntilComplete(jobId: string) {
+  async function pollUntilComplete(jobId: string, waitBudgetMs: number) {
+    const interval = typeof process !== "undefined" && process.env.NODE_ENV === "test" ? 10 : 2000;
+    const maxAttempts = Math.ceil(waitBudgetMs / 2000);
     let attempts = 0;
-    while (attempts < 30) {
-      const interval = typeof process !== "undefined" && process.env.NODE_ENV === "test" ? 10 : 2000;
+    while (attempts < maxAttempts) {
       await new Promise(r => setTimeout(r, interval));
       try {
         const poll = await pollTranscriptionJob(jobId);
@@ -546,7 +562,7 @@ export function useSessionWorkspace({ sessionId, caseId, transcriptId, reportId,
       attempts++;
     }
     setTransJobStatus("failed");
-    setTransJobMessage("Transcription timed out. Try again or use manual paste.");
+    setTransJobMessage("Transcription is taking longer than expected. Try again or use manual paste.");
     setUploadStep("error");
     setBusy(false);
   }

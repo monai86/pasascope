@@ -1,25 +1,32 @@
 """
-LocalWhisperProvider — architecture stub for future local Whisper integration.
+LocalWhisperProvider — on-device Whisper transcription with child/adult diarization.
 
-check_availability() returns unavailable unless WHISPER_MODEL_PATH is configured
-in app settings. This class is intentionally a non-functional stub.
+Runs the research audio pipeline (``src/audio_pipeline``) on a recording that is
+already stored on this machine. Nothing is sent to an external service, and a
+failed run is reported as a failure: this provider never substitutes text.
 """
 from __future__ import annotations
 
+from importlib import import_module
+from importlib.util import find_spec
+from pathlib import Path
+
+from app.core.config import get_settings
 from app.services.asr_providers.base import (
     BaseTranscriptionProvider,
     ProviderAvailability,
+    TranscriptLine,
     TranscriptionResult,
 )
-from app.core.config import get_settings
+
+# "api_openai" is deliberately absent: it would upload child audio.
+LOCAL_LANGUAGE_STRATEGIES = frozenset({"auto", "english", "thai", "dual_pass", "thai_specialized"})
+MODEL_SIZES = frozenset({"tiny", "base", "small", "medium", "large-v3"})
+UNCLEAR_CONFIDENCE_THRESHOLD = 0.30
+ADULT_SPEAKER_CODES = frozenset({"INV", "MOT", "FAT", "THER"})
 
 
 class LocalWhisperProvider(BaseTranscriptionProvider):
-    """
-    Placeholder stub. Returns unavailable unless whisper_model_path is set.
-    Full implementation requires openai-whisper or faster-whisper + model file.
-    """
-
     @property
     def provider_id(self) -> str:
         return "local_whisper"
@@ -30,49 +37,146 @@ class LocalWhisperProvider(BaseTranscriptionProvider):
 
     @property
     def provider_version(self) -> str:
-        return "v1-stub"
+        return "v2-faster-whisper"
 
     def get_provider_metadata(self) -> dict:
+        settings = get_settings()
         return {
             "provider_id": self.provider_id,
             "provider_name": self.provider_name,
             "provider_version": self.provider_version,
             "description": (
-                "Local Whisper ASR provider (not yet implemented). Architecture stub only."
+                "On-device Whisper transcription with child/adult speaker separation. "
+                "Experimental draft output; therapist review required."
             ),
-            "is_stub": True,
-            "external_dependencies": [
-                "openai-whisper or faster-whisper",
-                "WHISPER_MODEL_PATH env var",
-            ],
-            "clinical_caution": "Not available in this build.",
+            "is_stub": False,
+            "runs_locally": True,
+            "model_size": settings.asr_whisper_model_size,
+            "language_strategy": settings.asr_language_strategy,
+            "external_dependencies": ["faster-whisper"],
+            "clinical_caution": (
+                "Automatic transcription of child speech is error-prone. "
+                "Therapist must listen to the audio and correct all content."
+            ),
         }
 
     def check_availability(self) -> ProviderAvailability:
         settings = get_settings()
-        model_path = getattr(settings, "whisper_model_path", None)
-        if not model_path:
+        if not settings.asr_local_whisper_enabled:
             return ProviderAvailability(
                 available=False,
-                reason="WHISPER_MODEL_PATH not configured.",
-                missing_dependencies=["WHISPER_MODEL_PATH"],
+                reason="Local Whisper is disabled. Set LINGUALENS_ASR_LOCAL_WHISPER_ENABLED=true to enable it.",
+                missing_dependencies=["LINGUALENS_ASR_LOCAL_WHISPER_ENABLED"],
             )
-        return ProviderAvailability(
-            available=False,
-            reason="LocalWhisperProvider is a stub and is not yet implemented.",
-        )
+        if settings.storage_mode not in {"local", "local_private"}:
+            return ProviderAvailability(
+                available=False,
+                reason="Local Whisper needs recordings stored on this machine.",
+            )
+        if settings.asr_whisper_model_size not in MODEL_SIZES:
+            return ProviderAvailability(
+                available=False,
+                reason=f"Unsupported Whisper model size: {settings.asr_whisper_model_size}.",
+            )
+        if settings.asr_language_strategy not in LOCAL_LANGUAGE_STRATEGIES:
+            return ProviderAvailability(
+                available=False,
+                reason=f"Unsupported local language strategy: {settings.asr_language_strategy}.",
+            )
+        if find_spec("faster_whisper") is None:
+            return ProviderAvailability(
+                available=False,
+                reason="The faster-whisper package is not installed.",
+                missing_dependencies=["faster-whisper"],
+            )
+        return ProviderAvailability(available=True, reason="Local Whisper is ready.")
 
     def transcribe(
         self,
         audio_ref: str,
         config: dict | None = None,
     ) -> TranscriptionResult:
+        availability = self.check_availability()
+        if not availability:
+            return self._result("unavailable", error_message=availability.reason)
+
+        audio_path = (config or {}).get("audio_path")
+        if not audio_path or not Path(audio_path).is_file():
+            return self._result("failed", error_message="The recording for this job was not found in local storage.")
+
+        settings = get_settings()
+        try:
+            audio_to_cha = import_module("src.audio_pipeline.pipeline").audio_to_cha
+            pipeline_result = audio_to_cha(
+                Path(audio_path),
+                model_size=settings.asr_whisper_model_size,
+                strategy=settings.asr_language_strategy,
+                child_age_months=(config or {}).get("child_age_months"),
+                validate=False,
+            )
+        except Exception as exc:
+            return self._result("failed", error_message=f"Local Whisper transcription failed: {type(exc).__name__}.")
+
+        lines: list[TranscriptLine] = []
+        languages: set[str] = set()
+        has_words = False
+        for segment in pipeline_result.utterances:
+            text = (segment.text or "").strip()
+            if not text:
+                continue
+            words = list(segment.words or [])
+            has_words = has_words or bool(words)
+            confidence = (
+                round(sum(word.probability for word in words) / len(words), 3)
+                if words
+                else None
+            )
+            speaker = (segment.speaker or "").upper()
+            if speaker != "CHI" and speaker not in ADULT_SPEAKER_CODES:
+                speaker = "UNK"
+            if segment.language:
+                languages.add(segment.language)
+            lines.append(
+                TranscriptLine(
+                    line_id=f"lw-{len(lines) + 1:03d}",
+                    speaker=speaker,
+                    text=text,
+                    start_ms=int(round(segment.start * 1000)),
+                    end_ms=int(round(segment.end * 1000)),
+                    confidence=confidence,
+                    source="asr",
+                    unclear=confidence is not None and confidence < UNCLEAR_CONFIDENCE_THRESHOLD,
+                )
+            )
+
+        if not lines:
+            return self._result("failed", error_message="No speech was recognised in this recording.")
+
         return TranscriptionResult(
-            status="unavailable",
+            status="completed",
+            provider_id=self.provider_id,
+            provider_name=self.provider_name,
+            provider_version=self.provider_version,
+            transcript_lines=lines,
+            language=",".join(sorted(languages)) or "und",
+            confidence_available=has_words,
+            word_timestamps_available=has_words,
+            speaker_segments_available=any(line.speaker != "UNK" for line in lines),
+            warnings=[
+                "Automatic draft: speaker labels and wording must be checked against the recording.",
+            ],
+            provider_metadata={
+                "model_size": settings.asr_whisper_model_size,
+                "language_strategy": settings.asr_language_strategy,
+            },
+        )
+
+    def _result(self, status: str, *, error_message: str) -> TranscriptionResult:
+        return TranscriptionResult(
+            status=status,
             provider_id=self.provider_id,
             provider_name=self.provider_name,
             provider_version=self.provider_version,
             transcript_lines=[],
-            error_message="LocalWhisperProvider is not implemented in this build.",
-            warnings=["LocalWhisperProvider is a stub. Use mock provider for testing."],
+            error_message=error_message,
         )

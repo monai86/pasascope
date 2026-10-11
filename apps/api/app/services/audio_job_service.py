@@ -30,7 +30,17 @@ from app.services.asr_providers.base import TranscriptionResult
 
 
 
-ALLOWED_AUDIO_TYPES = {"audio/wav", "audio/mpeg", "audio/mp4", "audio/x-m4a", "video/mp4", "video/quicktime"}
+ALLOWED_AUDIO_TYPES = {
+    "audio/wav",
+    "audio/x-wav",
+    "audio/mpeg",
+    "audio/mp4",
+    "audio/x-m4a",
+    "audio/webm",
+    "audio/ogg",
+    "video/mp4",
+    "video/quicktime",
+}
 MAX_AUDIO_BYTES = 250 * 1024 * 1024
 
 
@@ -50,10 +60,28 @@ class AsrProviderError(RuntimeError):
 
 
 
+DIARIZED_ADULT_SPEAKERS = {"INV", "MOT", "FAT", "THER"}
+
+
+def _local_audio_path(audio_file: AudioFileMetadata | None) -> Path | None:
+    """Stored recording for on-device providers, or None when there is none."""
+    settings = get_settings()
+    if audio_file is None or not audio_file.object_key:
+        return None
+    if settings.storage_mode not in {"local", "local_private"}:
+        return None
+    storage_root = settings.resolved_local_storage_root.resolve()
+    candidate = (storage_root / audio_file.object_key).resolve()
+    if storage_root not in candidate.parents or not candidate.is_file():
+        return None
+    return candidate
+
+
 def validate_audio_upload(payload: AudioUploadRequest) -> None:
     if not payload.filename.strip() or "/" in payload.filename or "\\" in payload.filename or ".." in payload.filename:
         raise ValueError("unsafe filename")
-    if payload.content_type not in ALLOWED_AUDIO_TYPES:
+    # Browser recordings carry codec parameters, e.g. "audio/webm;codecs=opus".
+    if payload.content_type.split(";")[0].strip().lower() not in ALLOWED_AUDIO_TYPES:
         raise ValueError("unsupported file")
     if payload.size_bytes > MAX_AUDIO_BYTES:
         raise ValueError("audio too long or too large")
@@ -363,7 +391,11 @@ def run_audio_processing_job(repo: MockRepository, job_id: str, *, actor_id: str
             transcribe_config = payload.config.model_dump()
         if hasattr(payload, "draft_text") and payload.draft_text:
             transcribe_config["draft_text"] = payload.draft_text
-            
+        local_audio_path = _local_audio_path(audio_file)
+        if local_audio_path is not None:
+            transcribe_config["audio_path"] = str(local_audio_path)
+            transcribe_config["child_age_months"] = repo.cases[repo.sessions[session_id].case_id].age_months
+
         result: TranscriptionResult = provider.transcribe(
             audio_ref=audio_file_id or "",
             config=transcribe_config,
@@ -437,7 +469,11 @@ def create_draft_transcript_from_result(
     utterances: list[Utterance] = []
     for line in result.transcript_lines:
         speaker_code = line.speaker
-        if speaker_code != "CHI":
+        # Adult labels are kept only when the provider actually separated
+        # speakers; otherwise they are placeholders for the therapist to set.
+        if speaker_code != "CHI" and not (
+            result.speaker_segments_available and speaker_code in DIARIZED_ADULT_SPEAKERS
+        ):
             speaker_code = "UNK"
         utt = Utterance(
             utterance_id=new_id("utt"),

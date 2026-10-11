@@ -33,11 +33,21 @@ fi
 
 # 3. Start Backend FastAPI
 echo -e "${BLUE}[3/4] Starting FastAPI Backend on port 8000...${NC}"
-if [ -d ".venv" ]; then
+if [ -d ".venv312" ]; then
+    # shellcheck disable=SC1091
+    source .venv312/bin/activate
+elif [ -d ".venv" ]; then
     # shellcheck disable=SC1091
     source .venv/bin/activate
 else
-    echo -e "${YELLOW}[Warning] .venv not found. Using system Python.${NC}"
+    echo -e "${YELLOW}[Warning] No .venv312 or .venv found. Using system Python.${NC}"
+fi
+
+# On-device speech recognition is opt-in; export this before running the script.
+if [ "${LINGUALENS_ASR_LOCAL_WHISPER_ENABLED:-false}" = "true" ]; then
+    echo -e "${GREEN}✓ Local Whisper transcription enabled (model: ${LINGUALENS_ASR_WHISPER_MODEL_SIZE:-small}).${NC}"
+else
+    echo -e "${YELLOW}Local Whisper transcription is off. Set LINGUALENS_ASR_LOCAL_WHISPER_ENABLED=true to transcribe recordings.${NC}"
 fi
 
 # Run uvicorn in the background and save PID

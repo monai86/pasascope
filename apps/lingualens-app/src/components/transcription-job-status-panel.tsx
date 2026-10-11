@@ -30,6 +30,12 @@ const CFG: Record<TranscriptionJobDisplayStatus, { icon: React.ReactNode; label:
   unavailable:  { icon: <AlertTriangle size={18} />, label: "Provider unavailable", color: "text-amber-700" },
 };
 
+const PROVIDER_LABELS: Record<string, string> = {
+  local_whisper: "Whisper (on this server)",
+  mock: "Synthetic demo text — not speech recognition",
+  manual: "Manual entry",
+};
+
 export function TranscriptionJobStatusPanel({
   status, message, requestedProvider, actualProvider, fallbackReason,
   onOpenTranscript, onRetry, onUsePaste,
@@ -52,6 +58,9 @@ export function TranscriptionJobStatusPanel({
       )}
       {actualProvider && requestedProvider && actualProvider !== requestedProvider && (
         <p className="text-xs text-slate-500">Requested: {requestedProvider} · Used: {actualProvider}</p>
+      )}
+      {actualProvider && (
+        <p className="text-xs text-slate-500">Transcribed by: {PROVIDER_LABELS[actualProvider] ?? actualProvider}</p>
       )}
       {isSuccess && (
         <div className="rounded-[var(--radius-card)] border border-amber-200 bg-amber-50 p-3 text-sm text-amber-900">

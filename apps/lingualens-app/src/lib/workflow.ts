@@ -1755,7 +1755,8 @@ export async function uploadAudioBlobToBackend(
   blob: Blob,
   metadata: { durationSeconds: number; mimeType: string }
 ): Promise<{ audioFileId: string }> {
-  const ext = metadata.mimeType.split("/")[1] ?? "webm";
+  // Recorder MIME types carry codec parameters, e.g. "audio/webm;codecs=opus".
+  const ext = metadata.mimeType.split(";")[0].split("/")[1] ?? "webm";
   const job = await apiRequest<any>(`/sessions/${sessionId}/audio/upload`, {
     method: "POST",
     body: JSON.stringify({
@@ -1774,13 +1775,41 @@ export async function uploadAudioBlobToBackend(
   }
 
   await uploadAudioFileBytes(uploadUrl, blob);
+  // The backend only transcribes recordings whose upload has been verified.
+  await apiRequest<BackendAudioFileMetadata>(`/audio/${audioFileId}/complete-upload`, {
+    method: "POST",
+    body: JSON.stringify({ size_bytes: blob.size }),
+  });
   return { audioFileId };
+}
+
+export const LOCAL_WHISPER_PROVIDER_ID = "local_whisper";
+
+type BackendTranscriptionProvider = { provider_id: string; available: boolean };
+
+/**
+ * The real speech-recognition provider, when the backend has it switched on.
+ * Returns null otherwise: synthetic demo output is never chosen on the
+ * therapist's behalf.
+ */
+export async function findAvailableTranscriptionProvider(): Promise<string | null> {
+  const providers = await apiGet<BackendTranscriptionProvider[]>("/transcription-providers");
+  if (!Array.isArray(providers)) return null;
+  const localWhisper = providers.find((item) => item.provider_id === LOCAL_WHISPER_PROVIDER_ID);
+  return localWhisper?.available ? localWhisper.provider_id : null;
+}
+
+/** How long to wait for a transcription job before giving up, in milliseconds. */
+export function transcriptionWaitBudgetMs(durationSeconds: number): number {
+  // On-device Whisper on a CPU can take several times the clip length.
+  const estimated = (Number.isFinite(durationSeconds) ? durationSeconds : 0) * 6 * 1000 + 120_000;
+  return Math.min(Math.max(estimated, 180_000), 20 * 60_000);
 }
 
 export async function startBackendTranscriptionJob(
   sessionId: string,
   audioId: string,
-  provider: string = "mock"
+  provider: string
 ): Promise<{ jobId: string }> {
   const job = await apiRequest<any>(`/sessions/${sessionId}/audio/process`, {
     method: "POST",

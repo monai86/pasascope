@@ -1,6 +1,7 @@
 from fastapi import APIRouter
 
 from app.core.config import get_settings
+from app.services.asr_providers.registry import asr_provider_registry
 
 router = APIRouter(prefix="/settings", tags=["settings"])
 
@@ -15,7 +16,12 @@ def _audio_upload_capability(config) -> str:
 def settings():
     config = get_settings()
     audio_upload = _audio_upload_capability(config)
-    transcription = "experimental" if config.mock_mode and audio_upload == "experimental" else "unavailable"
+    local_whisper = asr_provider_registry.get("local_whisper").check_availability().available
+    transcription = (
+        "experimental"
+        if audio_upload == "experimental" and (local_whisper or config.mock_mode)
+        else "unavailable"
+    )
     return {
         "mock_mode": config.mock_mode,
         "auth_mode": config.auth_mode,
@@ -45,6 +51,7 @@ def settings():
         },
         "pipeline_settings": {
             "audio_processing": "experimental_async",
+            "transcription_provider": "local_whisper" if local_whisper else None,
             "job_queue_mode": config.job_queue_mode,
             "repository_mode": config.repository_mode,
             "storage_mode": config.storage_mode,

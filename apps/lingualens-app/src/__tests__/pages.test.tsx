@@ -981,6 +981,12 @@ describe("lingualens pages", () => {
       if (url.includes("/settings")) {
         return jsonResponse({ mock_mode: true });
       }
+      if (url.includes("/transcription-providers")) {
+        return jsonResponse([
+          { provider_id: "mock", available: true },
+          { provider_id: "local_whisper", available: true }
+        ]);
+      }
       if (url.includes("/audio/upload")) {
         return jsonResponse({
           job_id: "job-123",
@@ -994,6 +1000,9 @@ describe("lingualens pages", () => {
       }
       if (url.includes("/upload-file")) {
         return jsonResponse({ status: "success" });
+      }
+      if (url.includes("/complete-upload")) {
+        return jsonResponse({ audio_file_id: "aud-123", upload_status: "uploaded" });
       }
       if (url.includes("/audio/process")) {
         return jsonResponse({
@@ -1014,6 +1023,7 @@ describe("lingualens pages", () => {
           status: "needs_review",
           message: "Completed",
           details: {
+            actual_provider: "local_whisper",
             asr_draft: {
               transcript_id: "tr-123"
             }
@@ -1090,6 +1100,13 @@ describe("lingualens pages", () => {
     await waitFor(() => expect(screen.getByText("Queued")).toBeInTheDocument());
     await waitFor(() => expect(screen.getByText("Processing")).toBeInTheDocument());
     await waitFor(() => expect(screen.getByText(/Draft transcript ready/i)).toBeInTheDocument());
+
+    // The recording is verified, then transcribed by the real provider.
+    const requested = (pattern: string) =>
+      fetchMock.mock.calls.find(([input]) => String(input).includes(pattern)) as unknown as [string, RequestInit];
+    expect(requested("/complete-upload")).toBeDefined();
+    expect(JSON.parse(String(requested("/audio/process")[1].body)).provider).toBe("local_whisper");
+    expect(screen.getByText("Transcribed by: Whisper (on this server)")).toBeInTheDocument();
 
     const reviewBtn = screen.getByRole("button", { name: /Review transcript/i });
     fireEvent.click(reviewBtn);
