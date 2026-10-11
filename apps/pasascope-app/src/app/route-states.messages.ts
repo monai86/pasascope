@@ -2,7 +2,6 @@ import { defineMessages } from "@/i18n/messages";
 
 export const routeStateMessages = defineMessages({
   en: {
-    loading: "Loading…",
     notFound: {
       title: "This page does not exist",
       description: "The address may be mistyped, or the page may have moved. Nothing was changed.",
@@ -17,7 +16,6 @@ export const routeStateMessages = defineMessages({
     },
   },
   th: {
-    loading: "กำลังโหลด…",
     notFound: {
       title: "ไม่พบหน้านี้",
       description: "ที่อยู่อาจพิมพ์ผิด หรือหน้านี้ถูกย้ายไปแล้ว ไม่มีข้อมูลใดถูกเปลี่ยนแปลง",

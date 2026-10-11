@@ -1154,7 +1154,7 @@ describe("pasascope pages", () => {
 
   it("renders clean session results and transcript review routes", async () => {
     await renderResultsPage();
-    expect((await screen.findAllByRole("heading", { name: "Session Results" })).length).toBeGreaterThan(0);
+    expect((await screen.findAllByRole("heading", { name: "Findings", level: 1 })).length).toBeGreaterThan(0);
     expect(screen.getByRole("heading", { name: "No analysis results yet" })).toBeInTheDocument();
     expect(screen.getByRole("link", { name: "Review Transcript" })).toHaveAttribute("href", "/cases?intent=start-session");
     expect(screen.getByRole("button", { name: "Generate report draft" })).toBeDisabled();

@@ -105,7 +105,7 @@ export function SessionFindingsView({
     return (
       <div className="mx-auto max-w-7xl space-y-6">
         <SessionContextHeader
-          title="Session Results"
+          title="Findings"
           description="Review descriptive transcript cues and therapist-owned next steps."
           context={sessionContext}
         />
@@ -132,7 +132,7 @@ export function SessionFindingsView({
   return (
     <div className="space-y-6">
       <SessionContextHeader
-        title="Session Results"
+        title="Findings"
         description="Review descriptive transcript cues and therapist-owned draft language."
         context={sessionContext}
         density="compact"

@@ -99,7 +99,7 @@ describe("SessionContextHeader step completion", () => {
   it("ticks only the steps the session has actually finished", () => {
     render(
       <SessionContextHeader
-        title="Session Results"
+        title="Findings"
         description="Review extracted features."
         context={{ ...base, activeView: "findings", completion: { intake: true, transcript: false, findings: false, report: false } }}
       />,

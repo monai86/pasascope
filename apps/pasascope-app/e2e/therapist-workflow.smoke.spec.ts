@@ -112,7 +112,7 @@ test("happy path smoke flow covers transcript QA, ML readiness, evidence review,
   await page.getByTestId("extract-features-button").click();
   await expect(page).toHaveURL(/\/sessions\/[^/?]+\?view=findings/);
 
-  await expect(page.getByRole("heading", { name: "Session Results", level: 1 })).toBeVisible({ timeout: 20_000 });
+  await expect(page.getByRole("heading", { name: "Findings", level: 1, exact: true })).toBeVisible({ timeout: 20_000 });
   await expect(page.getByText("Report readiness")).toBeVisible();
   await expect(page.getByText(/Ready|Blocked/).first()).toBeVisible();
   const evidenceButton = page.getByTestId("generate-evidence-review-button");

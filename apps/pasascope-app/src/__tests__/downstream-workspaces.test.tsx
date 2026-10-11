@@ -231,7 +231,7 @@ describe("Findings Session workspace", () => {
   test("shows reviewed transcript and feature-set provenance with AI disposition", () => {
     renderFindings(findingsState());
 
-    expect(screen.getAllByRole("heading", { name: "Session Results" })).toHaveLength(1);
+    expect(screen.getAllByRole("heading", { name: "Findings", level: 1 })).toHaveLength(1);
     expect(screen.queryByRole("heading", { name: "Overall Progress" })).not.toBeInTheDocument();
     const provenance = screen.getByRole("region", { name: "Findings provenance" });
     expect(within(provenance).getAllByText("Version 4", { selector: "dd" })).toHaveLength(2);

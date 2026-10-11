@@ -109,7 +109,7 @@ for (const viewport of viewports) {
       `/sessions/${sessionId}?view=findings&case_id=${caseId}&transcript_id=${transcriptId}`,
       { waitUntil: "networkidle" },
     );
-    await expect(page.getByRole("region", { name: "Session context" }).getByRole("heading", { name: "Session Results", exact: true })).toBeVisible();
+    await expect(page.getByRole("region", { name: "Session context" }).getByRole("heading", { name: "Findings", level: 1, exact: true })).toBeVisible();
     for (const group of ["Language sample", "Lexical use", "Interaction", "Speech / intelligibility", "Data quality"]) {
       await expect(page.getByText(group, { exact: true })).toBeVisible();
     }

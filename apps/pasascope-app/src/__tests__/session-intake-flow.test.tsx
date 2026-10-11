@@ -364,7 +364,7 @@ describe("session intake flow", () => {
 
     renderResultsWorkspace({ session_id: "session-test" });
 
-    expect(await screen.findByRole("heading", { name: "Session Results" })).toBeInTheDocument();
+    expect(await screen.findByRole("heading", { name: "Findings", level: 1 })).toBeInTheDocument();
     expect(await screen.findByTestId("generate-evidence-review-button")).toBeEnabled();
     expect(await screen.findByTestId("generate-report-button")).toBeEnabled();
   });
