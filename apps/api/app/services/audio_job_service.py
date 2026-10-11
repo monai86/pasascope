@@ -128,7 +128,11 @@ def complete_audio_upload(repo: MockRepository, audio_file_id: str, payload: Aud
         raise ValueError("Audio upload must be re-issued with a new upload intent before completion verification.")
     if payload.size_bytes is not None and payload.size_bytes != audio_file.size_bytes:
         raise ValueError("Uploaded audio size does not match upload intent metadata.")
-    audio_file.checksum_sha256 = payload.checksum_sha256
+    # Bytes received by this API were hashed on arrival; that server-side digest
+    # is the integrity record. A client-declared checksum is only kept when the
+    # object went straight to external storage.
+    if not audio_file.checksum_sha256:
+        audio_file.checksum_sha256 = payload.checksum_sha256
     audio_file.uploaded_at = utc_now()
     audio_file.upload_status = "uploaded"
     repo.add_audit("audio.upload_complete", audio_file.audio_file_id, "Audio upload metadata marked complete.", actor_id=actor_id)
@@ -273,6 +277,9 @@ def run_audio_processing_job(repo: MockRepository, job_id: str, *, actor_id: str
         payload = AudioProcessRequest.model_validate(queued_payload)
         
     session_id = job.session_id
+    if job.status == JobStatus.cancelled:
+        # Cancelled while queued: leave it cancelled instead of running it.
+        return repo.clone(job)
     if job.details.get("consent_withdrawn"):
         job.status = JobStatus.cancelled
         job.message = "Audio processing cancelled because case consent was withdrawn."

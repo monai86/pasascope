@@ -28,6 +28,11 @@
   - Evaluation helper routes now require an authenticated user and are closed whenever auth mode is not `mock`, including staging deployments that keep mock mode on.
 
 ### Fixed
+- **Audio jobs and uploads** (`apps/api/`):
+  - With the default in-memory queue the API now drains queued audio jobs itself; previously nothing processed them and jobs stayed `queued`. `python -m app.tasks.worker` loops for the Redis queue.
+  - Cancelled jobs are no longer run by the worker, completed transcription jobs can no longer be cancelled, and the process-audio response no longer includes the storage object key.
+  - Local audio upload streams to disk with a hard size cap, rejects bodies that do not match the upload intent, and records a server-computed SHA-256 instead of the client-declared value.
+  - Waveform peaks are marked `X-Waveform-Source: synthetic`, and the audio review workbench states that its waveform and signal metrics are illustrative.
 - **API edge hardening** (`apps/api/app/core/`, `apps/api/app/auth/`):
   - Middleware order changed so 429 and origin-guard 403 responses carry CORS headers and an `x-request-id`.
   - The rate limiter ignores `X-Forwarded-For` unless `LINGUALENS_RATE_LIMIT_TRUSTED_PROXY_COUNT` declares trusted proxies, bounds the number of tracked clients, and does not count CORS preflight.

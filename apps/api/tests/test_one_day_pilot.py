@@ -210,7 +210,7 @@ def test_local_private_upload_intent_and_completion_are_metadata_only():
         ).json()
         audio_file = job["details"]["audio_file"]
         intent = job["details"]["upload_intent"]
-        put_resp = client.put(f"/api/v1{intent['upload_url']}", headers=headers, content=b"RIFFpilot")
+        put_resp = client.put(f"/api/v1{intent['upload_url']}", headers=headers, content=b"R" * 128)
         assert put_resp.status_code == 200
         completed = client.post(
             f"/api/v1/audio/{audio_file['audio_file_id']}/complete-upload",

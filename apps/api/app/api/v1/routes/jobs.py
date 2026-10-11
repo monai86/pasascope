@@ -96,7 +96,7 @@ def process_audio(
         ensure_session_consent_active(repo, session_id)
         job = process_audio_job(repo, session_id, payload or AudioProcessRequest(), actor_id=user.user_id)
         get_job_queue().enqueue(job.job_id)
-        return job
+        return _public_processing_job(job)
     except ValueError as exc:
         raise bad_request(str(exc)) from exc
 
@@ -116,7 +116,8 @@ def cancel_job(job_id: str, repo: MockRepository = Depends(get_repository), user
     job = repo.jobs[job_id]
     require_session(repo, job.session_id, user)
     assert_clinical_mutation_allowed(user)
-    terminal_statuses = {"failed", "cancelled", "needs_review"}
+    # A finished job (including a completed transcription) cannot be cancelled.
+    terminal_statuses = {"failed", "cancelled", "needs_review", "transcription_completed"}
     if job.status in terminal_statuses or (hasattr(job.status, "value") and job.status.value in terminal_statuses):
         return _public_processing_job(repo.clone(job))  # idempotent
     job.status = JobStatus.cancelled
@@ -135,7 +136,9 @@ def list_transcription_providers(user: CurrentUser = Depends(get_current_user)):
     return asr_provider_registry.list_supported()
 
 
-from fastapi import Request
+from hashlib import sha256
+
+from fastapi import HTTPException, Request, status
 from fastapi.responses import FileResponse
 from app.core.config import get_settings
 from app.services.consent_service import ensure_audio_file_consent_active
@@ -152,7 +155,10 @@ async def upload_audio_file_bytes(
     audio_file = repo.audio_files[audio_file_id]
     require_case(repo, audio_file.case_id, user)
     assert_clinical_mutation_allowed(user)
-    ensure_audio_file_consent_active(repo, audio_file_id)
+    try:
+        ensure_audio_file_consent_active(repo, audio_file_id)
+    except ValueError as exc:
+        raise bad_request(str(exc)) from exc
     if audio_file.upload_status != "pending":
         raise bad_request("This upload intent is no longer writable. Issue a new upload intent.")
     
@@ -167,15 +173,36 @@ async def upload_audio_file_bytes(
     if dest_path == storage_root or storage_root not in dest_path.parents:
         raise bad_request("Invalid audio storage path.")
     dest_path.parent.mkdir(parents=True, exist_ok=True)
-    
-    body = await request.body()
-    dest_path.write_bytes(body)
-    
+
+    # Stream to disk with a hard cap: never buffer an unbounded body in memory,
+    # and never accept more than the upload intent declared.
+    max_bytes = min(audio_file.size_bytes, settings.max_audio_file_size_mb * 1024 * 1024)
+    received = 0
+    digest = sha256()
+    try:
+        with dest_path.open("wb") as handle:
+            async for chunk in request.stream():
+                received += len(chunk)
+                if received > max_bytes:
+                    raise HTTPException(
+                        status_code=status.HTTP_413_REQUEST_ENTITY_TOO_LARGE,
+                        detail="Uploaded audio is larger than the upload intent allows.",
+                    )
+                digest.update(chunk)
+                handle.write(chunk)
+    except HTTPException:
+        dest_path.unlink(missing_ok=True)
+        raise
+    if received != audio_file.size_bytes:
+        dest_path.unlink(missing_ok=True)
+        raise bad_request("Uploaded audio size does not match upload intent metadata.")
+
+    audio_file.checksum_sha256 = digest.hexdigest()
     audio_file.upload_status = "pending_verification"
     if hasattr(repo, "save"):
         repo.save()
-        
-    return {"status": "success", "size_bytes": len(body)}
+
+    return {"status": "success", "size_bytes": received}
 
 
 @router.get("/audio/{audio_file_id}/file")
@@ -189,7 +216,10 @@ def get_audio_file_bytes(
     audio_file = repo.audio_files[audio_file_id]
     require_case(repo, audio_file.case_id, user)
     assert_sensitive_clinical_export_allowed(user)
-    ensure_audio_file_consent_active(repo, audio_file_id)
+    try:
+        ensure_audio_file_consent_active(repo, audio_file_id)
+    except ValueError as exc:
+        raise bad_request(str(exc)) from exc
     _ensure_audio_file_verified_for_read(audio_file)
     
     settings = get_settings()

@@ -1,6 +1,7 @@
 from contextlib import asynccontextmanager
 import logging
 import sys
+import threading
 import traceback
 from fastapi import FastAPI, Request
 from fastapi.exception_handlers import http_exception_handler, request_validation_exception_handler
@@ -59,10 +60,35 @@ def apply_startup_migrations() -> None:
             raise
 
 
+def _run_inline_job_worker(stop: threading.Event) -> None:
+    from app.tasks.worker import run_worker_once
+
+    while not stop.is_set():
+        try:
+            idle = run_worker_once()["status"] == "idle"
+        except Exception:
+            logger.exception("Inline audio job worker failed to process a job.")
+            idle = True
+        if idle:
+            stop.wait(0.25)
+
+
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     apply_startup_migrations()
-    yield
+    # The memory queue lives in this process, so a separate worker process can
+    # never see its jobs. Drain it here; durable queues use the worker runtime.
+    stop_worker = threading.Event()
+    worker = None
+    if settings_obj.job_queue_mode == "memory" and settings_obj.inline_job_worker_enabled:
+        worker = threading.Thread(target=_run_inline_job_worker, args=(stop_worker,), daemon=True)
+        worker.start()
+    try:
+        yield
+    finally:
+        stop_worker.set()
+        if worker is not None:
+            worker.join(timeout=2)
 
 
 app = FastAPI(

@@ -64,6 +64,8 @@ def get_waveform_peaks(
         "X-Duration-Ms": str(int(duration * 1000)),
         "X-Points-Per-Second": str(pps),
         "X-Channels": str(channels),
+        # These peaks are a generated placeholder shape, not decoded audio.
+        "X-Waveform-Source": "synthetic",
     }
     return Response(content=peaks_data, media_type="application/octet-stream", headers=headers)
 

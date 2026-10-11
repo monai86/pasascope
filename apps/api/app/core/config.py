@@ -178,6 +178,7 @@ class Settings(BaseModel):
     run_migrations_on_startup: bool = False
     run_assessment_migrations_on_startup: bool = False
     job_queue_mode: str = "memory"
+    inline_job_worker_enabled: bool = True
     redis_url: str = DEFAULT_REDIS_URL
     storage_mode: str = "local_private"
     local_storage_root: str = ".local/storage"
@@ -397,6 +398,12 @@ class Settings(BaseModel):
             ).lower()
             == "true",
             job_queue_mode=getenv_compat("LINGUALENS_JOB_QUEUE_MODE", "THERAPIST_APP_V2_JOB_QUEUE_MODE", "memory"),
+            inline_job_worker_enabled=getenv_compat(
+                "LINGUALENS_INLINE_JOB_WORKER_ENABLED",
+                "THERAPIST_APP_V2_INLINE_JOB_WORKER_ENABLED",
+                "true",
+            ).lower()
+            != "false",
             redis_url=os.getenv("REDIS_URL", DEFAULT_REDIS_URL),
             storage_mode=getenv_compat("LINGUALENS_STORAGE_MODE", "THERAPIST_APP_V2_STORAGE_MODE", "local_private"),
             local_storage_root=getenv_compat(

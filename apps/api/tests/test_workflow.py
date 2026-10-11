@@ -1,3 +1,4 @@
+import hashlib
 import json
 from pathlib import Path
 import warnings
@@ -1558,7 +1559,7 @@ def test_audio_upload_creates_metadata_only_signed_intent_and_consent_withdrawal
     assert raw_audio_key not in details
     assert details["upload_intent"]["upload_url"] == f"/audio/{audio_file_id}/upload-file"
     assert details["upload_intent"]["required_headers"]["content-type"] == "audio/wav"
-    put_resp = client.put(f"/api/v1{details['upload_intent']['upload_url']}", content=b"RIFFxxxxWAVE")
+    put_resp = client.put(f"/api/v1{details['upload_intent']['upload_url']}", content=b"R" * 2048)
     assert put_resp.status_code == 200
 
     complete = client.post(
@@ -1568,7 +1569,8 @@ def test_audio_upload_creates_metadata_only_signed_intent_and_consent_withdrawal
     assert complete.status_code == 200
     assert complete.json()["upload_status"] == "uploaded"
     assert complete.json()["object_key"] is None
-    assert complete.json()["checksum_sha256"] == "0" * 64
+    # The API hashes the bytes it received; the client-declared checksum is not trusted.
+    assert complete.json()["checksum_sha256"] == hashlib.sha256(b"R" * 2048).hexdigest()
     assert complete.json()["uploaded_at"] is not None
 
     withdrawn = client.post(
@@ -1605,7 +1607,7 @@ def test_audio_process_blocks_second_active_job_for_same_uploaded_audio_artifact
     audio_file_id = upload.json()["details"]["audio_file"]["audio_file_id"]
     assert client.put(
         f"/api/v1{upload.json()['details']['upload_intent']['upload_url']}",
-        content=b"RIFFlock",
+        content=b"R" * 2048,
     ).status_code == 200
     assert client.post(
         f"/api/v1/audio/{audio_file_id}/complete-upload",
@@ -1669,7 +1671,7 @@ def test_audio_reprocess_creates_new_job_after_prior_job_reaches_terminal_state(
     assert upload.status_code == 200
     upload_details = upload.json()["details"]
     audio_file_id = upload_details["audio_file"]["audio_file_id"]
-    put_resp = client.put(f"/api/v1{upload_details['upload_intent']['upload_url']}", content=b"RIFFxxxxWAVE")
+    put_resp = client.put(f"/api/v1{upload_details['upload_intent']['upload_url']}", content=b"R" * 2048)
     assert put_resp.status_code == 200
     assert client.post(
         f"/api/v1/audio/{audio_file_id}/complete-upload",
