@@ -6,6 +6,7 @@ import { AudioScrubberBar } from "./audio-scrubber-bar";
 import { DualViewWaveform } from "./dual-view-waveform";
 import { UtteranceReviewList, type ReviewLine } from "./utterance-review-list";
 import { useKeyboardReview } from "./use-keyboard-review";
+import { apiBlob } from "@/lib/api";
 import type { TranscriptLine } from "@/lib/workflow";
 
 export interface AudioReviewWorkbenchProps {
@@ -55,13 +56,12 @@ export function AudioReviewWorkbench({
 
     async function loadPeaks() {
       try {
-        const res = await fetch(`/api/v1/sessions/${sessionId}/audio/waveform-peaks`);
-        if (res.ok && isSubscribed) {
-          const buffer = await res.arrayBuffer();
-          setPeaks(new Int8Array(buffer));
-        }
+        const blob = await apiBlob(`/sessions/${sessionId}/audio/waveform-peaks`);
+        const buffer = await blob.arrayBuffer();
+        if (isSubscribed) setPeaks(new Int8Array(buffer));
       } catch {
-        // Fallback gracefully without binary peaks
+        // No waveform for this recording; the overview stays empty.
+        if (isSubscribed) setPeaks(null);
       }
     }
     loadPeaks();
@@ -312,13 +312,11 @@ export function AudioReviewWorkbench({
         onSeek={handleSeek}
       />
 
-      <p
-        role="note"
-        className="rounded-lg border border-amber-300 bg-amber-50 px-3 py-2 text-xs font-medium text-amber-950"
-      >
-        ภาพคลื่นเสียงด้านล่างเป็นภาพประกอบตัวอย่าง ไม่ได้สร้างจากไฟล์เสียงของ session นี้ ·
-        Illustrative waveform — not derived from this recording.
-      </p>
+      {peaks === null ? (
+        <p role="note" className="rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 text-xs font-medium text-slate-700">
+          ไม่มีภาพคลื่นเสียงสำหรับไฟล์นี้ · No waveform is available for this recording.
+        </p>
+      ) : null}
 
       {/* Dual-View Waveform: Mini-map + Detail Canvas */}
       <DualViewWaveform

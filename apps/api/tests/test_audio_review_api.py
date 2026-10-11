@@ -42,19 +42,43 @@ def repo_with_audio():
     app.dependency_overrides.pop(get_repository, None)
 
 
-def test_waveform_peaks_returns_binary_stream(repo_with_audio):
-    response = client.get(
-        "/api/v1/sessions/session_demo_001/audio/waveform-peaks",
-        headers=HEADERS,
-    )
+def test_waveform_peaks_come_from_the_stored_recording(repo_with_audio, tmp_path, monkeypatch):
+    np = pytest.importorskip("numpy")
+    soundfile = pytest.importorskip("soundfile")
+    pytest.importorskip("faster_whisper")
+    from app.core.config import Settings
+    from app.services import audio_job_service
+
+    # One second of silence, then one second of a loud tone.
+    rate = 16000
+    tone = 0.8 * np.sin(2 * np.pi * 440 * np.arange(rate) / rate)
+    audio = repo_with_audio.audio_files["audio_demo_001"]
+    recording = tmp_path / audio.object_key
+    recording.parent.mkdir(parents=True)
+    soundfile.write(str(recording), np.concatenate([np.zeros(rate), tone]).astype("float32"), rate)
+    monkeypatch.setattr(audio_job_service, "get_settings", lambda: Settings(local_storage_root=str(tmp_path)))
+
+    response = client.get("/api/v1/sessions/session_demo_001/audio/waveform-peaks", headers=HEADERS)
+
     assert response.status_code == 200
-    assert response.headers["content-type"] == "application/octet-stream"
-    assert "x-points-per-second" in response.headers
-    # The peaks are a generated placeholder, and the response must say so.
-    assert response.headers["x-waveform-source"] == "synthetic"
-    assert "x-duration-ms" in response.headers
-    assert "x-channels" in response.headers
-    assert len(response.content) > 0
+    assert response.headers["x-waveform-source"] == "recording"
+    assert response.headers["x-points-per-second"] == "50"
+    assert response.headers["x-duration-ms"] == "2000"
+    peaks = np.frombuffer(response.content, dtype=np.int8)
+    assert len(peaks) == 100
+    assert peaks[:45].max() <= 2          # the silent first second
+    assert peaks[55:].min() >= 120        # the loud second second
+
+
+def test_waveform_is_not_invented_when_the_recording_is_missing(repo_with_audio, tmp_path, monkeypatch):
+    from app.core.config import Settings
+    from app.services import audio_job_service
+
+    monkeypatch.setattr(audio_job_service, "get_settings", lambda: Settings(local_storage_root=str(tmp_path)))
+
+    response = client.get("/api/v1/sessions/session_demo_001/audio/waveform-peaks", headers=HEADERS)
+
+    assert response.status_code == 404
 
 
 def test_playback_grant_requires_consent_and_returns_signed_url(repo_with_audio):
