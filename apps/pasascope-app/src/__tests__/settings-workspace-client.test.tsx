@@ -393,8 +393,8 @@ describe("SettingsWorkspaceClient admin lifecycle UX", () => {
     expect(await screen.findByRole("heading", { name: "Account" })).toBeInTheDocument();
     expect(screen.queryByRole("link", { name: "Team" })).not.toBeInTheDocument();
     expect(screen.queryByRole("heading", { name: "Team" })).not.toBeInTheDocument();
-    expect(window.sessionStorage.getItem("lingualens.mock-access-session.v1")).toContain("\"aal\":\"aal1\"");
-    expect(window.sessionStorage.getItem("lingualens.mock-access-session.v1")).toContain("\"role\":\"therapist\"");
+    expect(window.sessionStorage.getItem("pasascope.mock-access-session.v1")).toContain("\"aal\":\"aal1\"");
+    expect(window.sessionStorage.getItem("pasascope.mock-access-session.v1")).toContain("\"role\":\"therapist\"");
   });
 
   it("revokes a membership and keeps the action visibly audited", async () => {
@@ -444,7 +444,7 @@ describe("SettingsWorkspaceClient admin lifecycle UX", () => {
   });
 
   it("refetches admin lifecycle state when the active organization session changes", async () => {
-    window.sessionStorage.setItem("lingualens.mock-access-session.v1", JSON.stringify({
+    window.sessionStorage.setItem("pasascope.mock-access-session.v1", JSON.stringify({
       role: "org_admin",
       organizationId: "pilot_org_001",
       aal: "aal2",
@@ -504,7 +504,7 @@ describe("SettingsWorkspaceClient admin lifecycle UX", () => {
       expect(getRequestedOrganizationIds(fetchMock, "/organizations/current/memberships")).toContain("pilot_org_001");
     });
 
-    window.sessionStorage.setItem("lingualens.mock-access-session.v1", JSON.stringify({
+    window.sessionStorage.setItem("pasascope.mock-access-session.v1", JSON.stringify({
       role: "org_admin",
       organizationId: "pilot_org_ops",
       aal: "aal2",

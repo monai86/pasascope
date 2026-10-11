@@ -10,7 +10,7 @@ const viewports = [
 ];
 async function setMockRole(page: Page, role: "therapist" | "org_admin") {
   await page.addInitScript((requestedRole) => {
-    window.sessionStorage.setItem("lingualens.mock-access-session.v1", JSON.stringify({
+    window.sessionStorage.setItem("pasascope.mock-access-session.v1", JSON.stringify({
       role: requestedRole,
       organizationId: "pilot_org_001",
       aal: "aal2",

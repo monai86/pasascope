@@ -1,6 +1,8 @@
 "use client";
 
-export const MOCK_ACCESS_SESSION_KEY = "lingualens.mock-access-session.v1";
+import "@/lib/storage-key-migration";
+
+export const MOCK_ACCESS_SESSION_KEY = "pasascope.mock-access-session.v1";
 export const MOCK_ACCESS_SESSION_EVENT = "pasascope:mock-access-session-changed";
 
 export type MockRole = "therapist" | "clinical_supervisor" | "org_admin";

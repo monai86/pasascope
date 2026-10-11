@@ -1,8 +1,10 @@
 "use client";
 
-export const SUPABASE_ACCESS_SESSION_KEY = "lingualens.supabase-access-session.v1";
+import "@/lib/storage-key-migration";
+
+export const SUPABASE_ACCESS_SESSION_KEY = "pasascope.supabase-access-session.v1";
 export const SUPABASE_ACCESS_SESSION_EVENT = "pasascope:supabase-access-session-changed";
-export const SUPABASE_ORGANIZATION_HINT_KEY = "lingualens.supabase-organization-hint.v1";
+export const SUPABASE_ORGANIZATION_HINT_KEY = "pasascope.supabase-organization-hint.v1";
 
 export type SupabaseSessionRole = "therapist" | "clinical_supervisor" | "org_admin" | "platform_operator";
 

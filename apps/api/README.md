@@ -3,7 +3,7 @@
 FastAPI boundary for the case-centered PasaScope clinical workflow.
 
 Local development defaults to a durable JSON repository at
-`.local/lingualens-app-repository.json`. Set
+`.local/pasascope-app-repository.json`. Set
 `PASASCOPE_REPOSITORY_MODE=memory` for isolated test/demo runs, or
 `PASASCOPE_REPOSITORY_MODE=sql` with
 `PASASCOPE_DATABASE_URL` for the SQLAlchemy-backed repository.

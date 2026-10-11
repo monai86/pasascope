@@ -53,7 +53,7 @@ describe("AppShell auth gating", () => {
   });
 
   it("keeps aal1 supabase sessions on the MFA gate instead of rendering workspace content", async () => {
-    window.sessionStorage.setItem("lingualens.supabase-browser-auth.v1", JSON.stringify({
+    window.sessionStorage.setItem("pasascope.supabase-browser-auth.v1", JSON.stringify({
       userId: "user_therapist_001",
       email: "clinician@clinic.example",
       aal: "aal1",
@@ -67,7 +67,7 @@ describe("AppShell auth gating", () => {
         ],
       },
     }));
-    window.sessionStorage.setItem("lingualens.supabase-access-session.v1", JSON.stringify({
+    window.sessionStorage.setItem("pasascope.supabase-access-session.v1", JSON.stringify({
       stage: "mfa_required",
       userId: "user_therapist_001",
       email: "clinician@clinic.example",
@@ -115,7 +115,7 @@ describe("AppShell auth gating", () => {
           mock_mode: false,
           auth_mode: "supabase",
           model_version: "v2-mock",
-          feature_schema: "lingualens-app.1",
+          feature_schema: "pasascope-app.1",
           guideline_mapping: "review-support-only",
           user_roles: ["therapist", "clinical_supervisor", "org_admin"],
           access_model: {
@@ -145,12 +145,12 @@ describe("AppShell auth gating", () => {
   });
 
   it("renders workspace chrome for a valid Supabase aal2 session despite a stale mock aal1 session", async () => {
-    window.sessionStorage.setItem("lingualens.mock-access-session.v1", JSON.stringify({
+    window.sessionStorage.setItem("pasascope.mock-access-session.v1", JSON.stringify({
       role: "org_admin",
       organizationId: "stale_mock_org",
       aal: "aal1",
     }));
-    window.sessionStorage.setItem("lingualens.supabase-browser-auth.v1", JSON.stringify({
+    window.sessionStorage.setItem("pasascope.supabase-browser-auth.v1", JSON.stringify({
       userId: "user_therapist_001",
       email: "clinician@clinic.example",
       aal: "aal2",
@@ -164,7 +164,7 @@ describe("AppShell auth gating", () => {
         ],
       },
     }));
-    window.sessionStorage.setItem("lingualens.supabase-access-session.v1", JSON.stringify({
+    window.sessionStorage.setItem("pasascope.supabase-access-session.v1", JSON.stringify({
       stage: "authenticated",
       userId: "user_therapist_001",
       email: "clinician@clinic.example",
@@ -202,7 +202,7 @@ describe("AppShell auth gating", () => {
           mock_mode: false,
           auth_mode: "supabase",
           model_version: "v2-mock",
-          feature_schema: "lingualens-app.1",
+          feature_schema: "pasascope-app.1",
           guideline_mapping: "review-support-only",
           user_roles: ["therapist", "clinical_supervisor", "org_admin"],
           access_model: {
@@ -233,7 +233,7 @@ describe("AppShell auth gating", () => {
   });
 
   it("blocks workspace access when runtime settings fail schema validation", async () => {
-    window.sessionStorage.setItem("lingualens.mock-access-session.v1", JSON.stringify({
+    window.sessionStorage.setItem("pasascope.mock-access-session.v1", JSON.stringify({
       role: "therapist",
       organizationId: "pilot_org_001",
       aal: "aal2",
@@ -261,7 +261,7 @@ describe("AppShell auth gating", () => {
       mock_mode: false,
       auth_mode: "oidc",
       model_version: "v2-mock",
-      feature_schema: "lingualens-app.1",
+      feature_schema: "pasascope-app.1",
       guideline_mapping: "review-support-only",
       user_roles: ["therapist"],
       data_retention: "configured",

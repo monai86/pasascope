@@ -179,7 +179,7 @@ class Settings(BaseModel):
     debug_feature_override: bool = False
     max_audio_file_size_mb: int = DEFAULT_CAPTURE_MAX_UPLOAD_SIZE_BYTES // MEBIBYTE
     repository_mode: str = "json"
-    json_repository_path: str = ".local/lingualens-app-repository.json"
+    json_repository_path: str = ".local/pasascope-app-repository.json"
     database_url: str = DEFAULT_DATABASE_URL
     assessment_database_url: str = DEFAULT_ASSESSMENT_DATABASE_URL
     sql_create_schema: bool = True
@@ -221,7 +221,12 @@ class Settings(BaseModel):
 
     @property
     def resolved_json_repository_path(self) -> Path:
-        return Path(self.json_repository_path)
+        path = Path(self.json_repository_path)
+        # Keep reading local data written before the project was renamed.
+        previous = path.with_name(path.name.replace("pasascope-app", "lingualens-app"))
+        if previous != path and not path.exists() and previous.exists():
+            return previous
+        return path
 
     @property
     def resolved_local_storage_root(self) -> Path:
@@ -383,7 +388,7 @@ class Settings(BaseModel):
             json_repository_path=getenv_compat(
                 "PASASCOPE_JSON_REPOSITORY_PATH",
                 "THERAPIST_APP_V2_JSON_REPOSITORY_PATH",
-                ".local/lingualens-app-repository.json",
+                ".local/pasascope-app-repository.json",
             ),
             database_url=getenv_compat("PASASCOPE_DATABASE_URL", "THERAPIST_APP_V2_DATABASE_URL", DEFAULT_DATABASE_URL),
             assessment_database_url=(

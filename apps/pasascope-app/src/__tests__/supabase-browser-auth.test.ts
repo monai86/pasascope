@@ -103,7 +103,7 @@ describe("supabase browser auth bridge", () => {
   });
 
   it("syncs an authenticated access session from accepted aal2 browser auth claims", () => {
-    window.sessionStorage.setItem("lingualens.supabase-browser-auth.v1", JSON.stringify({
+    window.sessionStorage.setItem("pasascope.supabase-browser-auth.v1", JSON.stringify({
       userId: "user_org_admin_001",
       email: "admin@clinic.example",
       displayName: "Clinic Admin",
@@ -128,8 +128,8 @@ describe("supabase browser auth bridge", () => {
       aal: "aal2",
       organizationId: "clinic_001",
     });
-    expect(window.sessionStorage.getItem("lingualens.supabase-access-session.v1")).toContain("\"stage\":\"authenticated\"");
-    expect(window.sessionStorage.getItem("lingualens.supabase-access-session.v1")).toContain("\"organizationId\":\"clinic_001\"");
+    expect(window.sessionStorage.getItem("pasascope.supabase-access-session.v1")).toContain("\"stage\":\"authenticated\"");
+    expect(window.sessionStorage.getItem("pasascope.supabase-access-session.v1")).toContain("\"organizationId\":\"clinic_001\"");
   });
 
   it("builds a browser-auth snapshot from a Supabase-like session payload", () => {
@@ -197,9 +197,9 @@ describe("supabase browser auth bridge", () => {
       email: "admin@clinic.example",
       organizationId: "clinic_001",
     });
-    expect(window.sessionStorage.getItem("lingualens.supabase-browser-auth.v1")).toContain("\"Clinic Admin\"");
-    expect(window.sessionStorage.getItem("lingualens.supabase-access-session.v1")).toContain("\"stage\":\"authenticated\"");
-    expect(window.sessionStorage.getItem("lingualens.supabase-session-token.v1")).toBe("supabase-access-token");
+    expect(window.sessionStorage.getItem("pasascope.supabase-browser-auth.v1")).toContain("\"Clinic Admin\"");
+    expect(window.sessionStorage.getItem("pasascope.supabase-access-session.v1")).toContain("\"stage\":\"authenticated\"");
+    expect(window.sessionStorage.getItem("pasascope.supabase-session-token.v1")).toBe("supabase-access-token");
   });
 
   it("fails closed when the Supabase session aal claim is missing", () => {
@@ -218,8 +218,8 @@ describe("supabase browser auth bridge", () => {
     });
 
     expect(accessSession).toEqual({ stage: "signed_out" });
-    expect(window.sessionStorage.getItem("lingualens.supabase-browser-auth.v1")).toBeNull();
-    expect(window.sessionStorage.getItem("lingualens.supabase-session-token.v1")).toBeNull();
+    expect(window.sessionStorage.getItem("pasascope.supabase-browser-auth.v1")).toBeNull();
+    expect(window.sessionStorage.getItem("pasascope.supabase-session-token.v1")).toBeNull();
   });
 
   it("fails closed and clears cached token when required claims downgrade to malformed state", () => {
@@ -254,13 +254,13 @@ describe("supabase browser auth bridge", () => {
     });
 
     expect(downgraded).toEqual({ stage: "signed_out" });
-    expect(window.sessionStorage.getItem("lingualens.supabase-browser-auth.v1")).toBeNull();
-    expect(window.sessionStorage.getItem("lingualens.supabase-access-session.v1")).toContain("\"stage\":\"signed_out\"");
-    expect(window.sessionStorage.getItem("lingualens.supabase-session-token.v1")).toBeNull();
+    expect(window.sessionStorage.getItem("pasascope.supabase-browser-auth.v1")).toBeNull();
+    expect(window.sessionStorage.getItem("pasascope.supabase-access-session.v1")).toContain("\"stage\":\"signed_out\"");
+    expect(window.sessionStorage.getItem("pasascope.supabase-session-token.v1")).toBeNull();
   });
 
   it("persists explicit organization selection back into the browser auth snapshot", () => {
-    window.sessionStorage.setItem("lingualens.supabase-browser-auth.v1", JSON.stringify({
+    window.sessionStorage.setItem("pasascope.supabase-browser-auth.v1", JSON.stringify({
       userId: "user_supervisor_001",
       email: "supervisor@clinic.example",
       aal: "aal2",
@@ -282,12 +282,12 @@ describe("supabase browser auth bridge", () => {
       organizationId: "clinic_002",
       role: "org_admin",
     });
-    expect(window.sessionStorage.getItem("lingualens.supabase-browser-auth.v1")).toContain("\"organization_id\":\"clinic_002\"");
-    expect(window.localStorage.getItem("lingualens.supabase-organization-hint.v1")).toContain("\"organizationId\":\"clinic_002\"");
+    expect(window.sessionStorage.getItem("pasascope.supabase-browser-auth.v1")).toContain("\"organization_id\":\"clinic_002\"");
+    expect(window.localStorage.getItem("pasascope.supabase-organization-hint.v1")).toContain("\"organizationId\":\"clinic_002\"");
   });
 
   it("uses the last active organization as a hint only for ambiguous aal2 sessions", () => {
-    window.localStorage.setItem("lingualens.supabase-organization-hint.v1", JSON.stringify({
+    window.localStorage.setItem("pasascope.supabase-organization-hint.v1", JSON.stringify({
       userId: "user_supervisor_001",
       email: "supervisor@clinic.example",
       organizationId: "clinic_002",
@@ -317,7 +317,7 @@ describe("supabase browser auth bridge", () => {
   });
 
   it("clears the selected organization from the browser auth snapshot when switching orgs", () => {
-    window.sessionStorage.setItem("lingualens.supabase-browser-auth.v1", JSON.stringify({
+    window.sessionStorage.setItem("pasascope.supabase-browser-auth.v1", JSON.stringify({
       userId: "user_supervisor_001",
       email: "supervisor@clinic.example",
       aal: "aal2",
@@ -338,7 +338,7 @@ describe("supabase browser auth bridge", () => {
     expect(accessSession).toMatchObject({
       stage: "org_selection_required",
     });
-    expect(window.sessionStorage.getItem("lingualens.supabase-browser-auth.v1")).not.toContain("\"organization_id\":\"clinic_001\"");
+    expect(window.sessionStorage.getItem("pasascope.supabase-browser-auth.v1")).not.toContain("\"organization_id\":\"clinic_001\"");
   });
 
   it("publishes a Supabase session payload event for the runtime bridge to consume", () => {
@@ -355,7 +355,7 @@ describe("supabase browser auth bridge", () => {
   });
 
   it("clears the organization hint when browser auth is removed", () => {
-    window.localStorage.setItem("lingualens.supabase-organization-hint.v1", JSON.stringify({
+    window.localStorage.setItem("pasascope.supabase-organization-hint.v1", JSON.stringify({
       userId: "user_supervisor_001",
       email: "supervisor@clinic.example",
       organizationId: "clinic_002",
@@ -363,8 +363,8 @@ describe("supabase browser auth bridge", () => {
 
     syncSupabaseAccessSessionFromSession(null);
 
-    expect(window.localStorage.getItem("lingualens.supabase-organization-hint.v1")).toBeNull();
-    expect(window.sessionStorage.getItem("lingualens.supabase-access-session.v1")).toContain("\"stage\":\"signed_out\"");
+    expect(window.localStorage.getItem("pasascope.supabase-organization-hint.v1")).toBeNull();
+    expect(window.sessionStorage.getItem("pasascope.supabase-access-session.v1")).toContain("\"stage\":\"signed_out\"");
   });
 
   it.each([

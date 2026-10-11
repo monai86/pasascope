@@ -23,7 +23,8 @@ from datetime import datetime
 from pathlib import Path
 
 PROJECT_ROOT = Path(__file__).resolve().parent.parent
-DEFAULT_REPOSITORY = PROJECT_ROOT / "apps" / "api" / ".local" / "lingualens-app-repository.json"
+DEFAULT_REPOSITORY = PROJECT_ROOT / "apps" / "api" / ".local" / "pasascope-app-repository.json"
+PREVIOUS_REPOSITORY = DEFAULT_REPOSITORY.with_name("lingualens-app-repository.json")
 DEFAULT_OUTPUT = PROJECT_ROOT / "reports" / "metrics" / "transcript_review_time.csv"
 
 CSV_COLUMNS = [
@@ -88,6 +89,8 @@ def main() -> int:
     parser.add_argument("--repository", type=Path, default=DEFAULT_REPOSITORY)
     parser.add_argument("--output", type=Path, default=DEFAULT_OUTPUT)
     args = parser.parse_args()
+    if args.repository == DEFAULT_REPOSITORY and not DEFAULT_REPOSITORY.exists() and PREVIOUS_REPOSITORY.exists():
+        args.repository = PREVIOUS_REPOSITORY
     if not args.repository.exists():
         print(f"No local repository at {args.repository}. Run the app and review a draft first.")
         return 1

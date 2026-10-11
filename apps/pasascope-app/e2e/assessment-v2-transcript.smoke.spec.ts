@@ -98,7 +98,7 @@ const evidenceProfile = {
 
 test.beforeEach(async ({ page }) => {
   await page.addInitScript(() => {
-    window.sessionStorage.setItem("lingualens.mock-access-session.v1", JSON.stringify({
+    window.sessionStorage.setItem("pasascope.mock-access-session.v1", JSON.stringify({
       role: "therapist",
       organizationId: "pilot_org_001",
       aal: "aal2",
@@ -115,7 +115,7 @@ test("processing assessment can review a transcript and follow durable evidence 
         mock_mode: true,
         auth_mode: "mock",
         model_version: "v2-mock",
-        feature_schema: "lingualens-app.1",
+        feature_schema: "pasascope-app.1",
         guideline_mapping: "review-support-only",
         user_roles: ["therapist"],
         data_retention: "local demo data only",

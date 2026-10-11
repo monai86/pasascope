@@ -11,7 +11,7 @@ const { mockRuntimeSettings } = vi.hoisted(() => {
     mock_mode: true,
     auth_mode: "mock",
     model_version: "v2-mock",
-    feature_schema: "lingualens-app.1",
+    feature_schema: "pasascope-app.1",
     guideline_mapping: "review-support-only",
     user_roles: ["therapist"],
     access_model: {
@@ -153,7 +153,7 @@ function mockSummaryFetch() {
 }
 
 beforeEach(() => {
-  window.sessionStorage.setItem("lingualens.mock-access-session.v1", JSON.stringify({
+  window.sessionStorage.setItem("pasascope.mock-access-session.v1", JSON.stringify({
     role: "therapist",
     organizationId: "pilot_org_001",
     aal: "aal2",

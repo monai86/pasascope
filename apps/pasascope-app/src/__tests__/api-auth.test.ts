@@ -44,7 +44,7 @@ describe("api auth headers", () => {
   });
 
   it("sends bearer auth and active organization headers in supabase runtime", async () => {
-    window.sessionStorage.setItem("lingualens.supabase-access-session.v1", JSON.stringify({
+    window.sessionStorage.setItem("pasascope.supabase-access-session.v1", JSON.stringify({
       stage: "authenticated",
       userId: "user_therapist_001",
       email: "clinician@clinic.example",
@@ -55,7 +55,7 @@ describe("api auth headers", () => {
         { organizationId: "clinic_001", label: "PasaScope Clinic" },
       ],
     }));
-    window.sessionStorage.setItem("lingualens.supabase-session-token.v1", "supabase-access-token");
+    window.sessionStorage.setItem("pasascope.supabase-session-token.v1", "supabase-access-token");
 
     getSession.mockResolvedValue({
       data: { session: null },
@@ -67,7 +67,7 @@ describe("api auth headers", () => {
           mock_mode: false,
           auth_mode: "supabase",
           model_version: "v2-mock",
-          feature_schema: "lingualens-app.1",
+          feature_schema: "pasascope-app.1",
           guideline_mapping: "review-support-only",
           user_roles: ["therapist", "clinical_supervisor", "org_admin"],
           access_model: {
@@ -103,7 +103,7 @@ describe("api auth headers", () => {
   });
 
   it("sends bearer auth headers for blob downloads in supabase runtime", async () => {
-    window.sessionStorage.setItem("lingualens.supabase-access-session.v1", JSON.stringify({
+    window.sessionStorage.setItem("pasascope.supabase-access-session.v1", JSON.stringify({
       stage: "authenticated",
       userId: "user_therapist_001",
       email: "clinician@clinic.example",
@@ -111,7 +111,7 @@ describe("api auth headers", () => {
       aal: "aal2",
       organizationId: "clinic_001",
     }));
-    window.sessionStorage.setItem("lingualens.supabase-session-token.v1", "supabase-access-token");
+    window.sessionStorage.setItem("pasascope.supabase-session-token.v1", "supabase-access-token");
 
     getSession.mockResolvedValue({
       data: { session: null },
@@ -123,7 +123,7 @@ describe("api auth headers", () => {
           mock_mode: false,
           auth_mode: "supabase",
           model_version: "v2-mock",
-          feature_schema: "lingualens-app.1",
+          feature_schema: "pasascope-app.1",
           guideline_mapping: "review-support-only",
           user_roles: ["therapist", "clinical_supervisor", "org_admin"],
           access_model: {
@@ -162,7 +162,7 @@ describe("api auth headers", () => {
   });
 
   it("falls back to the persisted Supabase auth-token when the app session token cache is empty", async () => {
-    window.sessionStorage.setItem("lingualens.supabase-access-session.v1", JSON.stringify({
+    window.sessionStorage.setItem("pasascope.supabase-access-session.v1", JSON.stringify({
       stage: "authenticated",
       userId: "user_therapist_001",
       email: "clinician@clinic.example",
@@ -189,7 +189,7 @@ describe("api auth headers", () => {
           mock_mode: false,
           auth_mode: "supabase",
           model_version: "v2-mock",
-          feature_schema: "lingualens-app.1",
+          feature_schema: "pasascope-app.1",
           guideline_mapping: "review-support-only",
           user_roles: ["therapist", "clinical_supervisor", "org_admin"],
           access_model: {
@@ -220,11 +220,11 @@ describe("api auth headers", () => {
 
     await getRuntimeSettings();
     await apiRequest("/protected");
-    expect(window.sessionStorage.getItem("lingualens.supabase-session-token.v1")).toBe("persisted-supabase-access-token");
+    expect(window.sessionStorage.getItem("pasascope.supabase-session-token.v1")).toBe("persisted-supabase-access-token");
   });
 
   it("prefers the persisted Supabase auth token over a stale app token cache", async () => {
-    window.sessionStorage.setItem("lingualens.supabase-access-session.v1", JSON.stringify({
+    window.sessionStorage.setItem("pasascope.supabase-access-session.v1", JSON.stringify({
       stage: "authenticated",
       userId: "user_therapist_001",
       email: "clinician@clinic.example",
@@ -232,7 +232,7 @@ describe("api auth headers", () => {
       aal: "aal2",
       organizationId: "clinic_001",
     }));
-    window.sessionStorage.setItem("lingualens.supabase-session-token.v1", "stale-access-token");
+    window.sessionStorage.setItem("pasascope.supabase-session-token.v1", "stale-access-token");
     window.localStorage.setItem("sb-cbhwxklvcpgizeqriqxi-auth-token", JSON.stringify({
       access_token: "fresh-persisted-supabase-access-token",
       aal: "aal2",
@@ -256,7 +256,7 @@ describe("api auth headers", () => {
           mock_mode: false,
           auth_mode: "supabase",
           model_version: "v2-mock",
-          feature_schema: "lingualens-app.1",
+          feature_schema: "pasascope-app.1",
           guideline_mapping: "review-support-only",
           user_roles: ["therapist", "clinical_supervisor", "org_admin"],
           access_model: {
@@ -287,7 +287,7 @@ describe("api auth headers", () => {
 
     await getRuntimeSettings();
     await apiRequest("/protected");
-    expect(window.sessionStorage.getItem("lingualens.supabase-session-token.v1")).toBe("fresh-persisted-supabase-access-token");
+    expect(window.sessionStorage.getItem("pasascope.supabase-session-token.v1")).toBe("fresh-persisted-supabase-access-token");
   });
 
   it("falls back to demo user headers in mock runtime", async () => {
@@ -297,7 +297,7 @@ describe("api auth headers", () => {
           mock_mode: true,
           auth_mode: "mock",
           model_version: "v2-mock",
-          feature_schema: "lingualens-app.1",
+          feature_schema: "pasascope-app.1",
           guideline_mapping: "review-support-only",
           user_roles: ["therapist", "clinical_supervisor", "org_admin"],
           access_model: {
@@ -331,12 +331,12 @@ describe("api auth headers", () => {
   });
 
   it("sends bearer auth for relative backend blob uploads in supabase runtime", async () => {
-    window.sessionStorage.setItem("lingualens.supabase-access-session.v1", JSON.stringify({
+    window.sessionStorage.setItem("pasascope.supabase-access-session.v1", JSON.stringify({
       stage: "authenticated",
       organizationId: "clinic_001",
       aal: "aal2",
     }));
-    window.sessionStorage.setItem("lingualens.supabase-session-token.v1", "supabase-access-token");
+    window.sessionStorage.setItem("pasascope.supabase-session-token.v1", "supabase-access-token");
 
     getSession.mockResolvedValue({
       data: { session: null },
@@ -348,7 +348,7 @@ describe("api auth headers", () => {
           mock_mode: false,
           auth_mode: "supabase",
           model_version: "v2-mock",
-          feature_schema: "lingualens-app.1",
+          feature_schema: "pasascope-app.1",
           guideline_mapping: "review-support-only",
           user_roles: ["therapist", "clinical_supervisor", "org_admin"],
           access_model: {
@@ -418,12 +418,12 @@ describe("api auth headers", () => {
   });
 
   it("sends bearer auth for report export and reviewed CHA export in supabase runtime", async () => {
-    window.sessionStorage.setItem("lingualens.supabase-access-session.v1", JSON.stringify({
+    window.sessionStorage.setItem("pasascope.supabase-access-session.v1", JSON.stringify({
       stage: "authenticated",
       organizationId: "clinic_001",
       aal: "aal2",
     }));
-    window.sessionStorage.setItem("lingualens.supabase-session-token.v1", "supabase-access-token");
+    window.sessionStorage.setItem("pasascope.supabase-session-token.v1", "supabase-access-token");
 
     getSession.mockResolvedValue({
       data: { session: null },
@@ -437,7 +437,7 @@ describe("api auth headers", () => {
           mock_mode: false,
           auth_mode: "supabase",
           model_version: "v2-mock",
-          feature_schema: "lingualens-app.1",
+          feature_schema: "pasascope-app.1",
           guideline_mapping: "review-support-only",
           user_roles: ["therapist", "clinical_supervisor", "org_admin"],
           access_model: {

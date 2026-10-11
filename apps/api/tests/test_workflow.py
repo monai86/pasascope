@@ -2478,3 +2478,18 @@ def test_complete_upload_requires_bytes_received_and_failed_attempt_needs_new_in
     )
     assert replacement_upload.status_code == 200
     assert replacement_upload.json()["details"]["audio_file"]["audio_file_id"] != first_audio_id
+
+
+def test_json_repository_written_under_the_previous_name_is_still_used(tmp_path, monkeypatch):
+    from app.core.config import Settings
+
+    monkeypatch.chdir(tmp_path)
+    (tmp_path / ".local").mkdir()
+    assert Settings().resolved_json_repository_path == Path(".local/pasascope-app-repository.json")
+
+    previous = tmp_path / ".local" / "lingualens-app-repository.json"
+    previous.write_text("{}", encoding="utf-8")
+    assert Settings().resolved_json_repository_path == Path(".local/lingualens-app-repository.json")
+
+    (tmp_path / ".local" / "pasascope-app-repository.json").write_text("{}", encoding="utf-8")
+    assert Settings().resolved_json_repository_path == Path(".local/pasascope-app-repository.json")

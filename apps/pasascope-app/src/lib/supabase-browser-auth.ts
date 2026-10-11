@@ -11,7 +11,9 @@ import {
 } from "@/lib/supabase-access-session";
 import { saveSupabaseSessionToken } from "@/lib/supabase-session-token";
 
-export const SUPABASE_BROWSER_AUTH_KEY = "lingualens.supabase-browser-auth.v1";
+import "@/lib/storage-key-migration";
+
+export const SUPABASE_BROWSER_AUTH_KEY = "pasascope.supabase-browser-auth.v1";
 export const SUPABASE_BROWSER_AUTH_EVENT = "pasascope:supabase-browser-auth-changed";
 
 export type SupabaseBrowserAuthSnapshot = {

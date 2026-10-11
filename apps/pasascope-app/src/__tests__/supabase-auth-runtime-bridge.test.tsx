@@ -63,9 +63,9 @@ describe("SupabaseAuthRuntimeBridge", () => {
     render(<SupabaseAuthRuntimeBridge />);
 
     await waitFor(() => {
-      expect(window.sessionStorage.getItem("lingualens.supabase-session-token.v1")).toBe("test-access-token");
-      expect(window.sessionStorage.getItem("lingualens.supabase-browser-auth.v1")).toContain("\"organization_id\":\"org_lingualens_a\"");
-      expect(window.sessionStorage.getItem("lingualens.supabase-access-session.v1")).toContain("\"stage\":\"authenticated\"");
+      expect(window.sessionStorage.getItem("pasascope.supabase-session-token.v1")).toBe("test-access-token");
+      expect(window.sessionStorage.getItem("pasascope.supabase-browser-auth.v1")).toContain("\"organization_id\":\"org_lingualens_a\"");
+      expect(window.sessionStorage.getItem("pasascope.supabase-access-session.v1")).toContain("\"stage\":\"authenticated\"");
     });
   });
 });

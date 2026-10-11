@@ -129,7 +129,7 @@ const runtimeSettings: RuntimeSettings = {
   mock_mode: false,
   auth_mode: "supabase",
   model_version: "v2-mock",
-  feature_schema: "lingualens-app.1",
+  feature_schema: "pasascope-app.1",
   guideline_mapping: "review-support-only",
   user_roles: ["therapist"],
   data_retention: "configured",

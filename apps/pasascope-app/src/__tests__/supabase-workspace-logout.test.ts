@@ -21,8 +21,8 @@ describe("signOutSupabaseWorkspace", () => {
   });
 
   it("clears browser auth, app access session, and cached bearer token", async () => {
-    window.sessionStorage.setItem("lingualens.supabase-session-token.v1", "token");
-    window.sessionStorage.setItem("lingualens.supabase-browser-auth.v1", JSON.stringify({
+    window.sessionStorage.setItem("pasascope.supabase-session-token.v1", "token");
+    window.sessionStorage.setItem("pasascope.supabase-browser-auth.v1", JSON.stringify({
       userId: "user_therapist_001",
       email: "clinician@clinic.example",
       aal: "aal2",
@@ -33,7 +33,7 @@ describe("signOutSupabaseWorkspace", () => {
         organization_id: "clinic_001",
       },
     }));
-    window.sessionStorage.setItem("lingualens.supabase-access-session.v1", JSON.stringify({
+    window.sessionStorage.setItem("pasascope.supabase-access-session.v1", JSON.stringify({
       stage: "authenticated",
       userId: "user_therapist_001",
       email: "clinician@clinic.example",
@@ -41,7 +41,7 @@ describe("signOutSupabaseWorkspace", () => {
       aal: "aal2",
       organizationId: "clinic_001",
     }));
-    window.localStorage.setItem("lingualens.supabase-organization-hint.v1", JSON.stringify({
+    window.localStorage.setItem("pasascope.supabase-organization-hint.v1", JSON.stringify({
       userId: "user_therapist_001",
       email: "clinician@clinic.example",
       organizationId: "clinic_001",
@@ -50,9 +50,9 @@ describe("signOutSupabaseWorkspace", () => {
     await signOutSupabaseWorkspace();
 
     expect(signOut).toHaveBeenCalledOnce();
-    expect(window.sessionStorage.getItem("lingualens.supabase-session-token.v1")).toBeNull();
-    expect(window.sessionStorage.getItem("lingualens.supabase-browser-auth.v1")).toBeNull();
-    expect(window.localStorage.getItem("lingualens.supabase-organization-hint.v1")).toBeNull();
-    expect(window.sessionStorage.getItem("lingualens.supabase-access-session.v1")).toContain("\"stage\":\"signed_out\"");
+    expect(window.sessionStorage.getItem("pasascope.supabase-session-token.v1")).toBeNull();
+    expect(window.sessionStorage.getItem("pasascope.supabase-browser-auth.v1")).toBeNull();
+    expect(window.localStorage.getItem("pasascope.supabase-organization-hint.v1")).toBeNull();
+    expect(window.sessionStorage.getItem("pasascope.supabase-access-session.v1")).toContain("\"stage\":\"signed_out\"");
   });
 });

@@ -26,7 +26,7 @@ afterEach(() => {
 
 describe("cases workspace", () => {
   it("renders a table-style case workspace with search, filters, right rail, and pagination footer", async () => {
-    window.sessionStorage.setItem("lingualens.mock-access-session.v1", JSON.stringify({
+    window.sessionStorage.setItem("pasascope.mock-access-session.v1", JSON.stringify({
       role: "org_admin",
       organizationId: "pilot_org_001",
       aal: "aal2",
@@ -274,7 +274,7 @@ describe("cases workspace", () => {
   });
 
   it("keeps case care-team data read-only and never fetches admin-only resources", async () => {
-    window.sessionStorage.setItem("lingualens.mock-access-session.v1", JSON.stringify({
+    window.sessionStorage.setItem("pasascope.mock-access-session.v1", JSON.stringify({
       role: "therapist",
       organizationId: "pilot_org_001",
       aal: "aal2",
@@ -375,7 +375,7 @@ describe("cases workspace", () => {
     expect(getRequestedOrganizationIds(vi.mocked(fetch), "/cases/case_demo_001/care-team")).toEqual([]);
     expect(getRequestedOrganizationIds(vi.mocked(fetch), "/organizations/current/memberships")).toEqual([]);
 
-    window.sessionStorage.setItem("lingualens.mock-access-session.v1", JSON.stringify({
+    window.sessionStorage.setItem("pasascope.mock-access-session.v1", JSON.stringify({
       role: "org_admin",
       organizationId: "pilot_org_ops",
       aal: "aal2",

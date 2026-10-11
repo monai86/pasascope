@@ -101,12 +101,12 @@ async function openReportSummary(page: Page) {
 
 test.beforeEach(async ({ page }) => {
   await page.addInitScript(() => {
-    window.sessionStorage.setItem("lingualens.mock-access-session.v1", JSON.stringify({
+    window.sessionStorage.setItem("pasascope.mock-access-session.v1", JSON.stringify({
       role: "therapist",
       organizationId: "pilot_org_001",
       aal: "aal2",
     }));
-    window.sessionStorage.removeItem("lingualens.therapist.workflow.v1");
+    window.sessionStorage.removeItem("pasascope.therapist.workflow.v1");
   });
 });
 

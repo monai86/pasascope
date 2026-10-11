@@ -33,7 +33,7 @@ describe("SupabaseWorkspaceAccessGate", () => {
   });
 
   it("enrolls and verifies TOTP to unlock workspace access from an aal1 session", async () => {
-    window.sessionStorage.setItem("lingualens.supabase-access-session.v1", JSON.stringify({
+    window.sessionStorage.setItem("pasascope.supabase-access-session.v1", JSON.stringify({
       stage: "mfa_required",
       userId: "user_therapist_001",
       email: "clinician@clinic.example",
@@ -185,16 +185,16 @@ describe("SupabaseWorkspaceAccessGate", () => {
     });
 
     expect(await screen.findByText("Unlocked workspace")).toBeInTheDocument();
-    expect(window.sessionStorage.getItem("lingualens.supabase-access-session.v1")).toContain("\"aal\":\"aal2\"");
+    expect(window.sessionStorage.getItem("pasascope.supabase-access-session.v1")).toContain("\"aal\":\"aal2\"");
   });
 
   it("treats the last active organization as a hint only until the user confirms it", async () => {
-    window.localStorage.setItem("lingualens.supabase-organization-hint.v1", JSON.stringify({
+    window.localStorage.setItem("pasascope.supabase-organization-hint.v1", JSON.stringify({
       userId: "user_supervisor_001",
       email: "supervisor@clinic.example",
       organizationId: "clinic_002",
     }));
-    window.sessionStorage.setItem("lingualens.supabase-browser-auth.v1", JSON.stringify({
+    window.sessionStorage.setItem("pasascope.supabase-browser-auth.v1", JSON.stringify({
       userId: "user_supervisor_001",
       email: "supervisor@clinic.example",
       aal: "aal2",
@@ -208,7 +208,7 @@ describe("SupabaseWorkspaceAccessGate", () => {
         ],
       },
     }));
-    window.sessionStorage.setItem("lingualens.supabase-access-session.v1", JSON.stringify({
+    window.sessionStorage.setItem("pasascope.supabase-access-session.v1", JSON.stringify({
       stage: "org_selection_required",
       userId: "user_supervisor_001",
       email: "supervisor@clinic.example",
@@ -234,12 +234,12 @@ describe("SupabaseWorkspaceAccessGate", () => {
     fireEvent.click(screen.getByRole("button", { name: "Continue with selected organization" }));
 
     expect(await screen.findByText("Unlocked workspace")).toBeInTheDocument();
-    expect(window.sessionStorage.getItem("lingualens.supabase-access-session.v1")).toContain("\"stage\":\"authenticated\"");
-    expect(window.sessionStorage.getItem("lingualens.supabase-access-session.v1")).toContain("\"organizationId\":\"clinic_002\"");
+    expect(window.sessionStorage.getItem("pasascope.supabase-access-session.v1")).toContain("\"stage\":\"authenticated\"");
+    expect(window.sessionStorage.getItem("pasascope.supabase-access-session.v1")).toContain("\"organizationId\":\"clinic_002\"");
   });
 
   it("restores workspace access from Supabase localStorage when the access-session cache is stale signed_out", async () => {
-    window.sessionStorage.setItem("lingualens.supabase-access-session.v1", JSON.stringify({
+    window.sessionStorage.setItem("pasascope.supabase-access-session.v1", JSON.stringify({
       stage: "signed_out",
     }));
     window.localStorage.setItem("sb-cbhwxklvcpgizeqriqxi-auth-token", JSON.stringify({
@@ -267,8 +267,8 @@ describe("SupabaseWorkspaceAccessGate", () => {
     );
 
     expect(await screen.findByText("Unlocked workspace")).toBeInTheDocument();
-    expect(window.sessionStorage.getItem("lingualens.supabase-access-session.v1")).toContain("\"stage\":\"authenticated\"");
-    expect(window.sessionStorage.getItem("lingualens.supabase-session-token.v1")).toBeTruthy();
+    expect(window.sessionStorage.getItem("pasascope.supabase-access-session.v1")).toContain("\"stage\":\"authenticated\"");
+    expect(window.sessionStorage.getItem("pasascope.supabase-session-token.v1")).toBeTruthy();
   });
 
   it("automatically redirects unauthenticated visitors to /login", async () => {

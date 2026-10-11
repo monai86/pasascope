@@ -136,6 +136,9 @@ def reload_api_service() -> bool:
 def main() -> int:
     repo_root = Path(__file__).resolve().parent.parent
     repo_paths = [
+        repo_root / ".local" / "pasascope-app-repository.json",
+        repo_root / "apps" / "api" / ".local" / "pasascope-app-repository.json",
+        # Files written before the project was renamed.
         repo_root / ".local" / "lingualens-app-repository.json",
         repo_root / "apps" / "api" / ".local" / "lingualens-app-repository.json",
     ]

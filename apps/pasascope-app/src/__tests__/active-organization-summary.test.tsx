@@ -45,7 +45,7 @@ describe("ActiveOrganizationSummary", () => {
     fireEvent.change(switcher, { target: { value: "pilot_org_002" } });
 
     expect((await screen.findAllByText("North Review Clinic")).length).toBeGreaterThan(0);
-    expect(window.sessionStorage.getItem("lingualens.mock-access-session.v1")).toContain("pilot_org_002");
+    expect(window.sessionStorage.getItem("pasascope.mock-access-session.v1")).toContain("pilot_org_002");
     expect(screen.getByText("Only one organization is active per session. Switching changes the next scoped request.")).toBeInTheDocument();
     expect(screen.getByText("Active organization switched. Refreshing scoped workspace data.")).toBeInTheDocument();
     expect(routerRefresh).toHaveBeenCalled();

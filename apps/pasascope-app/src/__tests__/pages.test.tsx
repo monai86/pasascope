@@ -59,7 +59,7 @@ const { runtimeSettingsState, mockRuntimeSettings, supabaseRuntimeSettings } = v
     mock_mode: true,
     auth_mode: "mock",
     model_version: "v2-mock",
-    feature_schema: "lingualens-app.1",
+    feature_schema: "pasascope-app.1",
     guideline_mapping: "review-support-only",
     user_roles: ["therapist", "clinical_supervisor", "org_admin"],
     access_model: {
@@ -267,11 +267,11 @@ describe("pasascope pages", () => {
     fireEvent.change(screen.getByLabelText("Active organization session"), { target: { value: "pilot_org_002" } });
     fireEvent.click(screen.getByRole("link", { name: "Enter workspace" }));
 
-    expect(window.sessionStorage.getItem("lingualens.mock-access-session.v1")).toContain("pilot_org_002");
+    expect(window.sessionStorage.getItem("pasascope.mock-access-session.v1")).toContain("pilot_org_002");
   });
 
   it("shows the MFA gate instead of workspace content for an aal1 mock session", () => {
-    window.sessionStorage.setItem("lingualens.mock-access-session.v1", JSON.stringify({
+    window.sessionStorage.setItem("pasascope.mock-access-session.v1", JSON.stringify({
       role: "clinical_supervisor",
       organizationId: "pilot_org_002",
       aal: "aal1",
@@ -319,7 +319,7 @@ describe("pasascope pages", () => {
 
   it("blocks workspace routes behind the supabase MFA gate for an aal1 session", async () => {
     runtimeSettingsState.current = { status: "success", mode: "backend", data: supabaseRuntimeSettings };
-    window.sessionStorage.setItem("lingualens.supabase-browser-auth.v1", JSON.stringify({
+    window.sessionStorage.setItem("pasascope.supabase-browser-auth.v1", JSON.stringify({
       userId: "user_therapist_001",
       email: "clinician@clinic.example",
       aal: "aal1",
@@ -361,7 +361,7 @@ describe("pasascope pages", () => {
 
   it("requires explicit organization selection before supabase workspace access when memberships are ambiguous", async () => {
     runtimeSettingsState.current = { status: "success", mode: "backend", data: supabaseRuntimeSettings };
-    window.sessionStorage.setItem("lingualens.supabase-browser-auth.v1", JSON.stringify({
+    window.sessionStorage.setItem("pasascope.supabase-browser-auth.v1", JSON.stringify({
       userId: "user_supervisor_001",
       email: "supervisor@clinic.example",
       aal: "aal2",
@@ -403,8 +403,8 @@ describe("pasascope pages", () => {
     fireEvent.click(screen.getByRole("button", { name: "Continue with selected organization" }));
 
     await waitFor(() => {
-      expect(window.sessionStorage.getItem("lingualens.supabase-access-session.v1")).toContain("\"stage\":\"authenticated\"");
-      expect(window.sessionStorage.getItem("lingualens.supabase-access-session.v1")).toContain("\"organizationId\":\"clinic_002\"");
+      expect(window.sessionStorage.getItem("pasascope.supabase-access-session.v1")).toContain("\"stage\":\"authenticated\"");
+      expect(window.sessionStorage.getItem("pasascope.supabase-access-session.v1")).toContain("\"organizationId\":\"clinic_002\"");
     });
 
     cleanup();
@@ -415,7 +415,7 @@ describe("pasascope pages", () => {
 
   it("opens the supabase workspace without selection when exactly one membership is active", async () => {
     runtimeSettingsState.current = { status: "success", mode: "backend", data: supabaseRuntimeSettings };
-    window.sessionStorage.setItem("lingualens.supabase-browser-auth.v1", JSON.stringify({
+    window.sessionStorage.setItem("pasascope.supabase-browser-auth.v1", JSON.stringify({
       userId: "user_therapist_001",
       email: "clinician@clinic.example",
       aal: "aal2",
@@ -450,11 +450,11 @@ describe("pasascope pages", () => {
 
     expect(await screen.findByRole("link", { name: "Start session" })).toHaveAttribute("href", "/cases?intent=start-session");
     expect(screen.queryByRole("heading", { name: "Choose an active organization" })).not.toBeInTheDocument();
-    expect(window.sessionStorage.getItem("lingualens.supabase-access-session.v1")).toContain("\"organizationId\":\"clinic_001\"");
+    expect(window.sessionStorage.getItem("pasascope.supabase-access-session.v1")).toContain("\"organizationId\":\"clinic_001\"");
   });
 
   it("allows the mock MFA gate to promote the session to aal2 and restore workspace access", async () => {
-    window.sessionStorage.setItem("lingualens.mock-access-session.v1", JSON.stringify({
+    window.sessionStorage.setItem("pasascope.mock-access-session.v1", JSON.stringify({
       role: "org_admin",
       organizationId: "pilot_org_ops",
       aal: "aal1",
@@ -465,12 +465,12 @@ describe("pasascope pages", () => {
     fireEvent.click(screen.getByRole("button", { name: "Complete mock MFA" }));
 
     expect(await screen.findByRole("heading", { name: "Team" })).toBeInTheDocument();
-    expect(window.sessionStorage.getItem("lingualens.mock-access-session.v1")).toContain("\"aal\":\"aal2\"");
+    expect(window.sessionStorage.getItem("pasascope.mock-access-session.v1")).toContain("\"aal\":\"aal2\"");
   });
 
   it("keeps the org-admin settings route behind the Supabase MFA gate for an aal1 session", async () => {
     runtimeSettingsState.current = { status: "success", mode: "backend", data: supabaseRuntimeSettings };
-    window.sessionStorage.setItem("lingualens.supabase-browser-auth.v1", JSON.stringify({
+    window.sessionStorage.setItem("pasascope.supabase-browser-auth.v1", JSON.stringify({
       userId: "user_org_admin_001",
       email: "admin@clinic.example",
       aal: "aal1",
@@ -511,7 +511,7 @@ describe("pasascope pages", () => {
 
   it("keeps the org-admin settings route behind explicit organization selection when memberships are ambiguous", async () => {
     runtimeSettingsState.current = { status: "success", mode: "backend", data: supabaseRuntimeSettings };
-    window.sessionStorage.setItem("lingualens.supabase-browser-auth.v1", JSON.stringify({
+    window.sessionStorage.setItem("pasascope.supabase-browser-auth.v1", JSON.stringify({
       userId: "user_org_admin_001",
       email: "admin@clinic.example",
       aal: "aal2",
@@ -554,7 +554,7 @@ describe("pasascope pages", () => {
     fireEvent.click(screen.getByRole("button", { name: "Continue with selected organization" }));
 
     expect(await screen.findByRole("heading", { name: "Team" })).toBeInTheDocument();
-    expect(window.sessionStorage.getItem("lingualens.supabase-access-session.v1")).toContain("\"organizationId\":\"clinic_002\"");
+    expect(window.sessionStorage.getItem("pasascope.supabase-access-session.v1")).toContain("\"organizationId\":\"clinic_002\"");
   });
 
   it("renders the backend-confirmed focused queue without legacy quick actions", async () => {
@@ -715,7 +715,7 @@ describe("pasascope pages", () => {
   });
 
   it("shows a safe read-only care-team summary on case detail", async () => {
-    window.sessionStorage.setItem("lingualens.mock-access-session.v1", JSON.stringify({
+    window.sessionStorage.setItem("pasascope.mock-access-session.v1", JSON.stringify({
       role: "org_admin",
       organizationId: "pilot_org_ops",
       aal: "aal2",
@@ -2393,7 +2393,7 @@ describe("pasascope pages", () => {
   });
 
   it("keeps admin runtime controls role-scoped in settings", async () => {
-    window.sessionStorage.setItem("lingualens.mock-access-session.v1", JSON.stringify({
+    window.sessionStorage.setItem("pasascope.mock-access-session.v1", JSON.stringify({
       role: "org_admin",
       organizationId: "pilot_org_001",
       aal: "aal2",
@@ -2411,7 +2411,7 @@ describe("pasascope pages", () => {
   });
 
   it("opens settings in admin scope from mock org-admin login query", async () => {
-    window.sessionStorage.setItem("lingualens.mock-access-session.v1", JSON.stringify({
+    window.sessionStorage.setItem("pasascope.mock-access-session.v1", JSON.stringify({
       role: "org_admin",
       organizationId: "pilot_org_001",
       aal: "aal2",

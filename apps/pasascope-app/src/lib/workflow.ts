@@ -1,3 +1,4 @@
+import "@/lib/storage-key-migration";
 import { apiGet, apiRequest, apiText, apiUploadBlob, ApiError, getMockAccessHeaders } from "@/lib/api";
 import {
   INTERPRETATION_HINT,
@@ -24,7 +25,7 @@ export {
   type SessionCuesAcknowledgement,
 } from "@/services/adapters/analysis-adapter";
 
-export const WORKFLOW_STORAGE_KEY = "lingualens.therapist.workflow.v1";
+export const WORKFLOW_STORAGE_KEY = "pasascope.therapist.workflow.v1";
 export const SEEDED_TRANSCRIPT_SESSION_ID = "SESSION-001";
 
 export type WorkflowSource = "recording" | "audio-upload" | "cha-upload" | "paste-transcript";

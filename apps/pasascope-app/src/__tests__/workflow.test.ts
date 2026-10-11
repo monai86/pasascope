@@ -32,7 +32,7 @@ beforeEach(() => {
 
 describe("simplified transcript intake", () => {
   it("migrates legacy title-cased report statuses to the lowercase persisted domain", () => {
-    window.sessionStorage.setItem("lingualens.therapist.workflow.v1", JSON.stringify({
+    window.sessionStorage.setItem("pasascope.therapist.workflow.v1", JSON.stringify({
       ...createInitialWorkflowState(),
       analysisStatus: "completed",
       reportStatus: "Draft",
@@ -76,7 +76,7 @@ describe("simplified transcript intake", () => {
       hasUnsavedRecording: true
     });
 
-    const stored = window.sessionStorage.getItem("lingualens.therapist.workflow.v1") ?? "";
+    const stored = window.sessionStorage.getItem("pasascope.therapist.workflow.v1") ?? "";
     expect(stored).toContain('"audioMimeType":"audio/webm"');
     expect(stored).not.toContain("blob:");
     expect(loadWorkflowState()).toEqual(expect.objectContaining({

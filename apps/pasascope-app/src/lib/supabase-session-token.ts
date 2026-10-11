@@ -1,6 +1,8 @@
 "use client";
 
-export const SUPABASE_SESSION_TOKEN_KEY = "lingualens.supabase-session-token.v1";
+import "@/lib/storage-key-migration";
+
+export const SUPABASE_SESSION_TOKEN_KEY = "pasascope.supabase-session-token.v1";
 
 export function loadSupabaseSessionToken(): string | null {
   if (typeof window === "undefined") return null;

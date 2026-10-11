@@ -30,7 +30,7 @@ test.describe.configure({ mode: "serial" });
 test("transcript editor stays responsive at 100, 500, and 1,000 lines", async ({ page, request, browser }) => {
   test.setTimeout(10 * 60_000);
   await page.addInitScript(() => {
-    window.sessionStorage.setItem("lingualens.mock-access-session.v1", JSON.stringify({
+    window.sessionStorage.setItem("pasascope.mock-access-session.v1", JSON.stringify({
       role: "therapist",
       organizationId: "pilot_org_001",
       aal: "aal2",
@@ -73,7 +73,7 @@ test("transcript editor stays responsive at 100, 500, and 1,000 lines", async ({
     if (page.url() !== "about:blank") {
       await page.evaluate(() => {
         window.localStorage.clear();
-        window.sessionStorage.removeItem("lingualens.therapist.workflow.v1");
+        window.sessionStorage.removeItem("pasascope.therapist.workflow.v1");
       });
     }
 

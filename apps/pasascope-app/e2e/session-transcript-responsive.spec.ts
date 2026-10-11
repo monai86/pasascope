@@ -19,7 +19,7 @@ const authHeaders = {
 
 async function setTherapistSession(page: Page) {
   await page.addInitScript(() => {
-    window.sessionStorage.setItem("lingualens.mock-access-session.v1", JSON.stringify({
+    window.sessionStorage.setItem("pasascope.mock-access-session.v1", JSON.stringify({
       role: "therapist",
       organizationId: "pilot_org_001",
       aal: "aal2",

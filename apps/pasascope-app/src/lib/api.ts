@@ -91,7 +91,7 @@ export const DEFAULT_PRODUCTION_RUNTIME_SETTINGS: RuntimeSettings = {
   mock_mode: false,
   auth_mode: "supabase",
   model_version: "v2-mock",
-  feature_schema: "lingualens-app.1",
+  feature_schema: "pasascope-app.1",
   guideline_mapping: "review-support-only",
   user_roles: ["therapist", "clinical_supervisor", "org_admin"],
   // Used only when the backend cannot be reached. Assume the strictest access
