@@ -31,6 +31,10 @@ ALLOWED_INVITATION_STATUSES = {
 BREAK_GLASS_MAX_DURATION_SECONDS = 60 * 60
 ALLOWED_JWKS_ALGORITHMS = {"RS256", "ES256"}
 _JWKS_CACHE: dict[str, tuple[float, str]] = {}
+# An unknown key id may mean the keys rotated, or that someone is sending junk
+# tokens. Refetch for it at most this often so junk cannot drive outbound calls.
+JWKS_FORCED_REFRESH_MIN_INTERVAL_SECONDS = 30
+_JWKS_LAST_FORCED_REFRESH: dict[str, float] = {}
 
 
 @dataclass(frozen=True)
@@ -118,16 +122,24 @@ def _decode_hs256_jwt(token: str, settings: Settings) -> dict[str, Any]:
     header = _json_part(parts[0])
     if header.get("alg") != "HS256":
         raise _unauthorized("Unsupported token algorithm.")
-    signing_input = f"{parts[0]}.{parts[1]}".encode("ascii")
+    try:
+        signing_input = f"{parts[0]}.{parts[1]}".encode("ascii")
+    except UnicodeEncodeError:
+        raise _unauthorized("Invalid bearer token.") from None
     expected = hmac.new(settings.supabase_jwt_secret.encode("utf-8"), signing_input, hashlib.sha256).digest()
     if not hmac.compare_digest(_b64decode(parts[2]), expected):
         raise _unauthorized("Invalid bearer token.")
 
     claims = _json_part(parts[1])
     now = int(time.time())
-    if int(claims.get("exp") or 0) <= now:
+    try:
+        expires_at = int(claims.get("exp") or 0)
+        not_before = int(claims["nbf"]) if "nbf" in claims else None
+    except (TypeError, ValueError):
+        raise _unauthorized("Invalid bearer token.") from None
+    if expires_at <= now:
         raise _unauthorized("Bearer token expired.")
-    if "nbf" in claims and int(claims["nbf"]) > now:
+    if not_before is not None and not_before > now:
         raise _unauthorized("Bearer token not yet valid.")
     if settings.supabase_jwt_issuer and claims.get("iss") != settings.supabase_jwt_issuer:
         raise _unauthorized("Invalid token issuer.")
@@ -180,6 +192,11 @@ def _decode_jwks_url_jwt(token: str, settings: Settings) -> dict[str, Any]:
     except HTTPException as exc:
         if exc.detail != "Bearer token signing key was not found.":
             raise
+    now = time.time()
+    last_forced = _JWKS_LAST_FORCED_REFRESH.get(settings.supabase_jwt_jwks_url)
+    if last_forced is not None and now - last_forced < JWKS_FORCED_REFRESH_MIN_INTERVAL_SECONDS:
+        raise _unauthorized("Bearer token signing key was not found.")
+    _JWKS_LAST_FORCED_REFRESH[settings.supabase_jwt_jwks_url] = now
     jwks_json = _load_jwks_json_from_url(
         settings.supabase_jwt_jwks_url,
         settings.supabase_jwt_jwks_cache_ttl_seconds,
@@ -242,6 +259,7 @@ def _fetch_jwks_json_from_url(url: str) -> str:
 
 def reset_jwks_cache_for_tests() -> None:
     _JWKS_CACHE.clear()
+    _JWKS_LAST_FORCED_REFRESH.clear()
 
 
 def _audience_matches(claim_audience: Any, expected: str) -> bool:

@@ -72,20 +72,24 @@ app = FastAPI(
     lifespan=lifespan,
 )
 
+# Starlette runs the middleware added last first. CORS must be outermost so that
+# 429 and 403 answers from the layers below still carry CORS headers, and
+# request logging must wrap rate limiting so those answers get a request id.
+app.add_middleware(
+    OriginGuardMiddleware,
+    allowed_origins=settings_obj.parsed_cors_allowed_origins,
+    enabled=settings_obj.csrf_origin_guard_enabled,
+)
+app.add_middleware(RateLimitMiddleware)
+app.add_middleware(RequestLoggingMiddleware)
 app.add_middleware(
     CORSMiddleware,
     allow_origins=settings_obj.parsed_cors_allowed_origins,
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
+    expose_headers=["x-request-id", "Retry-After", "X-RateLimit-Limit", "X-RateLimit-Window"],
 )
-app.add_middleware(
-    OriginGuardMiddleware,
-    allowed_origins=settings_obj.parsed_cors_allowed_origins,
-    enabled=settings_obj.csrf_origin_guard_enabled,
-)
-app.add_middleware(RequestLoggingMiddleware)
-app.add_middleware(RateLimitMiddleware)
 
 app.include_router(cases.router, prefix=settings_obj.api_prefix)
 app.include_router(dashboard.router, prefix=settings_obj.api_prefix)

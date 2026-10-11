@@ -80,6 +80,11 @@ def _postgresql_target(value: URL) -> tuple[str, int, str]:
     )
 
 
+def _points_at_loopback(value: str) -> bool:
+    host = (urlparse(value).hostname or "").strip().rstrip(".").lower()
+    return host in _LOOPBACK_HOSTS or host.startswith("127.")
+
+
 def _is_valid_https_url(value: str) -> bool:
     if not isinstance(value, str) or value != value.strip():
         return False
@@ -191,6 +196,7 @@ class Settings(BaseModel):
     rate_limit_enabled: bool = False
     rate_limit_requests: int = 120
     rate_limit_window_seconds: int = 60
+    rate_limit_trusted_proxy_count: int = 0
     observability_enabled: bool = False
     observability_provider: str = "disabled"
     critical_alert_route: str = ""
@@ -268,9 +274,11 @@ class Settings(BaseModel):
                 raise ValueError("Production Supabase auth must require invitation acceptance.")
             if self.repository_mode != "sql":
                 raise ValueError("Production repository mode must be sql.")
-            if self.database_url == DEFAULT_DATABASE_URL or "localhost" in self.database_url:
+            if self.database_url == DEFAULT_DATABASE_URL or _points_at_loopback(self.database_url):
                 raise ValueError("Production database URL must come from managed secrets and cannot use demo defaults.")
-            if self.assessment_database_url == DEFAULT_ASSESSMENT_DATABASE_URL or "localhost" in self.assessment_database_url:
+            if self.assessment_database_url == DEFAULT_ASSESSMENT_DATABASE_URL or _points_at_loopback(
+                self.assessment_database_url
+            ):
                 raise ValueError(
                     "Production assessment database URL must come from managed secrets and cannot use demo defaults."
                 )
@@ -292,7 +300,7 @@ class Settings(BaseModel):
                 raise ValueError("Production Supabase private storage configuration is missing or invalid.")
             if self.job_queue_mode not in PRODUCTION_JOB_QUEUE_MODES:
                 raise ValueError("Production job queue mode must use a durable managed queue.")
-            if self.redis_url == DEFAULT_REDIS_URL or "localhost" in self.redis_url:
+            if self.redis_url == DEFAULT_REDIS_URL or _points_at_loopback(self.redis_url):
                 raise ValueError("Production Redis URL must come from managed secrets and cannot use demo defaults.")
             if not self.observability_enabled or self.observability_provider not in PRODUCTION_OBSERVABILITY_PROVIDERS:
                 raise ValueError("Production observability provider must be configured.")
@@ -479,6 +487,16 @@ class Settings(BaseModel):
                     "THERAPIST_APP_V2_RATE_LIMIT_WINDOW_SECONDS",
                     "60",
                 )
+            ),
+            rate_limit_trusted_proxy_count=max(
+                0,
+                int(
+                    getenv_compat(
+                        "LINGUALENS_RATE_LIMIT_TRUSTED_PROXY_COUNT",
+                        "THERAPIST_APP_V2_RATE_LIMIT_TRUSTED_PROXY_COUNT",
+                        "0",
+                    )
+                ),
             ),
             observability_enabled=getenv_compat(
                 "LINGUALENS_OBSERVABILITY_ENABLED",

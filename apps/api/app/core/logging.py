@@ -67,6 +67,7 @@ SAFE_PATH_SEGMENTS = {
     "assessments",
     "transitions",
 }
+SAFE_REQUEST_ID_RE = re.compile(r"[A-Za-z0-9_.:-]{1,128}")
 ROUTE_PARAMETER_RE = re.compile(r"^\{[A-Za-z_][A-Za-z0-9_]*\}$")
 
 
@@ -104,6 +105,9 @@ class RequestLoggingMiddleware(BaseHTTPMiddleware):
         request_id = request.headers.get("x-request-id") or str(uuid4())
         if request.url.path.startswith(settings.assessment_api_prefix):
             request_id = sanitize_correlation_id(request_id)
+        elif not SAFE_REQUEST_ID_RE.fullmatch(request_id):
+            # The id is logged and echoed back; never let a caller put free text there.
+            request_id = str(uuid4())
         request.state.request_id = request_id
         start = time.perf_counter()
         response = await call_next(request)

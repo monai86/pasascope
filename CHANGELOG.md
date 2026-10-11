@@ -28,6 +28,11 @@
   - Evaluation helper routes now require an authenticated user and are closed whenever auth mode is not `mock`, including staging deployments that keep mock mode on.
 
 ### Fixed
+- **API edge hardening** (`apps/api/app/core/`, `apps/api/app/auth/`):
+  - Middleware order changed so 429 and origin-guard 403 responses carry CORS headers and an `x-request-id`.
+  - The rate limiter ignores `X-Forwarded-For` unless `LINGUALENS_RATE_LIMIT_TRUSTED_PROXY_COUNT` declares trusted proxies, bounds the number of tracked clients, and does not count CORS preflight.
+  - Malformed HS256 tokens answer 401 instead of 500; an unknown JWKS key id triggers at most one forced refetch per 30 seconds.
+  - Caller-supplied `x-request-id` values that are not opaque identifiers are replaced; production URL checks recognise `127.0.0.1` and `::1` as loopback.
 - **SQL repository data loss** (`apps/api/app/repositories/`):
   - The snapshot write no longer deletes every table before re-inserting; it upserts by primary key and appends only new audit events, so one repository instance can no longer erase records written by another. Consent withdrawal removes feature and ML rows through explicit delete methods.
   - Sample demo records are seeded only in mock mode. SQL mode refuses to start with more than one API worker.
