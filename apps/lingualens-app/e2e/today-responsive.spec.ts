@@ -1,4 +1,4 @@
-import { expect, test, type Locator } from "@playwright/test";
+import { expect, test, type APIRequestContext, type Locator } from "@playwright/test";
 import { capturePairedEvidence } from "./evidence-screenshots";
 
 const desktopViewports = [
@@ -21,8 +21,35 @@ async function visibleCount(locator: Locator) {
   }).length);
 }
 
+const backendBaseUrl = `http://127.0.0.1:${process.env.PLAYWRIGHT_BACKEND_PORT ?? "8000"}/api/v1`;
+const authHeaders = {
+  "X-Mock-Role": "therapist",
+  "X-Mock-User-Id": "therapist-demo",
+  "X-Organization-Id": "pilot_org_001",
+};
+
+// One queue row per case. Seed enough cases for the density check so it does
+// not depend on which specs ran earlier. Each case gets a session so it never
+// shows up as a second "Start session" row.
+async function seedQueueCases(request: APIRequestContext, prefix: string) {
+  for (const index of [1, 2, 3, 4]) {
+    const created = await request.post(`${backendBaseUrl}/cases`, {
+      headers: authHeaders,
+      data: { child_code: `${prefix}-${index}`, age_months: 60, language: "English", consent_status: "granted" },
+    });
+    expect(created.ok(), await created.text()).toBe(true);
+    const caseId = (await created.json()).case_id as string;
+    const session = await request.post(`${backendBaseUrl}/cases/${caseId}/sessions`, {
+      headers: authHeaders,
+      data: { session_date: "2026-07-21", session_type: "language_sample" },
+    });
+    expect(session.ok(), await session.text()).toBe(true);
+  }
+}
+
 for (const viewport of desktopViewports) {
-  test(`Today keeps the prioritized workbench dominant at ${viewport.name}`, async ({ page }) => {
+  test(`Today keeps the prioritized workbench dominant at ${viewport.name}`, async ({ page, request }) => {
+    await seedQueueCases(request, `TODAY-${viewport.name}`);
     await page.setViewportSize(viewport);
     await page.goto("/today");
     await expect(page.getByRole("heading", { name: "Work Queue" })).toBeVisible();
