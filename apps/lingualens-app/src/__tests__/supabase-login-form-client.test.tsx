@@ -2,7 +2,7 @@ import { fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 import { routerPush, routerRefresh } from "@/__tests__/setup";
-import { SupabaseLoginFormClient } from "@/components/supabase-login-form-client";
+import { ACCOUNT_NOT_PROVISIONED_MESSAGE, SupabaseLoginFormClient } from "@/components/supabase-login-form-client";
 import type { RuntimeSettings } from "@/lib/api";
 import { resetSupabaseBrowserClientForTests } from "@/lib/supabase-browser-client";
 
@@ -73,9 +73,15 @@ describe("SupabaseLoginFormClient", () => {
     signInWithPassword.mockResolvedValue({
       data: {
         session: {
+          aal: "aal2",
           user: {
+            id: "user_org_admin_001",
+            email: "admin@clinic.example",
             app_metadata: {
               role: "org_admin",
+              membership_active: true,
+              invitation_status: "accepted",
+              organization_id: "clinic_001",
             },
           },
         },
@@ -103,6 +109,27 @@ describe("SupabaseLoginFormClient", () => {
     });
 
     window.removeEventListener("lingualens:supabase-session-source", listener as EventListener);
+  });
+
+  it("tells an account without an organization membership that it is not provisioned", async () => {
+    signInWithPassword.mockResolvedValue({
+      data: {
+        session: {
+          aal: "aal1",
+          user: { id: "user_new_001", email: "new.user@clinic.example", app_metadata: {} },
+        },
+      },
+      error: null,
+    });
+
+    render(<SupabaseLoginFormClient runtimeSettings={runtimeSettings} />);
+
+    fireEvent.change(screen.getByLabelText("Email"), { target: { value: "new.user@clinic.example" } });
+    fireEvent.change(screen.getByLabelText("Password"), { target: { value: "secret-password" } });
+    fireEvent.click(screen.getByRole("button", { name: "Sign in with Supabase" }));
+
+    expect(await screen.findByText(ACCOUNT_NOT_PROVISIONED_MESSAGE)).toBeInTheDocument();
+    expect(routerPush).not.toHaveBeenCalled();
   });
 
   it("sends a Supabase password recovery email back to the login route", async () => {

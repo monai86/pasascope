@@ -50,6 +50,30 @@ def _require_org_admin(
     )
 
 
+def _is_first_admin_bootstrap(
+    user: CurrentUser,
+    repo: MockRepository,
+    payload: OrganizationMembershipCreate,
+) -> bool:
+    """Let a verified org admin record their own membership in an empty organization.
+
+    Every admin route requires a stored org-admin membership, so without this
+    the first admin of a new organization could never be recorded through the
+    API. It applies only while the organization has no active org admin, and
+    only for the caller's own org-admin membership; the caller's role comes from
+    the authenticated identity, not from the request body.
+    """
+
+    if user.role != "org_admin" or not user.membership_active:
+        return False
+    if payload.user_id != user.user_id or payload.role != "org_admin" or not payload.active:
+        return False
+    return not any(
+        membership.organization_id == user.organization_id and membership.role == "org_admin" and membership.active
+        for membership in repo.memberships.values()
+    )
+
+
 def _require_assignment_manager(
     request: Request,
     user: CurrentUser,
@@ -285,6 +309,16 @@ def upsert_current_organization_membership(
     user: CurrentUser = Depends(get_current_user),
     repo: MockRepository = Depends(get_repository),
 ):
+    if _is_first_admin_bootstrap(user, repo, payload):
+        membership = repo.upsert_membership(user.organization_id, payload, actor_id=user.user_id)
+        repo.add_audit(
+            "membership.bootstrap",
+            membership.membership_id,
+            "First organization admin membership recorded.",
+            actor_id=user.user_id,
+            organization_id=user.organization_id,
+        )
+        return membership
     _require_org_admin(
         request,
         user,

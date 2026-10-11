@@ -24,7 +24,7 @@ from app.schemas.clinical import (
 )
 from app.services.cha_service import build_cha_text, manual_text_to_utterances
 from app.services.consent_service import ensure_session_consent_active
-from app.services.storage_service import get_storage_adapter
+from app.services.storage_service import SupabasePrivateStorageAdapter, get_storage_adapter
 from app.services.asr_providers.registry import asr_provider_registry
 from app.services.asr_providers.base import TranscriptionResult
 
@@ -69,6 +69,10 @@ def create_audio_upload_job(repo: MockRepository, session_id: str, payload: Audi
     validate_audio_upload(payload)
     session = repo.sessions[session_id]
     storage_adapter = get_storage_adapter()
+    if isinstance(storage_adapter, SupabasePrivateStorageAdapter):
+        # This workflow has no managed-storage upload path; recordings for
+        # Supabase storage go through the assessment (v2) capture flow.
+        raise ValueError("Audio upload is unavailable for the configured storage mode.")
     audio_file = AudioFileMetadata(
         audio_file_id=new_id("aud"),
         organization_id=session.organization_id,

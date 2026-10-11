@@ -7,6 +7,7 @@ from app.auth.authorization import (
     filter_cases_for_user,
     require_case,
 )
+from app.core.config import Settings, get_settings
 from app.core.errors import bad_request, not_found
 from app.core.security import CurrentUser, get_current_user
 from app.repositories.base import CaseVersionConflictError
@@ -105,8 +106,13 @@ def create_case(
     payload: ChildCaseCreate,
     user: CurrentUser = Depends(get_current_user),
     repo: MockRepository = Depends(get_repository),
+    settings: Settings = Depends(get_settings),
 ):
     scoped_payload = _resolve_case_creation_payload(payload, repo, user)
+    if not settings.mock_mode:
+        # Outside local demo mode a case always starts without consent; the
+        # audited grant-consent route is the only way to record it.
+        scoped_payload = scoped_payload.model_copy(update={"consent_status": "pending"})
     return repo.create_case(scoped_payload, actor_id="system", audit_actor_id=user.user_id)
 
 
@@ -175,4 +181,11 @@ def withdraw_case_consent(
     repo: MockRepository = Depends(get_repository),
 ):
     require_case(repo, case_id, user)
-    return withdraw_consent(repo, case_id, payload.reason, payload.redact_notes, actor_id=user.user_id)
+    return withdraw_consent(
+        repo,
+        case_id,
+        payload.reason,
+        payload.redact_notes,
+        actor_id=user.user_id,
+        requester_role=user.role,
+    )

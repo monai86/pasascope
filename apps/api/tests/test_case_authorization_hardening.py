@@ -183,3 +183,134 @@ def test_sql_repository_mode_rejects_multiple_api_workers():
     with pytest.raises(ValueError, match="single API worker"):
         Settings(repository_mode="sql", web_concurrency=2).validate_runtime_security()
     Settings(repository_mode="json", web_concurrency=2).validate_runtime_security()
+
+
+def test_case_creation_cannot_start_with_consent_outside_demo_mode(client, repo):
+    production_like = Settings(mock_mode=False, auth_mode="mock")
+    app.dependency_overrides[get_settings] = lambda: production_like
+    try:
+        created = client.post(
+            "/api/v1/cases",
+            json={"child_code": "C-PROD-1", "age_months": 48, "consent_status": "granted"},
+            headers=THERAPIST,
+        )
+    finally:
+        app.dependency_overrides.pop(get_settings, None)
+
+    assert created.status_code == 200
+    assert created.json()["consent_status"] == "pending"
+    assert repo.cases[created.json()["case_id"]].consent_status == "pending"
+
+
+@pytest.mark.parametrize("consent_status", ["withdrawn", "whatever", ""])
+def test_case_creation_rejects_unknown_initial_consent(client, consent_status):
+    response = client.post(
+        "/api/v1/cases",
+        json={"child_code": "C-BAD", "age_months": 48, "consent_status": consent_status},
+        headers=THERAPIST,
+    )
+
+    assert response.status_code == 422
+
+
+def test_withdrawal_reason_is_kept_on_a_privacy_record_not_in_the_audit_log(client, repo):
+    reason = "Caregiver asked to stop participation."
+
+    response = client.post(
+        "/api/v1/cases/case_demo_001/withdraw-consent", json={"reason": reason}, headers=THERAPIST
+    )
+
+    assert response.status_code == 200
+    records = [item for item in repo.privacy_operations.values() if item.operation_type == "consent_withdrawal"]
+    assert [(item.reason, item.status, item.requested_by) for item in records] == [
+        (reason, "completed", "therapist-demo")
+    ]
+    assert records[0].completed_at is not None
+    assert all(reason not in event["message"] for event in repo.audit_log)
+
+
+def test_v1_audio_upload_reports_unavailable_storage_instead_of_failing(client, repo, monkeypatch):
+    monkeypatch.setenv("LINGUALENS_STORAGE_MODE", "supabase_private")
+    get_settings.cache_clear()
+    try:
+        response = client.post(
+            "/api/v1/sessions/session_demo_001/audio/upload",
+            json={"filename": "a.wav", "content_type": "audio/wav", "size_bytes": 10},
+            headers=THERAPIST,
+        )
+    finally:
+        monkeypatch.undo()
+        get_settings.cache_clear()
+
+    assert response.status_code == 400
+    assert response.json()["detail"] == "Audio upload is unavailable for the configured storage mode."
+    assert repo.audio_files == {}
+
+
+ADMIN = {"X-Mock-Role": "org_admin", "X-User-Id": "admin-first", "X-Organization-Id": "org_fresh"}
+
+
+def _membership(user_id: str, role: str) -> dict:
+    return {"user_id": user_id, "display_name": "Name", "role": role}
+
+
+def test_first_org_admin_can_record_their_own_membership_once(client, repo):
+    denied_before = client.get("/api/v1/organizations/current/memberships", headers=ADMIN)
+
+    bootstrap = client.post(
+        "/api/v1/organizations/current/memberships", json=_membership("admin-first", "org_admin"), headers=ADMIN
+    )
+    listed = client.get("/api/v1/organizations/current/memberships", headers=ADMIN)
+    add_therapist = client.post(
+        "/api/v1/organizations/current/memberships", json=_membership("t-1", "therapist"), headers=ADMIN
+    )
+
+    assert denied_before.status_code == 403
+    assert bootstrap.status_code == 200
+    assert listed.status_code == 200
+    assert add_therapist.status_code == 200
+    assert [event["actor_id"] for event in repo.audit_log if event["action"] == "membership.bootstrap"] == [
+        "admin-first"
+    ]
+
+
+@pytest.mark.parametrize(
+    ("headers", "payload"),
+    [
+        # Not an org admin by identity.
+        ({**ADMIN, "X-Mock-Role": "therapist"}, _membership("admin-first", "org_admin")),
+        # Bootstrapping someone else, or a non-admin role, is not a bootstrap.
+        (ADMIN, _membership("someone-else", "org_admin")),
+        (ADMIN, _membership("admin-first", "therapist")),
+    ],
+)
+def test_bootstrap_is_limited_to_the_callers_own_admin_membership(client, repo, headers, payload):
+    response = client.post("/api/v1/organizations/current/memberships", json=payload, headers=headers)
+
+    assert response.status_code == 403
+    assert repo.memberships == {}
+
+
+def test_bootstrap_closes_once_the_organization_has_an_admin(client, repo):
+    assert client.post(
+        "/api/v1/organizations/current/memberships", json=_membership("admin-first", "org_admin"), headers=ADMIN
+    ).status_code == 200
+
+    second = client.post(
+        "/api/v1/organizations/current/memberships",
+        json=_membership("admin-second", "org_admin"),
+        headers={**ADMIN, "X-User-Id": "admin-second"},
+    )
+
+    assert second.status_code == 403
+
+
+@pytest.mark.parametrize("role", ["platform_operator", "superuser", ""])
+def test_membership_roles_are_restricted_to_organization_roles(client, role):
+    assert client.post(
+        "/api/v1/organizations/current/memberships", json=_membership("admin-first", "org_admin"), headers=ADMIN
+    ).status_code == 200
+
+    response = client.post("/api/v1/organizations/current/memberships", json=_membership("x", role), headers=ADMIN)
+
+    assert response.status_code == 422

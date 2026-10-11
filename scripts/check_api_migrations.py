@@ -17,7 +17,7 @@ ROOT = Path(__file__).resolve().parents[1]
 API_ROOT = ROOT / "apps" / "api"
 if str(API_ROOT) not in sys.path:
     sys.path.insert(0, str(API_ROOT))
-HEAD_REVISION = "0013_session_cues_acknowledgement"
+HEAD_REVISION = "0015_session_stale_flags"
 REQUIRED_TABLES = {
     "alembic_version",
     "organizations",
@@ -115,6 +115,24 @@ def run_migration_smoke(database_path: Path) -> MigrationSmokeResult:
                 "Migration smoke missing required columns on "
                 f"{table_name}: {', '.join(missing_columns)}"
             )
+
+    # The hand-written lists above cannot notice a column that exists on the ORM
+    # model but in no migration, so derive the full expectation from the models.
+    from app.db.models import Base
+
+    model_drift: list[str] = []
+    for table in Base.metadata.sorted_tables:
+        if table.name not in tables:
+            model_drift.append(f"{table.name} (table)")
+            continue
+        migrated_columns = _columns(database_path, table.name)
+        model_drift.extend(
+            f"{table.name}.{column.name}" for column in table.columns if column.name not in migrated_columns
+        )
+    if model_drift:
+        raise RuntimeError(
+            "Migrations do not create everything the ORM models use: " + ", ".join(sorted(model_drift))
+        )
 
     stored_revision = _stored_revision(database_path)
     if stored_revision != HEAD_REVISION:

@@ -28,7 +28,7 @@ export type SupabaseBrowserAuthSnapshot = {
   };
 };
 
-type SupabaseSessionLike = {
+export type SupabaseSessionLike = {
   aal?: string | null;
   access_token?: string | null;
   user?: {
@@ -138,25 +138,37 @@ export function buildSupabaseBrowserAuthSnapshotFromSession(
     return null;
   }
 
-  const role = isValidRole(appMetadata.role) ? appMetadata.role : "therapist";
-  const invitationStatus = isValidInvitationStatus(appMetadata.invitation_status)
-    ? appMetadata.invitation_status
-    : "accepted";
-  const membershipActive = typeof appMetadata.membership_active === "boolean"
-    ? appMetadata.membership_active
-    : true;
-
+  // No defaults: the role, membership and organization must come from the
+  // signed token. An account without them has not been provisioned for any
+  // organization, and the API would reject every request it made.
   const rawOrgs = normalizeOrganizations(
     appMetadata.organizations ?? appMetadata.organization_memberships,
   );
-  const defaultOrg: SupabaseOrganizationOption = {
-    organizationId: "org_alpha",
-    label: "PasaScope Clinical Pilot Clinic",
-    role,
-  };
-  const organizations = rawOrgs && rawOrgs.length > 0 ? rawOrgs : [defaultOrg];
-  const organizationId = typeof appMetadata.organization_id === "string" && organizations.some((option) => option.organizationId === appMetadata.organization_id)
-    ? appMetadata.organization_id
+  if (appMetadata.membership_active !== true || !isValidInvitationStatus(appMetadata.invitation_status)) {
+    return null;
+  }
+  // A member of several organizations carries a role per organization and no
+  // top-level role until one organization is selected.
+  const role = isValidRole(appMetadata.role) ? appMetadata.role : rawOrgs?.[0]?.role;
+  if (!role) {
+    return null;
+  }
+  const invitationStatus = appMetadata.invitation_status;
+  const membershipActive = true;
+
+  const claimedOrganizationId = typeof appMetadata.organization_id === "string" && appMetadata.organization_id.trim()
+    ? appMetadata.organization_id.trim()
+    : undefined;
+  const organizations = rawOrgs && rawOrgs.length > 0
+    ? rawOrgs
+    : claimedOrganizationId
+      ? [{ organizationId: claimedOrganizationId, label: claimedOrganizationId, role }]
+      : [];
+  if (organizations.length === 0) {
+    return null;
+  }
+  const organizationId = claimedOrganizationId && organizations.some((option) => option.organizationId === claimedOrganizationId)
+    ? claimedOrganizationId
     : organizations[0].organizationId;
   const displayName = extractDisplayName(session.user.user_metadata);
 

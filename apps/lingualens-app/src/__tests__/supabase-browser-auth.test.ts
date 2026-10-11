@@ -366,4 +366,46 @@ describe("supabase browser auth bridge", () => {
     expect(window.localStorage.getItem("lingualens.supabase-organization-hint.v1")).toBeNull();
     expect(window.sessionStorage.getItem("lingualens.supabase-access-session.v1")).toContain("\"stage\":\"signed_out\"");
   });
+
+  it.each([
+    ["no app metadata at all", {}],
+    ["no role", { membership_active: true, invitation_status: "accepted", organization_id: "org_a" }],
+    ["no membership flag", { role: "therapist", invitation_status: "accepted", organization_id: "org_a" }],
+    ["no invitation status", { role: "therapist", membership_active: true, organization_id: "org_a" }],
+    ["no organization", { role: "therapist", membership_active: true, invitation_status: "accepted" }],
+  ])("does not invent access for an account with %s", (_label, appMetadata) => {
+    const snapshot = buildSupabaseBrowserAuthSnapshotFromSession({
+      access_token: "token",
+      user: {
+        id: "user-unprovisioned",
+        email: "new.user@clinic.example",
+        app_metadata: appMetadata,
+        user_metadata: {},
+        aal: "aal2",
+      },
+    } as never);
+
+    expect(snapshot).toBeNull();
+  });
+
+  it("accepts a multi-organization account that has per-organization roles and no top-level role", () => {
+    const snapshot = buildSupabaseBrowserAuthSnapshotFromSession({
+      aal: "aal2",
+      user: {
+        id: "user-multi",
+        email: "multi@clinic.example",
+        app_metadata: {
+          membership_active: true,
+          invitation_status: "accepted",
+          organizations: [
+            { organization_id: "org_a", name: "Clinic A", role: "therapist", active: true },
+            { organization_id: "org_b", name: "Clinic B", role: "clinical_supervisor", active: true },
+          ],
+        },
+      },
+    } as never);
+
+    expect(snapshot?.appMetadata.organizations?.map((item) => item.organizationId)).toEqual(["org_a", "org_b"]);
+  });
 });
+

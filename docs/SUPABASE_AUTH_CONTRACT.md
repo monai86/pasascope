@@ -127,6 +127,45 @@ normal routes. The backend exposes a scoped break-glass case-access endpoint
 that requires platform-operator role plus a valid case/category/reason/expiry
 tuple and writes an audit event for each case access.
 
+## Provisioning the Claims
+
+Supabase does not write these claims by itself. `scripts/supabase/auth_claims_hook.sql`
+installs the two database functions that do:
+
+1. Run the API migrations against the Supabase database, then run the SQL file
+   (SQL editor or `psql`).
+2. Enable the hook: Authentication -> Hooks -> Customize Access Token (JWT)
+   Claims -> Postgres function -> `public.pasascope_access_token_hook`.
+3. Create the first admin of each organization from the SQL editor:
+
+   ```sql
+   select public.pasascope_provision_first_admin(
+     'clinic_001', 'Example Clinic', '<auth.users id>', 'Admin Name'
+   );
+   ```
+
+The hook rebuilds the access claims on every token issue and refresh from
+`organization_memberships` and `organization_invitations`:
+
+- no active membership: no access claims, and the API answers 401;
+- one active membership: `organization_id` and `role` are set;
+- several: only `organizations` is set and the client must send
+  `X-Organization-Id`;
+- `invitation_status` is `accepted` when the user accepted an invitation or is
+  an organization admin, otherwise `pending`;
+- access claims already present on the token are discarded, and break-glass
+  claims are never issued by the hook.
+
+Revoking a membership takes effect on the next token, so keep the access-token
+lifetime short. The therapist app shows an explicit "not added to an
+organization" message for an account without these claims instead of assuming
+a role or organization.
+
+`apps/api/tests/test_supabase_auth_hook_postgres.py` feeds the hook's output
+through the API verifier. It runs when `PASASCOPE_AUTH_HOOK_TEST_DATABASE_URL`
+points at a disposable PostgreSQL database. It has been run against local
+PostgreSQL 16, not against a hosted Supabase project.
+
 ## Backend Lifecycle Workflow
 
 The local backend foundation supports:
@@ -138,9 +177,9 @@ The local backend foundation supports:
 - production runtime validation that rejects disabled MFA or invitation guards;
 - scoped break-glass case access audited per target case.
 
-These APIs are backend workflow scaffolding. Real invitation delivery, MFA
-enrollment, and custom-claim synchronization must be implemented in Supabase and
-the frontend before production use.
+These APIs are backend workflow scaffolding. Real invitation delivery must
+still be implemented before production use; custom-claim synchronization is
+covered by the hook above once it is enabled in the Supabase project.
 
 ## Not Yet Production Evidence
 

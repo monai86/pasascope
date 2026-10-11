@@ -10,6 +10,7 @@
 - ML output is editable/dismissible decision support trained on limited/public datasets and is not clinically validated.
 - Reports require therapist review. Local finalization is not a production signature or secure caregiver-delivery workflow.
 - Markdown and HTML export are available. PDF export is not yet implemented.
+- Runtime language-sample features are not computed the same way as the reference cohorts they would be compared with: on one sample the runtime reports MLU-words 2.0 and unintelligible ratio 0.1667, the reference extractor 3.0 and 0.25 (`apps/api/tests/test_reference_runtime_parity.py`). Reference evidence must stay disabled until a clinician chooses one definition and both sides use it.
 - The SQL repository keeps a per-process cache of clinical records and writes legacy paths as a whole-snapshot upsert. It must run as a single API worker (`WEB_CONCURRENCY=1`, enforced at startup); a second instance would read and write stale state. Per-request queries need a separate ADR.
 - Production authentication, encrypted private storage, durable queues, deployment monitoring, and audited role enforcement remain future work.
 

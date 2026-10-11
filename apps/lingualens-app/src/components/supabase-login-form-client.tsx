@@ -17,6 +17,10 @@ import {
 import { useEffect, type FormEvent, useState } from "react";
 
 import { type RuntimeSettings } from "@/lib/api";
+import {
+  buildSupabaseBrowserAuthSnapshotFromSession,
+  type SupabaseSessionLike,
+} from "@/lib/supabase-browser-auth";
 import { getSupabaseBrowserClient } from "@/lib/supabase-browser-client";
 import { getSupabaseBrowserClientConfigStatus } from "@/lib/supabase-browser-client-config";
 import { publishSupabaseSessionPayload } from "@/lib/supabase-session-source";
@@ -29,6 +33,9 @@ function resolvePostLoginRoute(role: unknown): string {
 
   return "/dashboard";
 }
+
+export const ACCOUNT_NOT_PROVISIONED_MESSAGE =
+  "บัญชีนี้ยังไม่ได้รับสิทธิ์เข้าองค์กรใด กรุณาติดต่อผู้ดูแลองค์กรเพื่อรับคำเชิญ · This account has not been added to an organization yet. Ask your organization admin for an invitation.";
 
 export function SupabaseLoginFormClient({
   runtimeSettings,
@@ -220,6 +227,14 @@ export function SupabaseLoginFormClient({
 
       if (error) {
         setErrorMessage(error.message);
+        return;
+      }
+
+      if (data.session && !buildSupabaseBrowserAuthSnapshotFromSession(data.session as unknown as SupabaseSessionLike)) {
+        // Signed in, but the token carries no organization membership yet.
+        await browserClient.auth.signOut?.();
+        publishSupabaseSessionPayload(null);
+        setErrorMessage(ACCOUNT_NOT_PROVISIONED_MESSAGE);
         return;
       }
 

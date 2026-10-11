@@ -27,6 +27,16 @@
   - Audit events for case, session, transcript, feature, review, report, goal, privacy, audio and consent actions triggered through the v1 routes now record the authenticated user instead of `system`; worker-run audio jobs record `worker`.
   - Evaluation helper routes now require an authenticated user and are closed whenever auth mode is not `mock`, including staging deployments that keep mock mode on.
 
+### Added
+- **Supabase access claims** (`scripts/supabase/auth_claims_hook.sql`): a Customize Access Token hook that issues the organization, role, membership and invitation claims the API requires, and a function to provision the first organization admin. Covered end to end by `test_supabase_auth_hook_postgres.py`.
+- **First organization admin bootstrap** (`apps/api/`): a verified org admin can record their own membership while the organization has no active admin; membership and invitation roles are restricted to the three organization roles.
+
+### Fixed
+- **Database built from migrations could not run the API** (`apps/api/app/db/`): `sessions.findings_stale` / `report_stale` and the membership unique constraint existed on the models but in no migration, and the migration runner failed on a fresh PostgreSQL database because a revision id exceeded `alembic_version`'s default length. Migrations `0014` and `0015` add the missing schema, the runner creates the version table wide enough, and the migration smoke check now derives its expectations from the models.
+- **Consent and access rules**: outside demo mode a case always starts with pending consent and initial consent values are validated; the consent-withdrawal reason is kept on a completed privacy record; v1 audio upload answers 400 instead of 500 when the configured storage has no upload path.
+- **Sign-in without organization access** (`apps/lingualens-app/`): the app no longer assumes a therapist role and a default organization for a Supabase account that carries no access claims; sign-in reports that the account has not been added to an organization.
+- **Today work queue** (`apps/lingualens-app/`): tighter layout keeps three to four queue rows above the fold on desktop.
+
 ### Removed
 - **Fabricated audio outputs** (`apps/lingualens-app/`, `apps/api/`):
   - Removed the unused recording handler that carried a canned "Mock ASR transcript" and the in-browser mock transcription service behind it.

@@ -92,6 +92,14 @@ class ChildCaseCreate(ChildCaseBase):
     def strip_optional_text(cls, value: str | None) -> str | None:
         return value.strip() if value is not None else None
 
+    @field_validator("consent_status")
+    @classmethod
+    def restrict_initial_consent(cls, value: str) -> str:
+        normalized = value.strip().lower()
+        if normalized not in {"pending", "granted"}:
+            raise ValueError("must be pending or granted")
+        return normalized
+
 
 class ChildCaseUpdate(BaseModel):
     nickname: str | None = None
@@ -131,10 +139,13 @@ class ChildCase(ChildCaseBase):
     updated_at: datetime = Field(default_factory=utc_now)
 
 
+OrganizationRole = Literal["therapist", "clinical_supervisor", "org_admin"]
+
+
 class OrganizationMembershipCreate(BaseModel):
-    user_id: str
-    display_name: str
-    role: str
+    user_id: str = Field(min_length=1, max_length=128)
+    display_name: str = Field(min_length=1, max_length=120)
+    role: OrganizationRole
     active: bool = True
 
 
@@ -151,7 +162,7 @@ class OrganizationMembership(BaseModel):
 class OrganizationInvitationCreate(BaseModel):
     email: str
     display_name: str
-    role: str
+    role: OrganizationRole
     expires_at: datetime | None = None
 
 
