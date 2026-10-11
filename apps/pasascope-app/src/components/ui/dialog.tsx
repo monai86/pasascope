@@ -3,113 +3,91 @@
 import * as React from "react";
 import { X } from "lucide-react";
 
+import { cn } from "@/lib/cn";
+import { useFocusTrap } from "@/components/ui/use-focus-trap";
+
+/**
+ * A modal dialog. Focus is trapped inside while it is open and returns to the
+ * control that opened it; Escape and the backdrop both close it.
+ */
 export function Dialog({
   open,
   onOpenChange,
+  labelledBy,
+  describedBy,
+  className,
   children,
 }: {
   open: boolean;
   onOpenChange: (open: boolean) => void;
+  /** Id of the element that titles the dialog, usually its DialogTitle. */
+  labelledBy?: string;
+  describedBy?: string;
+  className?: string;
   children: React.ReactNode;
 }) {
+  const panelRef = useFocusTrap<HTMLDivElement>(open, () => onOpenChange(false));
+
   React.useEffect(() => {
-    function handleKeyDown(e: KeyboardEvent) {
-      if (e.key === "Escape" && open) {
-        onOpenChange(false);
-      }
-    }
-    if (open) {
-      document.body.style.overflow = "hidden";
-      window.addEventListener("keydown", handleKeyDown);
-    } else {
-      document.body.style.overflow = "";
-    }
+    if (!open) return;
+    const previousOverflow = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
     return () => {
-      document.body.style.overflow = "";
-      window.removeEventListener("keydown", handleKeyDown);
+      document.body.style.overflow = previousOverflow;
     };
-  }, [open, onOpenChange]);
+  }, [open]);
 
   if (!open) return null;
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 sm:p-6" role="dialog" aria-modal="true">
+    <div className="fixed inset-0 z-[70] flex items-center justify-center p-4 sm:p-6">
+      <div className="fixed inset-0 bg-navy/45" onClick={() => onOpenChange(false)} aria-hidden="true" />
       <div
-        className="fixed inset-0 bg-black/40 backdrop-blur-xs transition-opacity"
-        onClick={() => onOpenChange(false)}
-        aria-hidden="true"
-      />
-      <div className="relative z-50 w-full max-w-lg rounded-2xl border border-[color:var(--color-border)] bg-[color:var(--color-surface-reading)] p-6 shadow-xl transition-all">
+        ref={panelRef}
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby={labelledBy}
+        aria-describedby={describedBy}
+        className={cn(
+          "relative z-10 w-full max-w-lg rounded-panel border border-line bg-surface p-6 shadow-floating focus:outline-none",
+          className,
+        )}
+      >
         {children}
       </div>
     </div>
   );
 }
 
-export function DialogHeader({
-  className = "",
-  ...props
-}: React.HTMLAttributes<HTMLDivElement>) {
-  return (
-    <div
-      className={`flex flex-col space-y-1.5 pb-4 border-b border-[color:var(--color-border)] text-left ${className}`}
-      {...props}
-    />
-  );
+export function DialogHeader({ className, ...props }: React.HTMLAttributes<HTMLDivElement>) {
+  return <div className={cn("flex flex-col gap-1.5 pr-10 text-left", className)} {...props} />;
 }
 
-export function DialogTitle({
-  className = "",
-  children,
-  ...props
-}: React.HTMLAttributes<HTMLHeadingElement>) {
+export function DialogTitle({ className, children, ...props }: React.HTMLAttributes<HTMLHeadingElement>) {
   return (
-    <h2
-      className={`text-xl font-bold tracking-tight text-[color:var(--color-text-strong)] ${className}`}
-      {...props}
-    >
+    <h2 className={cn("text-xl font-semibold text-ink", className)} {...props}>
       {children}
     </h2>
   );
 }
 
-export function DialogDescription({
-  className = "",
-  ...props
-}: React.HTMLAttributes<HTMLParagraphElement>) {
-  return (
-    <p
-      className={`text-sm text-[color:var(--color-text-muted)] leading-relaxed ${className}`}
-      {...props}
-    />
-  );
+export function DialogDescription({ className, ...props }: React.HTMLAttributes<HTMLParagraphElement>) {
+  return <p className={cn("text-sm leading-6 text-ink-muted", className)} {...props} />;
 }
 
-export function DialogFooter({
-  className = "",
-  ...props
-}: React.HTMLAttributes<HTMLDivElement>) {
-  return (
-    <div
-      className={`flex flex-col-reverse sm:flex-row sm:justify-end sm:space-x-2 pt-4 border-t border-[color:var(--color-border)] mt-6 gap-2 ${className}`}
-      {...props}
-    />
-  );
+export function DialogFooter({ className, ...props }: React.HTMLAttributes<HTMLDivElement>) {
+  return <div className={cn("mt-6 flex flex-col-reverse gap-2 sm:flex-row sm:justify-end", className)} {...props} />;
 }
 
-export function DialogClose({
-  onClose,
-}: {
-  onClose: () => void;
-}) {
+export function DialogClose({ onClose, label = "Close dialog" }: { onClose: () => void; label?: string }) {
   return (
     <button
       type="button"
       onClick={onClose}
-      aria-label="Close dialog"
-      className="absolute top-5 right-5 inline-flex h-8 w-8 items-center justify-center rounded-lg text-[color:var(--color-text-subtle)] hover:bg-[color:var(--color-surface)] hover:text-[color:var(--color-text-strong)] transition"
+      aria-label={label}
+      className="absolute right-3 top-3 grid h-11 w-11 place-items-center rounded-full text-ink-subtle transition hover:bg-surface-soft hover:text-ink focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-[color:var(--color-focus-ring)]"
     >
-      <X size={18} />
+      <X size={18} aria-hidden="true" />
     </button>
   );
 }

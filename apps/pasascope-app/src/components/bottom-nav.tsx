@@ -1,7 +1,11 @@
+"use client";
+
 import Link from "next/link";
 
-import type { ShellActive } from "@/components/sidebar";
-import { getWorkbenchNavigation } from "@/services/navigation/workbench-navigation";
+import { shellMessages } from "@/components/shell.messages";
+import { useMessages } from "@/i18n/locale-provider";
+import { cn } from "@/lib/cn";
+import { getWorkbenchNavigation, type ShellActive } from "@/services/navigation/workbench-navigation";
 
 export function BottomNav({
   active,
@@ -12,10 +16,12 @@ export function BottomNav({
   activeSessionId?: string;
   activeCaseId?: string;
 }) {
+  const t = useMessages(shellMessages);
   const items = getWorkbenchNavigation(activeSessionId, activeCaseId, { forBottomNav: true });
+
   return (
-    <nav className="mobile-bottom-nav" aria-label="Bottom navigation">
-      <div className="grid grid-cols-5 rounded-[var(--radius-panel)] border border-[color:var(--color-border)] bg-[color:var(--color-surface-reading)] p-1.5">
+    <nav className="mobile-bottom-nav" aria-label={t.bottomNavigation}>
+      <div className="glass-chrome grid grid-cols-5 rounded-panel p-1.5 shadow-lift">
         {items.map((item) => {
           const Icon = item.icon;
           const isActive = item.active === active;
@@ -25,14 +31,13 @@ export function BottomNav({
               key={item.href}
               href={item.href}
               aria-current={isActive ? "page" : undefined}
-              className={`flex min-h-11 flex-col items-center justify-center gap-1 rounded-xl px-2 py-1 text-xs transition duration-200 ease-out motion-reduce:transition-none ${
-                isActive
-                  ? "bg-[color:var(--color-pasa-teal-soft)] text-[color:var(--color-pasa-teal)] font-bold shadow-2xs"
-                  : "text-[color:var(--color-text-subtle)] hover:text-[color:var(--color-text-strong)] font-medium"
-              }`}
+              className={cn(
+                "flex min-h-11 flex-col items-center justify-center gap-1 rounded-card px-1 py-1 text-xs transition focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-[color:var(--color-focus-ring)] motion-reduce:transition-none",
+                isActive ? "bg-brand-soft font-semibold text-brand-strong" : "font-medium text-ink-subtle hover:text-ink",
+              )}
             >
               <Icon size={18} aria-hidden="true" />
-              <span>{item.label}</span>
+              <span>{t.nav[item.active]}</span>
             </Link>
           );
         })}

@@ -32,7 +32,7 @@ export function TodayWorkbenchView({
             What needs your decision next, in one prioritized list. Queue status is operational, not a clinical conclusion.
           </p>
         </div>
-        <ActionButton href="/cases?intent=start-session" tone="coral" className="w-full shrink-0 sm:w-auto font-bold">
+        <ActionButton href="/cases?intent=start-session" className="w-full shrink-0 sm:w-auto font-bold">
           Start session
         </ActionButton>
       </header>
@@ -80,7 +80,7 @@ function TodayReadyState({ model }: { model: TodayWorkbenchModel }) {
       <section className="rounded-2xl border border-[color:var(--color-border)] bg-[color:var(--color-surface-reading)] p-8 text-center shadow-xs" aria-live="polite">
         <h2 className="text-xl font-bold text-[color:var(--color-text-strong)]">No work requires attention right now.</h2>
         <p className="mt-2 text-sm text-[color:var(--color-text-muted)]">Start a session or review a case when you’re ready.</p>
-        <ActionButton href="/cases?intent=start-session" tone="coral" className="mt-5 font-bold">
+        <ActionButton href="/cases?intent=start-session" className="mt-5 font-bold">
           Start a session
         </ActionButton>
       </section>

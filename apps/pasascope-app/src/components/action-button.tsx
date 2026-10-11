@@ -1,28 +1,16 @@
-import Link from "next/link";
-import { isValidElement } from "react";
 import type { LucideIcon } from "lucide-react";
 
-type ActionButtonTone = "primary" | "secondary" | "ghost" | "destructive" | "coral" | "pine";
+import { Button, type ButtonVariant } from "@/components/ui/button";
+import { cn } from "@/lib/cn";
+
+type ActionButtonTone = "primary" | "secondary" | "ghost" | "destructive";
 type ActionButtonSize = "md" | "lg";
 
-const toneClasses: Record<ActionButtonTone, string> = {
-  primary:
-    "border border-transparent bg-[color:var(--color-pasa-teal)] text-white shadow-xs hover:bg-[color:var(--color-pasa-teal-hover)] active:scale-[0.99]",
-  coral:
-    "border border-transparent bg-[color:var(--color-scope-coral)] text-white shadow-xs hover:bg-[color:var(--color-scope-coral-hover)] active:scale-[0.99]",
-  pine:
-    "border border-transparent bg-[color:var(--color-pasa-teal)] text-white shadow-xs hover:bg-[color:var(--color-pasa-teal-hover)] active:scale-[0.99]",
-  secondary:
-    "border border-[color:var(--color-pasa-teal-border)] bg-[color:var(--color-surface-strong)] text-[color:var(--color-pasa-teal)] hover:bg-[color:var(--color-pasa-teal-soft)] shadow-xs active:scale-[0.99]",
-  ghost:
-    "border border-transparent bg-transparent text-[color:var(--color-text-strong)] hover:bg-[color:var(--color-surface)]",
-  destructive:
-    "border border-[color:var(--color-danger-border)] bg-[color:var(--color-danger-bg)] text-[color:var(--color-danger-text)] hover:border-[color:var(--color-danger-text)] hover:bg-[#ffe6de]"
-};
-
-const sizeClasses: Record<ActionButtonSize, string> = {
-  md: "min-h-11 px-4 py-2.5 text-sm",
-  lg: "min-h-14 px-6 py-3.5 text-base"
+const variantByTone: Record<ActionButtonTone, ButtonVariant> = {
+  primary: "primary",
+  secondary: "secondary",
+  ghost: "ghost",
+  destructive: "danger",
 };
 
 type BaseProps = {
@@ -42,62 +30,17 @@ type LinkProps = BaseProps & Omit<React.AnchorHTMLAttributes<HTMLAnchorElement>,
   disabled?: boolean;
 };
 
+/**
+ * The workbench's action button: full width on a phone, natural width from
+ * `sm` up. It is the shared Button with that layout default.
+ */
 export function ActionButton(props: ButtonProps): React.JSX.Element;
 export function ActionButton(props: LinkProps): React.JSX.Element;
-export function ActionButton(props: ButtonProps | LinkProps) {
-  const {
-    children,
-    icon,
-    tone = "primary",
-    size = "md",
-    className = ""
-  } = props;
-  const classes = [
-    "inline-flex w-full items-center justify-center gap-2 rounded-[var(--radius-card)] font-medium transition duration-200 ease-out focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-[color:var(--color-focus-ring)] motion-reduce:transition-none sm:w-auto",
-    "active:scale-[0.99] motion-reduce:active:scale-100",
-    toneClasses[tone],
-    sizeClasses[size],
-    props.disabled ? "cursor-not-allowed opacity-60 shadow-none" : "",
-    className
-  ].filter(Boolean).join(" ");
-
-  const renderedIcon = renderIcon(icon);
-  const content = (
-    <>
-      {renderedIcon}
-      <span className="min-w-0">{children}</span>
-    </>
+export function ActionButton({ tone = "primary", className, ...props }: ButtonProps | LinkProps) {
+  const classes = cn("w-full sm:w-auto", className);
+  return "href" in props && props.href ? (
+    <Button variant={variantByTone[tone]} className={classes} {...(props as LinkProps)} />
+  ) : (
+    <Button variant={variantByTone[tone]} className={classes} {...(props as ButtonProps)} />
   );
-
-  if ("href" in props && props.href) {
-    const { children: _children, className: _className, disabled, href, icon: _icon, size: _size, tone: _tone, ...linkProps } = props;
-    return (
-      <Link
-        href={href}
-        className={classes}
-        aria-disabled={disabled ? "true" : undefined}
-        tabIndex={disabled ? -1 : undefined}
-        {...linkProps}
-      >
-        {content}
-      </Link>
-    );
-  }
-
-  const { children: _children, className: _className, disabled, icon: _icon, size: _size, tone: _tone, ...buttonProps } = props as ButtonProps;
-  return (
-    <button className={classes} disabled={disabled} {...buttonProps}>
-      {content}
-    </button>
-  );
-}
-
-function renderIcon(icon: LucideIcon | React.ReactNode | undefined) {
-  if (!icon) return null;
-  if (isValidElement(icon)) return icon;
-  if (typeof icon === "function") {
-    const Icon = icon as LucideIcon;
-    return <Icon size={18} aria-hidden="true" />;
-  }
-  return icon;
 }

@@ -12,14 +12,15 @@ A modular clinical decision-support prototype that helps speech therapists organ
 
 ## Brand Personality
 - **Minimalist & Calm Clinical**: Structured, professional, clean layout with ample whitespace to reduce cognitive fatigue during heavy clinical tasks.
-- **Clinical Teal System**: Calm teal and cyan surfaces with restrained health-green success states, designed for trust, readability, and cross-platform consistency.
-- **Readable Depth**: Light translucent panels, crisp borders, and very restrained motion may add depth, but never at the cost of text contrast or performance.
+- **Light Blue System**: An ice-white canvas, sky and azure brand family, and a small coral highlight, split 60 / 30 / 10. No green anywhere; success states are blue with a check icon. See `DESIGN.md`.
+- **Readable Depth**: Frosted navigation chrome, soft blue-tinted shadows, and very restrained motion may add depth, but never at the cost of text contrast or performance. Reading surfaces stay opaque white.
 
 ## Anti-references
 - **The Visual Clutter of the Current UI**: Inconsistent alignment, nested boxes, hard-edged borders, crowded tables with no vertical rhythm, and pixelated font weights.
 - **Dull Gray-on-Gray**: Avoid low-contrast text or washed-out clinical templates.
-- **Decorative Glassmorphism**: Blur, glass overlays, and floating blobs must never obscure readability or cause performance jank.
-- **Conflicting Crimson Legacy**: Do not reintroduce rose/crimson as the primary identity; keep red for destructive or critical clinical states.
+- **Decorative Glassmorphism**: Blur, glass overlays, and floating blobs must never obscure readability or cause performance jank. Glass is for navigation chrome only.
+- **Conflicting Crimson Legacy**: Do not reintroduce rose/crimson as the primary identity; coral is a small highlight, and red is kept for destructive or critical clinical states.
+- **The Retired Green Identity**: Pine, teal, and emerald are not PasaScope colours and must not return in the interface, the logo, or charts.
 
 ## Design Principles
 1. **Clinical Command Clarity**: Present dense clinical information in clean, highly structured layouts. Use surface contrast and spacing to separate sidebars, headers, queues, and detail panels.

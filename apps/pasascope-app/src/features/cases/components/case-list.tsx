@@ -6,7 +6,7 @@ import { ArrowRight, Filter, Plus, Search } from "lucide-react";
 
 import { ActionButton } from "@/components/action-button";
 import { DataTable } from "@/components/data-table";
-import { EmptyState } from "@/components/empty-state";
+import { EmptyState } from "@/components/ui/empty-state";
 import { PageHeader } from "@/components/page-header";
 import { StatusBadge } from "@/components/status-badge";
 import { CreateCaseForm } from "@/features/cases/components/create-case-form";
@@ -99,13 +99,15 @@ export function CaseList({
   model,
   canFilterByClinician = false,
   canCreateCase = false,
+  initialQuery = "",
 }: {
   model: CaseListViewModel;
   canFilterByClinician?: boolean;
   canCreateCase?: boolean;
+  initialQuery?: string;
 }) {
   const { cases } = model;
-  const [query, setQuery] = useState("");
+  const [query, setQuery] = useState(initialQuery);
   const [statusFilter, setStatusFilter] = useState("all");
   const [consentFilter, setConsentFilter] = useState("all");
   const [clinicianFilter, setClinicianFilter] = useState("all");

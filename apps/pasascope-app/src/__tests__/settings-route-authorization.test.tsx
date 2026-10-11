@@ -42,7 +42,6 @@ vi.mock("@/lib/use-runtime-settings", () => ({
 
 vi.mock("@/components/sidebar", () => ({ Sidebar: () => null }));
 vi.mock("@/components/topbar", () => ({ Topbar: () => null }));
-vi.mock("@/components/mobile-header", () => ({ MobileHeader: () => null }));
 vi.mock("@/components/supabase-auth-runtime-bridge", () => ({ SupabaseAuthRuntimeBridge: () => null }));
 
 vi.mock("next/navigation", () => ({

@@ -12,9 +12,11 @@ type CasesWorkspaceClientProps = {
   caseId?: string;
   intent?: "start-session";
   preselectedCaseId?: string;
+  /** Search text carried in from the top-bar search (`/cases?q=`). */
+  initialQuery?: string;
 };
 
-export function CasesWorkspaceClient({ caseId, intent, preselectedCaseId }: CasesWorkspaceClientProps) {
+export function CasesWorkspaceClient({ caseId, intent, preselectedCaseId, initialQuery = "" }: CasesWorkspaceClientProps) {
   const model = useCasesWorkspace(caseId);
   const runtimeSettings = useConfirmedRuntimeSettings();
   const mockSession = useMockAccessSession();
@@ -62,7 +64,8 @@ export function CasesWorkspaceClient({ caseId, intent, preselectedCaseId }: Case
     return <StartSessionSelector cases={model.list.cases} preselectedCaseId={preselectedCaseId} />;
   }
 
-  return <CaseList model={model.list} canFilterByClinician={canFilterByClinician} canCreateCase={canCreateCase} />;
+  // Keyed by the incoming search so a new top-bar search replaces the list's own search text.
+  return <CaseList key={initialQuery} model={model.list} canFilterByClinician={canFilterByClinician} canCreateCase={canCreateCase} initialQuery={initialQuery} />;
 }
 
 function CaseListSkeleton() {

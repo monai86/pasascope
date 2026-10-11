@@ -2,7 +2,7 @@ import { AppShell } from "@/components/app-shell";
 import { CasesWorkspaceClient } from "@/components/cases-workspace-client";
 
 type CasesPageProps = {
-  searchParams?: Promise<{ intent?: string | string[]; case_id?: string | string[] }>;
+  searchParams?: Promise<{ intent?: string | string[]; case_id?: string | string[]; q?: string | string[] }>;
 };
 
 export default async function CasesPage({ searchParams }: CasesPageProps) {
@@ -13,9 +13,12 @@ export default async function CasesPage({ searchParams }: CasesPageProps) {
     ? caseIdParam
     : undefined;
 
+  const queryParam = resolvedSearchParams?.q;
+  const initialQuery = typeof queryParam === "string" ? queryParam.trim().slice(0, 120) : "";
+
   return (
     <AppShell active="Cases" activeCaseId={preselectedCaseId}>
-      <CasesWorkspaceClient intent={intent} preselectedCaseId={preselectedCaseId} />
+      <CasesWorkspaceClient intent={intent} preselectedCaseId={preselectedCaseId} initialQuery={initialQuery} />
     </AppShell>
   );
 }

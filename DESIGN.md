@@ -3,18 +3,21 @@
 Status: authoritative for the canonical therapist product in
 `apps/pasascope-app/`.
 
-PasaScope is a calm, precise clinical workbench for therapist-reviewed
-language-sample workflows. It borrows structural restraint from data-oriented
-workflow software such as Airtable—white canvas, compact rows, clear selection,
-hairline separators, and disciplined hierarchy—without copying Airtable
-branding, typography, marketing layouts, or palette.
+PasaScope is a calm, friendly clinical workbench for therapist-reviewed
+language-sample workflows. The visual direction, approved by the project owner
+on 2026-10-12, is a light blue system: an ice-white canvas, white rounded cards,
+a sky and azure brand family, soft blue-tinted elevation, pill actions, and one
+obvious next step per screen. It keeps the structural discipline of a data
+workbench: compact rows, clear selection, hairline separators.
 
 ## Product character
 
-The interface is professional, editorial, lightweight, and trustworthy. It is
-structured rather than decorative. It must not resemble a generic healthcare
-analytics dashboard, colorful SaaS landing page, glassmorphism product, AI
-sparkle interface, or Kanban clone.
+The interface is professional, approachable, lightweight, and trustworthy. Every
+screen leads with its single next action. It must not resemble a generic
+healthcare analytics dashboard, a marketing landing page, an AI sparkle
+interface, or a Kanban clone, and decoration never competes with clinical
+content: frosted glass is confined to navigation chrome and reading surfaces
+stay opaque white.
 
 The stable information architecture is Today, Cases, Session, Reports, and
 Settings. Today is the focused workbench and is not a split view. Cases and
@@ -40,30 +43,48 @@ or token vocabulary.
 
 ## Color
 
-- Canvas: very light cool neutral gray.
-- Reading and working surfaces: true or near white.
-- Primary ink: near black; secondary ink: cool dark gray.
-- Separation: light neutral hairlines; stronger neutral borders only for active
-  or temporary boundaries.
-- Teal: primary action, focus, active navigation, selected transcript line,
-  workflow progress, and necessary interactive emphasis.
-- Amber: caution or needs review.
-- Red: blocking, failed, or destructive state.
-- Green: confirmed or completed state only.
-- Blue: neutral information or links only when needed.
+Colour follows a 60 / 30 / 10 split, and the palette contains no green, teal, or
+turquoise anywhere, semantic states and data visualisation included.
 
-Teal never dominates a whole page. Coral, peach, mustard, forest, rainbow, and
-decorative gradient palettes are not PasaScope branding.
+- **60, canvas and surfaces:** ice-white canvas (`--color-page-bg`), true-white
+  reading and working surfaces, pale blue hairlines.
+- **30, sky family and navy ink:** sky tints for hero cards, icon tiles, step
+  rails and graphics (`--color-sky*`); navy for text (`--color-text-*`) and for
+  the audio waveform panel (`--color-navy`).
+- **10, azure and coral:** azure (`--color-brand`) for the primary action,
+  selection, active navigation and focus; coral (`--color-highlight`) as a
+  small highlight.
+
+Rules:
+
+- One solid azure button per view. Other actions are secondary or ghost.
+- Coral marks at most one thing per region (a count that needs attention, the
+  child speaker, the logo). White body text on coral fails contrast, so a coral
+  fill carries navy text or an icon, and coral text uses
+  `--color-highlight-text`.
+- Semantic state is never colour alone. Success is blue with a check icon,
+  warning is amber, danger is a red distinct from coral, information is sky;
+  each is paired with an icon or a label that names the state.
+- Azure never floods a whole page; the hero card is the one large azure field
+  a screen may have.
+
+`src/__tests__/design-palette-contract.test.ts` enforces this: it rejects green
+by hue, requires every `var()` to be defined, and checks WCAG AA for the allowed
+text and fill pairings.
 
 ## Typography
 
-The unified Thai-Latin product stack is:
+Two faces, loaded through `next/font` and served from the app's own origin:
 
 ```css
+/* reading: body, forms, tables, transcripts */
 font-family: "Noto Sans Thai", "Noto Sans", system-ui, sans-serif;
+/* display: h1–h3 and large numerals only */
+font-family: "Prompt", "Noto Sans Thai", "Noto Sans", system-ui, sans-serif;
 ```
 
-Use moderate weights and create hierarchy through scale and spacing. Page titles
+Prompt never sets body copy, form text, table cells, or transcript lines. Use
+moderate weights and create hierarchy through scale and spacing. Page titles
 are approximately 28–32px; section titles 20–24px; panel titles 16–18px; body
 14–16px; transcript text 15–16px with generous line height; metadata 12–14px;
 buttons 14–16px medium. Avoid marketing-scale display typography. Atkinson
@@ -72,33 +93,41 @@ Latin-only transcript context; it is not a competing global stack.
 
 ## Geometry and surfaces
 
-- Compact controls: 4–6px radius.
-- Standard panels: 8px radius.
-- Large workspace panels: 10–12px maximum.
-- Status chips may use the pill token when the shape communicates compact status;
-  ordinary buttons, panels, rows, and navigation do not become pills.
-- Prefer borders and surface contrast. Ordinary panels have no broad shadow.
-- Use elevation only for popovers, menus, drawers, modals, and other temporary
-  layers.
-- Avoid nested card grids, giant pills, glass panels, wide blur, and decorative
-  gradients.
+- Controls (inputs, selects): 12px radius (`--radius-control`).
+- Cards 20px, panels 24px, the outer shell 28px.
+- Buttons, navigation items, status chips, and segmented controls are pills.
+- Cards carry a soft blue-tinted shadow (`--shadow-soft`); stronger elevation is
+  for the hero card, popovers, drawers, and modals.
+- **Frosted glass** (`.glass-chrome`) is for chrome only: sidebar, top bar,
+  mobile header, bottom navigation, and sticky action bars. Transcripts,
+  findings, reports, tables, and forms sit on opaque white. The glass falls back
+  to an opaque surface under `forced-colors`, `prefers-reduced-transparency`,
+  and where `backdrop-filter` is unsupported.
+- **Hero card** (`.hero-wave`): an azure field with two soft wave shapes, used
+  once per screen at most to present the next action.
+- Avoid nested card grids and gradients other than the hero card and the canvas
+  wash.
 
 ## Shell and navigation
 
-The product shell is quiet and Notion-like: a persistent left sidebar on
-desktop, a drawer plus bottom navigation on mobile, and a thin top bar. The
-shell never competes with the surface it hosts.
+The product shell is quiet: a persistent left sidebar on desktop, a drawer plus
+bottom navigation on mobile, and a thin top bar, all frosted. The shell never
+competes with the surface it hosts.
 
-- **Sidebar (desktop, ≥1024px):** brand, one New Session action, the five
-  destinations (Today, Cases, Session, Reports, Settings), and a small clinical
-  safety footnote. Destinations render at 44px hit height with an active-state
-  fill and `aria-current="page"`.
-- **Mobile:** a 264px drawer with backdrop, a compact top bar with the nav
-  toggle, and a fixed bottom navigation of exactly five labeled items
-  (≤5-item rule). Content reserves bottom-nav space so nothing sits under it at
-  native size or 200% zoom.
-- **Top bar (desktop):** search strip, organization summary, notifications,
-  identity, and logout. It stays one line and never pushes content.
+- **Sidebar (desktop, ≥1024px):** brand (links to Today, the single home), one
+  New Session action, and one list of destinations in canonical order: Today,
+  Dashboard, Cases, Session, Reports, Settings. Destinations render at 44px hit
+  height with an active-state fill and `aria-current="page"`.
+- **Phone and tablet (<1024px):** a compact header with the menu button, brand,
+  and the language toggle; the sidebar becomes a 264px drawer with backdrop.
+  The open drawer traps focus, closes on Escape, and returns focus to the menu
+  button; while closed it is hidden from the tab order and assistive
+  technology. Below 768px a fixed bottom navigation shows exactly five labeled
+  items (≤5-item rule) and content reserves its space.
+- **Top bar (desktop):** case search (omitted on Cases, which has its own),
+  refresh, organization summary, the language toggle, identity, and logout. It
+  stays one line and never pushes content. It shows nothing that is not real:
+  no placeholder notification count, no inert control.
 - **Breadcrumbs:** deep flows (Cases → case → session step) use a quiet
   breadcrumb trail where ancestors link back and the current step is plain
   text. Breadcrumb links keep a 44px hit area via invisible padding.
@@ -107,6 +136,23 @@ shell never competes with the surface it hosts.
   group on the right.
 - Every surface uses the same shell; navigation placement never changes by
   page type.
+
+## Language
+
+The interface is available in Thai and English, switched by the TH/EN toggle in
+the top bar and the mobile header. Thai is the default for a first visit; the
+choice is stored in the `pasascope_locale` cookie and read by the root layout,
+so the first byte of every page is already in the chosen language and
+`<html lang>` matches it.
+
+- Strings live in per-feature catalogs (`*.messages.ts`, built with
+  `defineMessages`) beside the feature that renders them. Both languages are
+  required by the type, so a missing translation does not compile.
+- Dates and numbers are formatted with `src/i18n/format.ts`.
+- Clinical safety wording is single-sourced per language and follows
+  `docs/ux/therapist-workflow/content-and-safety-language.md`.
+- Unit tests and Playwright suites pin English; the language-switch coverage
+  exercises Thai explicitly.
 
 ## Shared states
 
@@ -196,8 +242,8 @@ admin placeholders. Backend and server-boundary authorization remain mandatory.
 
 ## Motion
 
-- Hover and selection: 80–120ms (`--motion-selection`, currently 100ms).
-- Menus and popovers: 150–180ms (`--motion-popover`, currently 160ms).
+- Hover and selection: 80–120ms (`--motion-selection`, currently 120ms).
+- Menus and popovers: 150–180ms (`--motion-popover`, currently 180ms).
 - Drawers and inspectors: 180–240ms (`--motion-panel`, currently 220ms).
 - Pane resize: immediate (`--motion-resize`, currently 0ms).
 
@@ -234,9 +280,14 @@ not current and stale Reports cannot be signed or exported.
 
 ## Anti-patterns
 
-- Misleading component names based on retired glass, gradient, or liquid styles.
-- Decorative gradients, sparkles, floating action clutter, and marketing blocks.
-- 20–30px radii or rounded-everything composition.
+- Any green, teal, or turquoise, including for success states and charts.
+- White body text on coral, or coral used as a button fill.
+- More than one solid azure button in a view.
+- Frosted glass on a reading surface, or blur that lowers text contrast.
+- Raw Tailwind palette classes (`slate-*`, `indigo-*`, …) or `dark:` variants;
+  the product is light-only and every colour comes from a token.
+- Sparkles, floating action clutter, and marketing blocks.
+- Placeholder controls or invented values on a real screen.
 - Repeating the same long safety paragraph in simultaneous panels.
 - Exposing every Findings method/reference paragraph by default.
 - Squeezing the tablet transcript beside an always-open inspector.

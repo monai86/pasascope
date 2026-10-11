@@ -53,7 +53,7 @@ export function TabsList({
   return (
     <div
       role="tablist"
-      className={`inline-flex items-center gap-1 rounded-xl border border-[color:var(--color-border)] bg-[color:var(--color-surface-muted)] p-1 text-[color:var(--color-text-muted)] ${className}`}
+      className={`inline-flex items-center gap-1 rounded-full border border-line bg-surface-muted p-1 text-ink-muted ${className}`}
       {...props}
     >
       {children}
@@ -83,10 +83,8 @@ export function TabsTrigger({
       aria-selected={isSelected}
       disabled={disabled}
       onClick={() => ctx?.onValueChange(value)}
-      className={`inline-flex min-h-9 items-center justify-center rounded-lg px-3.5 py-1.5 text-xs font-semibold transition duration-150 ease-out focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[color:var(--color-focus-ring)] disabled:pointer-events-none disabled:opacity-50 ${
-        isSelected
-          ? "bg-[color:var(--color-surface-reading)] text-[color:var(--color-pasa-teal)] shadow-2xs font-bold"
-          : "hover:bg-[color:var(--color-surface)] hover:text-[color:var(--color-text-strong)]"
+      className={`inline-flex min-h-11 items-center justify-center rounded-full px-4 py-1.5 text-sm font-semibold transition focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-[color:var(--color-focus-ring)] disabled:pointer-events-none disabled:opacity-50 motion-reduce:transition-none ${
+        isSelected ? "bg-surface text-brand shadow-soft" : "hover:text-ink"
       } ${className}`}
       {...props}
     >
@@ -112,7 +110,7 @@ export function TabsContent({
     <div
       role="tabpanel"
       tabIndex={0}
-      className={`mt-4 ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[color:var(--color-focus-ring)] ${className}`}
+      className={`mt-4 rounded-control focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-[color:var(--color-focus-ring)] ${className}`}
       {...props}
     >
       {children}

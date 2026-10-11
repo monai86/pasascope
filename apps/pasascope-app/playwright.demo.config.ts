@@ -1,5 +1,7 @@
 import { defineConfig, devices } from "@playwright/test";
 
+import { englishLocaleState } from "./e2e/support/locale-state";
+
 function resolvePort(envValue: string | undefined, fallback: number): number {
   const parsed = Number.parseInt(envValue ?? "", 10);
   return Number.isFinite(parsed) && parsed > 0 ? parsed : fallback;
@@ -33,6 +35,7 @@ export default defineConfig({
     baseURL: `http://127.0.0.1:${frontendPort}`,
     trace: "on-first-retry",
     ...devices["Desktop Chrome"],
+    storageState: englishLocaleState(),
   },
   webServer: [
     {

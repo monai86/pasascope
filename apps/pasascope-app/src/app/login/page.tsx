@@ -18,7 +18,7 @@ export default function LoginPage() {
       {/* 1. TOP BAR HEADER */}
       <header className="mx-auto w-full max-w-7xl flex flex-wrap items-center justify-between gap-3 pb-4 border-b border-slate-200/60">
         <div className="flex items-center gap-3">
-          <PasaScopeLogo size="sm" showSubtitle={false} priority />
+          <PasaScopeLogo size="sm" showSubtitle={false} />
           <div className="hidden sm:block h-4 w-px bg-slate-300/80" />
           <span className="text-xs font-semibold text-emerald-900 tracking-tight">
             Pediatric Speech &amp; Language Research Platform

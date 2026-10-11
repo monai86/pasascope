@@ -36,15 +36,14 @@ const CANONICAL_NAV_HREFS = [
   "/settings",
 ] as const;
 
-// The desktop sidebar renders the same destinations in two labelled sections:
-// the desktop-only clinic overview is grouped with the clinical workflow, and
-// Today/Settings form the workspace-management section.
+// The desktop sidebar lists the same destinations in the same order, starting
+// from Today (the single home), plus the desktop-only clinic overview.
 const DESKTOP_SIDEBAR_HREFS = [
+  "/today",
   "/dashboard",
   "/cases",
   "/cases?intent=start-session",
   "/reports",
-  "/today",
   "/settings",
 ] as const;
 

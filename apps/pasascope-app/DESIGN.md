@@ -8,13 +8,13 @@ PasaScope is a calm clinical workbench for therapist-reviewed language-sample wo
 
 ## Typography
 
-The unified Thai–Latin product stack is:
+The unified Thai–Latin reading stack is:
 
 ```css
 font-family: "Noto Sans Thai", "Noto Sans", system-ui, sans-serif;
 ```
 
-This stack is mandatory for the product shell, controls, forms, tables, reports, and mixed-script transcript content. Do not introduce Inter, Haas, or Atkinson Hyperlegible as a competing global stack. Atkinson Hyperlegible may be offered only through a deliberate accessibility preference or in a Latin-only transcript context where mixed-script metric changes cannot occur.
+This stack is mandatory for the product shell, controls, forms, tables, reports, and mixed-script transcript content. Prompt is the display face for h1–h3 and large numerals only (`font-display`). Both load through `next/font` in `src/app/fonts.ts` and are served from the app's origin. Do not introduce Inter, Haas, or Atkinson Hyperlegible as a competing global stack. Atkinson Hyperlegible may be offered only through a deliberate accessibility preference or in a Latin-only transcript context where mixed-script metric changes cannot occur.
 
 ## Layout contracts
 
@@ -28,7 +28,7 @@ This stack is mandatory for the product shell, controls, forms, tables, reports,
 
 ## Shell, navigation, and shared states
 
-- The shell is a quiet Notion-style frame: a 264px sidebar on desktop (brand, New Session, the five destinations at 44px hit height, clinical safety footnote), a drawer + bottom navigation of exactly five labeled items on mobile, and a one-line desktop top bar (search, organization, notifications, identity). Every surface uses the same shell; `AppShell` owns the frame and gates.
+- The shell is a quiet frosted frame: a 264px sidebar on desktop (brand linking to Today, New Session, and one destination list in canonical order at 44px hit height), a compact header with the menu button and language toggle below 1024px, a focus-trapping drawer, a bottom navigation of exactly five labeled items below 768px, and a one-line desktop top bar (case search, organization, language, identity). Every surface uses the same shell; `AppShell` owns the frame and gates. Shell strings live in `src/components/shell.messages.ts`.
 - Deep flows render a breadcrumb trail (Cases → case → session step) with 44px hit areas via invisible padding; the current step is plain text.
 - Page headers follow one `PageHeader` rhythm: optional eyebrow chip, one h1, short description, optional meta chips, one action group.
 - Session Intake is a guided flow: Details → Source material → Transcript setup → Review & Start, one question at a time with a quiet step rail. The pipeline progress bar (`PipelineProgressBar`) reflects the chosen source path — paste/CHA paths omit Upload and ASR stages entirely.
@@ -37,14 +37,14 @@ This stack is mandatory for the product shell, controls, forms, tables, reports,
 
 ## Surfaces and controls
 
-Use the semantic color, radius, spacing, and surface tokens in `src/design-system/tokens.css`; do not redefine them in feature styles. Prefer true-white reading surfaces, neutral hairlines, 4–6px control radii, 8px panels, and 10–12px maximum workspace radii. Ordinary panels do not use shadows. Controls may be visually compact on desktop, but touch devices require a 44px interactive hit area. Transcript lines remain directly editable; selected lines are unmistakable and use `aria-selected`. Secondary line actions belong in an overflow menu.
+Use the semantic color, radius, and surface tokens in `src/design-system/tokens.css`, through the Tailwind aliases in `tailwind.config.ts` (`bg-surface`, `text-ink`, `border-line`, `bg-brand`, `rounded-card`, …); do not redefine them in feature styles and do not use raw Tailwind palette classes or `dark:` variants. Build screens from the primitives in `src/components/ui/` (Button, IconButton, Card, Badge, Field, Input, Select, Textarea, SegmentedControl, StatTile, Stepper, Dialog, ConfirmDialog, EmptyState, ErrorState, Tabs) before writing new markup. Reading surfaces are true white with pale blue hairlines; controls use a 12px radius, cards 20px, panels 24px; buttons and chips are pills. Frosted glass (`.glass-chrome`) is for navigation chrome and sticky action bars only. Colour follows the 60 / 30 / 10 rules in the root `DESIGN.md`, enforced by `src/__tests__/design-palette-contract.test.ts`. Controls may be visually compact on desktop, but touch devices require a 44px interactive hit area. Transcript lines remain directly editable; selected lines are unmistakable and use `aria-selected`. Secondary line actions belong in an overflow menu.
 
 ## Motion
 
 Use the timing tokens in `src/design-system/tokens.css`:
 
-- selection and hover: `--motion-selection` (100ms; acceptable range 80–120ms)
-- popovers and menus: `--motion-popover` (160ms; acceptable range 150–180ms)
+- selection and hover: `--motion-selection` (120ms; acceptable range 80–120ms)
+- popovers and menus: `--motion-popover` (180ms; acceptable range 150–180ms)
 - drawers and panels: `--motion-panel` (220ms; acceptable range 180–240ms)
 - pane resizing: `--motion-resize` (immediate)
 

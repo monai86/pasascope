@@ -2,114 +2,77 @@ import { render, screen } from "@testing-library/react";
 import { describe, expect, it } from "vitest";
 import { StatusBadge } from "@/components/status-badge";
 
+function badgeFor(text: string): HTMLElement {
+  const badge = screen.getByText(text).closest<HTMLElement>("[data-tone]");
+  if (!badge) throw new Error(`No status badge contains "${text}"`);
+  return badge;
+}
+
 describe("StatusBadge component pipeline statuses and normalization", () => {
-  it("renders new pipeline statuses with correct styles", () => {
-    // 1. Awaiting Consent
-    const { rerender } = render(<StatusBadge status="Awaiting Consent" />);
-    let badge = screen.getByText("Awaiting Consent");
-    expect(badge).toHaveClass("border-[color:var(--color-warm-butter-border)]", "bg-[color:var(--color-warm-butter-soft)]", "text-[color:var(--color-warning-text)]");
-
-    // 2. Ready for Audio
-    rerender(<StatusBadge status="Ready for Audio" />);
-    badge = screen.getByText("Ready for Audio");
-    expect(badge).toHaveClass("border-[color:var(--color-pasa-teal-border)]", "bg-[color:var(--color-pasa-teal-soft)]", "text-[color:var(--color-pasa-teal)]");
-
-    // 3. Recording (pulse animation)
-    rerender(<StatusBadge status="Recording" />);
-    badge = screen.getByText("Recording");
-    expect(badge).toHaveClass("border-[color:var(--color-scope-coral-border)]", "bg-[color:var(--color-scope-coral-soft)]", "text-[color:var(--color-scope-coral-hover)]", "animate-pulse");
-
-    // 4. Uploading (pulse animation)
-    rerender(<StatusBadge status="Uploading" />);
-    badge = screen.getByText("Uploading");
-    expect(badge).toHaveClass("border-[color:var(--color-pasa-teal-border)]", "bg-[color:var(--color-pasa-teal-soft)]", "text-[color:var(--color-pasa-teal)]", "animate-pulse");
-
-    // 5. Transcribing
-    rerender(<StatusBadge status="Transcribing" />);
-    badge = screen.getByText("Transcribing");
-    expect(badge).toHaveClass("border-[color:var(--color-pasa-teal-border)]", "bg-[color:var(--color-pasa-teal-soft)]", "text-[color:var(--color-pasa-teal)]");
-
-    // 6. CHA Generating
-    rerender(<StatusBadge status="CHA Generating" />);
-    badge = screen.getByText("CHA Generating");
-    expect(badge).toHaveClass("border-[color:var(--color-pasa-teal-border)]", "bg-[color:var(--color-pasa-teal-soft)]", "text-[color:var(--color-pasa-teal)]");
-
-    // 7. ML Pending
-    rerender(<StatusBadge status="ML Pending" />);
-    badge = screen.getByText("ML Pending");
-    expect(badge).toHaveClass("border-[color:var(--color-warm-butter-border)]", "bg-[color:var(--color-warm-butter-soft)]", "text-[color:var(--color-warning-text)]");
-
-    // 8. Review Required (warning styles of Needs Review)
-    rerender(<StatusBadge status="Review Required" />);
-    badge = screen.getByText("Review Required");
-    expect(badge).toHaveClass("border-[color:var(--color-warning-border)]", "bg-[color:var(--color-warning-bg)]", "text-[color:var(--color-warning-text)]");
-
-    // 9. Report Ready (success styles of Ready)
-    rerender(<StatusBadge status="Report Ready" />);
-    badge = screen.getByText("Report Ready");
-    expect(badge).toHaveClass("border-emerald-200", "bg-emerald-50", "text-emerald-800");
+  it.each([
+    ["Awaiting Consent", "attention"],
+    ["Ready for Audio", "info"],
+    ["Transcribing", "info"],
+    ["CHA Generating", "info"],
+    ["ML Pending", "attention"],
+    ["Review Required", "warning"],
+    ["Needs Review", "warning"],
+    ["Report Ready", "success"],
+    ["Ready", "success"],
+    ["Attested", "success"],
+    ["Signed Off", "solid"],
+    ["Failed", "danger"],
+    ["Draft", "neutral"],
+    ["Withdrawn", "neutral"],
+  ])("renders %s with the %s tone", (status, tone) => {
+    render(<StatusBadge status={status} />);
+    expect(badgeFor(status)).toHaveAttribute("data-tone", tone);
+    expect(badgeFor(status)).not.toHaveAttribute("data-pulse");
   });
 
-  it("handles normalizations like converting case and underscores", () => {
-    // awaiting_consent -> Awaiting Consent
-    const { rerender } = render(<StatusBadge status="awaiting_consent" />);
-    let badge = screen.getByText("Awaiting Consent");
-    expect(badge).toHaveClass("border-[color:var(--color-warm-butter-border)]", "bg-[color:var(--color-warm-butter-soft)]", "text-[color:var(--color-warning-text)]");
+  it.each([
+    ["Recording", "highlight"],
+    ["Uploading", "info"],
+  ])("pulses while %s is in progress", (status, tone) => {
+    render(<StatusBadge status={status} />);
+    expect(badgeFor(status)).toHaveAttribute("data-tone", tone);
+    expect(badgeFor(status)).toHaveAttribute("data-pulse", "true");
+  });
 
-    // ml_pending -> ML Pending
-    rerender(<StatusBadge status="ml_pending" />);
-    badge = screen.getByText("ML Pending");
-    expect(badge).toHaveClass("border-[color:var(--color-warm-butter-border)]", "bg-[color:var(--color-warm-butter-soft)]", "text-[color:var(--color-warning-text)]");
+  it("pairs every status with an icon so state is not carried by colour alone", () => {
+    render(<StatusBadge status="Report Ready" />);
+    const icon = badgeFor("Report Ready").querySelector("svg");
+    expect(icon).not.toBeNull();
+    expect(icon).toHaveAttribute("aria-hidden", "true");
+  });
 
-    // review_required -> Review Required
-    rerender(<StatusBadge status="review_required" />);
-    badge = screen.getByText("Review Required");
-    expect(badge).toHaveClass("border-[color:var(--color-warning-border)]", "bg-[color:var(--color-warning-bg)]", "text-[color:var(--color-warning-text)]");
+  it("never renders a success state in green", () => {
+    render(<StatusBadge status="Report Ready" />);
+    expect(badgeFor("Report Ready").className).not.toMatch(/green|emerald|teal/);
+  });
 
-    // report_ready -> Report Ready
-    rerender(<StatusBadge status="report_ready" />);
-    badge = screen.getByText("Report Ready");
-    expect(badge).toHaveClass("border-emerald-200", "bg-emerald-50", "text-emerald-800");
-
-    // ready_for_audio -> Ready for Audio
-    rerender(<StatusBadge status="ready_for_audio" />);
-    badge = screen.getByText("Ready for Audio");
-    expect(badge).toHaveClass("border-[color:var(--color-pasa-teal-border)]", "bg-[color:var(--color-pasa-teal-soft)]", "text-[color:var(--color-pasa-teal)]");
-
-    // recording -> Recording
-    rerender(<StatusBadge status="recording" />);
-    badge = screen.getByText("Recording");
-    expect(badge).toHaveClass("border-[color:var(--color-scope-coral-border)]", "bg-[color:var(--color-scope-coral-soft)]", "text-[color:var(--color-scope-coral-hover)]", "animate-pulse");
-
-    // uploading -> Uploading
-    rerender(<StatusBadge status="uploading" />);
-    badge = screen.getByText("Uploading");
-    expect(badge).toHaveClass("border-[color:var(--color-pasa-teal-border)]", "bg-[color:var(--color-pasa-teal-soft)]", "text-[color:var(--color-pasa-teal)]", "animate-pulse");
-
-    // transcribing -> Transcribing
-    rerender(<StatusBadge status="transcribing" />);
-    badge = screen.getByText("Transcribing");
-    expect(badge).toHaveClass("border-[color:var(--color-pasa-teal-border)]", "bg-[color:var(--color-pasa-teal-soft)]", "text-[color:var(--color-pasa-teal)]");
-
-    // cha_generating -> CHA Generating
-    rerender(<StatusBadge status="cha_generating" />);
-    badge = screen.getByText("CHA Generating");
-    expect(badge).toHaveClass("border-[color:var(--color-pasa-teal-border)]", "bg-[color:var(--color-pasa-teal-soft)]", "text-[color:var(--color-pasa-teal)]");
+  it.each([
+    ["awaiting_consent", "Awaiting Consent", "attention"],
+    ["ml_pending", "ML Pending", "attention"],
+    ["review_required", "Review Required", "warning"],
+    ["report_ready", "Report Ready", "success"],
+    ["ready_for_audio", "Ready for Audio", "info"],
+    ["recording", "Recording", "highlight"],
+    ["uploading", "Uploading", "info"],
+    ["transcribing", "Transcribing", "info"],
+    ["cha_generating", "CHA Generating", "info"],
+  ])("normalizes %s to %s", (input, label, tone) => {
+    render(<StatusBadge status={input} />);
+    expect(badgeFor(label)).toHaveAttribute("data-tone", tone);
   });
 
   it("renders unknown/unmatched statuses with draft styles but keeps original text", () => {
     render(<StatusBadge status="Unknown Status" />);
-    const badge = screen.getByText("Unknown Status");
-    expect(badge).toHaveClass(
-      "border-[color:var(--color-border)]",
-      "bg-[color:var(--color-surface-strong)]",
-      "text-[color:var(--color-text-muted)]"
-    );
+    expect(badgeFor("Unknown Status")).toHaveAttribute("data-tone", "neutral");
   });
 
   it("properly capitalizes draft when casing variation is provided", () => {
     render(<StatusBadge status="draft" />);
-    const badge = screen.getByText("Draft");
-    expect(badge).toBeInTheDocument();
+    expect(screen.getByText("Draft")).toBeInTheDocument();
   });
 });

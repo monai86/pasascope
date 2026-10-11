@@ -106,6 +106,10 @@
     border-radius: var(--radius-pill);
   }
 
+  /*
+   * The tab bar floats as a frosted pill. The fade behind it keeps scrolled
+   * content from showing through at full strength around the pill.
+   */
   .mobile-bottom-nav {
     position: fixed;
     inset-inline: 0;
@@ -114,11 +118,22 @@
     width: 100%;
     max-width: 40rem;
     margin: 0 auto;
-    border-top: 1px solid var(--color-border);
-    background: var(--color-page-bg);
+    background: linear-gradient(to top, var(--color-page-bg) 35%, transparent);
     padding-inline: 1rem;
     padding-top: 0.75rem;
     padding-bottom: max(0.75rem, env(safe-area-inset-bottom));
+  }
+
+  /* Ice canvas with a soft sky wash in the top corner, behind the whole shell. */
+  .app-canvas {
+    background-color: var(--color-page-bg);
+    background-image: radial-gradient(60rem 28rem at 88% -8%, var(--color-sky-soft), transparent 70%);
+  }
+
+  @media (forced-colors: active) {
+    .app-canvas {
+      background-image: none;
+    }
   }
 
   .mobile-transcript-primary-actions {
