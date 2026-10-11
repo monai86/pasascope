@@ -1,6 +1,5 @@
 {
   "green": [
-    "src/app/assistant/page.tsx",
     "src/app/demo/dashboard/page.tsx",
     "src/app/demo/features/page.tsx",
     "src/app/demo/parent/page.tsx",
@@ -50,10 +49,8 @@
     "src/components/audio-review/waveform-detail-canvas.tsx",
     "src/components/audio-review/waveform-minimap.tsx",
     "src/components/audio-upload-confirm-panel.tsx",
-    "src/components/backend-availability-banner.tsx",
     "src/components/browser-audio-recorder.tsx",
     "src/components/caregiver-consent-form.tsx",
-    "src/components/reports-workspace-client.tsx",
     "src/components/settings-workspace-client.tsx",
     "src/components/stepper.tsx",
     "src/components/supabase-login-form-client.tsx",
@@ -78,7 +75,6 @@
     "src/features/cases/components/start-session-selector.tsx",
     "src/features/reports/components/clinical-pdf-report.tsx",
     "src/features/reports/components/longitudinal-trend-card.tsx",
-    "src/features/reports/components/reports-library.tsx",
     "src/features/sessions/components/session-guide.tsx",
     "src/features/sessions/findings/evidence-review-section.tsx",
     "src/features/sessions/findings/progress-summary-card.tsx",

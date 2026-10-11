@@ -514,15 +514,15 @@ function ReportSummaryIdentityScope({ caseId, sessionId, transcriptId, reportId 
           <div className="mt-2 flex flex-wrap gap-2">
             <button className="inline-flex items-center gap-2 rounded-card border border-line bg-surface px-4 py-3 text-sm font-bold text-brand disabled:opacity-50" disabled={!isFinalized || signedActionsBlocked} onClick={() => void handleExport("markdown")}><Download size={18} aria-hidden="true" />Export Markdown</button>
             <button className="inline-flex items-center gap-2 rounded-card border border-line bg-surface px-4 py-3 text-sm font-bold text-brand disabled:opacity-50" disabled={!isFinalized || signedActionsBlocked} onClick={() => void handleExport("html")}><Download size={18} aria-hidden="true" />Export HTML</button>
-            {isFinalized ? (
+            {isFinalized && state.backendReportId && !signedActionsBlocked ? (
               <Link
-                href={`/reports/preview${state.backendReportId ? `?report_id=${encodeURIComponent(state.backendReportId)}` : ""}`}
+                href={`/reports/print?report_id=${encodeURIComponent(state.backendReportId)}`}
                 target="_blank"
-                className="inline-flex items-center gap-2 rounded-card border border-emerald-600 bg-emerald-50 px-4 py-3 text-sm font-bold text-emerald-800 hover:bg-emerald-100 transition shadow-sm"
-                title="Print or Save as PDF with Thai Clinical Layout"
+                className="inline-flex items-center gap-2 rounded-card border border-brand-border bg-brand-soft px-4 py-3 text-sm font-bold text-brand-strong transition hover:bg-surface"
+                title="Open the signed report in a print view"
               >
                 <Printer size={18} aria-hidden="true" />
-                Print / Export PDF (Clinical)
+                Print / Save as PDF
               </Link>
             ) : (
               <button

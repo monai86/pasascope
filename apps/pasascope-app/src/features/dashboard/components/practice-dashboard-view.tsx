@@ -1,23 +1,15 @@
+"use client";
+
 import Link from "next/link";
-import {
-  Activity,
-  ArrowRight,
-  AudioLines,
-  CheckCircle2,
-  FileCheck2,
-  FileCode,
-  FolderOpen,
-  LayoutDashboard,
-  ListChecks,
-  MessagesSquare,
-  Printer,
-  Sparkles,
-} from "lucide-react";
+import { Activity, FileCheck2, FolderOpen, ListChecks, MessagesSquare } from "lucide-react";
 
 import { PageHeader } from "@/components/page-header";
 import { StatCard } from "@/components/stat-card";
 import { StatusBadge } from "@/components/status-badge";
 import { LanguageProgressChart } from "@/features/dashboard/components/language-progress-chart";
+import { dashboardMessages } from "@/features/dashboard/dashboard.messages";
+import { formatDate } from "@/i18n/format";
+import { useLocale, useMessages } from "@/i18n/locale-provider";
 import { EVIDENCE_REVIEW_NOUN } from "@/lib/workflow-glossary";
 import type { DashboardSummary } from "@/lib/workflow";
 
@@ -34,174 +26,22 @@ function sessionStage(session: DashboardSummary["recent_sessions"][number]) {
 }
 
 export function PracticeDashboardView({ summary }: { summary: DashboardSummary }) {
+  const t = useMessages(dashboardMessages);
+  const { locale } = useLocale();
   const consentCounts = Object.entries(summary.cases.consent_counts).sort((a, b) => b[1] - a[1]);
   const reviewedSessions = summary.cases.with_latest_reviewed_session;
 
   return (
     <div className="min-w-0 space-y-6">
       <PageHeader
-        eyebrow="Clinical Overview"
-        title="Dashboard"
-        description="ภาพรวมเคสที่กำลังดูแล การวิเคราะห์ตัวอย่างภาษา (LSA) และความก้าวหน้าตามเกณฑ์พัฒนาการ"
+        eyebrow={t.eyebrow}
+        title={t.title}
+        description={t.description}
         meta={[
-          summary.organization_id ? `Organization: ${summary.organization_id}` : "",
-          summary.generated_at ? `อัปเดต ${new Date(summary.generated_at).toLocaleDateString("th-TH")}` : "",
+          summary.organization_id ? t.organization(summary.organization_id) : "",
+          summary.generated_at ? t.updated(formatDate(summary.generated_at, locale)) : "",
         ].filter(Boolean)}
       />
-
-      {/* 4 Core Pillars Architecture & Quick Action Cards */}
-      <section aria-label="Core workflow pillars" className="rounded-2xl border border-line bg-surface p-6 shadow-2xs">
-        <div className="flex flex-wrap items-center justify-between gap-3 pb-4 border-b border-[color:var(--color-border)]/60">
-          <div>
-            <h2 className="text-xl font-bold tracking-tight text-ink">
-              ขั้นตอนการทำงาน
-            </h2>
-            <p className="text-xs text-ink-muted mt-0.5">
-              เข้าถึง 4 ขั้นตอนหลักของระบบเพื่อเริ่มการประเมินหรือดูผลสรุป
-            </p>
-          </div>
-          <div className="flex items-center gap-2">
-            <Link
-              href="/sessions/session_demo_001?view=findings"
-              className="inline-flex min-h-10 items-center gap-2 rounded-xl bg-brand px-4 text-xs font-bold text-white shadow-xs hover:bg-brand-hover transition"
-            >
-              <Activity className="h-3.5 w-3.5" />
-              <span>ทดลองดูผลวิเคราะห์ตัวอย่าง (Demo Case)</span>
-            </Link>
-          </div>
-        </div>
-
-        <div className="mt-5 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
-          {/* Pillar 1: Dashboard */}
-          <div className="flex flex-col justify-between rounded-xl border border-brand-border bg-[color:var(--color-brand-soft)]/50 p-4 transition hover:shadow-xs">
-            <div>
-              <div className="flex items-center justify-between">
-                <span className="flex h-9 w-9 items-center justify-center rounded-lg bg-brand text-white shadow-2xs">
-                  <LayoutDashboard className="h-4 w-4" />
-                </span>
-                <span className="text-xs font-bold text-brand bg-white px-2 py-0.5 rounded-full border border-brand-border">
-                  หน้าปัจจุบัน
-                </span>
-              </div>
-              <h3 className="mt-3 text-sm font-bold text-ink">
-                1. แดชบอร์ดภาพรวม
-              </h3>
-              <p className="mt-1 text-xs text-ink-muted leading-relaxed">
-                ดูสถิติเคสที่กำลังดูแล และวิเคราะห์กราฟแนวโน้มพัฒนาการทางภาษา (MLU, TTR)
-              </p>
-            </div>
-            <div className="mt-4 pt-3 border-t border-[color:var(--color-border)]/50">
-              <span className="inline-flex items-center gap-1 text-xs font-semibold text-brand">
-                <CheckCircle2 className="h-3.5 w-3.5" />
-                <span>กำลังแสดงผลอยู่ด้านล่าง</span>
-              </span>
-            </div>
-          </div>
-
-          {/* Pillar 2: Cases */}
-          <div className="flex flex-col justify-between rounded-xl border border-line bg-white p-4 transition hover:border-brand-border hover:shadow-xs">
-            <div>
-              <div className="flex items-center justify-between">
-                <span className="flex h-9 w-9 items-center justify-center rounded-lg bg-surface-muted text-brand">
-                  <FolderOpen className="h-4 w-4" />
-                </span>
-                <span className="text-xs font-bold text-ink-subtle bg-surface-muted px-2 py-0.5 rounded-full">
-                  จัดการเด็ก
-                </span>
-              </div>
-              <h3 className="mt-3 text-sm font-bold text-ink">
-                2. จัดการข้อมูลเคส
-              </h3>
-              <p className="mt-1 text-xs text-ink-muted leading-relaxed">
-                ค้นหาเคส ตรวจสอบอายุ เพศ ข้อมูลพัฒนาการ และหนังสือยินยอมของผู้ปกครอง
-              </p>
-            </div>
-            <div className="mt-4 pt-3 border-t border-[color:var(--color-border)]/50">
-              <Link
-                href="/cases"
-                className="inline-flex min-h-10 items-center justify-between w-full rounded-lg bg-[color:var(--color-surface-muted)]/70 px-3 text-xs font-bold text-ink hover:bg-brand-soft hover:text-brand transition"
-              >
-                <span>ไปที่หน้าเคสทั้งหมด</span>
-                <ArrowRight className="h-3.5 w-3.5" />
-              </Link>
-            </div>
-          </div>
-
-          {/* Pillar 3: Studio */}
-          <div className="flex flex-col justify-between rounded-xl border border-line bg-white p-4 transition hover:border-brand-border hover:shadow-xs">
-            <div>
-              <div className="flex items-center justify-between">
-                <span className="flex h-9 w-9 items-center justify-center rounded-lg bg-highlight-soft text-highlight">
-                  <AudioLines className="h-4 w-4" />
-                </span>
-                <span className="text-xs font-bold text-highlight bg-highlight-soft px-2 py-0.5 rounded-full border border-highlight-border">
-                  วิเคราะห์ LSA
-                </span>
-              </div>
-              <h3 className="mt-3 text-sm font-bold text-ink">
-                3. สตูดิโอวิเคราะห์ภาษา
-              </h3>
-              <p className="mt-1 text-xs text-ink-muted leading-relaxed">
-                นำเข้าไฟล์เสียง/TalkBank (.cha) คำนวณ 15 ดัชนีภาษา และสร้าง Spider Diagram
-              </p>
-            </div>
-            <div className="mt-4 pt-3 border-t border-[color:var(--color-border)]/50 flex flex-col gap-1.5">
-              <Link
-                href="/sessions/session_demo_001?view=findings"
-                className="inline-flex min-h-10 items-center justify-between w-full rounded-lg bg-[color:var(--color-surface-muted)]/70 px-3 text-xs font-bold text-ink hover:bg-brand-soft hover:text-brand transition"
-              >
-                <span>ดูกราฟใยแมงมุม (Spider)</span>
-                <ArrowRight className="h-3.5 w-3.5" />
-              </Link>
-              <Link
-                href="/sessions/session_demo_001?view=transcript"
-                className="inline-flex min-h-10 items-center gap-1.5 text-xs font-medium text-ink-muted hover:text-brand px-1"
-              >
-                <FileCode className="h-3 w-3" />
-                <span>เปิดห้องตรวจ TalkBank (.cha)</span>
-              </Link>
-            </div>
-          </div>
-
-          {/* Pillar 4: Reports */}
-          <div className="flex flex-col justify-between rounded-xl border border-line bg-white p-4 transition hover:border-brand-border hover:shadow-xs">
-            <div>
-              <div className="flex items-center justify-between">
-                <span className="flex h-9 w-9 items-center justify-center rounded-lg bg-[color:var(--color-attention-bg)] text-brand">
-                  <FileCheck2 className="h-4 w-4" />
-                </span>
-                <span className="text-xs font-bold text-brand bg-[color:var(--color-attention-bg)] px-2 py-0.5 rounded-full border border-[color:var(--color-attention-border)]">
-                  รายงานคลินิก
-                </span>
-              </div>
-              <h3 className="mt-3 text-sm font-bold text-ink">
-                4. รายงานผล &amp; พิมพ์ PDF
-              </h3>
-              <p className="mt-1 text-xs text-ink-muted leading-relaxed">
-                สรุปข้อค้นพบทางภาษา ตรวจสอบผล และพิมพ์รายงานแบบมาตรฐานสำหรับอาจารย์
-              </p>
-            </div>
-            <div className="mt-4 pt-3 border-t border-[color:var(--color-border)]/50 flex flex-col gap-1.5">
-              <Link
-                href="/reports/preview"
-                className="inline-flex min-h-10 items-center justify-between w-full rounded-lg bg-[color:var(--color-surface-muted)]/70 px-3 text-xs font-bold text-ink hover:bg-brand-soft hover:text-brand transition"
-              >
-                <span className="flex items-center gap-1.5">
-                  <Printer className="h-3.5 w-3.5" />
-                  <span>พิมพ์ใบคะแนน / PDF</span>
-                </span>
-                <ArrowRight className="h-3.5 w-3.5" />
-              </Link>
-              <Link
-                href="/reports"
-                className="inline-flex min-h-10 items-center gap-1.5 text-xs font-medium text-ink-muted hover:text-brand px-1"
-              >
-                <span>ดูประวัติรายงานทั้งหมด</span>
-              </Link>
-            </div>
-          </div>
-        </div>
-      </section>
 
       <section aria-labelledby="dashboard-stats" className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
         <h2 id="dashboard-stats" className="sr-only">
