@@ -1,4 +1,4 @@
-# lingualens Completion Audit
+# pasascope Completion Audit
 
 Current-state audit date: 2026-06-14
 
@@ -34,7 +34,7 @@ plus an override reason.
 | --- | --- | --- |
 | 0. Repository audit | `docs/THERAPIST_APP_V2_AUDIT.md` exists and current v2 evidence is summarized in this completion audit. | Complete for local MVP scope. |
 | 1. Product principles | `docs/THERAPIST_APP_V2_PRODUCT_SPEC.md` covers case-centered workflow, review gates, no automated diagnostic claim, privacy, and report principles. | Complete for local MVP scope. |
-| 2. lingualens frontend | `apps/pasascope-app/` contains Next.js App Router pages for login, today, cases, case detail, session workspace, reports, and settings/admin. Frontend tests cover 10 workflow cases, `npm run build` verifies all app routes compile, and Playwright runtime smoke returned HTTP 200 for key routes. | Complete for local MVP scope. |
+| 2. pasascope frontend | `apps/pasascope-app/` contains Next.js App Router pages for login, today, cases, case detail, session workspace, reports, and settings/admin. Frontend tests cover 10 workflow cases, `npm run build` verifies all app routes compile, and Playwright runtime smoke returned HTTP 200 for key routes. | Complete for local MVP scope. |
 | 3. Backend API boundary | `apps/api/app/main.py` wires cases, sessions, goals, transcripts, features, AI review, reports, jobs, privacy, settings, evaluation, and audit routes. | Complete for local MVP scope. |
 | 4. Manual CHA/transcript workflow | Transcript services parse/upload/manual-entry/edit/split/merge/export QA and attestation. Tests cover unsupported language, code-switching warning, stale-output invalidation, media header export, and QA gates. | Complete for local MVP scope. |
 | 5. Feature extraction | `feature_service.py` extracts core language sample features and review cues with schema/version/warnings. Tests cover MLU, TTR, NDW, unintelligible ratio, unknown speaker ratio, QA blocking, and version capture. | Complete for local MVP scope; acoustic features remain intentionally optional/unavailable unless future audio alignment is configured. |
@@ -108,7 +108,7 @@ therapist/admin settings scope.
 
 Changed:
 
-- Added a parallel Next.js lingualens in `apps/pasascope-app/`.
+- Added a parallel Next.js pasascope in `apps/pasascope-app/`.
 - Added a mock-first, PostgreSQL-ready FastAPI boundary in `apps/api/`.
 - Added manual CHA/transcript workflow, QA, transcript editing/export,
   feature extraction, structured AI-assisted review support, report generation,

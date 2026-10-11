@@ -566,7 +566,7 @@ class SupabasePrivateStorageAdapter:
         return StorageDeletionResult(deleted=status == "deleted", status=status)
 
     def download_object(self, object_key: str) -> bytes:
-        with tempfile.NamedTemporaryFile(prefix="lingualens-download-", suffix=".media") as temporary:
+        with tempfile.NamedTemporaryFile(prefix="pasascope-download-", suffix=".media") as temporary:
             self.download_object_to_path(object_key, temporary.name)
             return temporary.read()
 

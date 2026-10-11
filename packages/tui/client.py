@@ -1,7 +1,7 @@
-"""LinguaLens TUI API Client with decoupled HTTP and In-Memory Clinical Adapters.
+"""PasaScope TUI API Client with decoupled HTTP and In-Memory Clinical Adapters.
 
 In live mode (`mock_mode=False`), all operations communicate with the backend API or
-fail closed with structured exceptions (`LinguaLensApiError`). Local mock data is never
+fail closed with structured exceptions (`PasaScopeApiError`). Local mock data is never
 mutated in live mode. Explicit local mode (`mock_mode=True`) is reserved for demos and research.
 """
 
@@ -26,7 +26,7 @@ from packages.tui.adapters.http_adapter import HttpClinicalAdapter
 from packages.tui.adapters.memory_adapter import InMemoryClinicalAdapter
 from packages.tui.ports import ClinicalDataPort
 from packages.tui.validation import (
-    LinguaLensValidationError as _BaseValidationError,
+    PasaScopeValidationError as _BaseValidationError,
     calculate_age_in_months,
     validate_assessment_input,
     validate_child_input,
@@ -38,37 +38,30 @@ DEFAULT_API_URL = os.environ.get("PASASCOPE_API_URL") or os.environ.get(
 )
 
 
-class LinguaLensApiError(RuntimeError):
-    """Base error for LinguaLens / PasaScope API communication failures."""
+class PasaScopeApiError(RuntimeError):
+    """Base error for PasaScope / PasaScope API communication failures."""
 
     def __init__(self, message: str, status_code: int | None = None):
         super().__init__(message)
         self.status_code = status_code
 
 
-class LinguaLensAuthError(LinguaLensApiError):
+class PasaScopeAuthError(PasaScopeApiError):
     """Authentication failure (HTTP 401)."""
     pass
 
 
-class LinguaLensPermissionError(LinguaLensApiError):
+class PasaScopePermissionError(PasaScopeApiError):
     """Permission denied (HTTP 403)."""
     pass
 
 
-class LinguaLensConflictError(LinguaLensApiError):
+class PasaScopeConflictError(PasaScopeApiError):
     """Resource state conflict (HTTP 409)."""
     pass
 
 
-# PasaScope canonical aliases
-PasaScopeApiError = LinguaLensApiError
-PasaScopeAuthError = LinguaLensAuthError
-PasaScopePermissionError = LinguaLensPermissionError
-PasaScopeConflictError = LinguaLensConflictError
-
-
-class LinguaLensRateLimitError(LinguaLensApiError):
+class PasaScopeRateLimitError(PasaScopeApiError):
     """Rate limit exceeded (HTTP 429)."""
 
     def __init__(self, message: str, retry_after_seconds: int | None = None):
@@ -76,17 +69,17 @@ class LinguaLensRateLimitError(LinguaLensApiError):
         self.retry_after_seconds = retry_after_seconds
 
 
-class LinguaLensServerError(LinguaLensApiError):
+class PasaScopeServerError(PasaScopeApiError):
     """Server-side execution failure (HTTP 500+)."""
     pass
 
 
-class LinguaLensUnsupportedOperationError(LinguaLensApiError):
+class PasaScopeUnsupportedOperationError(PasaScopeApiError):
     """Operation unsupported in current live/local client mode."""
     pass
 
 
-class LinguaLensValidationError(LinguaLensApiError, _BaseValidationError):
+class PasaScopeValidationError(PasaScopeApiError, _BaseValidationError):
     """Client input failed canonical V2 transport validation."""
     pass
 
@@ -149,7 +142,7 @@ class _SafeRedirectHandler(urllib.request.HTTPRedirectHandler):
 
     def redirect_request(self, req, fp, code, msg, headers, newurl):
         if req.get_method() in ("POST", "PUT", "PATCH", "DELETE"):
-            raise LinguaLensApiError(
+            raise PasaScopeApiError(
                 f"HTTP {code} redirect rejected for {req.get_method()} mutation to prevent unintended method conversion or replay."
             )
 
@@ -170,8 +163,8 @@ class _SafeRedirectHandler(urllib.request.HTTPRedirectHandler):
         return new_req
 
 
-class LinguaLensClient:
-    """Client for interacting with LinguaLens Backend API via pluggable adapters."""
+class PasaScopeClient:
+    """Client for interacting with PasaScope Backend API via pluggable adapters."""
 
     def __init__(
         self,
@@ -319,32 +312,32 @@ class LinguaLensClient:
                 try:
                     return json.loads(resp_text)
                 except Exception:
-                    raise LinguaLensApiError("API request returned malformed JSON response.") from None
+                    raise PasaScopeApiError("API request returned malformed JSON response.") from None
         except urllib.error.HTTPError as exc:
             if exc.code == 401:
                 self._handle_auth_failure(failed_session_generation=session_gen, token_used=token_used)
-                raise LinguaLensAuthError("Authentication failed: HTTP 401 Session expired or invalid token.") from None
+                raise PasaScopeAuthError("Authentication failed: HTTP 401 Session expired or invalid token.") from None
             elif exc.code == 403:
-                raise LinguaLensPermissionError("Permission denied: HTTP 403 Action forbidden for current role.") from None
+                raise PasaScopePermissionError("Permission denied: HTTP 403 Action forbidden for current role.") from None
             elif exc.code == 409:
-                raise LinguaLensConflictError("Conflict error: HTTP 409 Resource state conflict or concurrent edit.") from None
+                raise PasaScopeConflictError("Conflict error: HTTP 409 Resource state conflict or concurrent edit.") from None
             elif exc.code == 429:
                 retry_val = exc.headers.get("Retry-After") if exc.headers else None
                 retry_sec = _parse_retry_after(retry_val)
-                raise LinguaLensRateLimitError(
+                raise PasaScopeRateLimitError(
                     "Rate limit exceeded: HTTP 429 Too many requests. Retry later.",
                     retry_after_seconds=retry_sec,
                 ) from None
             elif exc.code >= 500:
-                raise LinguaLensServerError(f"Server error: HTTP {exc.code} Internal server failure.") from None
+                raise PasaScopeServerError(f"Server error: HTTP {exc.code} Internal server failure.") from None
             else:
-                raise LinguaLensApiError(f"API request failed: HTTP {exc.code}.") from None
+                raise PasaScopeApiError(f"API request failed: HTTP {exc.code}.") from None
         except urllib.error.URLError:
-            raise LinguaLensApiError("API connection failed. Service is currently unavailable.") from None
-        except LinguaLensApiError:
+            raise PasaScopeApiError("API connection failed. Service is currently unavailable.") from None
+        except PasaScopeApiError:
             raise
         except Exception:
-            raise LinguaLensApiError("API request failed unexpectedly.") from None
+            raise PasaScopeApiError("API request failed unexpectedly.") from None
 
     def _http_request_bytes(self, method: str, endpoint: str, data: dict[str, Any] | None = None) -> bytes:
         if endpoint.startswith("/api/v2"):
@@ -383,28 +376,28 @@ class LinguaLensClient:
         except urllib.error.HTTPError as exc:
             if exc.code == 401:
                 self._handle_auth_failure(failed_session_generation=session_gen, token_used=token_used)
-                raise LinguaLensAuthError("Authentication failed: HTTP 401 Session expired or invalid token.") from None
+                raise PasaScopeAuthError("Authentication failed: HTTP 401 Session expired or invalid token.") from None
             elif exc.code == 403:
-                raise LinguaLensPermissionError("Permission denied: HTTP 403 Action forbidden for current role.") from None
+                raise PasaScopePermissionError("Permission denied: HTTP 403 Action forbidden for current role.") from None
             elif exc.code == 409:
-                raise LinguaLensConflictError("Conflict error: HTTP 409 Resource state conflict or concurrent edit.") from None
+                raise PasaScopeConflictError("Conflict error: HTTP 409 Resource state conflict or concurrent edit.") from None
             elif exc.code == 429:
                 retry_val = exc.headers.get("Retry-After") if exc.headers else None
                 retry_sec = _parse_retry_after(retry_val)
-                raise LinguaLensRateLimitError(
+                raise PasaScopeRateLimitError(
                     "Rate limit exceeded: HTTP 429 Too many requests. Retry later.",
                     retry_after_seconds=retry_sec,
                 ) from None
             elif exc.code >= 500:
-                raise LinguaLensServerError(f"Server error: HTTP {exc.code} Internal server failure.") from None
+                raise PasaScopeServerError(f"Server error: HTTP {exc.code} Internal server failure.") from None
             else:
-                raise LinguaLensApiError(f"API request failed: HTTP {exc.code}.") from None
+                raise PasaScopeApiError(f"API request failed: HTTP {exc.code}.") from None
         except urllib.error.URLError:
-            raise LinguaLensApiError("API connection failed. Service is currently unavailable.") from None
-        except LinguaLensApiError:
+            raise PasaScopeApiError("API connection failed. Service is currently unavailable.") from None
+        except PasaScopeApiError:
             raise
         except Exception:
-            raise LinguaLensApiError("API request failed unexpectedly.") from None
+            raise PasaScopeApiError("API request failed unexpectedly.") from None
 
     # Delegated Clinical Domain Operations
     def check_health(self) -> bool:
@@ -592,8 +585,3 @@ class LinguaLensClient:
     def get_playback_grant(self, session_id: str) -> dict[str, Any]:
         """Request time-limited consent-gated audio playback grant."""
         return self._adapter.get_playback_grant(session_id)
-
-
-# Canonical PasaScope alias
-PasaScopeClient = LinguaLensClient
-

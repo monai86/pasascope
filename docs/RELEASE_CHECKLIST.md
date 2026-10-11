@@ -1,6 +1,6 @@
 # Release Checklist
 
-Use this checklist before the first controlled lingualens clinic launch. It is
+Use this checklist before the first controlled pasascope clinic launch. It is
 not for a public self-serve SaaS release.
 
 ## Preflight

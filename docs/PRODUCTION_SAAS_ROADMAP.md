@@ -1,8 +1,8 @@
-# lingualens Production SaaS Handoff Plan
+# pasascope Production SaaS Handoff Plan
 
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
-**Goal:** Continue the original production SaaS roadmap until lingualens can realistically support 5–10 clinics and roughly 100 users with real tenant isolation, production auth, private audio processing, reviewed transcripts, signed reports, operational monitoring, and controlled rollout.
+**Goal:** Continue the original production SaaS roadmap until pasascope can realistically support 5–10 clinics and roughly 100 users with real tenant isolation, production auth, private audio processing, reviewed transcripts, signed reports, operational monitoring, and controlled rollout.
 
 **Architecture:** Keep the production product in `apps/pasascope-app/` and `apps/api/`. Treat `src/therapist_backend/` and `src/clinical_workflow/` as legacy/research compatibility surfaces only. The target architecture remains a modular-monolith FastAPI policy boundary backed by Supabase Postgres/Auth/private Storage, durable workers, managed Redis, and responsive web/PWA frontend.
 

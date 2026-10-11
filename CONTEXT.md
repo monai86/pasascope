@@ -115,7 +115,7 @@ _Avoid_: permanent recording limit, client-reported duration limit, silent trunc
 
 ## Clinical Repository Mode
 
-The backend storage mode used by the lingualens API for demo, local
+The backend storage mode used by the pasascope API for demo, local
 persistence, or future pilot storage. It describes where workflow state lives,
 not the clinical status of a case or report.
 _Avoid_: browser storage mode, clinical readiness mode, validation mode
@@ -377,7 +377,7 @@ _Avoid_: any assigned therapist, implicit signer, generic case owner
 
 ## Controlled Clinic Rollout
 
-The first production launch shape where lingualens is introduced to a limited, explicitly approved clinic tenant set under operational, legal, and security gates. The launch starts with one clinic tenant, not a broad multi-clinic or public rollout.
+The first production launch shape where pasascope is introduced to a limited, explicitly approved clinic tenant set under operational, legal, and security gates. The launch starts with one clinic tenant, not a broad multi-clinic or public rollout.
 _Avoid_: public launch, open SaaS launch, unrestricted multi-tenant rollout
 
 ## Assignment-Safe Metadata
@@ -673,7 +673,7 @@ It simplifies labels and hides technical metrics by default without creating a
 separate product surface or clinical workflow.
 _Avoid_: separate simple app, reduced clinical workflow, beginner mode
 
-## lingualens
+## pasascope
 
 A workflow redesign of the existing therapist/clinician app focused on
 case-centered clinical decision support, transcript review, and Progress Report
@@ -1174,9 +1174,9 @@ A non-downloadable candidate check applies the same rules before attestation;
 the final attested export repeats them before a clinical artifact is persisted.
 _Avoid_: parser smoke test, external-file byte comparison, best-effort export
 
-## Deterministic LinguaLens CHAT Export
+## Deterministic PasaScope CHAT Export
 
-A LinguaLens-generated `.cha` artifact whose canonical bytes and checksum remain
+A PasaScope-generated `.cha` artifact whose canonical bytes and checksum remain
 identical after export, parse, and re-export when the CHAT subset, parser,
 serializer, and normalization configuration versions are unchanged. External
 CHAT imports are compared semantically and are not required to preserve their
@@ -1188,7 +1188,7 @@ _Avoid_: original external bytes, unversioned serializer output, formatting-only
 The versioned contract documenting the CHAT headers, participant metadata,
 speaker tiers, dependent tiers, annotations, continuation semantics, Unicode
 rules, timestamps, opaque extensions, and explicit blocking or non-blocking
-unsupported content handled by LinguaLens. Unknown content must never be
+unsupported content handled by PasaScope. Unknown content must never be
 silently discarded.
 _Avoid_: full TalkBank compatibility, undocumented parser behavior, silent tier loss
 

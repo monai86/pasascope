@@ -1,4 +1,4 @@
-# LinguaLens Architecture Boundaries
+# PasaScope Architecture Boundaries
 
 Status: current maintained architecture, v1.7.0
 

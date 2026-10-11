@@ -10,7 +10,7 @@ import re
 from typing import Any
 
 
-class LinguaLensValidationError(ValueError):
+class PasaScopeValidationError(ValueError):
     """Raised when client-side or canonical schema validation fails."""
     pass
 

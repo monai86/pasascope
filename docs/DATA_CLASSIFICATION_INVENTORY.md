@@ -1,6 +1,6 @@
-# lingualens Data Classification Inventory
+# pasascope Data Classification Inventory
 
-This inventory defines production handling rules for common lingualens
+This inventory defines production handling rules for common pasascope
 data classes. It is a launch-readiness control, not a claim that all storage and
 deletion flows are fully implemented.
 

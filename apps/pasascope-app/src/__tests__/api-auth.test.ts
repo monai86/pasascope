@@ -52,7 +52,7 @@ describe("api auth headers", () => {
       aal: "aal2",
       organizationId: "clinic_001",
       availableOrganizations: [
-        { organizationId: "clinic_001", label: "LinguaLens Clinic" },
+        { organizationId: "clinic_001", label: "PasaScope Clinic" },
       ],
     }));
     window.sessionStorage.setItem("lingualens.supabase-session-token.v1", "supabase-access-token");

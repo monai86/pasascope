@@ -82,7 +82,7 @@ four-role launch model.
 
 Status: in progress
 
-- [x] Create Supabase organization `LinguaLens`.
+- [x] Create Supabase organization `PasaScope`.
 - [x] Create `lingualens-staging` in `ap-southeast-1`.
 - [x] Create `lingualens-production` in `ap-southeast-1`.
 - [ ] Disable public signup in both projects.

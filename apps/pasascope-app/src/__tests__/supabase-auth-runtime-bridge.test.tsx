@@ -32,7 +32,7 @@ vi.mock("@/lib/supabase-auth-runtime", () => ({
               organizations: [
                 {
                   organization_id: "org_lingualens_a",
-                  name: "LinguaLens",
+                  name: "PasaScope",
                   role: "org_admin",
                   active: true,
                 },

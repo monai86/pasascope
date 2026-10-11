@@ -6,7 +6,7 @@ This project is an AI-assisted speech-language clinical decision-support prototy
 
 ## Current Deliverable Status
 
-- lingualens (`apps/pasascope-app` + `apps/api`): primary deliverable
+- pasascope (`apps/pasascope-app` + `apps/api`): primary deliverable
   and main demo surface.
 - Python ML and audio pipeline: research and prototype support code, not a
   deployed clinical system.
@@ -50,7 +50,7 @@ This project is an AI-assisted speech-language clinical decision-support prototy
   JWT claim contract, production JWT secret/issuer guard, invitation/MFA/active
   membership checks, break-glass claim validation, backend invitation lifecycle,
   membership revocation, scoped audited break-glass case access, and a
-  lingualens Settings/Admin Pilot Access Lifecycle console for local admin workflow
+  pasascope Settings/Admin Pilot Access Lifecycle console for local admin workflow
   demonstration.
 - Backend organization-admin endpoints can add/list local memberships and assign
   case care-team members with cross-tenant denial and audit tenant tagging.
@@ -90,7 +90,7 @@ This project is an AI-assisted speech-language clinical decision-support prototy
   unsuitable.
 - Gate 1 is an engineering validation on proxy labels and public English
   corpora, not clinical validation.
-- lingualens currently uses Next.js 16.3.5, React 19, and Node.js 22.x. CI runs
+- pasascope currently uses Next.js 16.3.5, React 19, and Node.js 22.x. CI runs
   type checking, linting, tests, a production build, and blocking dependency
   audits before deployment.
 - AI report drafting through non-template providers is gated behind explicit

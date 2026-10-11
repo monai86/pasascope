@@ -1,4 +1,4 @@
-"""SQLAlchemy model boundary for the lingualens PostgreSQL-ready schema."""
+"""SQLAlchemy model boundary for the pasascope PostgreSQL-ready schema."""
 
 from __future__ import annotations
 

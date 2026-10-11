@@ -1,10 +1,10 @@
-# LinguaLens product design contract
+# PasaScope product design contract
 
 This document defines the current UI contract for the canonical therapist product in `apps/pasascope-app`. Root `DESIGN.md` is the human-readable product authority. The executable source is split by responsibility under `src/design-system/`: `tokens.css` owns every semantic token, `typography.css` owns the shared type hierarchy, and `components.css` owns reusable workbench primitives. `src/styles/globals.css` imports those files and is limited to reset, body/app defaults, generic transition binding, and global accessibility rules. Historical concepts and screenshots are evidence, not competing design systems.
 
 ## Product character
 
-LinguaLens is a calm clinical workbench for therapist-reviewed language-sample workflows. It must feel precise, quiet, readable, and trustworthy without implying automated diagnosis or Thai clinical validation. Use clear hierarchy, restrained surfaces, explicit workflow state, and one obvious next action.
+PasaScope is a calm clinical workbench for therapist-reviewed language-sample workflows. It must feel precise, quiet, readable, and trustworthy without implying automated diagnosis or Thai clinical validation. Use clear hierarchy, restrained surfaces, explicit workflow state, and one obvious next action.
 
 ## Typography
 

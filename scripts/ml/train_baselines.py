@@ -365,7 +365,7 @@ def run_full_ml_benchmark() -> None:
     # -----------------------------------------------------------------------
     # Generate reports/ml/MODEL_RESULTS.md
     # -----------------------------------------------------------------------
-    results_md = f"""# LinguaLens ML Baseline Evaluation & Benchmark Results
+    results_md = f"""# PasaScope ML Baseline Evaluation & Benchmark Results
 **Generated Date:** 2026-08-23  
 **Evaluated Cohort:** Task-Controlled Interactive Speech Cohort ({len(cohort_df)} sessions, {cohort_df['participant_id'].nunique()} unique participants)  
 **Validation Strategy:** 5-Fold Nested `GroupKFold(groups=participant_id)` + Leave-One-Corpus-Out (LOCO)  
@@ -436,7 +436,7 @@ Standardized model contributions on the standardized interactive speech cohort:
         ["model", "strategy", "auroc", "sensitivity", "specificity", "balanced_acc", "f1", "mcc", "brier"]
     ].sort_values(by=["model", "balanced_acc"], ascending=[True, False])
 
-    imbalance_md = f"""# LinguaLens Class Imbalance Strategy Comparison
+    imbalance_md = f"""# PasaScope Class Imbalance Strategy Comparison
 **Generated Date:** 2026-08-23  
 **Evaluated Strategies:** (A) None, (B) Class Weighting, (C) Random Oversampling, (D) SMOTE  
 **Validation Guardrail:** All transformations executed strictly inside training partitions.  

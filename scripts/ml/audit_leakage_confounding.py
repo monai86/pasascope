@@ -118,7 +118,7 @@ def run_leakage_and_confounding_audit() -> None:
     # -----------------------------------------------------------------------
     # 4. Generate Report
     # -----------------------------------------------------------------------
-    report_content = f"""# LinguaLens Leakage & Confounding Audit
+    report_content = f"""# PasaScope Leakage & Confounding Audit
 **Generated Date:** 2026-08-23  
 **Evaluated Cohort:** 1,961 Transcripts (740 Unique Participants in ASD/TD Binary Subset)  
 **Status:** Methodologically Rigorous & Validated  

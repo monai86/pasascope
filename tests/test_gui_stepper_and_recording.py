@@ -8,8 +8,8 @@ import time
 import tkinter as tk
 import pytest
 
-from packages.gui.app import LinguaLensGUIApp
-from packages.tui.client import LinguaLensClient
+from packages.gui.app import PasaScopeGUIApp
+from packages.tui.client import PasaScopeClient
 
 
 @pytest.fixture(autouse=True)
@@ -34,8 +34,8 @@ def test_gui_stepper_bar_and_next_action_ribbon():
         pytest.skip("Headless environment without display server")
 
     root.withdraw()
-    client = LinguaLensClient(mock_mode=True)
-    app = LinguaLensGUIApp(root, client=client)
+    client = PasaScopeClient(mock_mode=True)
+    app = PasaScopeGUIApp(root, client=client)
 
     # 1. Initially without any cases, step 1 is active
     assert hasattr(app, "frame_stepper")
@@ -86,8 +86,8 @@ def test_gui_live_mic_recording_controls():
         pytest.skip("Headless environment without display server")
 
     root.withdraw()
-    client = LinguaLensClient(mock_mode=True)
-    app = LinguaLensGUIApp(root, client=client)
+    client = PasaScopeClient(mock_mode=True)
+    app = PasaScopeGUIApp(root, client=client)
 
     # Check live recording UI widgets
     assert hasattr(app, "btn_start_record")
@@ -122,8 +122,8 @@ def test_gui_technical_disclosure_toggle():
         pytest.skip("Headless environment without display server")
 
     root.withdraw()
-    client = LinguaLensClient(mock_mode=True)
-    app = LinguaLensGUIApp(root, client=client)
+    client = PasaScopeClient(mock_mode=True)
+    app = PasaScopeGUIApp(root, client=client)
 
     assert hasattr(app, "btn_toggle_tech_details")
     assert hasattr(app, "frame_tech_details_content")
@@ -150,8 +150,8 @@ def test_gui_thai_lsa_findings_integration():
         pytest.skip("Headless environment without display server")
 
     root.withdraw()
-    client = LinguaLensClient(mock_mode=True)
-    app = LinguaLensGUIApp(root, client=client)
+    client = PasaScopeClient(mock_mode=True)
+    app = PasaScopeGUIApp(root, client=client)
 
     # Create case and session
     c = client.create_case("C-THAI-LSA", "2021-05", "th", "Thai LSA Test")

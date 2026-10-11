@@ -1,9 +1,9 @@
-# LinguaLens design language
+# PasaScope design language
 
 Status: authoritative for the canonical therapist product in
 `apps/pasascope-app/`.
 
-LinguaLens is a calm, precise clinical workbench for therapist-reviewed
+PasaScope is a calm, precise clinical workbench for therapist-reviewed
 language-sample workflows. It borrows structural restraint from data-oriented
 workflow software such as Airtable—white canvas, compact rows, clear selection,
 hairline separators, and disciplined hierarchy—without copying Airtable
@@ -53,7 +53,7 @@ or token vocabulary.
 - Blue: neutral information or links only when needed.
 
 Teal never dominates a whole page. Coral, peach, mustard, forest, rainbow, and
-decorative gradient palettes are not LinguaLens branding.
+decorative gradient palettes are not PasaScope branding.
 
 ## Typography
 

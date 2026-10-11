@@ -1,4 +1,4 @@
-# LinguaLens: Data Inventory, Feature Extraction, and ML Training Strategy
+# PasaScope: Data Inventory, Feature Extraction, and ML Training Strategy
 **Document Version:** 1.0
 **Generated Date:** 2026-08-23
 **Target Audience:** Machine Learning Engineers, Clinical NLP Researchers, Product Planners
@@ -8,7 +8,7 @@
 
 ## 1. Executive Summary & Project Context
 
-**LinguaLens** is a research and education prototype for therapist review of conversational and narrative child-language samples. The retrospective corpus labels below support methodology research; they do not establish a diagnostic model or a clinically validated reference population.
+**PasaScope** is a research and education prototype for therapist review of conversational and narrative child-language samples. The retrospective corpus labels below support methodology research; they do not establish a diagnostic model or a clinically validated reference population.
 
 ### System Components:
 - **Web Application:** Next.js + React + TypeScript ([`apps/pasascope-app/`](../apps/pasascope-app))
@@ -143,7 +143,7 @@ The dataset encompasses **7 distinct clinical and developmental profiles**:
 
 ## 7. Critical Technical & Clinical Boundaries
 
-1. **Clinical Safety & Non-Diagnostic Stance:** LinguaLens is an educational and research prototype. Current research ML outputs must not be shown as participant-level scores, cues, risk indicators, percentiles, concern flags, prognosis, or diagnosis.
+1. **Clinical Safety & Non-Diagnostic Stance:** PasaScope is an educational and research prototype. Current research ML outputs must not be shown as participant-level scores, cues, risk indicators, percentiles, concern flags, prognosis, or diagnosis.
 2. **Cross-Corpus Data Leakage Prevention:** Different corpora vary by task type (e.g., `narrative` story retelling vs. `toyplay` free play) and acoustic environment. Cross-validation MUST use **Stratified GroupKFold** (grouped by child ID and corpus) or **Leave-One-Corpus-Out (LOCO)** validation.
 3. **Class Imbalance Management:** ASD represents ~7% (136 / 1,961) of the total cohort. Use SMOTE / ADASYN, class weighting, or balanced bagging.
 4. **Data Privacy (No PHI/PII):** Transcripts must remain de-identified. No personal identifiable information (names, real dates, audio recordings with biometric identifiers) may be committed to version control.

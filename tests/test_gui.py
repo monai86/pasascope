@@ -1,4 +1,4 @@
-"""Unit tests for LinguaLens Desktop GUI Application."""
+"""Unit tests for PasaScope Desktop GUI Application."""
 
 from __future__ import annotations
 
@@ -9,8 +9,8 @@ from pathlib import Path
 import tkinter as tk
 import pytest
 
-from packages.tui.client import LinguaLensClient
-from packages.gui.app import LinguaLensGUIApp
+from packages.tui.client import PasaScopeClient
+from packages.gui.app import PasaScopeGUIApp
 
 
 @pytest.fixture(autouse=True)
@@ -35,8 +35,8 @@ def test_gui_app_initialization():
         pytest.skip("Headless environment without display server")
 
     root.withdraw()  # Don't show actual window during test
-    client = LinguaLensClient(mock_mode=True)
-    app = LinguaLensGUIApp(root, client=client)
+    client = PasaScopeClient(mock_mode=True)
+    app = PasaScopeGUIApp(root, client=client)
 
     # Starts clean and empty
     assert app.active_case_id is None
@@ -64,8 +64,8 @@ def test_empty_state_without_fake_metrics():
         pytest.skip("Headless environment without display server")
 
     root.withdraw()
-    client = LinguaLensClient(mock_mode=True)
-    app = LinguaLensGUIApp(root, client=client)
+    client = PasaScopeClient(mock_mode=True)
+    app = PasaScopeGUIApp(root, client=client)
 
     # Create case and empty session
     new_c = client.create_case("C-EMPTY", "2021-06", "th")
@@ -109,8 +109,8 @@ def test_async_task_execution():
         pytest.skip("Headless environment without display server")
 
     root.withdraw()
-    client = LinguaLensClient(mock_mode=True)
-    app = LinguaLensGUIApp(root, client=client)
+    client = PasaScopeClient(mock_mode=True)
+    app = PasaScopeGUIApp(root, client=client)
 
     result_holder = []
 
@@ -146,8 +146,8 @@ def test_audio_segment_playback_command():
         pytest.skip("Headless environment without display server")
 
     root.withdraw()
-    client = LinguaLensClient(mock_mode=True)
-    app = LinguaLensGUIApp(root, client=client)
+    client = PasaScopeClient(mock_mode=True)
+    app = PasaScopeGUIApp(root, client=client)
 
     cmd, _ = app._build_audio_segment_command("sample.wav", 1.5, 4.2)
     assert cmd is not None
@@ -163,8 +163,8 @@ def test_utterance_edit_marks_stale():
         pytest.skip("Headless environment without display server")
 
     root.withdraw()
-    client = LinguaLensClient(mock_mode=True)
-    app = LinguaLensGUIApp(root, client=client)
+    client = PasaScopeClient(mock_mode=True)
+    app = PasaScopeGUIApp(root, client=client)
 
     # Ingest demo dialogue synchronously via worker
     thread = app._load_demo_dialogue()
@@ -199,8 +199,8 @@ def test_spider_diagram_drawing_and_resize():
         pytest.skip("Headless environment without display server")
 
     root.withdraw()
-    client = LinguaLensClient(mock_mode=True)
-    app = LinguaLensGUIApp(root, client=client)
+    client = PasaScopeClient(mock_mode=True)
+    app = PasaScopeGUIApp(root, client=client)
 
     thread = app._load_demo_dialogue()
     if thread:
@@ -224,8 +224,8 @@ def test_dialog_creation():
         pytest.skip("Headless environment without display server")
 
     root.withdraw()
-    client = LinguaLensClient(mock_mode=True)
-    app = LinguaLensGUIApp(root, client=client)
+    client = PasaScopeClient(mock_mode=True)
+    app = PasaScopeGUIApp(root, client=client)
 
     dialog_case = app._build_create_case_window()
     assert dialog_case.winfo_exists()
@@ -246,8 +246,8 @@ def test_word_segment_ui_and_playback():
         pytest.skip("Headless environment without display server")
 
     root.withdraw()
-    client = LinguaLensClient(mock_mode=True)
-    app = LinguaLensGUIApp(root, client=client)
+    client = PasaScopeClient(mock_mode=True)
+    app = PasaScopeGUIApp(root, client=client)
 
     # Mock an active transcript with sub-word alignments
     app.active_transcript = {
@@ -305,8 +305,8 @@ def test_continuous_playback_toolbar_and_follow():
         pytest.skip("Headless environment without display server")
 
     root.withdraw()
-    client = LinguaLensClient(mock_mode=True)
-    app = LinguaLensGUIApp(root, client=client)
+    client = PasaScopeClient(mock_mode=True)
+    app = PasaScopeGUIApp(root, client=client)
 
     assert hasattr(app, "btn_play_continuous")
     assert hasattr(app, "btn_stop_audio")
@@ -328,8 +328,8 @@ def test_audio_ingest_progress_dialog_and_stage_updates():
         pytest.skip("Headless environment without display server")
 
     root.withdraw()
-    client = LinguaLensClient(mock_mode=True)
-    app = LinguaLensGUIApp(root, client=client)
+    client = PasaScopeClient(mock_mode=True)
+    app = PasaScopeGUIApp(root, client=client)
 
     # Trigger progress dialog
     app._show_ingest_progress_dialog("test_sample.wav")
@@ -382,13 +382,13 @@ def test_audio_ingestion_and_findings_determinism(tmp_path, monkeypatch):
     import src.audio_pipeline.pipeline
     monkeypatch.setattr(src.audio_pipeline.pipeline, "audio_to_cha", mock_audio_to_cha)
 
-    client1 = LinguaLensClient(mock_mode=True)
+    client1 = PasaScopeClient(mock_mode=True)
     c1 = client1.create_case("C-DET-01", "2021-05", "th")
     s1 = client1.create_session(c1["case_id"], "2026-08-23")
     tr1 = client1.ingest_audio_file(s1["session_id"], str(wav_file))
     f1 = client1.get_findings(s1["session_id"])
 
-    client2 = LinguaLensClient(mock_mode=True)
+    client2 = PasaScopeClient(mock_mode=True)
     c2 = client2.create_case("C-DET-02", "2021-05", "th")
     s2 = client2.create_session(c2["case_id"], "2026-08-23")
     tr2 = client2.ingest_audio_file(s2["session_id"], str(wav_file))
@@ -409,8 +409,8 @@ def test_waveform_and_speed_control(tmp_path):
         pytest.skip("Headless environment without display server")
 
     root.withdraw()
-    client = LinguaLensClient(mock_mode=True)
-    app = LinguaLensGUIApp(root, client=client)
+    client = PasaScopeClient(mock_mode=True)
+    app = PasaScopeGUIApp(root, client=client)
 
     import soundfile as sf
     import numpy as np
@@ -451,8 +451,8 @@ def test_multiformat_export_center(tmp_path, monkeypatch):
         pytest.skip("Headless environment without display server")
 
     root.withdraw()
-    client = LinguaLensClient(mock_mode=True)
-    app = LinguaLensGUIApp(root, client=client)
+    client = PasaScopeClient(mock_mode=True)
+    app = PasaScopeGUIApp(root, client=client)
 
     # Ingest mock transcript
     c = client.create_case("C-EXP-01", "2021-05", "th")
@@ -484,7 +484,7 @@ def test_multiformat_export_center(tmp_path, monkeypatch):
     app._export_html_report()
     assert html_out.exists()
     html_content = html_out.read_text(encoding="utf-8")
-    assert "LinguaLens" in html_content
+    assert "PasaScope" in html_content
     assert "<!DOCTYPE html>" in html_content
 
     # 4. Test Edit Box Buttons & Speaker Update
@@ -513,8 +513,8 @@ def test_audio_scrubber_and_seeking(tmp_path):
         pytest.skip("Headless environment without display server")
 
     root.withdraw()
-    client = LinguaLensClient(mock_mode=True)
-    app = LinguaLensGUIApp(root, client=client)
+    client = PasaScopeClient(mock_mode=True)
+    app = PasaScopeGUIApp(root, client=client)
 
     import soundfile as sf
     import numpy as np
@@ -581,8 +581,8 @@ def test_speaker_refinement_and_hotkeys(tmp_path, monkeypatch):
         pytest.skip("Headless environment without display server")
 
     root.withdraw()
-    client = LinguaLensClient(mock_mode=True)
-    app = LinguaLensGUIApp(root, client=client)
+    client = PasaScopeClient(mock_mode=True)
+    app = PasaScopeGUIApp(root, client=client)
 
     # Ingest session with inverted speakers
     c = client.create_case("C-SPK-01", "2021-05", "th")
@@ -646,8 +646,8 @@ def test_f0_pitch_overlay_and_longitudinal_trajectory(tmp_path, monkeypatch):
         pytest.skip("Headless environment without display server")
 
     root.withdraw()
-    client = LinguaLensClient(mock_mode=True)
-    app = LinguaLensGUIApp(root, client=client)
+    client = PasaScopeClient(mock_mode=True)
+    app = PasaScopeGUIApp(root, client=client)
 
     # 1. Test F0 Pitch Overlay Toggle
     assert app._show_pitch_overlay is True
@@ -689,7 +689,7 @@ def test_f0_pitch_overlay_and_longitudinal_trajectory(tmp_path, monkeypatch):
     app._export_html_report()
     assert out_report.exists()
     content = out_report.read_text(encoding="utf-8")
-    assert "LinguaLens Clinical LSA Report" in content
+    assert "PasaScope Clinical LSA Report" in content
     assert "Longitudinal Assessment Trajectory" in content
     root.destroy()
 
@@ -702,16 +702,16 @@ def test_gui_failure_presentation_on_api_error(monkeypatch):
         pytest.skip("Headless environment without display server")
 
     root.withdraw()
-    from packages.tui.client import LinguaLensServerError
+    from packages.tui.client import PasaScopeServerError
 
     errors_shown = []
     monkeypatch.setattr("tkinter.messagebox.showerror", lambda title, msg: errors_shown.append((title, msg)))
 
-    client = LinguaLensClient(mock_mode=True)
-    app = LinguaLensGUIApp(root, client=client)
+    client = PasaScopeClient(mock_mode=True)
+    app = PasaScopeGUIApp(root, client=client)
 
     # Simulate an API error during task completion
-    app._on_task_done(None, None, LinguaLensServerError("Server error: HTTP 500 Internal server failure."))
+    app._on_task_done(None, None, PasaScopeServerError("Server error: HTTP 500 Internal server failure."))
 
     assert len(errors_shown) == 1
     title, msg = errors_shown[0]
@@ -733,17 +733,17 @@ def test_gui_create_case_api_error_presentation(monkeypatch):
         pytest.skip("Headless environment without display server")
 
     from tkinter import ttk
-    from packages.tui.client import LinguaLensApiError
+    from packages.tui.client import PasaScopeApiError
     root.withdraw()
     errors_shown = []
     monkeypatch.setattr("tkinter.messagebox.showerror", lambda title, msg: errors_shown.append((title, msg)))
 
-    client = LinguaLensClient(mock_mode=True)
+    client = PasaScopeClient(mock_mode=True)
     def failing_create(*args, **kwargs):
-        raise LinguaLensApiError("API service unavailable")
+        raise PasaScopeApiError("API service unavailable")
     monkeypatch.setattr(client, "create_case", failing_create)
 
-    app = LinguaLensGUIApp(root, client=client)
+    app = PasaScopeGUIApp(root, client=client)
     win = app._build_create_case_window()
 
     # Find the Create Case button inside btn_row
@@ -757,7 +757,7 @@ def test_gui_create_case_api_error_presentation(monkeypatch):
                         break
 
     assert btn_create is not None
-    # Invoking button should catch the LinguaLensApiError and show errorbox
+    # Invoking button should catch the PasaScopeApiError and show errorbox
     btn_create.invoke()
 
     assert len(errors_shown) == 1
@@ -781,14 +781,14 @@ def test_gui_batch_audio_ingest_reports_failure_no_false_success(monkeypatch, tm
     monkeypatch.setattr("tkinter.messagebox.showinfo", lambda title, msg: info_messages.append((title, msg)))
     monkeypatch.setattr("tkinter.messagebox.showwarning", lambda title, msg: warning_messages.append((title, msg)))
 
-    from packages.tui.client import LinguaLensApiError
-    client = LinguaLensClient(mock_mode=True)
+    from packages.tui.client import PasaScopeApiError
+    client = PasaScopeClient(mock_mode=True)
     # Fail ingest_audio_file
     def failing_ingest(*args, **kwargs):
-        raise LinguaLensApiError("Audio ingestion failed on backend")
+        raise PasaScopeApiError("Audio ingestion failed on backend")
     monkeypatch.setattr(client, "ingest_audio_file", failing_ingest)
 
-    app = LinguaLensGUIApp(root, client=client)
+    app = PasaScopeGUIApp(root, client=client)
     app.active_case_id = "case_demo_001"
 
     fake_f1 = tmp_path / "audio1.wav"
@@ -824,21 +824,21 @@ def test_gui_batch_audio_ingest_reports_failure_no_false_success(monkeypatch, tm
 
 
 def test_gui_handles_auth_error_with_reauth_state(monkeypatch):
-    """Verify GUI sets authentication required state when LinguaLensAuthError is received."""
+    """Verify GUI sets authentication required state when PasaScopeAuthError is received."""
     try:
         root = tk.Tk()
     except tk.TclError:
         pytest.skip("Headless environment without display server")
 
-    from packages.tui.client import LinguaLensAuthError
+    from packages.tui.client import PasaScopeAuthError
     root.withdraw()
     errors_shown = []
     monkeypatch.setattr("tkinter.messagebox.showerror", lambda title, msg: errors_shown.append((title, msg)))
 
-    client = LinguaLensClient(mock_mode=True)
-    app = LinguaLensGUIApp(root, client=client)
+    client = PasaScopeClient(mock_mode=True)
+    app = PasaScopeGUIApp(root, client=client)
 
-    auth_err = LinguaLensAuthError("Authentication failed: HTTP 401 Session expired or invalid token.")
+    auth_err = PasaScopeAuthError("Authentication failed: HTTP 401 Session expired or invalid token.")
     app._on_task_done(None, None, auth_err)
 
     assert len(errors_shown) == 1
@@ -855,19 +855,19 @@ def test_gui_stale_clinical_state_cleared_on_auth_failure(monkeypatch):
     except tk.TclError:
         pytest.skip("Headless environment without display server")
 
-    from packages.tui.client import LinguaLensAuthError
+    from packages.tui.client import PasaScopeAuthError
     root.withdraw()
     monkeypatch.setattr("tkinter.messagebox.showerror", lambda *args: None)
 
-    client = LinguaLensClient(mock_mode=True)
-    app = LinguaLensGUIApp(root, client=client)
+    client = PasaScopeClient(mock_mode=True)
+    app = PasaScopeGUIApp(root, client=client)
 
     # Set up active clinical state
     app.active_case_id = "case_sensitive_001"
     app.active_session_id = "session_sensitive_001"
     app.active_transcript = {"transcript_id": "tr-sens-01", "utterances": [{"speaker": "CHI", "text": "secret"}]}
 
-    auth_err = LinguaLensAuthError("Authentication failed: HTTP 401 Session expired or invalid token.")
+    auth_err = PasaScopeAuthError("Authentication failed: HTTP 401 Session expired or invalid token.")
     app._on_task_done(None, None, auth_err)
 
     # All active clinical state must be cleared
@@ -887,7 +887,7 @@ def test_gui_child_intake_empty_code_rejected_client_side():
     from unittest.mock import MagicMock
     root.withdraw()
     client = MagicMock()
-    app = LinguaLensGUIApp(root, client=client)
+    app = PasaScopeGUIApp(root, client=client)
 
     validation_error = app._validate_child_intake("", 2021, 5)
     assert validation_error == "Child Identifier / Display Code is required."
@@ -923,7 +923,7 @@ def test_gui_child_switch_flushes_previous_clinical_context():
     client.get_active_consent.return_value = None
     client.list_assessments.return_value = []
 
-    app = LinguaLensGUIApp(root, client=client)
+    app = PasaScopeGUIApp(root, client=client)
     # Set existing clinical context for child 1
     app.active_child_id = "c1"
     app.active_child = {"id": "c1", "display_code": "C-001"}
@@ -952,12 +952,12 @@ def test_gui_set_active_child_api_error_never_fabricates_child():
         pytest.skip("Headless environment without display server")
 
     from unittest.mock import MagicMock
-    from packages.tui.client import LinguaLensApiError
+    from packages.tui.client import PasaScopeApiError
     root.withdraw()
     client = MagicMock()
-    client.get_child.side_effect = LinguaLensApiError("Child 'nonexistent' not found.")
+    client.get_child.side_effect = PasaScopeApiError("Child 'nonexistent' not found.")
 
-    app = LinguaLensGUIApp(root, client=client)
+    app = PasaScopeGUIApp(root, client=client)
     app._set_active_child("nonexistent")
     time.sleep(0.05)
     app._poll_async_queue()
@@ -976,13 +976,13 @@ def test_gui_set_active_child_401_clears_auth_and_clinical_context():
         pytest.skip("Headless environment without display server")
 
     from unittest.mock import MagicMock
-    from packages.tui.client import LinguaLensAuthError, ClientSession
+    from packages.tui.client import PasaScopeAuthError, ClientSession
     root.withdraw()
     client = MagicMock()
     client.get_session.return_value = ClientSession(access_token="tok", organization_id="org1")
-    client.get_child.side_effect = LinguaLensAuthError("HTTP 401 Unauthorized")
+    client.get_child.side_effect = PasaScopeAuthError("HTTP 401 Unauthorized")
 
-    app = LinguaLensGUIApp(root, client=client)
+    app = PasaScopeGUIApp(root, client=client)
     app.active_child_id = "c-prev"
     app.active_child = {"id": "c-prev"}
 
@@ -1004,7 +1004,7 @@ def test_gui_set_active_child_403_shows_permission_denied_preserves_session(monk
         pytest.skip("Headless environment without display server")
 
     from unittest.mock import MagicMock
-    from packages.tui.client import LinguaLensPermissionError, ClientSession
+    from packages.tui.client import PasaScopePermissionError, ClientSession
     root.withdraw()
     errors_shown = []
     monkeypatch.setattr("tkinter.messagebox.showerror", lambda title, msg: errors_shown.append((title, msg)))
@@ -1012,9 +1012,9 @@ def test_gui_set_active_child_403_shows_permission_denied_preserves_session(monk
     client = MagicMock()
     session = ClientSession(access_token="tok", organization_id="org1")
     client.get_session.return_value = session
-    client.get_child.side_effect = LinguaLensPermissionError("HTTP 403 Access Denied to child")
+    client.get_child.side_effect = PasaScopePermissionError("HTTP 403 Access Denied to child")
 
-    app = LinguaLensGUIApp(root, client=client)
+    app = PasaScopeGUIApp(root, client=client)
     app._set_active_child("c-forbidden")
     time.sleep(0.05)
     app._poll_async_queue()
@@ -1036,8 +1036,8 @@ def test_gui_late_async_child_response_discarded_after_switch():
         pytest.skip("Headless environment without display server")
 
     root.withdraw()
-    client = LinguaLensClient(mock_mode=True)
-    app = LinguaLensGUIApp(root, client=client)
+    client = PasaScopeClient(mock_mode=True)
+    app = PasaScopeGUIApp(root, client=client)
 
     # Active child is now C-NEW with generation 2
     app.active_child_id = "child-NEW"
@@ -1073,7 +1073,7 @@ def test_gui_child_intake_modal_submission_calls_create_child_and_refreshes():
     client.list_children.return_value = [created_child]
     client.get_child.return_value = created_child
 
-    app = LinguaLensGUIApp(root, client=client)
+    app = PasaScopeGUIApp(root, client=client)
 
     # Open child creation dialog
     win = app._show_create_child_dialog()
@@ -1114,11 +1114,11 @@ def test_gui_child_list_selection_and_mode_badge():
         pytest.skip("Headless environment without display server")
 
     root.withdraw()
-    client = LinguaLensClient(mock_mode=True)
+    client = PasaScopeClient(mock_mode=True)
     c1 = client.create_child("C-LIST-01", 2020, 2)
     c2 = client.create_child("C-LIST-02", 2021, 7)
 
-    app = LinguaLensGUIApp(root, client=client)
+    app = PasaScopeGUIApp(root, client=client)
     app._refresh_children()
     time.sleep(0.05)
     app._poll_async_queue()
@@ -1167,7 +1167,7 @@ def test_gui_set_active_child_returns_immediately_while_in_flight():
         return {"id": cid, "display_code": f"C-{cid}"}
 
     client.get_child.side_effect = slow_get_child
-    app = LinguaLensGUIApp(root, client=client)
+    app = PasaScopeGUIApp(root, client=client)
 
     # Call _set_active_child: must return immediately without waiting for slow_get_child!
     app._set_active_child("c-async-1")
@@ -1205,7 +1205,7 @@ def test_gui_pending_child_response_then_logout_never_restores_child():
         return {"id": cid, "display_code": f"C-{cid}"}
 
     client.get_child.side_effect = slow_get_child
-    app = LinguaLensGUIApp(root, client=client)
+    app = PasaScopeGUIApp(root, client=client)
 
     app._set_active_child("c-async-logout")
     assert fetch_started.wait(timeout=2.0)
@@ -1246,7 +1246,7 @@ def test_gui_child_request_racing_later_selection_never_overwrites():
         return {"id": "child-B", "display_code": "CHILD-B"}
 
     client.get_child.side_effect = mock_get_child
-    app = LinguaLensGUIApp(root, client=client)
+    app = PasaScopeGUIApp(root, client=client)
 
     # 1. Start selection of Child A
     app._set_active_child("child-A")
@@ -1290,7 +1290,7 @@ def test_gui_create_child_closing_dialog_in_flight_discards_stale_completion():
         return {"id": "child-cancelled", "display_code": code, "birth_year": by, "birth_month": bm}
 
     client.create_child.side_effect = slow_create
-    app = LinguaLensGUIApp(root, client=client)
+    app = PasaScopeGUIApp(root, client=client)
 
     win = app._show_create_child_dialog()
     app._submit_create_child(win, "C-CANCEL", 2021, 5, "th")
@@ -1318,17 +1318,17 @@ def test_gui_stale_401_from_old_session_does_not_clear_new_session():
         pytest.skip("Headless environment without display server")
 
     from unittest.mock import MagicMock
-    from packages.tui.client import LinguaLensAuthError, ClientSession
+    from packages.tui.client import PasaScopeAuthError, ClientSession
     root.withdraw()
     client = MagicMock()
     # Current session is session 2
     session_2 = ClientSession(access_token="tok2", organization_id="org1")
     client.get_session.return_value = session_2
-    app = LinguaLensGUIApp(root, client=client)
+    app = PasaScopeGUIApp(root, client=client)
     app._current_session_generation = 2
 
     # Stale 401 callback with session_generation = 1 arrives
-    app._handle_auth_error(LinguaLensAuthError("401 Unauthorized"), session_generation=1)
+    app._handle_auth_error(PasaScopeAuthError("401 Unauthorized"), session_generation=1)
 
     # Active session 2 must NOT be cleared!
     client.clear_session.assert_not_called()
@@ -1343,11 +1343,11 @@ def test_gui_create_child_never_auto_retried_on_failure():
         pytest.skip("Headless environment without display server")
 
     from unittest.mock import MagicMock
-    from packages.tui.client import LinguaLensApiError
+    from packages.tui.client import PasaScopeApiError
     root.withdraw()
     client = MagicMock()
-    client.create_child.side_effect = LinguaLensApiError("500 Internal Server Error")
-    app = LinguaLensGUIApp(root, client=client)
+    client.create_child.side_effect = PasaScopeApiError("500 Internal Server Error")
+    app = PasaScopeGUIApp(root, client=client)
 
     win = app._show_create_child_dialog()
     app._submit_create_child(win, "C-FAIL", 2021, 5, "th")
@@ -1368,12 +1368,12 @@ def test_gui_list_children_401_clears_context_and_credentials():
         pytest.skip("Headless environment without display server")
 
     from unittest.mock import MagicMock
-    from packages.tui.client import LinguaLensAuthError, ClientSession
+    from packages.tui.client import PasaScopeAuthError, ClientSession
     root.withdraw()
     client = MagicMock()
     client.get_session.return_value = ClientSession(access_token="tok1", organization_id="org1")
-    client.list_children.side_effect = LinguaLensAuthError("401 Session expired")
-    app = LinguaLensGUIApp(root, client=client)
+    client.list_children.side_effect = PasaScopeAuthError("401 Session expired")
+    app = PasaScopeGUIApp(root, client=client)
     app.active_child_id = "c-pre-list"
 
     app._refresh_children()
@@ -1393,15 +1393,15 @@ def test_gui_list_children_403_preserves_credentials(monkeypatch):
         pytest.skip("Headless environment without display server")
 
     from unittest.mock import MagicMock
-    from packages.tui.client import LinguaLensPermissionError, ClientSession
+    from packages.tui.client import PasaScopePermissionError, ClientSession
     root.withdraw()
     errors_shown = []
     monkeypatch.setattr("tkinter.messagebox.showerror", lambda title, msg: errors_shown.append((title, msg)))
 
     client = MagicMock()
     client.get_session.return_value = ClientSession(access_token="tok1", organization_id="org1")
-    client.list_children.side_effect = LinguaLensPermissionError("403 Forbidden to list children")
-    app = LinguaLensGUIApp(root, client=client)
+    client.list_children.side_effect = PasaScopePermissionError("403 Forbidden to list children")
+    app = PasaScopeGUIApp(root, client=client)
     app.active_child_id = "c-keep"
 
     app._refresh_children()
@@ -1423,12 +1423,12 @@ def test_gui_create_child_401_clears_context_and_credentials():
         pytest.skip("Headless environment without display server")
 
     from unittest.mock import MagicMock
-    from packages.tui.client import LinguaLensAuthError, ClientSession
+    from packages.tui.client import PasaScopeAuthError, ClientSession
     root.withdraw()
     client = MagicMock()
     client.get_session.return_value = ClientSession(access_token="tok1", organization_id="org1")
-    client.create_child.side_effect = LinguaLensAuthError("401 Token invalid")
-    app = LinguaLensGUIApp(root, client=client)
+    client.create_child.side_effect = PasaScopeAuthError("401 Token invalid")
+    app = PasaScopeGUIApp(root, client=client)
     app.active_child_id = "c-pre-create"
 
     win = app._show_create_child_dialog()
@@ -1449,15 +1449,15 @@ def test_gui_create_child_403_preserves_credentials(monkeypatch):
         pytest.skip("Headless environment without display server")
 
     from unittest.mock import MagicMock
-    from packages.tui.client import LinguaLensPermissionError, ClientSession
+    from packages.tui.client import PasaScopePermissionError, ClientSession
     root.withdraw()
     errors_shown = []
     monkeypatch.setattr("tkinter.messagebox.showerror", lambda title, msg: errors_shown.append((title, msg)))
 
     client = MagicMock()
     client.get_session.return_value = ClientSession(access_token="tok1", organization_id="org1")
-    client.create_child.side_effect = LinguaLensPermissionError("403 Forbidden to create child")
-    app = LinguaLensGUIApp(root, client=client)
+    client.create_child.side_effect = PasaScopePermissionError("403 Forbidden to create child")
+    app = PasaScopeGUIApp(root, client=client)
 
     win = app._show_create_child_dialog()
     app._submit_create_child(win, "C-FAIL-403", 2021, 5, "th")
@@ -1479,7 +1479,7 @@ def test_gui_child_request_403_after_switch_does_not_clear_newer_child(monkeypat
         pytest.skip("Headless environment without display server")
 
     from unittest.mock import MagicMock
-    from packages.tui.client import LinguaLensPermissionError, ClientSession
+    from packages.tui.client import PasaScopePermissionError, ClientSession
     root.withdraw()
     client = MagicMock()
     client.get_session.return_value = ClientSession(access_token="tok1", organization_id="org1")
@@ -1488,11 +1488,11 @@ def test_gui_child_request_403_after_switch_does_not_clear_newer_child(monkeypat
     def get_child_side_effect(cid):
         if cid == "child-A":
             time.sleep(0.08)
-            raise LinguaLensPermissionError("403 Forbidden for Child A")
+            raise PasaScopePermissionError("403 Forbidden for Child A")
         return {"id": "child-B", "display_code": "C-B"}
 
     client.get_child.side_effect = get_child_side_effect
-    app = LinguaLensGUIApp(root, client=client)
+    app = PasaScopeGUIApp(root, client=client)
 
     # 1. Dispatch request for Child A
     t_a = app._set_active_child("child-A")
@@ -1525,17 +1525,17 @@ def test_gui_stale_error_from_old_session_does_not_clear_new_session():
         pytest.skip("Headless environment without display server")
 
     from unittest.mock import MagicMock
-    from packages.tui.client import LinguaLensPermissionError, ClientSession
+    from packages.tui.client import PasaScopePermissionError, ClientSession
     root.withdraw()
     client = MagicMock()
     client.get_session.return_value = ClientSession(access_token="tok2", organization_id="org2")
 
     def slow_get_child(cid):
         time.sleep(0.08)
-        raise LinguaLensPermissionError("403 from old session")
+        raise PasaScopePermissionError("403 from old session")
 
     client.get_child.side_effect = slow_get_child
-    app = LinguaLensGUIApp(root, client=client)
+    app = PasaScopeGUIApp(root, client=client)
 
     # Dispatch request in initial session
     t = app._set_active_child("child-old")
@@ -1570,7 +1570,7 @@ def test_gui_out_of_order_refresh_preserves_latest_snapshot():
     snapshot_old = [{"id": "c_old", "display_code": "C_OLD", "birth_year": 2021, "birth_month": 1}]
     snapshot_new = [{"id": "c_new", "display_code": "C_NEW", "birth_year": 2022, "birth_month": 2}]
 
-    app = LinguaLensGUIApp(root, client=client)
+    app = PasaScopeGUIApp(root, client=client)
     time.sleep(0.05)
     app._poll_async_queue()
 
@@ -1632,7 +1632,7 @@ def test_gui_create_child_racing_child_selection_does_not_auto_activate():
     client.list_children.return_value = [{"id": "c-created-new", "display_code": "C-NEW"}]
     client.get_child.return_value = {"id": "c-user-selected", "display_code": "C-SELECTED"}
 
-    app = LinguaLensGUIApp(root, client=client)
+    app = PasaScopeGUIApp(root, client=client)
     win = app._show_create_child_dialog()
 
     # 1. Submit child creation
@@ -1676,7 +1676,7 @@ def test_gui_submit_create_child_while_in_flight_prevents_duplicate_post():
     client.create_child.side_effect = slow_create_child
     client.list_children.return_value = []
 
-    app = LinguaLensGUIApp(root, client=client)
+    app = PasaScopeGUIApp(root, client=client)
     win = app._show_create_child_dialog()
 
     # First click
@@ -1703,7 +1703,7 @@ def test_gui_closed_dialog_discards_create_error_presentation(monkeypatch):
         pytest.skip("Headless environment without display server")
 
     from unittest.mock import MagicMock
-    from packages.tui.client import LinguaLensApiError
+    from packages.tui.client import PasaScopeApiError
     root.withdraw()
     errors_shown = []
     monkeypatch.setattr("tkinter.messagebox.showerror", lambda title, msg: errors_shown.append((title, msg)))
@@ -1711,10 +1711,10 @@ def test_gui_closed_dialog_discards_create_error_presentation(monkeypatch):
     client = MagicMock()
     def slow_failing_create(*args, **kwargs):
         time.sleep(0.08)
-        raise LinguaLensApiError("Late creation error")
+        raise PasaScopeApiError("Late creation error")
 
     client.create_child.side_effect = slow_failing_create
-    app = LinguaLensGUIApp(root, client=client)
+    app = PasaScopeGUIApp(root, client=client)
 
     win = app._show_create_child_dialog()
     t = app._submit_create_child(win, "C-ERR-CLOSED", 2021, 5, "th")
@@ -1741,7 +1741,7 @@ def test_gui_create_child_token_mismatch_discards_completion():
     from unittest.mock import MagicMock
     root.withdraw()
     client = MagicMock()
-    app = LinguaLensGUIApp(root, client=client)
+    app = PasaScopeGUIApp(root, client=client)
 
     win = app._show_create_child_dialog()
     old_token = win._dlg_token
@@ -1782,7 +1782,7 @@ def test_gui_consent_status_badge_states():
         {"id": "con-1", "child_id": "c1", "purpose": "clinical_assessment", "scope_version": "2026.1", "status": "active", "version": 1}
     ]
 
-    app = LinguaLensGUIApp(root, client=client)
+    app = PasaScopeGUIApp(root, client=client)
 
     # Check that consent UI elements exist in context bar
     assert hasattr(app, "lbl_consent_status")
@@ -1825,7 +1825,7 @@ def test_gui_consent_status_uses_list_consents_latest_version_per_purpose():
         {"id": "con-2", "child_id": "c1", "purpose": "clinical_assessment", "scope_version": "2026.1", "status": "withdrawn", "version": 2},
     ]
 
-    app = LinguaLensGUIApp(root, client=client)
+    app = PasaScopeGUIApp(root, client=client)
     t = app._set_active_child("c1")
     if t:
         t.join(timeout=1.0)
@@ -1868,14 +1868,14 @@ def test_gui_consent_api_failure_shows_error_not_no_consent():
         pytest.skip("Headless environment without display server")
 
     from unittest.mock import MagicMock
-    from packages.tui.client import LinguaLensApiError
+    from packages.tui.client import PasaScopeApiError
     root.withdraw()
     client = MagicMock()
     client.list_children.return_value = [{"id": "c1", "display_code": "C-01"}]
     client.get_child.return_value = {"id": "c1", "display_code": "C-01"}
-    client.list_consents.side_effect = LinguaLensApiError("503 Service Unavailable")
+    client.list_consents.side_effect = PasaScopeApiError("503 Service Unavailable")
 
-    app = LinguaLensGUIApp(root, client=client)
+    app = PasaScopeGUIApp(root, client=client)
     t = app._set_active_child("c1")
     if t:
         t.join(timeout=1.0)
@@ -1907,7 +1907,7 @@ def test_gui_record_consent_requires_explicit_confirmation(monkeypatch):
         "id": "con-new", "child_id": "c1", "purpose": "clinical_assessment", "scope_version": "2026.1", "status": "active", "version": 1
     }
 
-    app = LinguaLensGUIApp(root, client=client)
+    app = PasaScopeGUIApp(root, client=client)
     t = app._set_active_child("c1")
     if t:
         t.join(timeout=1.0)
@@ -1956,7 +1956,7 @@ def test_gui_record_consent_double_submit_prevented(monkeypatch):
         return {"id": "con-slow", "child_id": "c1", "purpose": "clinical_assessment", "scope_version": "2026.1", "status": "active", "version": 1}
 
     client.record_consent.side_effect = slow_record
-    app = LinguaLensGUIApp(root, client=client)
+    app = PasaScopeGUIApp(root, client=client)
     t = app._set_active_child("c1")
     if t:
         t.join(timeout=1.0)
@@ -1986,7 +1986,7 @@ def test_gui_record_consent_401_clears_clinical_context_and_403_preserves_sessio
         pytest.skip("Headless environment without display server")
 
     from unittest.mock import MagicMock
-    from packages.tui.client import LinguaLensAuthError, LinguaLensPermissionError
+    from packages.tui.client import PasaScopeAuthError, PasaScopePermissionError
     root.withdraw()
 
     # Part 1: 401
@@ -1994,9 +1994,9 @@ def test_gui_record_consent_401_clears_clinical_context_and_403_preserves_sessio
     client_401.list_children.return_value = [{"id": "c1", "display_code": "C-01"}]
     client_401.get_child.return_value = {"id": "c1", "display_code": "C-01"}
     client_401.list_consents.return_value = []
-    client_401.record_consent.side_effect = LinguaLensAuthError("401 Unauthorized")
+    client_401.record_consent.side_effect = PasaScopeAuthError("401 Unauthorized")
 
-    app_401 = LinguaLensGUIApp(root, client=client_401)
+    app_401 = PasaScopeGUIApp(root, client=client_401)
     t_ch1 = app_401._set_active_child("c1")
     if t_ch1:
         t_ch1.join(timeout=1.0)
@@ -2019,9 +2019,9 @@ def test_gui_record_consent_401_clears_clinical_context_and_403_preserves_sessio
     client_403.list_children.return_value = [{"id": "c2", "display_code": "C-02"}]
     client_403.get_child.return_value = {"id": "c2", "display_code": "C-02"}
     client_403.list_consents.return_value = []
-    client_403.record_consent.side_effect = LinguaLensPermissionError("403 Forbidden")
+    client_403.record_consent.side_effect = PasaScopePermissionError("403 Forbidden")
 
-    app_403 = LinguaLensGUIApp(root, client=client_403)
+    app_403 = PasaScopeGUIApp(root, client=client_403)
     t_ch2 = app_403._set_active_child("c2")
     if t_ch2:
         t_ch2.join(timeout=1.0)
@@ -2047,7 +2047,7 @@ def test_gui_record_consent_409_displays_conflict_and_refreshes_authoritative_st
         pytest.skip("Headless environment without display server")
 
     from unittest.mock import MagicMock
-    from packages.tui.client import LinguaLensConflictError
+    from packages.tui.client import PasaScopeConflictError
     root.withdraw()
     errors_shown = []
     monkeypatch.setattr("tkinter.messagebox.showerror", lambda title, msg: errors_shown.append((title, msg)))
@@ -2057,9 +2057,9 @@ def test_gui_record_consent_409_displays_conflict_and_refreshes_authoritative_st
     client.list_children.return_value = [{"id": "c1", "display_code": "C-01"}]
     client.get_child.return_value = {"id": "c1", "display_code": "C-01"}
     client.list_consents.return_value = []
-    client.record_consent.side_effect = LinguaLensConflictError("409 Consent conflict on scope version")
+    client.record_consent.side_effect = PasaScopeConflictError("409 Consent conflict on scope version")
 
-    app = LinguaLensGUIApp(root, client=client)
+    app = PasaScopeGUIApp(root, client=client)
     t = app._set_active_child("c1")
     if t:
         t.join(timeout=1.0)
@@ -2089,7 +2089,7 @@ def test_gui_record_consent_success_refresh_failure_reported_distinctly(monkeypa
         pytest.skip("Headless environment without display server")
 
     from unittest.mock import MagicMock
-    from packages.tui.client import LinguaLensApiError
+    from packages.tui.client import PasaScopeApiError
     root.withdraw()
     warnings_shown = []
     monkeypatch.setattr("tkinter.messagebox.showwarning", lambda title, msg: warnings_shown.append((title, msg)))
@@ -2104,10 +2104,10 @@ def test_gui_record_consent_success_refresh_failure_reported_distinctly(monkeypa
     # Initial load returns empty, refresh after mutation fails
     client.list_consents.side_effect = [
         [],
-        LinguaLensApiError("Network timeout on refresh"),
+        PasaScopeApiError("Network timeout on refresh"),
     ]
 
-    app = LinguaLensGUIApp(root, client=client)
+    app = PasaScopeGUIApp(root, client=client)
     t = app._set_active_child("c1")
     if t:
         t.join(timeout=1.0)
@@ -2151,7 +2151,7 @@ def test_gui_record_consent_racing_child_switch_discards_stale_completion(monkey
 
     client.record_consent.side_effect = slow_record
 
-    app = LinguaLensGUIApp(root, client=client)
+    app = PasaScopeGUIApp(root, client=client)
     t = app._set_active_child("child-A")
     if t:
         t.join(timeout=1.0)
@@ -2191,7 +2191,7 @@ def test_gui_record_consent_dialog_bound_to_target_child_switch_prevents_dispatc
     client.get_child.side_effect = lambda cid: {"id": cid, "display_code": f"C-{cid}"}
     client.list_consents.return_value = []
 
-    app = LinguaLensGUIApp(root, client=client)
+    app = PasaScopeGUIApp(root, client=client)
     t = app._set_active_child("child-A")
     if t:
         t.join(timeout=1.0)
@@ -2229,7 +2229,7 @@ def test_gui_record_consent_context_switch_during_confirmation_cancels_dispatch(
     client.get_child.return_value = {"id": "child-A", "display_code": "C-A"}
     client.list_consents.return_value = []
 
-    app = LinguaLensGUIApp(root, client=client)
+    app = PasaScopeGUIApp(root, client=client)
     t = app._set_active_child("child-A")
     if t:
         t.join(timeout=1.0)
@@ -2268,7 +2268,7 @@ def test_gui_record_consent_blank_or_invalid_scope_version_rejected_client_side(
     client.get_child.return_value = {"id": "child-A", "display_code": "C-A"}
     client.list_consents.return_value = []
 
-    app = LinguaLensGUIApp(root, client=client)
+    app = PasaScopeGUIApp(root, client=client)
     t = app._set_active_child("child-A")
     if t:
         t.join(timeout=1.0)
@@ -2318,7 +2318,7 @@ def test_gui_record_consent_mutation_success_refresh_is_asynchronous(monkeypatch
 
     client.list_consents.side_effect = list_consents_spy
 
-    app = LinguaLensGUIApp(root, client=client)
+    app = PasaScopeGUIApp(root, client=client)
     t = app._set_active_child("child-A")
     if t:
         t.join(timeout=1.0)
@@ -2349,7 +2349,7 @@ def test_gui_record_consent_success_refresh_401_triggers_session_invalidation(mo
         pytest.skip("Headless environment without display server")
 
     from unittest.mock import MagicMock
-    from packages.tui.client import LinguaLensAuthError
+    from packages.tui.client import PasaScopeAuthError
     root.withdraw()
     monkeypatch.setattr("tkinter.messagebox.askyesno", lambda *args, **kw: True)
     errors_shown = []
@@ -2364,10 +2364,10 @@ def test_gui_record_consent_success_refresh_401_triggers_session_invalidation(mo
     # Initial load returns empty, refresh after mutation raises 401
     client.list_consents.side_effect = [
         [],
-        LinguaLensAuthError("401 Token Expired"),
+        PasaScopeAuthError("401 Token Expired"),
     ]
 
-    app = LinguaLensGUIApp(root, client=client)
+    app = PasaScopeGUIApp(root, client=client)
     t = app._set_active_child("child-A")
     if t:
         t.join(timeout=1.0)
@@ -2414,7 +2414,7 @@ def test_gui_record_consent_closed_dialog_discards_presentation_does_not_clear_n
 
     client.record_consent.side_effect = slow_record
 
-    app = LinguaLensGUIApp(root, client=client)
+    app = PasaScopeGUIApp(root, client=client)
     t = app._set_active_child("child-A")
     if t:
         t.join(timeout=1.0)
@@ -2455,7 +2455,7 @@ def test_gui_create_assessment_requires_active_child(monkeypatch):
     monkeypatch.setattr("tkinter.messagebox.showwarning", lambda title, msg, **kw: warnings_shown.append((title, msg)))
 
     client = MagicMock()
-    app = LinguaLensGUIApp(root, client=client)
+    app = PasaScopeGUIApp(root, client=client)
     app.active_child_id = None
 
     win = app._show_create_assessment_dialog()
@@ -2484,7 +2484,7 @@ def test_gui_create_assessment_blocked_when_consent_not_active(monkeypatch, bad_
     client.list_children.return_value = [{"id": "child-c1", "display_code": "C-01"}]
     client.get_child.return_value = {"id": "child-c1", "display_code": "C-01"}
 
-    app = LinguaLensGUIApp(root, client=client)
+    app = PasaScopeGUIApp(root, client=client)
     app.active_child_id = "child-c1"
     app.active_child = {"id": "child-c1", "display_code": "C-01"}
     app._update_consent_badge(bad_status, None if bad_status != "withdrawn" else {"status": "withdrawn", "version": 1})
@@ -2531,7 +2531,7 @@ def test_gui_create_assessment_canonical_payload_and_context_isolation(monkeypat
     client.create_assessment.return_value = created_asmt
     client.list_assessments.return_value = [created_asmt]
 
-    app = LinguaLensGUIApp(root, client=client)
+    app = PasaScopeGUIApp(root, client=client)
     t_child = app._set_active_child("child-c1")
     if t_child:
         t_child.join(timeout=1.0)
@@ -2607,7 +2607,7 @@ def test_gui_create_assessment_double_submit_protection(monkeypatch):
     client.create_assessment.side_effect = slow_create
     client.list_assessments.return_value = []
 
-    app = LinguaLensGUIApp(root, client=client)
+    app = PasaScopeGUIApp(root, client=client)
     t_child = app._set_active_child("child-c1")
     if t_child:
         t_child.join(timeout=1.0)
@@ -2650,7 +2650,7 @@ def test_gui_create_assessment_context_drift_aborts_zero_post(monkeypatch):
         {"id": "con-1", "child_id": "child-c1", "purpose": "clinical_assessment", "scope_version": "2026.1", "status": "active", "version": 1}
     ]
 
-    app = LinguaLensGUIApp(root, client=client)
+    app = PasaScopeGUIApp(root, client=client)
     t_child = app._set_active_child("child-c1")
     if t_child:
         t_child.join(timeout=1.0)
@@ -2705,7 +2705,7 @@ def test_gui_create_assessment_late_success_after_child_switch_or_cancel_discard
     client.create_assessment.side_effect = slow_create
     client.list_assessments.return_value = []
 
-    app = LinguaLensGUIApp(root, client=client)
+    app = PasaScopeGUIApp(root, client=client)
     t_child = app._set_active_child("child-c1")
     if t_child:
         t_child.join(timeout=1.0)
@@ -2736,7 +2736,7 @@ def test_gui_create_assessment_409_conflict_refreshes_consent_no_active_assessme
         pytest.skip("Headless environment without display server")
 
     from unittest.mock import MagicMock
-    from packages.tui.client import LinguaLensConflictError
+    from packages.tui.client import PasaScopeConflictError
     root.withdraw()
     monkeypatch.setattr("tkinter.messagebox.askyesno", lambda *args, **kw: True)
     errors_shown = []
@@ -2751,9 +2751,9 @@ def test_gui_create_assessment_409_conflict_refreshes_consent_no_active_assessme
         [{"id": "con-1", "child_id": "child-c1", "purpose": "clinical_assessment", "scope_version": "2026.1", "status": "active", "version": 1}],
         [{"id": "con-2", "child_id": "child-c1", "purpose": "clinical_assessment", "scope_version": "2026.1", "status": "withdrawn", "version": 2}],
     ]
-    client.create_assessment.side_effect = LinguaLensConflictError("Active clinical-assessment consent is required.")
+    client.create_assessment.side_effect = PasaScopeConflictError("Active clinical-assessment consent is required.")
 
-    app = LinguaLensGUIApp(root, client=client)
+    app = PasaScopeGUIApp(root, client=client)
     t_child = app._set_active_child("child-c1")
     if t_child:
         t_child.join(timeout=1.0)
@@ -2787,7 +2787,7 @@ def test_gui_create_assessment_mutation_success_refresh_failure_preserves_fact(m
         pytest.skip("Headless environment without display server")
 
     from unittest.mock import MagicMock
-    from packages.tui.client import LinguaLensApiError
+    from packages.tui.client import PasaScopeApiError
     root.withdraw()
     monkeypatch.setattr("tkinter.messagebox.askyesno", lambda *args, **kw: True)
     warnings_shown = []
@@ -2812,9 +2812,9 @@ def test_gui_create_assessment_mutation_success_refresh_failure_preserves_fact(m
         "version": 1,
     }
     client.create_assessment.return_value = created_asmt
-    client.list_assessments.side_effect = LinguaLensApiError("500 Server error refreshing assessment list")
+    client.list_assessments.side_effect = PasaScopeApiError("500 Server error refreshing assessment list")
 
-    app = LinguaLensGUIApp(root, client=client)
+    app = PasaScopeGUIApp(root, client=client)
     t_child = app._set_active_child("child-c1")
     if t_child:
         t_child.join(timeout=1.0)
@@ -2854,7 +2854,7 @@ def test_gui_downstream_handlers_blocked_in_v2_mode(monkeypatch):
     monkeypatch.setattr("tkinter.messagebox.showwarning", lambda title, msg, **kw: warnings_shown.append((title, msg)))
 
     client = MagicMock()
-    app = LinguaLensGUIApp(root, client=client)
+    app = PasaScopeGUIApp(root, client=client)
     app.active_assessment_id = "asmt-v2-active"
     app.active_assessment = {"id": "asmt-v2-active", "child_id": "c1"}
     app._update_downstream_tabs_mode()
@@ -2902,7 +2902,7 @@ def test_gui_legacy_mode_works_when_not_in_v2(monkeypatch):
     client = MagicMock()
     client.auto_refine_speakers.return_value = {"utterances": []}
     client.get_findings.return_value = {"metrics": {}}
-    app = LinguaLensGUIApp(root, client=client)
+    app = PasaScopeGUIApp(root, client=client)
     app.active_assessment_id = None
     app.active_session_id = "sess-legacy-123"
     app.active_transcript = {"id": "tr-123", "session_id": "sess-legacy-123", "utterances": []}
@@ -2956,7 +2956,7 @@ def test_gui_create_assessment_rejects_invalid_purpose_zero_post(monkeypatch):
     monkeypatch.setattr("tkinter.messagebox.showerror", lambda title, msg, **kw: errors_shown.append((title, msg)))
 
     client = MagicMock()
-    app = LinguaLensGUIApp(root, client=client)
+    app = PasaScopeGUIApp(root, client=client)
     app.active_child_id = "c1"
     app.active_child = {"id": "c1", "display_code": "C-01"}
     app._current_consent_status = "active"
@@ -3010,7 +3010,7 @@ def test_gui_create_assessment_all_canonical_purposes_accepted(monkeypatch, vali
     }
     client.create_assessment.return_value = created
 
-    app = LinguaLensGUIApp(root, client=client)
+    app = PasaScopeGUIApp(root, client=client)
     app.active_child_id = "c1"
     app.active_child = {"id": "c1", "display_code": "C-01"}
     app._current_consent_status = "active"
@@ -3055,7 +3055,7 @@ def test_gui_create_assessment_preflight_fresh_withdrawn_consent_zero_post(monke
         {"id": "con-1", "child_id": "c1", "purpose": "clinical_assessment", "status": "withdrawn", "version": 2}
     ]
 
-    app = LinguaLensGUIApp(root, client=client)
+    app = PasaScopeGUIApp(root, client=client)
     app.active_child_id = "c1"
     app.active_child = {"id": "c1", "display_code": "C-01"}
     # Cache was active initially
@@ -3104,7 +3104,7 @@ def test_gui_create_assessment_preflight_context_drift_zero_post(monkeypatch):
     client = MagicMock()
     client.list_consents.side_effect = slow_list_consents
 
-    app = LinguaLensGUIApp(root, client=client)
+    app = PasaScopeGUIApp(root, client=client)
     app.active_child_id = "c1"
     app.active_child = {"id": "c1", "display_code": "C-01"}
     app._current_consent_status = "active"
@@ -3157,7 +3157,7 @@ def test_gui_on_assessment_selected_cache_miss_fetches_canonical_detail(monkeypa
     }
     client.get_assessment.return_value = canonical_detail
 
-    app = LinguaLensGUIApp(root, client=client)
+    app = PasaScopeGUIApp(root, client=client)
     app.active_child_id = "c1"
     app.active_child = {"id": "c1", "display_code": "C-01"}
     app._cached_assessments = []  # Cache miss
@@ -3202,7 +3202,7 @@ def test_gui_on_assessment_selected_mismatched_child_does_not_activate_context(m
         "version": 1,
     }
 
-    app = LinguaLensGUIApp(root, client=client)
+    app = PasaScopeGUIApp(root, client=client)
     app.active_child_id = "c1"
     app.active_child = {"id": "c1", "display_code": "C-01"}
     app._cached_assessments = []
@@ -3243,7 +3243,7 @@ def test_gui_create_assessment_dialog_close_during_preflight_cancels_with_zero_p
     client = MagicMock()
     client.list_consents.side_effect = slow_list_consents
 
-    app = LinguaLensGUIApp(root, client=client)
+    app = PasaScopeGUIApp(root, client=client)
     app.active_child_id = "c1"
     app.active_child = {"id": "c1", "display_code": "C-01"}
     app._current_consent_status = "active"
@@ -3296,7 +3296,7 @@ def test_gui_create_assessment_dialog_token_change_during_preflight_cancels_with
     client = MagicMock()
     client.list_consents.side_effect = slow_list_consents
 
-    app = LinguaLensGUIApp(root, client=client)
+    app = PasaScopeGUIApp(root, client=client)
     app.active_child_id = "c1"
     app.active_child = {"id": "c1", "display_code": "C-01"}
     app._current_consent_status = "active"
@@ -3344,7 +3344,7 @@ def test_gui_create_assessment_cancel_after_post_dispatched_does_not_activate_st
     client.list_consents.return_value = [{"id": "con-1", "child_id": "c1", "purpose": "clinical_assessment", "status": "active", "version": 1}]
     client.create_assessment.side_effect = slow_create_assessment
 
-    app = LinguaLensGUIApp(root, client=client)
+    app = PasaScopeGUIApp(root, client=client)
     app.active_child_id = "c1"
     app.active_child = {"id": "c1", "display_code": "C-01"}
     app._current_consent_status = "active"
@@ -3399,7 +3399,7 @@ def test_gui_assessment_selection_latest_detail_wins_over_slow_earlier_detail(mo
     client = MagicMock()
     client.get_assessment.side_effect = mock_get_assessment
 
-    app = LinguaLensGUIApp(root, client=client)
+    app = PasaScopeGUIApp(root, client=client)
     app.active_child_id = "c1"
     app.active_child = {"id": "c1", "display_code": "C-01"}
     app._cached_assessments = []
@@ -3464,7 +3464,7 @@ def test_gui_assessment_selection_cache_hit_wins_over_pending_slow_detail(monkey
     client = MagicMock()
     client.get_assessment.side_effect = mock_get_assessment
 
-    app = LinguaLensGUIApp(root, client=client)
+    app = PasaScopeGUIApp(root, client=client)
     app.active_child_id = "c1"
     app.active_child = {"id": "c1", "display_code": "C-01"}
     app._cached_assessments = [cached_b]
@@ -3517,7 +3517,7 @@ def test_gui_assessment_detail_loaded_rejects_mismatched_assessment_id(monkeypat
         "version": 1,
     }
 
-    app = LinguaLensGUIApp(root, client=client)
+    app = PasaScopeGUIApp(root, client=client)
     app.active_child_id = "c1"
     app.active_child = {"id": "c1", "display_code": "C-01"}
     app._cached_assessments = []
@@ -3558,7 +3558,7 @@ def test_gui_assessment_selection_cancelled_on_child_switch_or_logout(monkeypatc
     client = MagicMock()
     client.get_assessment.side_effect = slow_get_assessment
 
-    app = LinguaLensGUIApp(root, client=client)
+    app = PasaScopeGUIApp(root, client=client)
     app.active_child_id = "c1"
     app.active_child = {"id": "c1", "display_code": "C-01"}
     app._cached_assessments = []
@@ -3598,7 +3598,7 @@ def test_gui_assessment_selection_failure_clears_context_and_does_not_show_old_a
     client = MagicMock()
     client.get_assessment.side_effect = RuntimeError("404 Not Found")
 
-    app = LinguaLensGUIApp(root, client=client)
+    app = PasaScopeGUIApp(root, client=client)
     app.active_child_id = "c1"
     app.active_child = {"id": "c1", "display_code": "C-01"}
     # Old assessment was active
@@ -3642,7 +3642,7 @@ def test_gui_cached_assessment_requires_canonical_fields_not_just_age_and_clinic
     }
     client.get_assessment.return_value = canonical_detail
 
-    app = LinguaLensGUIApp(root, client=client)
+    app = PasaScopeGUIApp(root, client=client)
     app.active_child_id = "c1"
     app.active_child = {"id": "c1", "display_code": "C-01"}
     # Has age_months and assigned_clinician_id, but missing 'purpose' and 'state'
@@ -3677,8 +3677,8 @@ def test_gui_waveform_drag_and_longitudinal_chart_and_pdf_export(monkeypatch):
         pytest.skip("Headless environment without display server")
 
     root.withdraw()
-    client = LinguaLensClient(mock_mode=True)
-    app = LinguaLensGUIApp(root, client=client)
+    client = PasaScopeClient(mock_mode=True)
+    app = PasaScopeGUIApp(root, client=client)
 
     # 1. Test Waveform Drag Selection
     app.active_audio_path = "/tmp/dummy.wav"
@@ -3741,8 +3741,8 @@ def test_gui_create_case_dialog_with_birth_year_month():
 
     from tkinter import ttk
     root.withdraw()
-    client = LinguaLensClient(mock_mode=True)
-    app = LinguaLensGUIApp(root, client=client)
+    client = PasaScopeClient(mock_mode=True)
+    app = PasaScopeGUIApp(root, client=client)
 
     win = app._build_create_case_window()
 
@@ -3777,8 +3777,8 @@ def test_gui_toggle_backend_mode(monkeypatch):
         pytest.skip("Headless environment without display server")
 
     root.withdraw()
-    client = LinguaLensClient(mock_mode=True)
-    app = LinguaLensGUIApp(root, client=client)
+    client = PasaScopeClient(mock_mode=True)
+    app = PasaScopeGUIApp(root, client=client)
 
     assert app.client.mock_mode
     assert "[RESEARCH MOCK]" in app.lbl_mode.cget("text")

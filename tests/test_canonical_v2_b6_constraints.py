@@ -16,7 +16,7 @@ Covers:
      assigned_clinician_id (optional, 1..128 chars).
    - mock mode verifies child existence.
    - mock mode consent gate: active clinical_assessment consent required; missing or withdrawn
-     consent raises LinguaLensConflictError with zero mutation.
+     consent raises PasaScopeConflictError with zero mutation.
    - mock mode canonical age calculation: computed from child's birth date and controllable clock,
      rejecting out of range (< 0 or > 216 months); NEVER hardcoded 48.
    - mock mode language context: inherited directly from child, NEVER fabricated.
@@ -39,17 +39,17 @@ import unittest.mock as mock
 
 import pytest
 
-from packages.gui.app import LinguaLensGUIApp
+from packages.gui.app import PasaScopeGUIApp
 from packages.tui.client import (
-    LinguaLensApiError,
-    LinguaLensConflictError,
-    LinguaLensClient,
+    PasaScopeApiError,
+    PasaScopeConflictError,
+    PasaScopeClient,
 )
 
 try:
-    from packages.tui.client import LinguaLensValidationError
+    from packages.tui.client import PasaScopeValidationError
 except ImportError:
-    class LinguaLensValidationError(LinguaLensApiError, ValueError):  # type: ignore[no-redef]
+    class PasaScopeValidationError(PasaScopeApiError, ValueError):  # type: ignore[no-redef]
         pass
 
 
@@ -74,7 +74,7 @@ def tk_root() -> tk.Tk:
     gc.collect()
 
 
-def _drain_async_queue(app: LinguaLensGUIApp) -> None:
+def _drain_async_queue(app: PasaScopeGUIApp) -> None:
     while True:
         try:
             callback, _ = app._async_queue.get_nowait()
@@ -104,7 +104,7 @@ def test_create_child_valid_boundaries_and_normalization(
 ) -> None:
     """Valid boundary inputs succeed and normalize language in both mock and live modes."""
     # Mock mode
-    client_mock = LinguaLensClient(mock_mode=True)
+    client_mock = PasaScopeClient(mock_mode=True)
     child = client_mock.create_child(display_code, birth_year, birth_month, lang_ctx)
     assert child["display_code"] == display_code
     assert child["birth_year"] == birth_year
@@ -112,7 +112,7 @@ def test_create_child_valid_boundaries_and_normalization(
     assert child["language_context"] == expected_lang
 
     # Live mode (verifying outgoing payload)
-    client_live = LinguaLensClient(mock_mode=False)
+    client_live = PasaScopeClient(mock_mode=False)
     with mock.patch.object(client_live, "_http_request", return_value={"id": "child-live-01", **child}) as mock_http:
         created = client_live.create_child(display_code, birth_year, birth_month, lang_ctx)
         assert mock_http.call_count == 1
@@ -167,16 +167,16 @@ def test_create_child_invalid_inputs_fail_closed_without_mutation_or_network(
 ) -> None:
     """Invalid child intake inputs raise validation error without mutating mock state or emitting POST."""
     # Live mode: zero network request
-    client_live = LinguaLensClient(mock_mode=False)
+    client_live = PasaScopeClient(mock_mode=False)
     with mock.patch.object(client_live, "_http_request") as mock_http:
-        with pytest.raises((LinguaLensValidationError, LinguaLensApiError, ValueError)):
+        with pytest.raises((PasaScopeValidationError, PasaScopeApiError, ValueError)):
             client_live.create_child(bad_code, bad_year, bad_month, bad_lang)
         assert mock_http.call_count == 0
 
     # Mock mode: zero local mutation
-    client_mock = LinguaLensClient(mock_mode=True)
+    client_mock = PasaScopeClient(mock_mode=True)
     initial_children = list(client_mock._mock_data.get("children", []))
-    with pytest.raises((LinguaLensValidationError, LinguaLensApiError, ValueError)):
+    with pytest.raises((PasaScopeValidationError, PasaScopeApiError, ValueError)):
         client_mock.create_child(bad_code, bad_year, bad_month, bad_lang)
     assert client_mock._mock_data.get("children", []) == initial_children
 
@@ -195,7 +195,7 @@ def test_create_child_invalid_inputs_fail_closed_without_mutation_or_network(
 )
 def test_record_consent_valid_boundaries(purpose: str, scope_version: str, status: str) -> None:
     """Valid consent parameters succeed and record accurately."""
-    client_mock = LinguaLensClient(mock_mode=True)
+    client_mock = PasaScopeClient(mock_mode=True)
     # Register child first in mock mode
     child = client_mock.create_child("C01", 2021, 6)
     child_id = child["id"]
@@ -207,7 +207,7 @@ def test_record_consent_valid_boundaries(purpose: str, scope_version: str, statu
     assert rec["status"] == status
 
     # Live mode
-    client_live = LinguaLensClient(mock_mode=False)
+    client_live = PasaScopeClient(mock_mode=False)
     with mock.patch.object(client_live, "_http_request", return_value={"id": "consent-01", **rec}) as mock_http:
         client_live.record_consent(child_id, purpose=purpose, scope_version=scope_version, status=status)
         assert mock_http.call_count == 1
@@ -244,24 +244,24 @@ def test_record_consent_invalid_inputs_fail_closed_without_mutation_or_network(
     bad_child_id: Any, bad_purpose: Any, bad_scope: Any, bad_status: Any
 ) -> None:
     """Invalid consent inputs raise validation error without network call or state mutation."""
-    client_live = LinguaLensClient(mock_mode=False)
+    client_live = PasaScopeClient(mock_mode=False)
     with mock.patch.object(client_live, "_http_request") as mock_http:
-        with pytest.raises((LinguaLensValidationError, LinguaLensApiError, ValueError)):
+        with pytest.raises((PasaScopeValidationError, PasaScopeApiError, ValueError)):
             client_live.record_consent(bad_child_id, purpose=bad_purpose, scope_version=bad_scope, status=bad_status)
         assert mock_http.call_count == 0
 
-    client_mock = LinguaLensClient(mock_mode=True)
+    client_mock = PasaScopeClient(mock_mode=True)
     initial_consents = dict(client_mock._mock_data.get("consents", {}))
-    with pytest.raises((LinguaLensValidationError, LinguaLensApiError, ValueError)):
+    with pytest.raises((PasaScopeValidationError, PasaScopeApiError, ValueError)):
         client_mock.record_consent(bad_child_id, purpose=bad_purpose, scope_version=bad_scope, status=bad_status)
     assert client_mock._mock_data.get("consents", {}) == initial_consents
 
 
 def test_record_consent_for_nonexistent_child_fails_closed_in_mock_mode() -> None:
     """In mock mode, recording consent for non-existent child fails closed."""
-    client = LinguaLensClient(mock_mode=True)
+    client = PasaScopeClient(mock_mode=True)
     initial_consents = dict(client._mock_data.get("consents", {}))
-    with pytest.raises(LinguaLensApiError, match="[Nn]ot found"):
+    with pytest.raises(PasaScopeApiError, match="[Nn]ot found"):
         client.record_consent("child-does-not-exist", purpose="clinical_assessment")
     assert client._mock_data.get("consents", {}) == initial_consents
 
@@ -274,7 +274,7 @@ def test_create_assessment_canonical_age_and_language_computation() -> None:
     """Mock create_assessment MUST canonically compute age_months from child birth date and inherit child language."""
     # Deterministic clock: 2026-09-13
     fixed_clock = datetime(2026, 9, 13, 12, 0, 0, tzinfo=timezone.utc)
-    client = LinguaLensClient(mock_mode=True)
+    client = PasaScopeClient(mock_mode=True)
     if hasattr(client, "_clock"):
         client._clock = lambda: fixed_clock
     elif hasattr(client, "clock"):
@@ -307,24 +307,24 @@ def test_create_assessment_canonical_age_and_language_computation() -> None:
 
 def test_create_assessment_consent_gate_enforcement_and_no_bypass() -> None:
     """Direct client.create_assessment call MUST enforce active consent gate; no bypass allowed."""
-    client = LinguaLensClient(mock_mode=True)
+    client = PasaScopeClient(mock_mode=True)
     child = client.create_child("C-NOCONSENT", 2022, 1)
     child_id = child["id"]
 
     # 1. Zero consent -> 409 Conflict
-    with pytest.raises(LinguaLensConflictError, match="[Cc]onsent"):
+    with pytest.raises(PasaScopeConflictError, match="[Cc]onsent"):
         client.create_assessment(child_id, purpose="initial")
     assert child_id not in client._mock_data.get("assessments", {})
 
     # 2. Withdrawn consent -> 409 Conflict
     client.record_consent(child_id, purpose="clinical_assessment", status="withdrawn")
-    with pytest.raises(LinguaLensConflictError, match="[Cc]onsent"):
+    with pytest.raises(PasaScopeConflictError, match="[Cc]onsent"):
         client.create_assessment(child_id, purpose="initial")
     assert child_id not in client._mock_data.get("assessments", {})
 
     # 3. Only research consent -> 409 Conflict (must be clinical_assessment)
     client.record_consent(child_id, purpose="research_reuse", status="active")
-    with pytest.raises(LinguaLensConflictError, match="[Cc]onsent"):
+    with pytest.raises(PasaScopeConflictError, match="[Cc]onsent"):
         client.create_assessment(child_id, purpose="initial")
 
     # 4. Now grant active clinical assessment consent -> succeeds!
@@ -352,19 +352,19 @@ def test_create_assessment_invalid_inputs_fail_closed_without_mutation_or_networ
     bad_purpose: Any, bad_clinician: Any
 ) -> None:
     """Invalid assessment creation inputs fail closed without POST or state mutation."""
-    client_live = LinguaLensClient(mock_mode=False)
+    client_live = PasaScopeClient(mock_mode=False)
     with mock.patch.object(client_live, "_http_request") as mock_http:
-        with pytest.raises((LinguaLensValidationError, LinguaLensApiError, ValueError)):
+        with pytest.raises((PasaScopeValidationError, PasaScopeApiError, ValueError)):
             client_live.create_assessment("child-01", purpose=bad_purpose, assigned_clinician_id=bad_clinician)
         assert mock_http.call_count == 0
 
-    client_mock = LinguaLensClient(mock_mode=True)
+    client_mock = PasaScopeClient(mock_mode=True)
     child = client_mock.create_child("C01", 2021, 6)
     child_id = child["id"]
     client_mock.record_consent(child_id, status="active")
     initial_asmts = dict(client_mock._mock_data.get("assessments", {}))
 
-    with pytest.raises((LinguaLensValidationError, LinguaLensApiError, ValueError)):
+    with pytest.raises((PasaScopeValidationError, PasaScopeApiError, ValueError)):
         client_mock.create_assessment(child_id, purpose=bad_purpose, assigned_clinician_id=bad_clinician)
     assert client_mock._mock_data.get("assessments", {}) == initial_asmts
 
@@ -372,14 +372,14 @@ def test_create_assessment_invalid_inputs_fail_closed_without_mutation_or_networ
 def test_create_assessment_age_out_of_range_fails_closed_in_mock_mode() -> None:
     """Child age < 0 or > 216 months fails closed in mock assessment creation."""
     fixed_clock = datetime(2026, 9, 13, 12, 0, 0, tzinfo=timezone.utc)
-    client = LinguaLensClient(mock_mode=True)
+    client = PasaScopeClient(mock_mode=True)
 
     # 1. Born in future (relative to clock) -> age < 0
     child_future = client.create_child("C-FUTURE", 2027, 1)
     client.record_consent(child_future["id"], status="active")
 
     with mock.patch("packages.tui.client._get_current_utc_time", return_value=fixed_clock):
-        with pytest.raises(LinguaLensApiError, match="[Aa]ge"):
+        with pytest.raises(PasaScopeApiError, match="[Aa]ge"):
             client.create_assessment(child_future["id"], purpose="initial")
 
     # 2. Too old (> 216 months = 18 years) -> born 2000-01 (age 320 months)
@@ -387,7 +387,7 @@ def test_create_assessment_age_out_of_range_fails_closed_in_mock_mode() -> None:
     client.record_consent(child_old["id"], status="active")
 
     with mock.patch("packages.tui.client._get_current_utc_time", return_value=fixed_clock):
-        with pytest.raises(LinguaLensApiError, match="[Aa]ge"):
+        with pytest.raises(PasaScopeApiError, match="[Aa]ge"):
             client.create_assessment(child_old["id"], purpose="initial")
 
 
@@ -397,8 +397,8 @@ def test_create_assessment_age_out_of_range_fails_closed_in_mock_mode() -> None:
 
 def test_gui_child_intake_validation_rejects_overlong_code_and_strict_types(tk_root: tk.Tk) -> None:
     """GUI _validate_child_intake rejects display_code > 64 chars and non-strict types."""
-    client = LinguaLensClient(mock_mode=True)
-    app = LinguaLensGUIApp(tk_root, client=client)
+    client = PasaScopeClient(mock_mode=True)
+    app = PasaScopeGUIApp(tk_root, client=client)
 
     # Overlong display code
     assert app._validate_child_intake("C" * 65, 2021, 6) is not None
@@ -421,12 +421,12 @@ def test_gui_create_assessment_rejects_overlong_clinician_without_mutating_conte
         lambda title, msg, **kw: errors_shown.append((title, msg)),
     )
 
-    client = LinguaLensClient(mock_mode=True)
+    client = PasaScopeClient(mock_mode=True)
     child = client.create_child("C-GUI-TEST", 2021, 6)
     child_id = child["id"]
     client.record_consent(child_id, status="active")
 
-    app = LinguaLensGUIApp(tk_root, client=client)
+    app = PasaScopeGUIApp(tk_root, client=client)
     app.active_child_id = child_id
     app.active_child = child
     app._current_consent_status = "active"
@@ -493,15 +493,15 @@ def test_differential_language_additional_none_rejected_by_both() -> None:
         validate_child_input("C1", 2021, 6, malformed)
 
     # Direct client calls must fail closed without POST or mock mutation
-    client_live = LinguaLensClient(mock_mode=False)
+    client_live = PasaScopeClient(mock_mode=False)
     with mock.patch.object(client_live, "_http_request") as mock_http:
-        with pytest.raises(LinguaLensValidationError):
+        with pytest.raises(PasaScopeValidationError):
             client_live.create_child("C1", 2021, 6, malformed)
         assert mock_http.call_count == 0
 
-    client_mock = LinguaLensClient(mock_mode=True)
+    client_mock = PasaScopeClient(mock_mode=True)
     initial_children = list(client_mock._mock_data.get("children", []))
-    with pytest.raises(LinguaLensValidationError):
+    with pytest.raises(PasaScopeValidationError):
         client_mock.create_child("C1", 2021, 6, malformed)
     assert client_mock._mock_data.get("children", []) == initial_children
 
@@ -678,7 +678,7 @@ def test_differential_optional_assigned_clinician_id() -> None:
 
 def test_client_convenience_default_vs_malformed_nested() -> None:
     """Documented convenience default language_context=None succeeds; explicit malformed nested value fails closed."""
-    client = LinguaLensClient(mock_mode=True)
+    client = PasaScopeClient(mock_mode=True)
 
     # 1. Calling create_child without language_context (or language_context=None)
     # uses documented convenience default {"primary": "th", "additional": []}
@@ -689,5 +689,5 @@ def test_client_convenience_default_vs_malformed_nested() -> None:
     assert child2["language_context"] == {"primary": "th", "additional": []}
 
     # 2. Calling with explicit malformed nested dict must NOT be quietly fixed to valid input
-    with pytest.raises(LinguaLensValidationError):
+    with pytest.raises(PasaScopeValidationError):
         client.create_child("C-BAD", 2021, 6, language_context={"primary": "th", "additional": None})

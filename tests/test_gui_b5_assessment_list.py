@@ -22,13 +22,13 @@ import unittest.mock as mock
 
 import pytest
 
-from packages.gui.app import LinguaLensGUIApp
+from packages.gui.app import PasaScopeGUIApp
 from packages.tui.client import (
-    LinguaLensApiError,
-    LinguaLensAuthError,
-    LinguaLensClient,
-    LinguaLensPermissionError,
-    LinguaLensServerError,
+    PasaScopeApiError,
+    PasaScopeAuthError,
+    PasaScopeClient,
+    PasaScopePermissionError,
+    PasaScopeServerError,
 )
 
 
@@ -118,7 +118,7 @@ class FakeB5ApiClient:
             for a in child_asmts:
                 if a.get("id") == assessment_id:
                     return a
-        raise LinguaLensApiError(f"Assessment '{assessment_id}' not found.")
+        raise PasaScopeApiError(f"Assessment '{assessment_id}' not found.")
 
 
 @pytest.fixture
@@ -138,7 +138,7 @@ def tk_root() -> tk.Tk:
     gc.collect()
 
 
-def _drain_async_queue(app: LinguaLensGUIApp) -> None:
+def _drain_async_queue(app: PasaScopeGUIApp) -> None:
     """Synchronously drain all pending tasks from the async queue onto the main thread."""
     while True:
         try:
@@ -157,7 +157,7 @@ def test_assessment_list_200_empty_list_is_genuine_empty_success(tk_root: tk.Tk)
     client = FakeB5ApiClient()
     client.assessments_map["child-01"] = []
 
-    app = LinguaLensGUIApp(tk_root, client=client)
+    app = PasaScopeGUIApp(tk_root, client=client)
     app.active_child_id = "child-01"
 
     t = app._refresh_assessments()
@@ -176,16 +176,16 @@ def test_assessment_list_401_routes_to_auth_boundary_not_empty_success(
 ) -> None:
     """2. HTTP 401 routes through existing auth boundary, and does NOT claim empty success."""
     client = FakeB5ApiClient()
-    client.list_assessments_side_effect = LinguaLensAuthError("HTTP 401 Session expired")
+    client.list_assessments_side_effect = PasaScopeAuthError("HTTP 401 Session expired")
 
     auth_calls = []
     monkeypatch.setattr(
-        LinguaLensGUIApp,
+        PasaScopeGUIApp,
         "_handle_auth_error",
         lambda self, err, **kw: auth_calls.append(err),
     )
 
-    app = LinguaLensGUIApp(tk_root, client=client)
+    app = PasaScopeGUIApp(tk_root, client=client)
     app.active_child_id = "child-01"
 
     t = app._refresh_assessments()
@@ -194,19 +194,19 @@ def test_assessment_list_401_routes_to_auth_boundary_not_empty_success(
     _drain_async_queue(app)
 
     assert len(auth_calls) == 1
-    assert isinstance(auth_calls[0], LinguaLensAuthError)
+    assert isinstance(auth_calls[0], PasaScopeAuthError)
 
 
 def test_assessment_list_403_and_5xx_and_network_error_are_explicit_failures(tk_root: tk.Tk) -> None:
     """3. 403, 5xx, and network errors are explicit failures, not fallback []."""
     client = FakeB5ApiClient()
-    app = LinguaLensGUIApp(tk_root, client=client)
+    app = PasaScopeGUIApp(tk_root, client=client)
     app.active_child_id = "child-01"
 
     errors_to_test = [
-        LinguaLensPermissionError("HTTP 403 Forbidden: Insufficient role"),
-        LinguaLensServerError("HTTP 500 Internal Server Error"),
-        LinguaLensApiError("Connection refused by upstream API"),
+        PasaScopePermissionError("HTTP 403 Forbidden: Insufficient role"),
+        PasaScopeServerError("HTTP 500 Internal Server Error"),
+        PasaScopeApiError("Connection refused by upstream API"),
     ]
 
     for err in errors_to_test:
@@ -230,15 +230,15 @@ def test_assessment_list_403_and_5xx_and_network_error_are_explicit_failures(tk_
 
 def test_assessment_list_malformed_response_raises_contract_error_in_client() -> None:
     """4. Malformed non-list response is a contract error in client.py, not empty success."""
-    client = LinguaLensClient(mock_mode=False)
+    client = PasaScopeClient(mock_mode=False)
 
     # Mock _http_request returning a dict or string instead of list
     with mock.patch.object(client, "_http_request", return_value={"status": "not_a_list"}):
-        with pytest.raises(LinguaLensApiError, match="[Mm]alformed response"):
+        with pytest.raises(PasaScopeApiError, match="[Mm]alformed response"):
             client.list_assessments("child-01")
 
     with mock.patch.object(client, "_http_request", return_value="invalid string"):
-        with pytest.raises(LinguaLensApiError, match="[Mm]alformed response"):
+        with pytest.raises(PasaScopeApiError, match="[Mm]alformed response"):
             client.list_assessments("child-01")
 
 
@@ -250,7 +250,7 @@ def test_assessment_list_failure_on_new_child_does_not_use_old_child_assessments
         {"id": "asmt-A1", "child_id": "child-01", "purpose": "screening", "state": "draft", "clinician": "c1", "version": 1},
     ]
 
-    app = LinguaLensGUIApp(tk_root, client=client)
+    app = PasaScopeGUIApp(tk_root, client=client)
     app.active_child_id = "child-01"
 
     t = app._refresh_assessments()
@@ -262,7 +262,7 @@ def test_assessment_list_failure_on_new_child_does_not_use_old_child_assessments
     assert len(app._cached_assessments) == 1
 
     # Now switch to Child B, but listing assessments fails
-    client.list_assessments_side_effect = LinguaLensServerError("HTTP 502 Bad Gateway")
+    client.list_assessments_side_effect = PasaScopeServerError("HTTP 502 Bad Gateway")
     app._set_active_child("child-02")
     _drain_async_queue(app)
 
@@ -288,7 +288,7 @@ def test_assessment_list_stale_response_discarded_after_child_or_session_switch(
         {"id": "asmt-stale-01", "child_id": "child-01", "purpose": "screening", "state": "draft", "clinician": "c1", "version": 1},
     ]
 
-    app = LinguaLensGUIApp(tk_root, client=client)
+    app = PasaScopeGUIApp(tk_root, client=client)
     app.active_child_id = "child-01"
 
     # Start refresh for child-01 (blocked by gate)
@@ -324,7 +324,7 @@ def test_assessment_creation_success_with_list_refresh_failure_preserves_creatio
         "version": 1,
     }
     client.create_assessment_return_value = created_asmt
-    client.list_assessments_side_effect = LinguaLensServerError("HTTP 500 downstream refresh failure")
+    client.list_assessments_side_effect = PasaScopeServerError("HTTP 500 downstream refresh failure")
 
     warnings_shown = []
     monkeypatch.setattr(
@@ -332,7 +332,7 @@ def test_assessment_creation_success_with_list_refresh_failure_preserves_creatio
         lambda title, msg, **kw: warnings_shown.append((title, msg)),
     )
 
-    app = LinguaLensGUIApp(tk_root, client=client)
+    app = PasaScopeGUIApp(tk_root, client=client)
     app.active_child_id = "child-01"
 
     session_gen = app._get_current_session_generation()
@@ -361,9 +361,9 @@ def test_assessment_creation_success_with_list_refresh_failure_preserves_creatio
 def test_assessment_list_retry_recovers_after_transient_failure(tk_root: tk.Tk) -> None:
     """8. Retry GET after transient failure recovers cleanly."""
     client = FakeB5ApiClient()
-    client.list_assessments_side_effect = LinguaLensServerError("Temporary 503 Service Unavailable")
+    client.list_assessments_side_effect = PasaScopeServerError("Temporary 503 Service Unavailable")
 
-    app = LinguaLensGUIApp(tk_root, client=client)
+    app = PasaScopeGUIApp(tk_root, client=client)
     app.active_child_id = "child-01"
 
     # Initial failed attempt
@@ -405,9 +405,9 @@ def test_selecting_presentation_error_row_does_not_invoke_detail_api_or_start_se
     )
 
     client = FakeB5ApiClient()
-    client.list_assessments_side_effect = LinguaLensServerError("500 Outage")
+    client.list_assessments_side_effect = PasaScopeServerError("500 Outage")
 
-    app = LinguaLensGUIApp(tk_root, client=client)
+    app = PasaScopeGUIApp(tk_root, client=client)
     app.active_child_id = "child-01"
 
     # Refresh fails via real callback path
@@ -441,9 +441,9 @@ def test_cache_miss_detail_fetch_preserved_for_genuine_assessment_after_recovery
 ) -> None:
     """10. After recovery, genuine assessment selection works; cache-miss invokes detail fetch."""
     client = FakeB5ApiClient()
-    client.list_assessments_side_effect = LinguaLensServerError("500 Outage")
+    client.list_assessments_side_effect = PasaScopeServerError("500 Outage")
 
-    app = LinguaLensGUIApp(tk_root, client=client)
+    app = PasaScopeGUIApp(tk_root, client=client)
     app.active_child_id = "child-01"
 
     # Initial failure

@@ -78,7 +78,7 @@ def test_bilingual_clinical_html_report_generation():
 
     assert "CASE-101" in html
     assert "CHI-101" in html
-    assert "🗣️ LinguaLens Clinical LSA Report" in html
+    assert "🗣️ PasaScope Clinical LSA Report" in html
     assert "Thai Clinical Language Structure" in html
     assert "MLU-w (ความยาวประโยค)" in html
     assert "Longitudinal Assessment Trajectory" in html

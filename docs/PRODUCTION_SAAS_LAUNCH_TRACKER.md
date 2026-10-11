@@ -2,7 +2,7 @@
 
 Date: 2026-06-27
 
-This tracker records the agreed first-launch shape for lingualens and maps it to
+This tracker records the agreed first-launch shape for pasascope and maps it to
 the current repository state. It is for the first controlled clinic rollout,
 not a public self-serve SaaS launch.
 
@@ -129,7 +129,7 @@ Important:
 
 ## In Progress
 
-- Supabase organization `LinguaLens`, staging project
+- Supabase organization `PasaScope`, staging project
   `cbhwxklvcpgizeqriqxi`, and production project `rftslmbgbudqsypknzss` now
   exist and are recorded in
   [docs/release_artifacts/project_setup/2026-06-28_140742_lingualens-org-created.md](/Users/porschecaa/lingualens/docs/release_artifacts/project_setup/2026-06-28_140742_lingualens-org-created.md),
@@ -259,7 +259,7 @@ The first launch is ready only when all of the following are true:
 
 ## Launch Gate Checklist
 
-- [x] Supabase organization `LinguaLens` exists.
+- [x] Supabase organization `PasaScope` exists.
 - [x] Staging and production Supabase projects exist in `ap-southeast-1`.
 - [ ] Invitation-only email/password plus TOTP MFA is live.
 - [ ] `aal2` is required before app access.

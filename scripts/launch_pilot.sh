@@ -107,7 +107,7 @@ cleanup() {
     kill "$FRONTEND_PID" 2>/dev/null || true
     echo -e "  • Stopped Frontend Dev Server (PID: $FRONTEND_PID)"
   fi
-  echo -e "${GREEN}✓ LinguaLens pilot shutdown complete.${NC}"
+  echo -e "${GREEN}✓ PasaScope pilot shutdown complete.${NC}"
 }
 trap cleanup EXIT INT TERM
 
@@ -148,7 +148,7 @@ for _ in {1..40}; do
 done
 
 echo -e "\n${GREEN}${BOLD}======================================================================${NC}"
-echo -e "${GREEN}${BOLD}  🚀 LINGUALENS CLINICAL PILOT ENVIRONMENT ACTIVE                     ${NC}"
+echo -e "${GREEN}${BOLD}  🚀 PASASCOPE CLINICAL PILOT ENVIRONMENT ACTIVE                     ${NC}"
 echo -e "${GREEN}${BOLD}======================================================================${NC}"
 echo -e "  • Therapist Workbench:      ${CYAN}${BOLD}http://localhost:3000${NC}"
 echo -e "  • Clinician AI Assistant:   ${CYAN}${BOLD}http://localhost:3000/assistant${NC}"

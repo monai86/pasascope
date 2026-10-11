@@ -1,1 +1,1 @@
-"""Pydantic schemas for lingualens."""
+"""Pydantic schemas for pasascope."""

@@ -1,1 +1,1 @@
-"""lingualens API package."""
+"""pasascope API package."""

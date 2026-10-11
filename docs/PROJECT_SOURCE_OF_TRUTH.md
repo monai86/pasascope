@@ -58,7 +58,7 @@ research tests และ workflow เดิมบางส่วนยังใ�
 ใหม่ที่นี่ เว้นแต่งานนั้นระบุชัดว่าแก้ legacy compatibility.
 
 `src/clinical_workflow` เป็น legacy/research domain implementation และไม่ใช่
-persistence layer หลักของ lingualens.
+persistence layer หลักของ pasascope.
 
 ## Removed and generated paths
 
@@ -144,7 +144,7 @@ persistence layer หลักของ lingualens.
 22. Browser/PWA clients may use Supabase Auth and FastAPI-issued short-lived
     signed storage URLs only; all clinical reads/writes and workflow transitions
     must pass through `apps/api`.
-23. lingualens is responsive web/PWA only. Do not recreate the removed
+23. pasascope is responsive web/PWA only. Do not recreate the removed
     Vite/Capacitor app or add a native shell without a new accepted ADR.
 24. One-day production-like pilot scope is frozen in
     `docs/ONE_DAY_PILOT_SCOPE.md` and operationalized by
@@ -171,7 +171,7 @@ persistence layer หลักของ lingualens.
     invitation records, invitation acceptance into active organization
     membership, membership revocation with care-team deactivation, production
     MFA/invitation fail-closed guards, and scoped audited break-glass case
-    access for platform operators. lingualens Settings now exposes a local Pilot Access Lifecycle admin
+    access for platform operators. pasascope Settings now exposes a local Pilot Access Lifecycle admin
     UX for invitation records, active memberships, and revocation against these
     backend endpoints. This remains pilot UX only; real Supabase invitation
     delivery, MFA enrollment UI, managed custom claims, and external

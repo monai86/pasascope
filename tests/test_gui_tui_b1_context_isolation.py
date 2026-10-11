@@ -28,11 +28,11 @@ import unittest.mock as mock
 
 import pytest
 
-from packages.gui.app import LinguaLensGUIApp
+from packages.gui.app import PasaScopeGUIApp
 from packages.tui.client import (
     ClientSession,
-    LinguaLensApiError,
-    LinguaLensClient,
+    PasaScopeApiError,
+    PasaScopeClient,
 )
 from packages.tui.workflow import WorkflowRunner
 
@@ -128,7 +128,7 @@ class FakeB1ApiClient:
         for c in self.children:
             if c["id"] == child_id:
                 return dict(c)
-        raise LinguaLensApiError(f"Child {child_id} not found", status_code=404)
+        raise PasaScopeApiError(f"Child {child_id} not found", status_code=404)
 
     def list_consents(self, child_id: str) -> list[dict[str, Any]]:
         return list(self.consents.get(child_id, []))
@@ -141,7 +141,7 @@ class FakeB1ApiClient:
             for a in asmts:
                 if a["id"] == assessment_id:
                     return dict(a)
-        raise LinguaLensApiError(f"Assessment {assessment_id} not found", status_code=404)
+        raise PasaScopeApiError(f"Assessment {assessment_id} not found", status_code=404)
 
 
 # ---------------------------------------------------------------------------
@@ -151,7 +151,7 @@ class FakeB1ApiClient:
 def test_gui_entering_v2_clears_legacy_context_and_sets_mode(tk_root: tk.Tk) -> None:
     """Entering V2 mode in GUI must set current_mode='v2', clear all legacy context, and stop playback."""
     fake_client = FakeB1ApiClient()
-    app = LinguaLensGUIApp(tk_root, client=fake_client)  # type: ignore[arg-type]
+    app = PasaScopeGUIApp(tk_root, client=fake_client)  # type: ignore[arg-type]
 
     # Establish legacy active context
     app.current_mode = "legacy"
@@ -196,7 +196,7 @@ def test_gui_v2_child_only_context_blocks_direct_legacy_callbacks(
     monkeypatch.setattr("tkinter.filedialog.asksaveasfilename", lambda *a, **kw: "")
 
     fake_client = FakeB1ApiClient()
-    app = LinguaLensGUIApp(tk_root, client=fake_client)  # type: ignore[arg-type]
+    app = PasaScopeGUIApp(tk_root, client=fake_client)  # type: ignore[arg-type]
 
     # Put in V2 child-only mode (assessment is None / loading / empty)
     app.current_mode = "v2"
@@ -255,7 +255,7 @@ def test_gui_v2_assessment_error_keeps_legacy_actions_guarded(
     """When V2 assessment loading fails, active_assessment_id remains None but legacy actions remain blocked."""
     monkeypatch.setattr("tkinter.messagebox.showwarning", lambda *a, **kw: None)
     fake_client = FakeB1ApiClient()
-    app = LinguaLensGUIApp(tk_root, client=fake_client)  # type: ignore[arg-type]
+    app = PasaScopeGUIApp(tk_root, client=fake_client)  # type: ignore[arg-type]
 
     # Child selected, assessments fail to load
     child_data = {"id": "child-v2-01", "display_code": "CV2-01", "birth_year": 2021, "birth_month": 6}
@@ -265,7 +265,7 @@ def test_gui_v2_assessment_error_keeps_legacy_actions_guarded(
     app._assessment_list_request_id = req_asmt_id
     app._on_assessments_refresh_error(
         child_id="child-v2-01",
-        error=LinguaLensApiError("Network timeout", status_code=503),
+        error=PasaScopeApiError("Network timeout", status_code=503),
         request_id=req_asmt_id,
         session_gen=app._get_current_session_generation(),
         child_sel_gen=app._child_selection_generation,
@@ -283,7 +283,7 @@ def test_gui_v2_assessment_error_keeps_legacy_actions_guarded(
 def test_gui_legacy_worker_started_before_v2_switch_is_discarded(tk_root: tk.Tk) -> None:
     """An async legacy task started before switching to V2 must be safely discarded when it finishes."""
     fake_client = FakeB1ApiClient()
-    app = LinguaLensGUIApp(tk_root, client=fake_client)  # type: ignore[arg-type]
+    app = PasaScopeGUIApp(tk_root, client=fake_client)  # type: ignore[arg-type]
 
     # Establish legacy mode
     app.current_mode = "legacy"
@@ -338,7 +338,7 @@ def test_gui_legacy_worker_started_before_v2_switch_is_discarded(tk_root: tk.Tk)
 def test_gui_stale_legacy_worker_does_not_mutate_ui_or_busy_owner(tk_root: tk.Tk) -> None:
     """Late legacy worker completion must NOT clear busy state or change status text owned by a newer V2 task."""
     fake_client = FakeB1ApiClient()
-    app = LinguaLensGUIApp(tk_root, client=fake_client)  # type: ignore[arg-type]
+    app = PasaScopeGUIApp(tk_root, client=fake_client)  # type: ignore[arg-type]
 
     # 1. Start legacy worker A
     app.current_mode = "legacy"
@@ -390,7 +390,7 @@ def test_gui_v2_mode_blocks_actual_export_callbacks_with_residual_data(
 ) -> None:
     """In V2 mode, actual bound export and playback callbacks must fail-closed even if residual legacy data exists."""
     fake_client = FakeB1ApiClient()
-    app = LinguaLensGUIApp(tk_root, client=fake_client)  # type: ignore[arg-type]
+    app = PasaScopeGUIApp(tk_root, client=fake_client)  # type: ignore[arg-type]
 
     # Enter V2 mode
     app.current_mode = "v2"
@@ -443,7 +443,7 @@ def test_gui_explicit_return_to_legacy_restores_legacy_capabilities(
 ) -> None:
     """Explicitly selecting a Legacy Case transitions back to legacy mode, clearing V2 context and re-enabling tabs."""
     fake_client = FakeB1ApiClient()
-    app = LinguaLensGUIApp(tk_root, client=fake_client)  # type: ignore[arg-type]
+    app = PasaScopeGUIApp(tk_root, client=fake_client)  # type: ignore[arg-type]
 
     # 1. Start in V2 mode
     child_data = {"id": "child-v2-01", "display_code": "CV2-01", "birth_year": 2021, "birth_month": 6}

@@ -1,4 +1,4 @@
-"""Loopback HTTP transport tests for LinguaLens client."""
+"""Loopback HTTP transport tests for PasaScope client."""
 
 from __future__ import annotations
 
@@ -10,13 +10,13 @@ from typing import Generator
 import pytest
 
 from packages.tui.client import (
-    LinguaLensClient,
-    LinguaLensApiError,
-    LinguaLensAuthError,
-    LinguaLensPermissionError,
-    LinguaLensConflictError,
-    LinguaLensRateLimitError,
-    LinguaLensServerError,
+    PasaScopeClient,
+    PasaScopeApiError,
+    PasaScopeAuthError,
+    PasaScopePermissionError,
+    PasaScopeConflictError,
+    PasaScopeRateLimitError,
+    PasaScopeServerError,
 )
 
 
@@ -78,7 +78,7 @@ def test_transport_200_success(mock_server):
     handler.status_to_return = 200
     handler.body_to_return = json.dumps([{"case_id": "case-001", "child_id": "C-101"}]).encode("utf-8")
 
-    client = LinguaLensClient(base_url=base_url, mock_mode=False)
+    client = PasaScopeClient(base_url=base_url, mock_mode=False)
     cases = client.list_cases()
     assert len(cases) == 1
     assert cases[0]["case_id"] == "case-001"
@@ -91,8 +91,8 @@ def test_transport_401_auth_error(mock_server):
     handler.status_to_return = 401
     handler.body_to_return = b'{"detail": "Session expired or invalid token"}'
 
-    client = LinguaLensClient(base_url=base_url, mock_mode=False)
-    with pytest.raises(LinguaLensAuthError) as exc_info:
+    client = PasaScopeClient(base_url=base_url, mock_mode=False)
+    with pytest.raises(PasaScopeAuthError) as exc_info:
         client.list_cases()
     assert "Authentication" in str(exc_info.value) or "401" in str(exc_info.value) or "Session expired" in str(exc_info.value)
 
@@ -102,8 +102,8 @@ def test_transport_403_permission_error(mock_server):
     handler.status_to_return = 403
     handler.body_to_return = b'{"detail": "Permission denied"}'
 
-    client = LinguaLensClient(base_url=base_url, mock_mode=False)
-    with pytest.raises(LinguaLensPermissionError) as exc_info:
+    client = PasaScopeClient(base_url=base_url, mock_mode=False)
+    with pytest.raises(PasaScopePermissionError) as exc_info:
         client.list_cases()
     assert "Permission" in str(exc_info.value) or "403" in str(exc_info.value) or "denied" in str(exc_info.value)
 
@@ -113,8 +113,8 @@ def test_transport_409_conflict_error(mock_server):
     handler.status_to_return = 409
     handler.body_to_return = b'{"detail": "Version conflict"}'
 
-    client = LinguaLensClient(base_url=base_url, mock_mode=False)
-    with pytest.raises(LinguaLensConflictError) as exc_info:
+    client = PasaScopeClient(base_url=base_url, mock_mode=False)
+    with pytest.raises(PasaScopeConflictError) as exc_info:
         client.create_case(child_code="C-001", age_months=48)
     assert "Conflict" in str(exc_info.value) or "409" in str(exc_info.value) or "conflict" in str(exc_info.value)
 
@@ -124,8 +124,8 @@ def test_transport_429_rate_limit_error(mock_server):
     handler.status_to_return = 429
     handler.body_to_return = b'{"detail": "Too many requests"}'
 
-    client = LinguaLensClient(base_url=base_url, mock_mode=False)
-    with pytest.raises(LinguaLensRateLimitError) as exc_info:
+    client = PasaScopeClient(base_url=base_url, mock_mode=False)
+    with pytest.raises(PasaScopeRateLimitError) as exc_info:
         client.list_cases()
     assert "Rate limit" in str(exc_info.value) or "429" in str(exc_info.value) or "Too many requests" in str(exc_info.value)
 
@@ -135,8 +135,8 @@ def test_transport_500_server_error(mock_server):
     handler.status_to_return = 500
     handler.body_to_return = b'{"detail": "Internal database error"}'
 
-    client = LinguaLensClient(base_url=base_url, mock_mode=False)
-    with pytest.raises(LinguaLensServerError) as exc_info:
+    client = PasaScopeClient(base_url=base_url, mock_mode=False)
+    with pytest.raises(PasaScopeServerError) as exc_info:
         client.list_cases()
     assert "Server error" in str(exc_info.value) or "500" in str(exc_info.value) or "failed" in str(exc_info.value)
 
@@ -146,16 +146,16 @@ def test_transport_malformed_json(mock_server):
     handler.status_to_return = 200
     handler.body_to_return = b"<!DOCTYPE html><html><body>Error 502 Bad Gateway</body></html>"
 
-    client = LinguaLensClient(base_url=base_url, mock_mode=False)
-    with pytest.raises(LinguaLensApiError) as exc_info:
+    client = PasaScopeClient(base_url=base_url, mock_mode=False)
+    with pytest.raises(PasaScopeApiError) as exc_info:
         client.list_cases()
     assert "JSON" in str(exc_info.value) or "decode" in str(exc_info.value) or "malformed" in str(exc_info.value) or "API request failed" in str(exc_info.value)
 
 
 def test_transport_server_unavailable():
     # Pick a port guaranteed not to be running
-    client = LinguaLensClient(base_url="http://127.0.0.1:59999", mock_mode=False)
-    with pytest.raises(LinguaLensApiError) as exc_info:
+    client = PasaScopeClient(base_url="http://127.0.0.1:59999", mock_mode=False)
+    with pytest.raises(PasaScopeApiError) as exc_info:
         client.list_cases()
     assert "failed" in str(exc_info.value).lower() or "connection" in str(exc_info.value).lower()
 
@@ -165,9 +165,9 @@ def test_transport_sanitization(mock_server):
     handler.status_to_return = 400
     handler.body_to_return = b'{"detail": "Invalid request"}'
 
-    client = LinguaLensClient(base_url=base_url, mock_mode=False)
+    client = PasaScopeClient(base_url=base_url, mock_mode=False)
     secret_token = "secret-token-xyz-123"
-    with pytest.raises(LinguaLensApiError) as exc_info:
+    with pytest.raises(PasaScopeApiError) as exc_info:
         client.create_case("CHILD-SECRET-NAME-456", 48, notes=f"Private: {secret_token}")
     err_msg = str(exc_info.value)
     # The error message presented to caller should never expose clinical identifiers or secrets
@@ -180,8 +180,8 @@ def test_list_sessions_raises_api_error_on_malformed_timeline_response(mock_serv
     handler.status_to_return = 200
     handler.body_to_return = b'{"case_id": "C-001", "child_id": "child-1"}'  # dict instead of timeline event list
 
-    client = LinguaLensClient(base_url=base_url, mock_mode=False)
-    with pytest.raises(LinguaLensApiError) as exc_info:
+    client = PasaScopeClient(base_url=base_url, mock_mode=False)
+    with pytest.raises(PasaScopeApiError) as exc_info:
         client.list_sessions("C-001")
     assert "malformed" in str(exc_info.value).lower() or "timeline" in str(exc_info.value).lower()
 
@@ -192,8 +192,8 @@ def test_transport_exception_chaining_sanitized_no_underlying_url_leak(mock_serv
     handler.status_to_return = 401
     handler.body_to_return = b'{"detail": "Unauthorized"}'
 
-    client = LinguaLensClient(base_url=base_url, mock_mode=False)
-    with pytest.raises(LinguaLensAuthError) as exc_info:
+    client = PasaScopeClient(base_url=base_url, mock_mode=False)
+    with pytest.raises(PasaScopeAuthError) as exc_info:
         client.list_cases()
     exc = exc_info.value
     # Ensure chained cause is None to prevent raw urllib HTTPError/URLError url/header leaks
@@ -208,7 +208,7 @@ def test_transport_bearer_token_propagation_to_origin(mock_server):
     handler.status_to_return = 200
     handler.body_to_return = b"[]"
 
-    client = LinguaLensClient(base_url=base_url, mock_mode=False)
+    client = PasaScopeClient(base_url=base_url, mock_mode=False)
     client.set_session(access_token="synthetic-jwt-xyz", organization_id="org-clinic-1")
     client.list_cases()
 
@@ -256,7 +256,7 @@ def test_transport_cross_origin_redirect_strips_credentials():
     t_a.start()
 
     try:
-        client = LinguaLensClient(base_url=f"http://127.0.0.1:{port_a}", mock_mode=False)
+        client = PasaScopeClient(base_url=f"http://127.0.0.1:{port_a}", mock_mode=False)
         client.set_session(access_token="secret-token-do-not-forward")
         client.list_cases()
 
@@ -278,10 +278,10 @@ def test_transport_401_invalidates_session_and_prevents_replay(mock_server):
     handler.status_to_return = 401
     handler.body_to_return = b'{"detail": "Session expired"}'
 
-    client = LinguaLensClient(base_url=base_url, mock_mode=False)
+    client = PasaScopeClient(base_url=base_url, mock_mode=False)
     client.set_session(access_token="token-expired-123")
 
-    with pytest.raises(LinguaLensAuthError):
+    with pytest.raises(PasaScopeAuthError):
         client.list_cases()
 
     # Active session should be invalidated immediately
@@ -299,7 +299,7 @@ def test_transport_401_invalidates_session_and_prevents_replay(mock_server):
 def test_transport_late_401_does_not_clear_new_session(mock_server):
     """Verify that a race condition or delayed 401 with old token does not wipe a newly set session."""
     base_url, handler = mock_server
-    client = LinguaLensClient(base_url=base_url, mock_mode=False)
+    client = PasaScopeClient(base_url=base_url, mock_mode=False)
     client.set_session(access_token="token-old-1")
 
     # Simulate token replacement happening before/during 401 response handling
@@ -320,10 +320,10 @@ def test_transport_403_does_not_clear_session(mock_server):
     handler.status_to_return = 403
     handler.body_to_return = b'{"detail": "Permission denied"}'
 
-    client = LinguaLensClient(base_url=base_url, mock_mode=False)
+    client = PasaScopeClient(base_url=base_url, mock_mode=False)
     client.set_session(access_token="valid-therapist-token")
 
-    with pytest.raises(LinguaLensPermissionError):
+    with pytest.raises(PasaScopePermissionError):
         client.list_cases()
 
     # Session must NOT be cleared on 403
@@ -338,14 +338,14 @@ def test_transport_429_parses_retry_after_safely(mock_server):
     handler.headers_to_return = [("Content-Type", "application/json"), ("Retry-After", "25")]
     handler.body_to_return = b'{"detail": "Too many requests"}'
 
-    client = LinguaLensClient(base_url=base_url, mock_mode=False)
-    with pytest.raises(LinguaLensRateLimitError) as exc_info:
+    client = PasaScopeClient(base_url=base_url, mock_mode=False)
+    with pytest.raises(PasaScopeRateLimitError) as exc_info:
         client.list_cases()
     assert exc_info.value.retry_after_seconds == 25
 
     # Test malformed Retry-After header
     handler.headers_to_return = [("Content-Type", "application/json"), ("Retry-After", "invalid-seconds")]
-    with pytest.raises(LinguaLensRateLimitError) as exc_info2:
+    with pytest.raises(PasaScopeRateLimitError) as exc_info2:
         client.list_cases()
     assert exc_info2.value.retry_after_seconds is None
 
@@ -356,10 +356,10 @@ def test_transport_mutations_never_auto_retried(mock_server):
     handler.status_to_return = 500
     handler.body_to_return = b'{"detail": "Server error"}'
 
-    client = LinguaLensClient(base_url=base_url, mock_mode=False)
+    client = PasaScopeClient(base_url=base_url, mock_mode=False)
     req_count_before = len(handler.request_log)
 
-    with pytest.raises(LinguaLensServerError):
+    with pytest.raises(PasaScopeServerError):
         client.create_case(child_code="C-099", age_months=42)
 
     # Strictly 1 attempt, zero automatic retry on mutation
@@ -382,11 +382,11 @@ def test_transport_retry_after_http_date_and_edge_cases(mock_server, monkeypatch
     future_http_str = email.utils.format_datetime(future_date)
     handler.headers_to_return = [("Content-Type", "application/json"), ("Retry-After", future_http_str)]
 
-    client = LinguaLensClient(base_url=base_url, mock_mode=False)
+    client = PasaScopeClient(base_url=base_url, mock_mode=False)
     # Monkeypatch now_fn or clock inside client
     monkeypatch.setattr("packages.tui.client._get_current_utc_time", lambda: fixed_now, raising=False)
 
-    with pytest.raises(LinguaLensRateLimitError) as exc_info:
+    with pytest.raises(PasaScopeRateLimitError) as exc_info:
         client.list_cases()
     assert exc_info.value.retry_after_seconds == pytest.approx(45.0, abs=1.0)
 
@@ -395,19 +395,19 @@ def test_transport_retry_after_http_date_and_edge_cases(mock_server, monkeypatch
     past_http_str = email.utils.format_datetime(past_date)
     handler.headers_to_return = [("Content-Type", "application/json"), ("Retry-After", past_http_str)]
 
-    with pytest.raises(LinguaLensRateLimitError) as exc_info_past:
+    with pytest.raises(PasaScopeRateLimitError) as exc_info_past:
         client.list_cases()
     assert exc_info_past.value.retry_after_seconds == 0.0
 
     # 3. Negative delta-seconds -> must normalize to 0.0
     handler.headers_to_return = [("Content-Type", "application/json"), ("Retry-After", "-15")]
-    with pytest.raises(LinguaLensRateLimitError) as exc_info_neg:
+    with pytest.raises(PasaScopeRateLimitError) as exc_info_neg:
         client.list_cases()
     assert exc_info_neg.value.retry_after_seconds == 0.0
 
     # 4. Abnormal value (e.g. NaN or excessive numbers) -> None or capped safely
     handler.headers_to_return = [("Content-Type", "application/json"), ("Retry-After", "NaN")]
-    with pytest.raises(LinguaLensRateLimitError) as exc_info_nan:
+    with pytest.raises(PasaScopeRateLimitError) as exc_info_nan:
         client.list_cases()
     assert exc_info_nan.value.retry_after_seconds is None
 
@@ -415,7 +415,7 @@ def test_transport_retry_after_http_date_and_edge_cases(mock_server, monkeypatch
 def test_transport_session_generation_same_token_race(mock_server):
     """Verify that late 401 does not clear session even if token string is identical, due to generation tracking."""
     base_url, handler = mock_server
-    client = LinguaLensClient(base_url=base_url, mock_mode=False)
+    client = PasaScopeClient(base_url=base_url, mock_mode=False)
 
     client.set_session(access_token="shared-token-val")
     first_session = client.get_session()
@@ -439,7 +439,7 @@ def test_transport_session_generation_same_token_race(mock_server):
 def test_transport_concurrent_session_barrier_late_401(mock_server):
     """Verify thread-safe compare-and-clear using barriers without sleeps."""
     base_url, handler = mock_server
-    client = LinguaLensClient(base_url=base_url, mock_mode=False)
+    client = PasaScopeClient(base_url=base_url, mock_mode=False)
     client.set_session(access_token="session-1")
 
     barrier1 = threading.Barrier(2)
@@ -513,7 +513,7 @@ def test_transport_cross_origin_redirect_strips_organization_context():
     threading.Thread(target=orig_srv.serve_forever, daemon=True).start()
 
     try:
-        client = LinguaLensClient(base_url=f"http://127.0.0.1:{orig_port}", mock_mode=False)
+        client = PasaScopeClient(base_url=f"http://127.0.0.1:{orig_port}", mock_mode=False)
         client.set_session(access_token="secret-tok", organization_id="org-private")
         client.list_cases()
 
@@ -545,8 +545,8 @@ def test_transport_mutation_redirect_rejected_no_silent_replay():
     threading.Thread(target=srv.serve_forever, daemon=True).start()
 
     try:
-        client = LinguaLensClient(base_url=f"http://127.0.0.1:{port}", mock_mode=False)
-        with pytest.raises(LinguaLensApiError) as exc_info:
+        client = PasaScopeClient(base_url=f"http://127.0.0.1:{port}", mock_mode=False)
+        with pytest.raises(PasaScopeApiError) as exc_info:
             client.create_case(child_code="C-MUT-01", age_months=60)
         assert "redirect" in str(exc_info.value).lower() or "mutation" in str(exc_info.value).lower()
     finally:
@@ -582,7 +582,7 @@ def test_transport_v2_create_child_and_get_child(mock_server):
     handler.body_to_return = json.dumps(child_payload).encode("utf-8")
     handler.request_log.clear()
 
-    client = LinguaLensClient(base_url=base_url, mock_mode=False)
+    client = PasaScopeClient(base_url=base_url, mock_mode=False)
     created = client.create_child(
         display_code="LL-001",
         birth_year=2021,
@@ -631,7 +631,7 @@ def test_transport_v2_record_and_list_consents(mock_server):
     handler.body_to_return = json.dumps(consent_payload).encode("utf-8")
     handler.request_log.clear()
 
-    client = LinguaLensClient(base_url=base_url, mock_mode=False)
+    client = PasaScopeClient(base_url=base_url, mock_mode=False)
     created = client.record_consent(
         child_id="child_001",
         purpose="clinical_assessment",
@@ -662,7 +662,7 @@ def test_transport_v2_record_and_list_consents(mock_server):
 
 
 def test_transport_v2_create_assessment_without_consent_raises_conflict(mock_server):
-    """Verify that backend 409 active_consent_required raises LinguaLensConflictError."""
+    """Verify that backend 409 active_consent_required raises PasaScopeConflictError."""
     base_url, handler = mock_server
 
     handler.status_to_return = 409
@@ -675,8 +675,8 @@ def test_transport_v2_create_assessment_without_consent_raises_conflict(mock_ser
         }
     }).encode("utf-8")
 
-    client = LinguaLensClient(base_url=base_url, mock_mode=False)
-    with pytest.raises(LinguaLensConflictError):
+    client = PasaScopeClient(base_url=base_url, mock_mode=False)
+    with pytest.raises(PasaScopeConflictError):
         client.create_assessment("child_001", purpose="initial")
 
 
@@ -698,7 +698,7 @@ def test_transport_v2_create_and_list_assessments(mock_server):
     handler.body_to_return = json.dumps(assessment_payload).encode("utf-8")
     handler.request_log.clear()
 
-    client = LinguaLensClient(base_url=base_url, mock_mode=False)
+    client = PasaScopeClient(base_url=base_url, mock_mode=False)
     created = client.create_assessment(
         child_id="child_001",
         purpose="initial",
@@ -740,7 +740,7 @@ def test_transport_v2_get_assessment_detail(mock_server):
     handler.body_to_return = json.dumps(assessment_payload).encode("utf-8")
     handler.request_log.clear()
 
-    client = LinguaLensClient(base_url=base_url, mock_mode=False)
+    client = PasaScopeClient(base_url=base_url, mock_mode=False)
     detail = client.get_assessment("asmt_001")
 
     assert detail["id"] == "asmt_001"
@@ -761,7 +761,7 @@ def test_transport_v2_get_assessment_detail(mock_server):
         }
     }).encode("utf-8")
 
-    with pytest.raises(LinguaLensApiError) as exc_info:
+    with pytest.raises(PasaScopeApiError) as exc_info:
         client.get_assessment("asmt_nonexistent")
     assert "404" in str(exc_info.value)
 

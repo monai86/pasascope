@@ -16,11 +16,11 @@ import pytest
 
 from app.schemas.clinical import TherapySession, TherapySessionCreate, TimelineEvent
 from packages.tui.client import (
-    LinguaLensApiError,
-    LinguaLensAuthError,
-    LinguaLensClient,
-    LinguaLensPermissionError,
-    LinguaLensServerError,
+    PasaScopeApiError,
+    PasaScopeAuthError,
+    PasaScopeClient,
+    PasaScopePermissionError,
+    PasaScopeServerError,
 )
 from packages.tui.workflow import WorkflowRunner
 
@@ -117,7 +117,7 @@ def test_list_sessions_calls_timeline_and_session_detail(session_api_server) -> 
     handler.routes[("GET", "/cases/case-b3a-001/timeline")] = (200, json.dumps(timeline_data).encode("utf-8"))
     handler.routes[("GET", "/sessions/sess-b3a-001")] = (200, json.dumps(session_detail_data).encode("utf-8"))
 
-    client = LinguaLensClient(base_url=base_url, mock_mode=False)
+    client = PasaScopeClient(base_url=base_url, mock_mode=False)
     sessions = client.list_sessions("case-b3a-001")
 
     assert len(sessions) == 1
@@ -142,7 +142,7 @@ def test_list_sessions_empty_timeline_returns_valid_empty_list(session_api_serve
     base_url, handler = session_api_server
     handler.routes[("GET", "/cases/case-empty/timeline")] = (200, b"[]")
 
-    client = LinguaLensClient(base_url=base_url, mock_mode=False)
+    client = PasaScopeClient(base_url=base_url, mock_mode=False)
     sessions = client.list_sessions("case-empty")
 
     assert sessions == []
@@ -151,12 +151,12 @@ def test_list_sessions_empty_timeline_returns_valid_empty_list(session_api_serve
 
 
 def test_list_sessions_malformed_response_raises_api_error(session_api_server) -> None:
-    """If the timeline returns malformed data (dict instead of list), raise LinguaLensApiError."""
+    """If the timeline returns malformed data (dict instead of list), raise PasaScopeApiError."""
     base_url, handler = session_api_server
     handler.routes[("GET", "/cases/case-bad/timeline")] = (200, b'{"error": "not a list"}')
 
-    client = LinguaLensClient(base_url=base_url, mock_mode=False)
-    with pytest.raises(LinguaLensApiError) as exc_info:
+    client = PasaScopeClient(base_url=base_url, mock_mode=False)
+    with pytest.raises(PasaScopeApiError) as exc_info:
         client.list_sessions("case-bad")
     assert "malformed" in str(exc_info.value).lower() or "timeline" in str(exc_info.value).lower()
 
@@ -170,19 +170,19 @@ def test_list_sessions_fail_closed_on_http_errors(session_api_server) -> None:
     handler.routes[("GET", "/cases/case-404/timeline")] = (404, b'{"detail": "Case not found"}')
     handler.routes[("GET", "/cases/case-500/timeline")] = (500, b'{"detail": "Internal Error"}')
 
-    client = LinguaLensClient(base_url=base_url, mock_mode=False)
+    client = PasaScopeClient(base_url=base_url, mock_mode=False)
 
-    with pytest.raises(LinguaLensAuthError):
+    with pytest.raises(PasaScopeAuthError):
         client.list_sessions("case-401")
 
-    with pytest.raises(LinguaLensPermissionError):
+    with pytest.raises(PasaScopePermissionError):
         client.list_sessions("case-403")
 
-    with pytest.raises(LinguaLensApiError) as exc_404:
+    with pytest.raises(PasaScopeApiError) as exc_404:
         client.list_sessions("case-404")
     assert "404" in str(exc_404.value)
 
-    with pytest.raises(LinguaLensServerError):
+    with pytest.raises(PasaScopeServerError):
         client.list_sessions("case-500")
 
 
@@ -208,7 +208,7 @@ def test_create_session_sends_canonical_schema(session_api_server) -> None:
 
     handler.routes[("POST", "/cases/case-b3a-002/sessions")] = (200, json.dumps(response_data).encode("utf-8"))
 
-    client = LinguaLensClient(base_url=base_url, mock_mode=False)
+    client = PasaScopeClient(base_url=base_url, mock_mode=False)
     created = client.create_session("case-b3a-002", session_date="2026-09-13", notes="Focused clinical observation notes")
 
     assert created["session_id"] == "sess-new-123"
@@ -227,7 +227,7 @@ def test_create_session_sends_canonical_schema(session_api_server) -> None:
 
 def test_workflow_select_session_sets_active_session_id(monkeypatch: pytest.MonkeyPatch) -> None:
     """TUI menu session selection sets active_session_id correctly."""
-    client = LinguaLensClient(mock_mode=True)
+    client = PasaScopeClient(mock_mode=True)
     client._mock_data["sessions"]["case-sel-test"] = [
         {
             "session_id": "sess-sel-1",
@@ -250,7 +250,7 @@ def test_workflow_select_session_sets_active_session_id(monkeypatch: pytest.Monk
 
 def test_workflow_create_session_wizard_sets_active_session_id(monkeypatch: pytest.MonkeyPatch) -> None:
     """TUI create session wizard sets active_session_id to the created session."""
-    client = LinguaLensClient(mock_mode=True)
+    client = PasaScopeClient(mock_mode=True)
     runner = WorkflowRunner(client)
     runner.active_case_id = "case-wizard-test"
 
@@ -264,7 +264,7 @@ def test_workflow_create_session_wizard_sets_active_session_id(monkeypatch: pyte
 
 def test_direct_v2_entry_does_not_call_legacy_session_endpoints() -> None:
     """Entering V2 Assessment flow does NOT call legacy session methods."""
-    class GuardedClient(LinguaLensClient):
+    class GuardedClient(PasaScopeClient):
         def __init__(self) -> None:
             super().__init__(mock_mode=True)
             self.legacy_session_calls: list[str] = []

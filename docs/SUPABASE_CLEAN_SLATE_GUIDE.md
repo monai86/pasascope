@@ -1,6 +1,6 @@
 # คู่มือการรื้อระบบ Supabase และเริ่มต้นนับ 1 ใหม่ (Supabase Clean-Slate Guide)
 
-เอกสารฉบับนี้อธิบายวิธีการรีเซ็ตฐานข้อมูล Supabase ของโปรเจกต์ **LinguaLens** ทั้งหมดแบบ Clean-Slate (รื้อระบบเดิมทิ้งทั้งหมด แล้วเริ่มนับ 1 ใหม่) เพื่อให้โครงสร้างฐานข้อมูลตรงตามสถาปัตยกรรม **Assessment V2** ล่าสุดอย่างสมบูรณ์แบบ
+เอกสารฉบับนี้อธิบายวิธีการรีเซ็ตฐานข้อมูล Supabase ของโปรเจกต์ **PasaScope** ทั้งหมดแบบ Clean-Slate (รื้อระบบเดิมทิ้งทั้งหมด แล้วเริ่มนับ 1 ใหม่) เพื่อให้โครงสร้างฐานข้อมูลตรงตามสถาปัตยกรรม **Assessment V2** ล่าสุดอย่างสมบูรณ์แบบ
 
 ---
 
@@ -15,7 +15,7 @@
 
 ### 1. เข้าสู่ Supabase Dashboard
 1. เปิดเบราว์เซอร์ไปที่ [Supabase Dashboard](https://supabase.com/dashboard)
-2. เลือกโปรเจกต์ **LinguaLens**
+2. เลือกโปรเจกต์ **PasaScope**
 
 ### 2. เปิด SQL Editor
 1. ที่แถบเมนูด้านซ้าย ให้คลิกที่ **SQL Editor** (ไอคอน `>_`)
@@ -28,7 +28,7 @@
 4. รอระบบประมวลผลประมาณ 3-5 วินาที จนกระทั่งปรากฏข้อความ:
    ```text
    Success. No rows returned
-   NOTICE: LinguaLens Assessment V2 clean-slate initialization completed successfully.
+   NOTICE: PasaScope Assessment V2 clean-slate initialization completed successfully.
    ```
 
 ---
@@ -103,7 +103,7 @@
   - อนุญาตให้ `service_role` เข้าถึงไฟล์เพื่อส่งเข้า ML Pipeline
 
 ### 6. ข้อมูลตั้งต้นทางคลินิก (Seed Data)
-- องค์กรตัวอย่าง: `org_alpha` ("LinguaLens Clinical Pilot Clinic")
+- องค์กรตัวอย่าง: `org_alpha` ("PasaScope Clinical Pilot Clinic")
 - โปรโตคอลมาตรฐานภาษาไทย: `thai_guided_language_sample:v0`
 - กิจกรรมมาตรฐาน:
   1. `free_play` — การเล่นอิสระ (180 วินาที)

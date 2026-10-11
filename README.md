@@ -413,7 +413,7 @@ companion workflows. The desktop GUI features a **Therapist 5-Step Guided Workfl
 
 In live mode (`mock_mode=False`), all client operations communicate strictly
 with the backend REST API (`apps/api`) or fail closed with structured, sanitized exceptions
-(`LinguaLensApiError`). Live mode never mutates local mock state, and unsupported operations fail
+(`PasaScopeApiError`). Live mode never mutates local mock state, and unsupported operations fail
 explicitly without fabricating local success. Explicit local mock mode (`mock_mode=True`) is
 reserved for offline demonstrations and research prototyping.
 

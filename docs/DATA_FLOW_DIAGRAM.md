@@ -1,4 +1,4 @@
-# lingualens Data Flow Diagram
+# pasascope Data Flow Diagram
 
 This document describes the intended production data flows. It is a textual DFD
 for implementation and review; it is not evidence that every flow is complete.

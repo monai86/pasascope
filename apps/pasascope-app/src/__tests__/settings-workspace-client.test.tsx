@@ -510,7 +510,7 @@ describe("SettingsWorkspaceClient admin lifecycle UX", () => {
       aal: "aal2",
     }));
     act(() => {
-      window.dispatchEvent(new CustomEvent("lingualens:mock-access-session-changed"));
+      window.dispatchEvent(new CustomEvent("pasascope:mock-access-session-changed"));
     });
 
     expect(await screen.findByRole("button", { name: "Revoke Operations Admin" })).toBeInTheDocument();

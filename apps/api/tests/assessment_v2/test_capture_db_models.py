@@ -231,7 +231,7 @@ def test_capture_migration_seeds_catalog_and_reverses_to_0002(monkeypatch) -> No
     from app.assessment_v2.db.migrations_runner import downgrade_assessment_database, upgrade_assessment_database
     from app.core.config import get_settings
 
-    with TemporaryDirectory(prefix="lingualens-assessment-v2-capture-") as temp_dir:
+    with TemporaryDirectory(prefix="pasascope-assessment-v2-capture-") as temp_dir:
         database_path = Path(temp_dir) / "assessment-v2-capture.db"
         monkeypatch.setenv("PASASCOPE_ASSESSMENT_DATABASE_URL", f"sqlite:///{database_path}")
         get_settings.cache_clear()
@@ -343,7 +343,7 @@ def test_fresh_sqlite_migration_catalog_matches_python_protocol_catalog(monkeypa
     from app.assessment_v2.db.migrations_runner import downgrade_assessment_database, upgrade_assessment_database
     from app.core.config import get_settings
 
-    with TemporaryDirectory(prefix="lingualens-assessment-v2-catalog-parity-") as temp_dir:
+    with TemporaryDirectory(prefix="pasascope-assessment-v2-catalog-parity-") as temp_dir:
         database_path = Path(temp_dir) / "assessment-v2-catalog.db"
         monkeypatch.setenv("PASASCOPE_ASSESSMENT_DATABASE_URL", f"sqlite:///{database_path}")
         get_settings.cache_clear()

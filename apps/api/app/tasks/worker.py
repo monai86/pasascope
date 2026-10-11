@@ -20,8 +20,8 @@ def run_worker_once() -> dict:
 def run_worker() -> str:
     result = run_worker_once()
     if result["status"] == "idle":
-        return "lingualens worker is ready; no queued jobs."
-    return f"lingualens worker processed job {result['job_id']} with status {result['job_status']}."
+        return "pasascope worker is ready; no queued jobs."
+    return f"pasascope worker processed job {result['job_id']} with status {result['job_status']}."
 
 
 def run_worker_forever(poll_seconds: float = 1.0) -> None:

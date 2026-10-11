@@ -323,7 +323,7 @@ def generate_dataset_audit_report(df: pd.DataFrame) -> None:
     sex_dist = pd.crosstab(ready_df["diagnostic_group"], ready_df["sex"], margins=True)
     task_dist = pd.crosstab(ready_df["diagnostic_group"], ready_df["task_type"], margins=True)
 
-    report_content = f"""# LinguaLens Dataset & Participant Integrity Audit
+    report_content = f"""# PasaScope Dataset & Participant Integrity Audit
 **Generated Date:** 2026-08-23  
 **Registry File:** `data/ml/participant_registry.csv`  
 **Status:** Complete, Reconciled, and Programmatically Verified  

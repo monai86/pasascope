@@ -102,7 +102,7 @@ def main():
     parser.add_argument("--input-file", type=Path, help="Path to prospective pilot dataset CSV.")
     args = parser.parse_args()
 
-    print("=== LinguaLens Prospective Pilot Audit ===")
+    print("=== PasaScope Prospective Pilot Audit ===")
     if not args.input_file or not args.input_file.exists():
         print("Note: No prospective clinical pilot dataset provided or file does not exist.")
         print("Protocol and ethics checklists located at:")

@@ -1,4 +1,4 @@
-# LinguaLens Cloud Deployment Runbook (Vercel + Render + Supabase)
+# PasaScope Cloud Deployment Runbook (Vercel + Render + Supabase)
 
 **Document Version:** `v1.7.0`  
 **Date:** 2026-10-04  
@@ -40,7 +40,7 @@
 ## ขั้นตอนที่ 1: ตั้งค่า Supabase (Database & Private Storage)
 
 ### 1.1 ข้อมูลโปรเจกต์ Supabase ที่เตรียมไว้แล้ว
-- **Organization:** `LinguaLens` (`whgbnlqvrgjodiquclnr`)
+- **Organization:** `PasaScope` (`whgbnlqvrgjodiquclnr`)
 - **Staging Project Ref:** `lliodfzujsmapwmpqmjb`
 - **Region:** `ap-southeast-1` (Singapore)
 - **Supabase URL:** `https://lliodfzujsmapwmpqmjb.supabase.co`

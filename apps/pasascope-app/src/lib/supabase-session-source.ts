@@ -2,7 +2,7 @@
 
 import type { SupabaseBrowserAuthSnapshot } from "@/lib/supabase-browser-auth";
 
-export const SUPABASE_SESSION_SOURCE_EVENT = "lingualens:supabase-session-source";
+export const SUPABASE_SESSION_SOURCE_EVENT = "pasascope:supabase-session-source";
 
 type SupabaseSessionSourcePayload = {
   kind: "session";

@@ -3,7 +3,7 @@
 > [!WARNING]
 > **LEGACY SURFACE / NOT FOR NEW PRODUCT ENDPOINTS**
 > Per `AGENTS.md` and `docs/PROJECT_SOURCE_OF_TRUTH.md`:
-> - `apps/api/app/repositories/` is the canonical production persistence layer for LinguaLens.
+> - `apps/api/app/repositories/` is the canonical production persistence layer for PasaScope.
 > - `src/clinical_workflow/` is retained solely for backward compatibility with legacy research tests and pilot scripts (`src/therapist_backend/`).
 > - Do **NOT** add new clinical entities, business logic, or endpoints here.
 

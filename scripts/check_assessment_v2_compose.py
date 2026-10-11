@@ -13,7 +13,7 @@ import psycopg
 
 
 ROOT = Path(__file__).resolve().parents[1]
-PROJECT = "lingualens-assessment-v2-check"
+PROJECT = "pasascope-assessment-v2-check"
 API_PORT = 8002
 DATABASE_PORT = 5434
 COMPOSE = [

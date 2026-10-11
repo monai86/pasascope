@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """Generate a consolidated, professionally formatted Excel workbook containing all extracted features,
-model benchmark results, confounder analyses, and feature dictionaries for LinguaLens.
+model benchmark results, confounder analyses, and feature dictionaries for PasaScope.
 
 Output:
 -------

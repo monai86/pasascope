@@ -13,13 +13,13 @@ from typing import Generator
 import pytest
 from rich.console import Console
 
-from packages.tui.client import LinguaLensApiError, LinguaLensClient
+from packages.tui.client import PasaScopeApiError, PasaScopeClient
 from packages.tui.workflow import WorkflowRunner
 from packages.tui.ui import render_cases_table
 
 
 def test_legacy_case_selection_uses_canonical_case_id(monkeypatch: pytest.MonkeyPatch) -> None:
-    client = LinguaLensClient(mock_mode=True)
+    client = PasaScopeClient(mock_mode=True)
     client._mock_data["cases"] = [
         {
             "case_id": "case-b4-select",
@@ -40,7 +40,7 @@ def test_legacy_case_selection_uses_canonical_case_id(monkeypatch: pytest.Monkey
 def test_legacy_case_creation_uses_canonical_payload_and_enters_sessions(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
-    class RecordingClient(LinguaLensClient):
+    class RecordingClient(PasaScopeClient):
         def __init__(self) -> None:
             super().__init__(mock_mode=True)
             self.session_case_ids: list[str | None] = []
@@ -113,7 +113,7 @@ def test_client_create_case_sends_actual_legacy_api_schema(case_create_server) -
     from app.schemas.clinical import ChildCaseCreate
 
     base_url, handler = case_create_server
-    client = LinguaLensClient(base_url=base_url, mock_mode=False)
+    client = PasaScopeClient(base_url=base_url, mock_mode=False)
 
     response = client.create_case(
         child_code="child-b4-api",
@@ -142,7 +142,7 @@ def test_client_create_case_legacy_birth_year_month_converts_to_age_months_on_li
     from app.schemas.clinical import ChildCaseCreate
 
     base_url, handler = case_create_server
-    client = LinguaLensClient(base_url=base_url, mock_mode=False)
+    client = PasaScopeClient(base_url=base_url, mock_mode=False)
 
     # Call with positional legacy shape (child_code, birth_year_month, language, notes)
     response = client.create_case(
@@ -163,7 +163,7 @@ def test_client_create_case_legacy_birth_year_month_converts_to_age_months_on_li
 
 
 def test_client_set_mock_mode_toggles_adapter() -> None:
-    client = LinguaLensClient(mock_mode=False)
+    client = PasaScopeClient(mock_mode=False)
     assert not client.mock_mode
     from packages.tui.adapters.http_adapter import HttpClinicalAdapter
     assert isinstance(client._adapter, HttpClinicalAdapter)
@@ -180,10 +180,10 @@ def test_client_set_mock_mode_toggles_adapter() -> None:
 
 
 def test_invalid_birth_year_month_fails_closed_without_local_mutation() -> None:
-    client = LinguaLensClient(mock_mode=True)
+    client = PasaScopeClient(mock_mode=True)
     before = copy.deepcopy(client._mock_data)
 
-    with pytest.raises(LinguaLensApiError):
+    with pytest.raises(PasaScopeApiError):
         client.create_case(
             child_id="child-b4-invalid",
             birth_year_month="2022-13",
@@ -195,9 +195,9 @@ def test_invalid_birth_year_month_fails_closed_without_local_mutation() -> None:
 
 
 def test_api_failure_does_not_create_fabricated_active_case(monkeypatch: pytest.MonkeyPatch) -> None:
-    class FailingClient(LinguaLensClient):
+    class FailingClient(PasaScopeClient):
         def create_case(self, *args: object, **kwargs: object) -> dict[str, object]:
-            raise LinguaLensApiError("synthetic API failure")
+            raise PasaScopeApiError("synthetic API failure")
 
     client = FailingClient(mock_mode=True)
     before = copy.deepcopy(client._mock_data)

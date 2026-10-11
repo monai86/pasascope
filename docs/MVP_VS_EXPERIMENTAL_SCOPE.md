@@ -1,4 +1,4 @@
-# lingualens MVP vs Experimental Scope
+# pasascope MVP vs Experimental Scope
 
 This document separates the stable local manual-first MVP from experimental or pilot-hardening surfaces. It is intentionally conservative: anything that is not verified as part of the manual-first local workflow stays experimental until validated, configured, and governed for a real pilot.
 

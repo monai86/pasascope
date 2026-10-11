@@ -6,13 +6,13 @@ import re
 from typing import Any, Optional, TYPE_CHECKING
 
 if TYPE_CHECKING:
-    from packages.tui.client import LinguaLensClient
+    from packages.tui.client import PasaScopeClient
 
 
 class HttpClinicalAdapter:
-    """Clinical data adapter delegating all calls to live LinguaLens FastAPI endpoints."""
+    """Clinical data adapter delegating all calls to live PasaScope FastAPI endpoints."""
 
-    def __init__(self, client: LinguaLensClient) -> None:
+    def __init__(self, client: PasaScopeClient) -> None:
         self._client = client
 
     def check_health(self) -> bool:
@@ -37,7 +37,7 @@ class HttpClinicalAdapter:
         birth_year_month: str | None = None,
         primary_language: str | None = None,
     ) -> dict[str, Any]:
-        from packages.tui.client import LinguaLensApiError, LinguaLensUnsupportedOperationError
+        from packages.tui.client import PasaScopeApiError, PasaScopeUnsupportedOperationError
 
         legacy_shape = (
             child_id is not None
@@ -50,13 +50,13 @@ class HttpClinicalAdapter:
             legacy_birth_month = birth_year_month if birth_year_month is not None else age_months
             legacy_language = primary_language if primary_language is not None else language
             if not isinstance(legacy_child_id, str) or not isinstance(legacy_birth_month, str):
-                raise LinguaLensApiError(
+                raise PasaScopeApiError(
                     "Legacy case creation requires child_id and birth_year_month; no age conversion was performed."
                 )
             legacy_child_id = legacy_child_id.strip()
             legacy_birth_month = legacy_birth_month.strip()
             if not legacy_child_id:
-                raise LinguaLensApiError("Case creation requires a non-empty child_code.")
+                raise PasaScopeApiError("Case creation requires a non-empty child_code.")
 
             calc_age: int
             if re.fullmatch(r"\d{4}-(0[1-9]|1[0-2])", legacy_birth_month):
@@ -66,9 +66,9 @@ class HttpClinicalAdapter:
             elif legacy_birth_month.isdigit():
                 calc_age = int(legacy_birth_month)
                 if not 0 <= calc_age <= 240:
-                    raise LinguaLensApiError("Case creation requires age_months as an integer from 0 through 240.")
+                    raise PasaScopeApiError("Case creation requires age_months as an integer from 0 through 240.")
             else:
-                raise LinguaLensApiError(
+                raise PasaScopeApiError(
                     "Invalid birth_year_month; expected YYYY-MM with a month from 01 through 12."
                 )
 
@@ -80,13 +80,13 @@ class HttpClinicalAdapter:
             )
 
         if not isinstance(child_code, str) or not child_code.strip():
-            raise LinguaLensApiError("Case creation requires a non-empty child_code.")
+            raise PasaScopeApiError("Case creation requires a non-empty child_code.")
         if not isinstance(age_months, int) or isinstance(age_months, bool) or not 0 <= age_months <= 240:
-            raise LinguaLensApiError("Case creation requires age_months as an integer from 0 through 240.")
+            raise PasaScopeApiError("Case creation requires age_months as an integer from 0 through 240.")
         if not isinstance(language, str) or not language.strip():
-            raise LinguaLensApiError("Case creation requires a non-empty language.")
+            raise PasaScopeApiError("Case creation requires a non-empty language.")
         if not isinstance(notes, str):
-            raise LinguaLensApiError("Case creation notes must be text.")
+            raise PasaScopeApiError("Case creation notes must be text.")
 
         payload = {
             "child_code": child_code,
@@ -97,17 +97,17 @@ class HttpClinicalAdapter:
         return self._client._http_request("POST", "/cases", payload)
 
     def get_session_detail(self, session_id: str) -> dict[str, Any]:
-        from packages.tui.client import LinguaLensApiError
+        from packages.tui.client import PasaScopeApiError
         sess = self._client._http_request("GET", f"/sessions/{session_id}")
         if not isinstance(sess, dict) or "session_id" not in sess:
-            raise LinguaLensApiError("Malformed API response: invalid session detail object.")
+            raise PasaScopeApiError("Malformed API response: invalid session detail object.")
         return sess
 
     def list_sessions(self, case_id: str) -> list[dict[str, Any]]:
-        from packages.tui.client import LinguaLensApiError
+        from packages.tui.client import PasaScopeApiError
         timeline = self._client._http_request("GET", f"/cases/{case_id}/timeline")
         if not isinstance(timeline, list):
-            raise LinguaLensApiError("Malformed API response: expected list from case timeline.")
+            raise PasaScopeApiError("Malformed API response: expected list from case timeline.")
         sessions = []
         for idx, event in enumerate(timeline, 1):
             if not isinstance(event, dict) or "target_id" not in event:
@@ -124,14 +124,14 @@ class HttpClinicalAdapter:
         return self._client._http_request("POST", f"/cases/{case_id}/sessions", payload)
 
     def get_session_transcript(self, session_id: str) -> dict[str, Any] | None:
-        from packages.tui.client import LinguaLensApiError
+        from packages.tui.client import PasaScopeApiError
         sess = self.get_session_detail(session_id)
         tr_id = sess.get("transcript_id") if isinstance(sess, dict) else None
         if not tr_id:
             return None
         try:
             return self._client._http_request("GET", f"/sessions/{session_id}/transcript")
-        except LinguaLensApiError as exc:
+        except PasaScopeApiError as exc:
             if "404" in str(exc):
                 return None
             raise
@@ -145,8 +145,8 @@ class HttpClinicalAdapter:
         audio_path: str,
         progress_callback: Optional[Any] = None,
     ) -> dict[str, Any]:
-        from packages.tui.client import LinguaLensUnsupportedOperationError
-        raise LinguaLensUnsupportedOperationError(
+        from packages.tui.client import PasaScopeUnsupportedOperationError
+        raise PasaScopeUnsupportedOperationError(
             "Audio ingestion is unsupported in live thin-client mode. "
             "Use local mode or backend processing queue."
         )
@@ -158,32 +158,32 @@ class HttpClinicalAdapter:
         new_text: str,
         new_speaker: str,
     ) -> dict[str, Any]:
-        from packages.tui.client import LinguaLensUnsupportedOperationError
-        raise LinguaLensUnsupportedOperationError(
+        from packages.tui.client import PasaScopeUnsupportedOperationError
+        raise PasaScopeUnsupportedOperationError(
             "In-place utterance editing is unsupported in live thin-client mode."
         )
 
     def auto_refine_speakers(self, transcript_id: str) -> dict[str, Any]:
-        from packages.tui.client import LinguaLensUnsupportedOperationError
-        raise LinguaLensUnsupportedOperationError(
+        from packages.tui.client import PasaScopeUnsupportedOperationError
+        raise PasaScopeUnsupportedOperationError(
             "Speaker auto-refinement is unsupported in live thin-client mode."
         )
 
     def swap_speakers(self, transcript_id: str, spk1: str = "CHI", spk2: str = "INV") -> dict[str, Any]:
-        from packages.tui.client import LinguaLensUnsupportedOperationError
-        raise LinguaLensUnsupportedOperationError(
+        from packages.tui.client import PasaScopeUnsupportedOperationError
+        raise PasaScopeUnsupportedOperationError(
             "Speaker swapping is unsupported in live thin-client mode."
         )
 
     def attest_transcript(self, transcript_id: str, therapist_name: str) -> dict[str, Any]:
-        payload = {"attested_by": therapist_name, "notes": "Attested via LinguaLens TUI"}
+        payload = {"attested_by": therapist_name, "notes": "Attested via PasaScope TUI"}
         return self._client._http_request("POST", f"/transcripts/{transcript_id}/attest", payload)
 
     def get_findings(self, session_id: str) -> dict[str, Any]:
-        from packages.tui.client import LinguaLensApiError
+        from packages.tui.client import PasaScopeApiError
         try:
             res = self._client._http_request("GET", f"/sessions/{session_id}/features")
-        except LinguaLensApiError as exc:
+        except PasaScopeApiError as exc:
             if getattr(exc, "status_code", None) == 404 or "not found" in str(exc).lower():
                 return {
                     "session_id": session_id,
@@ -284,11 +284,11 @@ class HttpClinicalAdapter:
         language_context: dict[str, Any] | None = None,
     ) -> dict[str, Any]:
         from packages.tui.validation import validate_child_input
-        from packages.tui.client import LinguaLensValidationError
+        from packages.tui.client import PasaScopeValidationError
         try:
             norm = validate_child_input(display_code, birth_year, birth_month, language_context)
         except ValueError as exc:
-            raise LinguaLensValidationError(str(exc)) from exc
+            raise PasaScopeValidationError(str(exc)) from exc
         return self._client._http_request("POST", "/api/v2/children", norm)
 
     def get_child(self, child_id: str) -> dict[str, Any]:
@@ -305,11 +305,11 @@ class HttpClinicalAdapter:
         status: str = "active",
     ) -> dict[str, Any]:
         from packages.tui.validation import validate_consent_input
-        from packages.tui.client import LinguaLensValidationError
+        from packages.tui.client import PasaScopeValidationError
         try:
             norm = validate_consent_input(child_id, purpose, scope_version, status)
         except ValueError as exc:
-            raise LinguaLensValidationError(str(exc)) from exc
+            raise PasaScopeValidationError(str(exc)) from exc
 
         clean_child_id = norm["child_id"]
         payload = {
@@ -346,11 +346,11 @@ class HttpClinicalAdapter:
         assigned_clinician_id: str | None = None,
     ) -> dict[str, Any]:
         from packages.tui.validation import validate_assessment_input
-        from packages.tui.client import LinguaLensValidationError
+        from packages.tui.client import PasaScopeValidationError
         try:
             norm = validate_assessment_input(child_id, purpose, assigned_clinician_id)
         except ValueError as exc:
-            raise LinguaLensValidationError(str(exc)) from exc
+            raise PasaScopeValidationError(str(exc)) from exc
 
         clean_child_id = norm["child_id"]
         payload: dict[str, Any] = {"purpose": norm["purpose"]}
@@ -359,10 +359,10 @@ class HttpClinicalAdapter:
         return self._client._http_request("POST", f"/api/v2/children/{clean_child_id}/assessments", payload)
 
     def list_assessments(self, child_id: str) -> list[dict[str, Any]]:
-        from packages.tui.client import LinguaLensApiError
+        from packages.tui.client import PasaScopeApiError
         res = self._client._http_request("GET", f"/api/v2/children/{child_id}/assessments")
         if not isinstance(res, list):
-            raise LinguaLensApiError(
+            raise PasaScopeApiError(
                 f"Malformed response from list_assessments: expected list, got {type(res).__name__}"
             )
         return res

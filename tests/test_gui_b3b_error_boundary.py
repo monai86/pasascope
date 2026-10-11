@@ -19,17 +19,17 @@ import tkinter as tk
 from typing import Any
 import pytest
 
-from packages.gui.app import LinguaLensGUIApp
+from packages.gui.app import PasaScopeGUIApp
 from packages.tui.client import (
-    LinguaLensApiError,
-    LinguaLensAuthError,
-    LinguaLensClient,
-    LinguaLensPermissionError,
-    LinguaLensServerError,
+    PasaScopeApiError,
+    PasaScopeAuthError,
+    PasaScopeClient,
+    PasaScopePermissionError,
+    PasaScopeServerError,
 )
 
 
-class FakeApiClient(LinguaLensClient):
+class FakeApiClient(PasaScopeClient):
     """Deterministic synthetic test client preventing accidental real HTTP calls."""
 
     def __init__(self) -> None:
@@ -121,7 +121,7 @@ def tk_root() -> tk.Tk:
     gc.collect()
 
 
-def _drain_async_queue(app: LinguaLensGUIApp) -> None:
+def _drain_async_queue(app: PasaScopeGUIApp) -> None:
     """Drain all pending callbacks on app._async_queue on the main thread."""
     while not app._async_queue.empty():
         try:
@@ -139,9 +139,9 @@ def _drain_async_queue(app: LinguaLensGUIApp) -> None:
 def test_startup_list_cases_failure_does_not_crash_app_constructor(tk_root: tk.Tk) -> None:
     """When list_cases fails during GUI startup, the constructor must not raise an unhandled error."""
     client = FakeApiClient()
-    client.list_cases_side_effect = LinguaLensServerError("Server error 500: Database unavailable.")
+    client.list_cases_side_effect = PasaScopeServerError("Server error 500: Database unavailable.")
 
-    app = LinguaLensGUIApp(tk_root, client=client)
+    app = PasaScopeGUIApp(tk_root, client=client)
 
     assert app.active_case_id is None
     assert app.active_session_id is None
@@ -161,9 +161,9 @@ def test_startup_session_fetch_failure_does_not_crash_app(tk_root: tk.Tk) -> Non
         "session_count": 1,
         "clinical_notes": "Initial intake",
     }]
-    client.list_sessions_side_effect = LinguaLensServerError("Server error 500: Session service timeout.")
+    client.list_sessions_side_effect = PasaScopeServerError("Server error 500: Session service timeout.")
 
-    app = LinguaLensGUIApp(tk_root, client=client)
+    app = PasaScopeGUIApp(tk_root, client=client)
 
     assert app.active_case_id == "case-b3b-001"
     assert app.active_session_id is None
@@ -175,9 +175,9 @@ def test_startup_session_fetch_failure_does_not_crash_app(tk_root: tk.Tk) -> Non
 def test_startup_401_triggers_auth_boundary(tk_root: tk.Tk, mock_msgbox: dict[str, list[tuple[str, str]]]) -> None:
     """When startup encounters HTTP 401, it routes to _handle_auth_error without crashing."""
     client = FakeApiClient()
-    client.list_cases_side_effect = LinguaLensAuthError("Authentication failed: HTTP 401 Session expired.")
+    client.list_cases_side_effect = PasaScopeAuthError("Authentication failed: HTTP 401 Session expired.")
 
-    app = LinguaLensGUIApp(tk_root, client=client)
+    app = PasaScopeGUIApp(tk_root, client=client)
 
     assert app.active_case_id is None
     assert app.active_session_id is None
@@ -195,11 +195,11 @@ def test_case_search_typing_failure_does_not_claim_no_matching_cases_and_does_no
         {"case_id": "case-002", "child_id": "Bob", "clinical_notes": "Second child"},
     ]
 
-    app = LinguaLensGUIApp(tk_root, client=client)
+    app = PasaScopeGUIApp(tk_root, client=client)
     app.active_case_id = "case-001"
 
     # Simulate network outage during search typing
-    client.list_cases_side_effect = LinguaLensApiError("API request failed: Connection reset.")
+    client.list_cases_side_effect = PasaScopeApiError("API request failed: Connection reset.")
 
     app.entry_case_search.delete(0, tk.END)
     app.entry_case_search.insert(0, "searching")
@@ -219,11 +219,11 @@ def test_refresh_cases_preserves_existing_rows_on_fetch_failure(tk_root: tk.Tk) 
         {"case_id": "case-keep-2", "child_id": "Child-2", "age_months": 48, "primary_language": "th"},
     ]
 
-    app = LinguaLensGUIApp(tk_root, client=client)
+    app = PasaScopeGUIApp(tk_root, client=client)
     assert len(app.tree_cases.get_children()) == 2
 
     # Break list_cases
-    client.list_cases_side_effect = LinguaLensServerError("HTTP 502 Bad Gateway")
+    client.list_cases_side_effect = PasaScopeServerError("HTTP 502 Bad Gateway")
 
     result = app._refresh_cases()
     assert result is False
@@ -237,7 +237,7 @@ def test_refresh_cases_distinguishes_empty_list_from_failure(tk_root: tk.Tk) -> 
     client = FakeApiClient()
     client.cases_to_return = []
 
-    app = LinguaLensGUIApp(tk_root, client=client)
+    app = PasaScopeGUIApp(tk_root, client=client)
     res = app._refresh_cases()
 
     assert res is True
@@ -249,9 +249,9 @@ def test_refresh_cases_distinguishes_empty_list_from_failure(tk_root: tk.Tk) -> 
 def test_retry_after_failure_recovers_cleanly(tk_root: tk.Tk) -> None:
     """After an initial failure, subsequent refresh when healthy restores normal GUI state."""
     client = FakeApiClient()
-    client.list_cases_side_effect = LinguaLensServerError("Transient failure")
+    client.list_cases_side_effect = PasaScopeServerError("Transient failure")
 
-    app = LinguaLensGUIApp(tk_root, client=client)
+    app = PasaScopeGUIApp(tk_root, client=client)
     assert app.active_case_id is None
 
     # Recover health
@@ -280,7 +280,7 @@ def test_refresh_all_data_does_not_report_success_while_children_pending(
     gate = threading.Event()
     client.list_children_event = gate
 
-    app = LinguaLensGUIApp(tk_root, client=client)
+    app = PasaScopeGUIApp(tk_root, client=client)
     mock_msgbox["showinfo"].clear()
 
     # Initiate refresh all
@@ -306,9 +306,9 @@ def test_refresh_all_data_reports_failure_when_children_fails_even_if_cases_sess
     """When cases/sessions succeed but children fails, overall success must NOT be reported."""
     client = FakeApiClient()
     client.cases_to_return = [{"case_id": "case-01", "child_id": "C-01"}]
-    client.list_children_side_effect = LinguaLensServerError("Children database unreachable")
+    client.list_children_side_effect = PasaScopeServerError("Children database unreachable")
 
-    app = LinguaLensGUIApp(tk_root, client=client)
+    app = PasaScopeGUIApp(tk_root, client=client)
     mock_msgbox["showinfo"].clear()
     mock_msgbox["showerror"].clear()
 
@@ -336,9 +336,9 @@ def test_refresh_all_data_reports_failure_when_transcript_fetch_fails(
         "session_date": "2026-09-01",
         "transcript_id": "tr-01",
     }]
-    client.get_transcript_side_effect = LinguaLensServerError("Transcript storage 500")
+    client.get_transcript_side_effect = PasaScopeServerError("Transcript storage 500")
 
-    app = LinguaLensGUIApp(tk_root, client=client)
+    app = PasaScopeGUIApp(tk_root, client=client)
     mock_msgbox["showinfo"].clear()
     mock_msgbox["showerror"].clear()
 
@@ -367,7 +367,7 @@ def test_case_switch_invalidates_session_context_when_session_fetch_fails(tk_roo
     }]
     client.transcripts_map["sess-A1"] = {"utterances": [{"speaker": "CHI", "text": "Hello from A"}]}
 
-    app = LinguaLensGUIApp(tk_root, client=client)
+    app = PasaScopeGUIApp(tk_root, client=client)
     assert app.active_case_id == "case-A"
     assert app.active_session_id == "sess-A1"
     assert app.active_transcript is not None
@@ -375,7 +375,7 @@ def test_case_switch_invalidates_session_context_when_session_fetch_fails(tk_roo
     # Now make list_sessions fail for case-B
     def failing_sessions(case_id: str) -> list[dict[str, Any]]:
         if case_id == "case-B":
-            raise LinguaLensServerError("Sessions offline for case-B")
+            raise PasaScopeServerError("Sessions offline for case-B")
         return client.sessions_map.get(case_id, [])
 
     client.list_sessions = failing_sessions  # type: ignore[assignment]
@@ -402,7 +402,7 @@ def test_session_switch_invalidates_transcript_when_transcript_fetch_fails(tk_ro
     ]
     client.transcripts_map["sess-01"] = {"utterances": [{"id": "u-01", "speaker": "CHI", "text": "Session 1 text"}]}
 
-    app = LinguaLensGUIApp(tk_root, client=client)
+    app = PasaScopeGUIApp(tk_root, client=client)
     # Select sess-01
     app.active_session_id = "sess-01"
     app._refresh_transcript_and_findings()
@@ -410,7 +410,7 @@ def test_session_switch_invalidates_transcript_when_transcript_fetch_fails(tk_ro
     assert app.active_transcript["utterances"][0]["text"] == "Session 1 text"
 
     # Now fail transcript for sess-02
-    client.get_transcript_side_effect = LinguaLensServerError("HTTP 500 transcript failure")
+    client.get_transcript_side_effect = PasaScopeServerError("HTTP 500 transcript failure")
 
     # Select sess-02
     app.active_session_id = "sess-02"
@@ -431,7 +431,7 @@ def test_unexpected_programming_error_is_not_masked_as_network_failure(tk_root: 
 
     client.list_cases = bug_in_code  # type: ignore[assignment]
 
-    app = LinguaLensGUIApp(tk_root, client=FakeApiClient())
+    app = PasaScopeGUIApp(tk_root, client=FakeApiClient())
     app.client = client
 
     # Calling _refresh_cases with a client raising TypeError must raise TypeError, NOT return False
@@ -444,7 +444,7 @@ def test_stale_async_children_refresh_does_not_overwrite_newer_session_generatio
     client = FakeApiClient()
     client.children_to_return = [{"id": "child-old", "display_code": "OLD-01"}]
 
-    app = LinguaLensGUIApp(tk_root, client=client)
+    app = PasaScopeGUIApp(tk_root, client=client)
     # Clear children tree
     for item in app.tree_children.get_children():
         app.tree_children.delete(item)

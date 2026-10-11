@@ -1,4 +1,4 @@
-"""Initial lingualens schema.
+"""Initial pasascope schema.
 
 Revision ID: 0001_initial_v2_schema
 Revises:

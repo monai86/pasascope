@@ -167,7 +167,7 @@ const renderSettingsPage = (searchParams?: Record<string, string>) =>
     ? renderAsyncPage(SettingsPage, { searchParams })
     : renderAsyncPage(SettingsPage);
 
-describe("lingualens pages", () => {
+describe("pasascope pages", () => {
   it("routes mock login by selected role without browser storage", () => {
     vi.stubGlobal("fetch", vi.fn(async (input: RequestInfo | URL) => {
       if (String(input).includes("/settings")) {
@@ -329,7 +329,7 @@ describe("lingualens pages", () => {
         invitation_status: "accepted",
         organization_id: "clinic_001",
         organizations: [
-          { organizationId: "clinic_001", label: "LinguaLens Clinic" },
+          { organizationId: "clinic_001", label: "PasaScope Clinic" },
         ],
       },
     }));
@@ -370,7 +370,7 @@ describe("lingualens pages", () => {
         membership_active: true,
         invitation_status: "accepted",
         organizations: [
-          { organizationId: "clinic_001", label: "LinguaLens Clinic" },
+          { organizationId: "clinic_001", label: "PasaScope Clinic" },
           { organizationId: "clinic_002", label: "North Review Clinic" },
         ],
       },
@@ -424,7 +424,7 @@ describe("lingualens pages", () => {
         membership_active: true,
         invitation_status: "accepted",
         organizations: [
-          { organizationId: "clinic_001", label: "LinguaLens Clinic" },
+          { organizationId: "clinic_001", label: "PasaScope Clinic" },
         ],
       },
     }));
@@ -480,7 +480,7 @@ describe("lingualens pages", () => {
         invitation_status: "accepted",
         organization_id: "clinic_001",
         organizations: [
-          { organizationId: "clinic_001", label: "LinguaLens Clinic", role: "org_admin" },
+          { organizationId: "clinic_001", label: "PasaScope Clinic", role: "org_admin" },
         ],
       },
     }));
@@ -520,7 +520,7 @@ describe("lingualens pages", () => {
         membership_active: true,
         invitation_status: "accepted",
         organizations: [
-          { organizationId: "clinic_001", label: "LinguaLens Clinic", role: "org_admin" },
+          { organizationId: "clinic_001", label: "PasaScope Clinic", role: "org_admin" },
           { organizationId: "clinic_002", label: "North Review Clinic", role: "org_admin" },
         ],
       },

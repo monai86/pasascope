@@ -3,7 +3,7 @@
 Date: 2026-06-29
 
 This is the shortest operator-facing checklist that stays inside the current
-first-launch plan for lingualens. It is not a new plan. It is the compressed
+first-launch plan for pasascope. It is not a new plan. It is the compressed
 execution path for the remaining work that cannot be finished by local code
 changes alone.
 
@@ -33,7 +33,7 @@ Detailed runbooks:
 
 ## What Is Already Recorded
 
-- Supabase organization: `LinguaLens`
+- Supabase organization: `PasaScope`
 - Organization ID: `whgbnlqvrgjodiquclnr`
 - Staging project ref: `cbhwxklvcpgizeqriqxi`
 - Production project ref: `rftslmbgbudqsypknzss`

@@ -1,6 +1,6 @@
-# lingualens Known Limitations
+# pasascope Known Limitations
 
-- **Decision-support only, not diagnostic**: lingualens is a research and education prototype, not a clinical diagnostic product. It does not provide automated diagnostic assertions.
+- **Decision-support only, not diagnostic**: pasascope is a research and education prototype, not a clinical diagnostic product. It does not provide automated diagnostic assertions.
 - **ASR is experimental**: Audio recording and ASR-to-draft-CHA translation are experimental and must not be used as direct clinical input.
 - **Basic CHAT format only**: CHAT import and export support basic header, speaker tier, and bullet timestamp structure.
 - **Not full TalkBank/CLAN-grade compatibility yet**: The parser does not validate full TalkBank/CLAN conventions.

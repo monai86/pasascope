@@ -1,7 +1,7 @@
 # Legacy ASD Pilot Backend API Contract
 
 > **Status:** This document describes the legacy `src/therapist_backend` API.
-> The canonical lingualens API is `apps/api`, exposes `/api/v1`, and
+> The canonical pasascope API is `apps/api`, exposes `/api/v1`, and
 > publishes its current OpenAPI contract at `/docs` when running. See
 > `apps/api/README.md` and `docs/PROJECT_SOURCE_OF_TRUTH.md`.
 

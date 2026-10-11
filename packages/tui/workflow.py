@@ -1,4 +1,4 @@
-"""Interactive 5-step clinical workflow controller for LinguaLens TUI."""
+"""Interactive 5-step clinical workflow controller for PasaScope TUI."""
 
 from __future__ import annotations
 
@@ -8,11 +8,11 @@ from rich.console import Console
 from rich.prompt import Prompt, Confirm
 
 from packages.tui.client import (
-    LinguaLensClient,
-    LinguaLensApiError,
-    LinguaLensAuthError,
-    LinguaLensPermissionError,
-    LinguaLensConflictError,
+    PasaScopeClient,
+    PasaScopeApiError,
+    PasaScopeAuthError,
+    PasaScopePermissionError,
+    PasaScopeConflictError,
 )
 from packages.tui.ui import (
     console,
@@ -29,7 +29,7 @@ from packages.tui.ui import (
 class WorkflowRunner:
     """Controls the interactive text-based session navigation."""
 
-    def __init__(self, client: LinguaLensClient):
+    def __init__(self, client: PasaScopeClient):
         self.client = client
         self.active_case_id: str | None = None
         self.active_session_id: str | None = None
@@ -74,14 +74,14 @@ class WorkflowRunner:
         if not child_id:
             return
 
-        from packages.tui.client import LinguaLensAuthError, LinguaLensPermissionError
+        from packages.tui.client import PasaScopeAuthError, PasaScopePermissionError
         try:
             self.active_child = self.client.get_child(child_id)
             self.active_child_id = child_id
-        except LinguaLensAuthError as exc:
+        except PasaScopeAuthError as exc:
             console.print(f"\n[bold red]🔒 Authentication Error: {exc}[/bold red]")
             self._handle_auth_error(exc)
-        except LinguaLensPermissionError as exc:
+        except PasaScopePermissionError as exc:
             console.print(f"\n[bold red]⛔ Permission Denied: {exc}[/bold red]")
         except Exception as exc:
             console.print(f"\n[bold red]⚠️ Failed to load child: {exc}[/bold red]")
@@ -123,12 +123,12 @@ class WorkflowRunner:
                 if route == "entry":
                     route = self._entry_menu()
                     if route == "exit":
-                        console.print("[yellow]Exiting LinguaLens TUI. Goodbye![/yellow]")
+                        console.print("[yellow]Exiting PasaScope TUI. Goodbye![/yellow]")
                         break
                 elif route == "cases":
                     action = self._cases_menu()
                     if action == "exit":
-                        console.print("[yellow]Exiting LinguaLens TUI. Goodbye![/yellow]")
+                        console.print("[yellow]Exiting PasaScope TUI. Goodbye![/yellow]")
                         break
                     elif action == "back":
                         route = "entry"
@@ -139,7 +139,7 @@ class WorkflowRunner:
                 elif route == "children":
                     action = self._children_menu()
                     if action == "exit":
-                        console.print("[yellow]Exiting LinguaLens TUI. Goodbye![/yellow]")
+                        console.print("[yellow]Exiting PasaScope TUI. Goodbye![/yellow]")
                         break
                     elif action == "back":
                         route = "entry"
@@ -157,7 +157,7 @@ class WorkflowRunner:
                         self.active_transcript = None
                     elif action == "exit":
                         break
-            except LinguaLensAuthError as exc:
+            except PasaScopeAuthError as exc:
                 console.print(f"\n[bold red]🔒 Authentication Error: {exc}[/bold red]")
                 console.print("[yellow]Session expired or invalid credentials. Please re-authenticate or sign-in again.[/yellow]")
                 self._handle_auth_error(exc)
@@ -165,14 +165,14 @@ class WorkflowRunner:
                 action = Prompt.ask("Press Enter to continue, or [Q] to quit", default="")
                 if action.lower() in ("q", "quit", "exit"):
                     break
-            except LinguaLensPermissionError as exc:
+            except PasaScopePermissionError as exc:
                 console.print(f"\n[bold red]⛔ Permission Denied: {exc}[/bold red]")
                 console.print("[yellow]You do not have permission to access this resource. Active session preserved.[/yellow]")
                 route = "entry"
                 action = Prompt.ask("Press Enter to continue, or [Q] to quit", default="")
                 if action.lower() in ("q", "quit", "exit"):
                     break
-            except LinguaLensApiError as exc:
+            except PasaScopeApiError as exc:
                 console.print(f"\n[bold red]⚠️ API Error: {exc}[/bold red]")
                 choice = Prompt.ask("Choose action: [R]etry / Continue, [B]ack to Main, or [Q]uit", default="b")
                 if choice.lower() in ("q", "quit", "exit"):
@@ -264,9 +264,9 @@ class WorkflowRunner:
                 language=lang,
                 notes=notes,
             )
-        except (LinguaLensAuthError, LinguaLensPermissionError):
+        except (PasaScopeAuthError, PasaScopePermissionError):
             raise
-        except LinguaLensApiError as exc:
+        except PasaScopeApiError as exc:
             console.print(f"[bold red]⚠️ Failed to create case: {exc}[/bold red]")
             Prompt.ask("Press Enter to continue")
             return
@@ -290,7 +290,7 @@ class WorkflowRunner:
         """Query authoritative consent history and resolve current state using latest-version-per-purpose."""
         try:
             history = self.client.list_consents(child_id)
-        except (LinguaLensAuthError, LinguaLensPermissionError):
+        except (PasaScopeAuthError, PasaScopePermissionError):
             raise
         except Exception:
             return "error", None
@@ -376,19 +376,19 @@ class WorkflowRunner:
             # Asynchronously refresh authoritative state
             try:
                 self._resolve_consent_state(self.active_child_id)
-            except LinguaLensAuthError:
+            except PasaScopeAuthError:
                 raise
-            except LinguaLensPermissionError as exc:
+            except PasaScopePermissionError as exc:
                 console.print(f"[bold yellow]⚠️ Consent recorded, but permission was denied to refresh history: {exc}[/bold yellow]")
             except Exception as exc:
                 console.print(f"[bold yellow]⚠️ Consent recorded, but failed to refresh history: {exc}[/bold yellow]")
 
-        except LinguaLensAuthError:
+        except PasaScopeAuthError:
             raise
-        except LinguaLensPermissionError as exc:
+        except PasaScopePermissionError as exc:
             console.print(f"[bold red]⛔ Permission Denied: {exc}[/bold red]")
             raise
-        except LinguaLensConflictError as exc:
+        except PasaScopeConflictError as exc:
             console.print(f"[bold red]⚠️ Consent Conflict (409): {exc}[/bold red]")
             self._resolve_consent_state(self.active_child_id)
         except Exception as exc:
@@ -533,12 +533,12 @@ class WorkflowRunner:
             self.active_session_id = None
             console.print(f"[bold green]✓ Assessment created successfully: {self.active_assessment_id}[/bold green]")
             Prompt.ask("Press Enter to continue")
-        except LinguaLensAuthError:
+        except PasaScopeAuthError:
             raise
-        except LinguaLensPermissionError as exc:
+        except PasaScopePermissionError as exc:
             console.print(f"[bold red]⛔ Permission Denied: {exc}[/bold red]")
             Prompt.ask("Press Enter to continue")
-        except LinguaLensConflictError as exc:
+        except PasaScopeConflictError as exc:
             console.print(f"[bold red]⚠️ Assessment Conflict (409): {exc}[/bold red]")
             self.active_assessment_id = None
             self.active_assessment = None
@@ -592,7 +592,7 @@ class WorkflowRunner:
             new_child = self.client.create_child(display_code, birth_year, birth_month, lang_ctx)
             console.print(f"[bold green]✓ Child profile created successfully: {new_child['id']}[/bold green]")
             self._set_active_child(new_child["id"])
-        except (LinguaLensAuthError, LinguaLensPermissionError):
+        except (PasaScopeAuthError, PasaScopePermissionError):
             raise
         except Exception as exc:
             console.print(f"[bold red]⚠️ Failed to create child: {exc}[/bold red]")
@@ -849,7 +849,7 @@ class WorkflowRunner:
         os.makedirs("reports", exist_ok=True)
 
         with open(out_path, "w", encoding="utf-8") as f:
-            f.write(f"# LinguaLens Clinical Progress Report\n\n")
+            f.write(f"# PasaScope Clinical Progress Report\n\n")
             f.write(f"- **Case ID:** {self.active_case_id}\n")
             f.write(f"- **Session ID:** {self.active_session_id}\n")
             f.write(f"- **Exported At:** 2026-08-16\n")

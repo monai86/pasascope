@@ -261,8 +261,8 @@ def render_assessment_v2_pdf(snapshot: dict[str, Any]) -> bytes | None:
     for candidate in font_candidates:
         if os.path.exists(candidate):
             try:
-                pdfmetrics.registerFont(TTFont("LinguaLensThai", candidate))
-                font_name = "LinguaLensThai"
+                pdfmetrics.registerFont(TTFont("PasaScopeThai", candidate))
+                font_name = "PasaScopeThai"
                 break
             except Exception:
                 continue
@@ -273,7 +273,7 @@ def render_assessment_v2_pdf(snapshot: dict[str, Any]) -> bytes | None:
 
     # Title & Header
     pdf.setFont(font_name, 14)
-    pdf.drawString(48, height - 48, f"LinguaLens Assessment Report - {snapshot.get('child_code')}")
+    pdf.drawString(48, height - 48, f"PasaScope Assessment Report - {snapshot.get('child_code')}")
     pdf.setFont(font_name, 9)
     pdf.drawString(48, height - 64, f"Report ID: {snapshot.get('report_id')} | Hash: {snapshot.get('snapshot_hash', '')[:16]}...")
     pdf.drawString(48, height - 76, f"Signed By: {snapshot.get('signed_by')} on {snapshot.get('signed_at')}")
@@ -297,7 +297,7 @@ def render_assessment_v2_pdf(snapshot: dict[str, Any]) -> bytes | None:
 
     # Footer Disclaimer
     pdf.setFont(font_name, 8)
-    pdf.drawString(48, 30, "Non-diagnostic clinical research prototype. LinguaLens does not diagnose ASD.")
+    pdf.drawString(48, 30, "Non-diagnostic clinical research prototype. PasaScope does not diagnose ASD.")
     pdf.save()
 
     return buffer.getvalue()

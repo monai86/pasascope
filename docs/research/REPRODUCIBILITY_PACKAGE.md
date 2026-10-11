@@ -1,4 +1,4 @@
-# LinguaLens Scientific & Software Reproducibility Package
+# PasaScope Scientific & Software Reproducibility Package
 
 **Package Version:** 2.0 (Assessment V2 V1 Deliverable)  
 **Date:** 2026-09-12  
@@ -9,9 +9,9 @@
 
 ## 1. Paper-to-Feature Traceability Matrix
 
-Every feature, boundary rule, and clinical safety constraint implemented in LinguaLens is directly traceable to peer-reviewed scientific literature verified from primary PDF sources at `/Users/porschecaa/Desktop/Paper-ASD/`:
+Every feature, boundary rule, and clinical safety constraint implemented in PasaScope is directly traceable to peer-reviewed scientific literature verified from primary PDF sources at `/Users/porschecaa/Desktop/Paper-ASD/`:
 
-| Ref Key | Full Citation | DOI / Identifier | Verified Source Location | Primary Clinical Construct | Implementation in LinguaLens | Thai Clinical Transfer Boundary |
+| Ref Key | Full Citation | DOI / Identifier | Verified Source Location | Primary Clinical Construct | Implementation in PasaScope | Thai Clinical Transfer Boundary |
 |---|---|---|---|---|---|---|
 | `RBSTR768` | Assaf et al. (2025). *Screening autism spectrum disorder in children using machine learning on speech transcripts*. Sci Rep. | `10.1038/s41598-025-86518-5` | pp. 1–8; Table 1 (pp. 2–3) | Transcript linguistic markers (MLU, TTR, vocabulary size). | Feature extractors `mluw`, `ttr`, `vocabulary_size` in `evidence.py`. | English inflectional morphemes do not apply to Thai; implemented PyThaiNLP word-level tokenization. |
 | `27IITKNS` | Eni et al. (2025). *Reliably quantifying the severity of social symptoms in children with autism using ASDSpeech*. Transl Psychiatry. | `10.1038/s41398-024-03204-1` | pp. 1–10; Cohort p. 2; ADOS validation p. 5 | Continuous acoustic symptom tracking over longitudinal sessions. | Continuous numeric delta evaluation in `longitudinal.py` without diagnostic bucketing. | Cross-linguistic acoustic norms require native Thai acoustic calibration. |

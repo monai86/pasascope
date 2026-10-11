@@ -381,7 +381,7 @@ describe("cases workspace", () => {
       aal: "aal2",
     }));
     act(() => {
-      window.dispatchEvent(new CustomEvent("lingualens:mock-access-session-changed"));
+      window.dispatchEvent(new CustomEvent("pasascope:mock-access-session-changed"));
     });
 
     expect(getRequestedOrganizationIds(vi.mocked(fetch), "/cases/case_demo_001/care-team")).toEqual([]);

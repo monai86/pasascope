@@ -1,4 +1,4 @@
-# Responsive web and PWA only for lingualens
+# Responsive web and PWA only for pasascope
 
 ## Status
 
@@ -8,7 +8,7 @@ Accepted
 
 The repository previously explored Vite, Capacitor, and native-shell paths for a
 therapist application. The maintained product surface has since converged on the
-Next.js lingualens in `apps/pasascope-app/`, backed by the FastAPI
+Next.js pasascope in `apps/pasascope-app/`, backed by the FastAPI
 boundary in `apps/api/`.
 
 Production work now needs focus on tenant isolation, authentication, private
@@ -18,7 +18,7 @@ increase clinical safety review scope.
 
 ## Decision
 
-lingualens will be delivered as responsive web/PWA only.
+pasascope will be delivered as responsive web/PWA only.
 
 The canonical frontend remains:
 

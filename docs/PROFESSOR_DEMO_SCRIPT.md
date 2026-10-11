@@ -1,6 +1,6 @@
 # Professor Demo Script
 
-Audience: advisor/professor review of the lingualens local MVP.
+Audience: advisor/professor review of the pasascope local MVP.
 
 Clinical boundary: this is a research and education prototype. It supports therapist review, report drafting, and workflow demonstration only. It does not diagnose ASD, does not show ASD probability, and does not replace clinician judgment.
 

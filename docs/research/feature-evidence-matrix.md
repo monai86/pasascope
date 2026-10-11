@@ -1,9 +1,9 @@
-# LinguaLens Research Inventory & Feature-Evidence Matrix
+# PasaScope Research Inventory & Feature-Evidence Matrix
 
 **Version:** 2.0 (Assessment V2 E1 Comprehensive Specification)  
 **Date:** 2026-09-12  
 **Target Audience:** Clinical Researchers, Speech-Language Pathologists, Machine Learning Engineers, API Architects  
-**Clinical Safety Boundary:** LinguaLens is a research and educational prototype for speech-language therapists. It is **not a diagnostic instrument**, has **no automated ASD diagnosis or clinical validation**, and must strictly decouple measured numeric changes from clinician-authored clinical impressions. If any evidence source or quality requirement is not met, the system must return explicit `unavailable` or `insufficient_data` states rather than simulating or imputing values.
+**Clinical Safety Boundary:** PasaScope is a research and educational prototype for speech-language therapists. It is **not a diagnostic instrument**, has **no automated ASD diagnosis or clinical validation**, and must strictly decouple measured numeric changes from clinician-authored clinical impressions. If any evidence source or quality requirement is not met, the system must return explicit `unavailable` or `insufficient_data` states rather than simulating or imputing values.
 
 ---
 

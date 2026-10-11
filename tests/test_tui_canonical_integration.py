@@ -1,4 +1,4 @@
-"""Canonical integration tests connecting LinguaLensClient to FastAPI Assessment V2 routes.
+"""Canonical integration tests connecting PasaScopeClient to FastAPI Assessment V2 routes.
 
 Verifies end-to-end routing, Pydantic schema validation, domain consent gating,
 detail route semantics, error status propagation, and zero mock mutation.
@@ -41,12 +41,12 @@ from app.assessment_v2.domain.models import (
 from app.assessment_v2.services import ClinicalPolicyError
 from app.main import app
 from packages.tui.client import (
-    LinguaLensClient,
-    LinguaLensApiError,
-    LinguaLensAuthError,
-    LinguaLensConflictError,
-    LinguaLensPermissionError,
-    LinguaLensValidationError,
+    PasaScopeClient,
+    PasaScopeApiError,
+    PasaScopeAuthError,
+    PasaScopeConflictError,
+    PasaScopePermissionError,
+    PasaScopeValidationError,
 )
 
 
@@ -193,7 +193,7 @@ def canonical_client():
     service = InMemoryAssessmentService()
     app.dependency_overrides[get_assessment_service] = lambda: service
     with TestClient(app) as test_client:
-        client = LinguaLensClient(base_url="http://testserver/api/v1", mock_mode=False)
+        client = PasaScopeClient(base_url="http://testserver/api/v1", mock_mode=False)
         client._opener = urllib.request.build_opener(FastAPITransportHandler(test_client))
         try:
             yield client, service
@@ -231,7 +231,7 @@ def test_canonical_child_lifecycle(canonical_client):
     assert all_children[0]["id"] == "child_001"
 
     # 5. Nonexistent child returns 404
-    with pytest.raises(LinguaLensApiError) as exc_info:
+    with pytest.raises(PasaScopeApiError) as exc_info:
         client.get_child("child_nonexistent")
     assert "404" in str(exc_info.value)
 
@@ -285,8 +285,8 @@ def test_canonical_consent_lifecycle_and_withdrawn_semantics(canonical_client):
     # Verify active consent is now None because latest is withdrawn!
     assert client.get_active_consent(child_id) is None
 
-    # 5. Creating a new assessment now MUST fail with LinguaLensConflictError (HTTP 409)
-    with pytest.raises(LinguaLensConflictError) as exc_info:
+    # 5. Creating a new assessment now MUST fail with PasaScopeConflictError (HTTP 409)
+    with pytest.raises(PasaScopeConflictError) as exc_info:
         client.create_assessment(child_id, purpose="initial")
     assert "409" in str(exc_info.value) or "conflict" in str(exc_info.value).lower()
 
@@ -314,13 +314,13 @@ def test_canonical_assessment_detail_and_list(canonical_client):
     assert asmts[0]["id"] == asmt_id
 
     # 3. Not found detail route returns HTTP 404
-    with pytest.raises(LinguaLensApiError) as exc_info:
+    with pytest.raises(PasaScopeApiError) as exc_info:
         client.get_assessment("asmt_nonexistent")
     assert "404" in str(exc_info.value)
 
 
 def test_client_create_child_validation_error_fails_closed_zero_dispatch(canonical_client, monkeypatch):
-    """Client-side validation rejects invalid intake input immediately with LinguaLensValidationError and zero network dispatch."""
+    """Client-side validation rejects invalid intake input immediately with PasaScopeValidationError and zero network dispatch."""
     client, service = canonical_client
 
     # Spy on transport dispatch to prove zero HTTP requests are dispatched
@@ -333,11 +333,11 @@ def test_client_create_child_validation_error_fails_closed_zero_dispatch(canonic
 
     monkeypatch.setattr(client, "_http_request", spy_http_request)
 
-    # Invalid birth month (13) must raise LinguaLensValidationError specifically
-    with pytest.raises(LinguaLensValidationError) as exc_info:
+    # Invalid birth month (13) must raise PasaScopeValidationError specifically
+    with pytest.raises(PasaScopeValidationError) as exc_info:
         client.create_child("INV-01", birth_year=2021, birth_month=13)
 
-    assert exc_info.value.__class__ is LinguaLensValidationError
+    assert exc_info.value.__class__ is PasaScopeValidationError
     assert str(exc_info.value) == "birth_month must be between 1 and 12"
 
     # Verify zero network transport dispatch (zero POST calls)
@@ -363,11 +363,11 @@ def test_canonical_backend_validation_error_422_rejection(canonical_client):
     initial_service_children = len(service.children)
     initial_mock_children = len(client._mock_data.get("children", []))
 
-    # Expect LinguaLensApiError with HTTP 422 status mapping
-    with pytest.raises(LinguaLensApiError) as exc_info:
+    # Expect PasaScopeApiError with HTTP 422 status mapping
+    with pytest.raises(PasaScopeApiError) as exc_info:
         client._http_request("POST", "/api/v2/children", malformed_payload)
 
-    assert exc_info.value.__class__ is LinguaLensApiError
+    assert exc_info.value.__class__ is PasaScopeApiError
     assert "422" in str(exc_info.value)
 
     # Verify no child was created in backend service or repository state
@@ -384,7 +384,7 @@ def test_canonical_absent_consent_blocks_assessment_creation(canonical_client):
 
     # Child exists, but no consent recorded
     assert client.get_active_consent(child_id) is None
-    with pytest.raises(LinguaLensConflictError) as exc_info:
+    with pytest.raises(PasaScopeConflictError) as exc_info:
         client.create_assessment(child_id, purpose="initial")
     assert "409" in str(exc_info.value) or "conflict" in str(exc_info.value).lower()
 
@@ -402,7 +402,7 @@ def test_canonical_auth_and_permission_errors_preserve_state(canonical_client):
         raise ClinicalPolicyError("unauthorized", 401, "Session expired or invalid token.")
 
     service.list_children = raise_401  # type: ignore[assignment]
-    with pytest.raises(LinguaLensAuthError):
+    with pytest.raises(PasaScopeAuthError):
         client.list_children()
     assert client._mock_data == initial_mock_state
 
@@ -411,7 +411,7 @@ def test_canonical_auth_and_permission_errors_preserve_state(canonical_client):
         raise ClinicalPolicyError("forbidden", 403, "Action forbidden for current role.")
 
     service.list_children = raise_403  # type: ignore[assignment]
-    with pytest.raises(LinguaLensPermissionError):
+    with pytest.raises(PasaScopePermissionError):
         client.list_children()
     assert client._mock_data == initial_mock_state
 
@@ -470,7 +470,7 @@ def test_canonical_consent_versioning_per_purpose_and_child_isolation(canonical_
 
 def test_client_audio_waveform_peaks_and_playback_grant_in_memory():
     """Verify in-memory client adapter handles peaks and playback grant with validation."""
-    client = LinguaLensClient(mock_mode=True, seed_demo=True)
+    client = PasaScopeClient(mock_mode=True, seed_demo=True)
 
     # 1. Waveform peaks returns 50 bytes of binary samples
     peaks = client.get_waveform_peaks("sess-demo-101")
@@ -485,7 +485,7 @@ def test_client_audio_waveform_peaks_and_playback_grant_in_memory():
     assert grant["audio_sha256"].startswith("mock_sha256_")
 
     # 3. Nonexistent session raises error
-    with pytest.raises(LinguaLensApiError) as exc_info:
+    with pytest.raises(PasaScopeApiError) as exc_info:
         client.get_playback_grant("nonexistent_session")
     assert "not found" in str(exc_info.value).lower()
 

@@ -285,7 +285,7 @@ class InMemoryClinicalAdapter:
         birth_year_month: str | None = None,
         primary_language: str | None = None,
     ) -> dict[str, Any]:
-        from packages.tui.client import LinguaLensApiError
+        from packages.tui.client import PasaScopeApiError
 
         legacy_shape = (
             child_id is not None
@@ -298,7 +298,7 @@ class InMemoryClinicalAdapter:
             legacy_birth_month = birth_year_month if birth_year_month is not None else age_months
             legacy_language = primary_language if primary_language is not None else language
             if not isinstance(legacy_child_id, str) or not isinstance(legacy_birth_month, str):
-                raise LinguaLensApiError(
+                raise PasaScopeApiError(
                     "Legacy case creation requires child_id and birth_year_month; no age conversion was performed."
                 )
             return self._create_case_from_birth_year_month(
@@ -309,13 +309,13 @@ class InMemoryClinicalAdapter:
             )
 
         if not isinstance(child_code, str) or not child_code.strip():
-            raise LinguaLensApiError("Case creation requires a non-empty child_code.")
+            raise PasaScopeApiError("Case creation requires a non-empty child_code.")
         if not isinstance(age_months, int) or isinstance(age_months, bool) or not 0 <= age_months <= 240:
-            raise LinguaLensApiError("Case creation requires age_months as an integer from 0 through 240.")
+            raise PasaScopeApiError("Case creation requires age_months as an integer from 0 through 240.")
         if not isinstance(language, str) or not language.strip():
-            raise LinguaLensApiError("Case creation requires a non-empty language.")
+            raise PasaScopeApiError("Case creation requires a non-empty language.")
         if not isinstance(notes, str):
-            raise LinguaLensApiError("Case creation notes must be text.")
+            raise PasaScopeApiError("Case creation notes must be text.")
 
         new_case = {
             "case_id": f"case-local-{len(self._mock_data['cases']) + 1:03d}",
@@ -338,7 +338,7 @@ class InMemoryClinicalAdapter:
         primary_language: str,
         notes: str,
     ) -> dict[str, Any]:
-        from packages.tui.client import LinguaLensApiError
+        from packages.tui.client import PasaScopeApiError
         from packages.tui.validation import calculate_age_in_months
 
         calc_age: int | None = None
@@ -348,7 +348,7 @@ class InMemoryClinicalAdapter:
         elif birth_year_month.isdigit():
             calc_age = int(birth_year_month)
         else:
-            raise LinguaLensApiError(
+            raise PasaScopeApiError(
                 "Invalid birth_year_month; expected YYYY-MM with a month from 01 through 12."
             )
         new_case = {
@@ -369,12 +369,12 @@ class InMemoryClinicalAdapter:
         return new_case
 
     def get_session_detail(self, session_id: str) -> dict[str, Any]:
-        from packages.tui.client import LinguaLensApiError
+        from packages.tui.client import PasaScopeApiError
         for s_list in self._mock_data["sessions"].values():
             for s in s_list:
                 if s.get("session_id") == session_id:
                     return s
-        raise LinguaLensApiError(f"Session '{session_id}' not found.")
+        raise PasaScopeApiError(f"Session '{session_id}' not found.")
 
     def list_sessions(self, case_id: str) -> list[dict[str, Any]]:
         return self._mock_data["sessions"].get(case_id, [])
@@ -800,11 +800,11 @@ class InMemoryClinicalAdapter:
         language_context: dict[str, Any] | None = None,
     ) -> dict[str, Any]:
         from packages.tui.validation import validate_child_input
-        from packages.tui.client import LinguaLensValidationError
+        from packages.tui.client import PasaScopeValidationError
         try:
             norm = validate_child_input(display_code, birth_year, birth_month, language_context)
         except ValueError as exc:
-            raise LinguaLensValidationError(str(exc)) from exc
+            raise PasaScopeValidationError(str(exc)) from exc
 
         if "children" not in self._mock_data:
             self._mock_data["children"] = []
@@ -820,11 +820,11 @@ class InMemoryClinicalAdapter:
         return new_child
 
     def get_child(self, child_id: str) -> dict[str, Any]:
-        from packages.tui.client import LinguaLensApiError
+        from packages.tui.client import PasaScopeApiError
         for c in self._mock_data.get("children", []):
             if c.get("id") == child_id or c.get("display_code") == child_id:
                 return c
-        raise LinguaLensApiError(f"Child '{child_id}' not found.")
+        raise PasaScopeApiError(f"Child '{child_id}' not found.")
 
     def list_children(self) -> list[dict[str, Any]]:
         return list(self._mock_data.get("children", []))
@@ -837,11 +837,11 @@ class InMemoryClinicalAdapter:
         status: str = "active",
     ) -> dict[str, Any]:
         from packages.tui.validation import validate_consent_input
-        from packages.tui.client import LinguaLensValidationError
+        from packages.tui.client import PasaScopeValidationError
         try:
             norm = validate_consent_input(child_id, purpose, scope_version, status)
         except ValueError as exc:
-            raise LinguaLensValidationError(str(exc)) from exc
+            raise PasaScopeValidationError(str(exc)) from exc
 
         clean_child_id = norm["child_id"]
         # In mock mode, verify child exists first
@@ -903,29 +903,29 @@ class InMemoryClinicalAdapter:
             validate_assessment_input,
         )
         from packages.tui.client import (
-            LinguaLensApiError,
-            LinguaLensConflictError,
-            LinguaLensValidationError,
+            PasaScopeApiError,
+            PasaScopeConflictError,
+            PasaScopeValidationError,
         )
 
         try:
             norm = validate_assessment_input(child_id, purpose, assigned_clinician_id)
         except ValueError as exc:
-            raise LinguaLensValidationError(str(exc)) from exc
+            raise PasaScopeValidationError(str(exc)) from exc
 
         clean_child_id = norm["child_id"]
         child = self.get_child(clean_child_id)
 
         active_consent = self.get_active_consent(clean_child_id)
         if not active_consent:
-            raise LinguaLensConflictError("Active clinical-assessment consent is required.")
+            raise PasaScopeConflictError("Active clinical-assessment consent is required.")
 
         try:
             age_months = calculate_age_in_months(
                 child["birth_year"], child["birth_month"], current_date=self._get_now()
             )
         except ValueError as exc:
-            raise LinguaLensApiError(str(exc)) from exc
+            raise PasaScopeApiError(str(exc)) from exc
 
         child_lang = child.get("language_context")
         if isinstance(child_lang, dict):
@@ -955,12 +955,12 @@ class InMemoryClinicalAdapter:
         return list(self._mock_data.get("assessments", {}).get(child_id, []))
 
     def get_assessment(self, assessment_id: str) -> dict[str, Any]:
-        from packages.tui.client import LinguaLensApiError
+        from packages.tui.client import PasaScopeApiError
         for child_asmts in self._mock_data.get("assessments", {}).values():
             for a in child_asmts:
                 if a.get("id") == assessment_id:
                     return a
-        raise LinguaLensApiError(f"Assessment '{assessment_id}' not found.")
+        raise PasaScopeApiError(f"Assessment '{assessment_id}' not found.")
 
     def get_waveform_peaks(self, session_id: str) -> bytes:
         import struct
@@ -969,7 +969,7 @@ class InMemoryClinicalAdapter:
         return struct.pack(f"{len(samples)}b", *samples)
 
     def get_playback_grant(self, session_id: str) -> dict[str, Any]:
-        from packages.tui.client import LinguaLensApiError
+        from packages.tui.client import PasaScopeApiError
         found = False
         for s_list in self._mock_data.get("sessions", {}).values():
             for s in s_list:
@@ -977,7 +977,7 @@ class InMemoryClinicalAdapter:
                     found = True
                     break
         if not found:
-            raise LinguaLensApiError(f"Session '{session_id}' not found.")
+            raise PasaScopeApiError(f"Session '{session_id}' not found.")
         return {
             "playback_url": f"/api/v1/audio/{session_id}_mock/file",
             "expires_at": self._get_now().isoformat(),

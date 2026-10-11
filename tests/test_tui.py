@@ -1,4 +1,4 @@
-"""Unit tests for LinguaLens Interactive Terminal UI."""
+"""Unit tests for PasaScope Interactive Terminal UI."""
 
 from __future__ import annotations
 
@@ -6,11 +6,11 @@ import os
 from pathlib import Path
 import pytest
 
-from packages.tui.client import LinguaLensClient
+from packages.tui.client import PasaScopeClient
 
 
 def test_tui_client_cases_and_sessions():
-    client = LinguaLensClient(mock_mode=True)
+    client = PasaScopeClient(mock_mode=True)
     
     # 1. Clean default starts empty
     cases = client.list_cases()
@@ -40,7 +40,7 @@ def test_tui_client_cases_and_sessions():
 
 
 def test_tui_transcript_ingestion_and_review():
-    client = LinguaLensClient(mock_mode=True)
+    client = PasaScopeClient(mock_mode=True)
     session_id = "sess-test-888"
 
     raw_dialogue = (
@@ -69,7 +69,7 @@ def test_tui_transcript_ingestion_and_review():
 
 
 def test_tui_findings_and_report_signoff(tmp_path: Path):
-    client = LinguaLensClient(mock_mode=True)
+    client = PasaScopeClient(mock_mode=True)
     session_id = "sess-test-999"
 
     # 1. Before ingestion: No fake findings!
@@ -131,7 +131,7 @@ def test_tui_audio_ingestion_and_acoustic_features(tmp_path: Path, monkeypatch):
         )
 
     monkeypatch.setattr(pipeline, "audio_to_cha", fake_audio_to_cha)
-    client = LinguaLensClient(mock_mode=True)
+    client = PasaScopeClient(mock_mode=True)
     session_id = "sess-audio-123"
     dummy_wav = tmp_path / "sample.wav"
     dummy_wav.write_bytes(b"RIFFdummyWAVEfmt ")
@@ -160,7 +160,7 @@ def test_tui_audio_ingestion_failure_raises_instead_of_fabricating(tmp_path: Pat
         raise RuntimeError("decoder crashed")
 
     monkeypatch.setattr(pipeline, "audio_to_cha", broken_audio_to_cha)
-    client = LinguaLensClient(mock_mode=True)
+    client = PasaScopeClient(mock_mode=True)
     before = copy.deepcopy(client._mock_data)
     dummy_wav = tmp_path / "broken.wav"
     dummy_wav.write_bytes(b"RIFFdummyWAVEfmt ")
@@ -173,7 +173,7 @@ def test_tui_audio_ingestion_failure_raises_instead_of_fabricating(tmp_path: Pat
 
 
 def test_text_only_findings_have_no_acoustic_or_invented_values():
-    client = LinguaLensClient(mock_mode=True)
+    client = PasaScopeClient(mock_mode=True)
     client.ingest_transcript_text("sess-text-001", "*INV:\tเล่นอะไรดี .\n*CHI:\txxx .\n*CHI:\tเล่น รถ .\n")
 
     findings = client.get_findings("sess-text-001")
@@ -188,10 +188,10 @@ def test_text_only_findings_have_no_acoustic_or_invented_values():
 
 
 from packages.tui.client import (
-    LinguaLensClient,
-    LinguaLensApiError,
-    LinguaLensConflictError,
-    LinguaLensUnsupportedOperationError,
+    PasaScopeClient,
+    PasaScopeApiError,
+    PasaScopeConflictError,
+    PasaScopeUnsupportedOperationError,
 )
 import copy
 
@@ -224,15 +224,15 @@ LIVE_OPERATIONS = [
 @pytest.mark.parametrize("op_name,op_func", LIVE_OPERATIONS)
 def test_live_api_errors_never_fall_back_to_local_mock_state(op_name, op_func, monkeypatch):
     """Every live operation independently raises on network/server error and preserves local state."""
-    client = LinguaLensClient(mock_mode=False, seed_demo=True)
+    client = PasaScopeClient(mock_mode=False, seed_demo=True)
     initial_mock_state = copy.deepcopy(client._mock_data)
 
     def fail_request(*args, **kwargs):
-        raise LinguaLensApiError("API request failed: offline")
+        raise PasaScopeApiError("API request failed: offline")
 
     monkeypatch.setattr(client, "_http_request", fail_request)
 
-    with pytest.raises(LinguaLensApiError):
+    with pytest.raises(PasaScopeApiError):
         op_func(client)
 
     # Assert entire mock state is completely untouched and identical
@@ -250,14 +250,14 @@ LOCAL_ONLY_UNSUPPORTED_OPERATIONS = [
 @pytest.mark.parametrize("op_name,op_func", LOCAL_ONLY_UNSUPPORTED_OPERATIONS)
 def test_live_client_rejects_unsupported_local_only_operations(op_name, op_func, tmp_path):
     """When mock_mode=False, operations without backend API equivalents must fail explicitly before mutation."""
-    client = LinguaLensClient(mock_mode=False, seed_demo=True)
+    client = PasaScopeClient(mock_mode=False, seed_demo=True)
     initial_mock_state = copy.deepcopy(client._mock_data)
 
     # Create dummy audio file for ingest_audio_file
     fake_wav = tmp_path / "fake.wav"
     fake_wav.write_bytes(b"RIFFdummyWAVEfmt ")
 
-    with pytest.raises(LinguaLensUnsupportedOperationError) as exc_info:
+    with pytest.raises(PasaScopeUnsupportedOperationError) as exc_info:
         op_func(client, tmp_path)
 
     assert "unsupported" in str(exc_info.value).lower() or "local mode" in str(exc_info.value).lower()
@@ -267,7 +267,7 @@ def test_live_client_rejects_unsupported_local_only_operations(op_name, op_func,
 def test_workflow_runner_recovers_from_api_error_in_main_loop(monkeypatch):
     """Verify that an API error inside WorkflowRunner.start() does not abort the loop without recovery."""
     from packages.tui.workflow import WorkflowRunner
-    client = LinguaLensClient(mock_mode=False)
+    client = PasaScopeClient(mock_mode=False)
     runner = WorkflowRunner(client)
 
     calls = 0
@@ -275,7 +275,7 @@ def test_workflow_runner_recovers_from_api_error_in_main_loop(monkeypatch):
         nonlocal calls
         calls += 1
         if calls == 1:
-            raise LinguaLensApiError("API service unreachable")
+            raise PasaScopeApiError("API service unreachable")
         return []
 
     monkeypatch.setattr(client, "list_cases", failing_list_cases)
@@ -285,15 +285,15 @@ def test_workflow_runner_recovers_from_api_error_in_main_loop(monkeypatch):
     inputs = iter(["", "q"])
     monkeypatch.setattr("rich.prompt.Prompt.ask", lambda *args, **kwargs: next(inputs))
 
-    # Should not raise LinguaLensApiError out of start()
+    # Should not raise PasaScopeApiError out of start()
     runner.start()
 
 
 def test_workflow_runner_handles_auth_error_with_reauth_guidance(monkeypatch):
     """Verify that an HTTP 401 auth error inside WorkflowRunner provides explicit sign-in/re-auth guidance."""
     from packages.tui.workflow import WorkflowRunner
-    from packages.tui.client import LinguaLensAuthError
-    client = LinguaLensClient(mock_mode=False)
+    from packages.tui.client import PasaScopeAuthError
+    client = PasaScopeClient(mock_mode=False)
     runner = WorkflowRunner(client)
 
     calls = 0
@@ -301,7 +301,7 @@ def test_workflow_runner_handles_auth_error_with_reauth_guidance(monkeypatch):
         nonlocal calls
         calls += 1
         if calls == 1:
-            raise LinguaLensAuthError("Authentication failed: HTTP 401 Session expired or invalid token.")
+            raise PasaScopeAuthError("Authentication failed: HTTP 401 Session expired or invalid token.")
         return []
 
     monkeypatch.setattr(client, "list_cases", auth_failed_list_cases)
@@ -322,7 +322,7 @@ def test_workflow_runner_handles_auth_error_with_reauth_guidance(monkeypatch):
 
 def test_tui_client_v2_mock_stage1_flow():
     """Verify Stage 1 V2 mock mode operations: child creation, consent tracking, and gated assessment."""
-    client = LinguaLensClient(mock_mode=True)
+    client = PasaScopeClient(mock_mode=True)
 
     # 1. Starts empty
     assert client.list_children() == []
@@ -347,8 +347,8 @@ def test_tui_client_v2_mock_stage1_flow():
     fetched = client.get_child(child_id)
     assert fetched["id"] == child_id
 
-    # 3. Create assessment without consent fails with LinguaLensConflictError
-    with pytest.raises(LinguaLensConflictError):
+    # 3. Create assessment without consent fails with PasaScopeConflictError
+    with pytest.raises(PasaScopeConflictError):
         client.create_assessment(child_id, purpose="initial")
 
     # 4. Record consent
@@ -386,8 +386,8 @@ def test_tui_client_v2_mock_stage1_flow():
     assert detail["id"] == assessment["id"]
     assert detail["child_id"] == child_id
 
-    # 7. Nonexistent assessment raises LinguaLensApiError
-    with pytest.raises(LinguaLensApiError):
+    # 7. Nonexistent assessment raises PasaScopeApiError
+    with pytest.raises(PasaScopeApiError):
         client.get_assessment("asmt_nonexistent")
 
     # 8. Record consent withdrawal and verify active consent becomes None
@@ -401,7 +401,7 @@ def test_tui_client_v2_mock_stage1_flow():
     assert client.get_active_consent(child_id) is None
 
     # Creating another assessment now fails due to withdrawn consent
-    with pytest.raises(LinguaLensConflictError):
+    with pytest.raises(PasaScopeConflictError):
         client.create_assessment(child_id, purpose="developmental_follow_up")
 
 
@@ -415,7 +415,7 @@ def test_mock_consent_versioning_per_purpose_and_child_isolation() -> None:
     4. Child 1: clinical active -> version 3 (clinical sequence: 1 -> 2 -> 3)
     Verify active consent derivation and child isolation.
     """
-    client = LinguaLensClient(base_url="http://localhost:8000", mock_mode=True)
+    client = PasaScopeClient(base_url="http://localhost:8000", mock_mode=True)
     child_1 = "child_alpha"
     child_2 = "child_beta"
     client.create_child(child_1, 2021, 6, {"primary": "th"})
@@ -463,9 +463,9 @@ def test_mock_consent_versioning_per_purpose_and_child_isolation() -> None:
 def test_tui_child_intake_and_selection():
     """WorkflowRunner tracks active_child_id and flushes context on switch."""
     from packages.tui.workflow import WorkflowRunner
-    from packages.tui.client import LinguaLensClient
+    from packages.tui.client import PasaScopeClient
 
-    client = LinguaLensClient(mock_mode=True)
+    client = PasaScopeClient(mock_mode=True)
     runner = WorkflowRunner(client)
 
     # Initial state
@@ -492,11 +492,11 @@ def test_tui_child_intake_and_selection():
 def test_tui_set_active_child_failure_never_fabricates_child():
     """WorkflowRunner._set_active_child must not fabricate a child dictionary upon API failure."""
     from packages.tui.workflow import WorkflowRunner
-    from packages.tui.client import LinguaLensClient, LinguaLensApiError
+    from packages.tui.client import PasaScopeClient, PasaScopeApiError
     from unittest.mock import MagicMock
 
-    client = MagicMock(spec=LinguaLensClient)
-    client.get_child.side_effect = LinguaLensApiError("Child not found")
+    client = MagicMock(spec=PasaScopeClient)
+    client.get_child.side_effect = PasaScopeApiError("Child not found")
     runner = WorkflowRunner(client)
 
     runner._set_active_child("nonexistent")
@@ -507,11 +507,11 @@ def test_tui_set_active_child_failure_never_fabricates_child():
 def test_tui_set_active_child_401_clears_clinical_context():
     """When get_child raises 401, WorkflowRunner clears active clinical context."""
     from packages.tui.workflow import WorkflowRunner
-    from packages.tui.client import LinguaLensClient, LinguaLensAuthError
+    from packages.tui.client import PasaScopeClient, PasaScopeAuthError
     from unittest.mock import MagicMock
 
-    client = MagicMock(spec=LinguaLensClient)
-    client.get_child.side_effect = LinguaLensAuthError("401 Unauthorized")
+    client = MagicMock(spec=PasaScopeClient)
+    client.get_child.side_effect = PasaScopeAuthError("401 Unauthorized")
     runner = WorkflowRunner(client)
     runner.active_child_id = "prev-c"
     runner.active_child = {"id": "prev-c"}
@@ -524,9 +524,9 @@ def test_tui_set_active_child_401_clears_clinical_context():
 def test_tui_main_loop_reaches_children_menu_and_create_wizard(monkeypatch):
     """WorkflowRunner.start() main loop offers Child Directory [C] and creates a child via wizard."""
     from packages.tui.workflow import WorkflowRunner
-    from packages.tui.client import LinguaLensClient
+    from packages.tui.client import PasaScopeClient
 
-    client = LinguaLensClient(mock_mode=True)
+    client = PasaScopeClient(mock_mode=True)
     runner = WorkflowRunner(client)
 
     # Sequence of user prompts:
@@ -561,15 +561,15 @@ def test_tui_main_loop_reaches_children_menu_and_create_wizard(monkeypatch):
 def test_tui_main_loop_reaches_v2_when_legacy_list_cases_fails(monkeypatch):
     """WorkflowRunner allows entering V2 Child Directory even if legacy list_cases fails."""
     from packages.tui.workflow import WorkflowRunner
-    from packages.tui.client import LinguaLensClient, LinguaLensApiError
+    from packages.tui.client import PasaScopeClient, PasaScopeApiError
 
-    client = LinguaLensClient(mock_mode=True)
+    client = PasaScopeClient(mock_mode=True)
     # Configure legacy list_cases to raise 500 error
     list_cases_calls = 0
     def failing_list_cases():
         nonlocal list_cases_calls
         list_cases_calls += 1
-        raise LinguaLensApiError("500 Legacy Database Unavailable")
+        raise PasaScopeApiError("500 Legacy Database Unavailable")
 
     monkeypatch.setattr(client, "list_cases", failing_list_cases)
     monkeypatch.setattr(client, "check_health", lambda: True)
@@ -595,10 +595,10 @@ def test_tui_main_loop_reaches_v2_when_legacy_list_cases_fails(monkeypatch):
 def test_tui_main_loop_auth_error_wipes_v2_and_legacy_contexts(monkeypatch):
     """Main-loop 401 must wipe both V2 and legacy clinical contexts and clear session."""
     from packages.tui.workflow import WorkflowRunner
-    from packages.tui.client import LinguaLensClient, LinguaLensAuthError
+    from packages.tui.client import PasaScopeClient, PasaScopeAuthError
     from unittest.mock import MagicMock
 
-    client = LinguaLensClient(mock_mode=True)
+    client = PasaScopeClient(mock_mode=True)
     client.clear_session = MagicMock()
     runner = WorkflowRunner(client)
     # Populate both legacy and V2 contexts
@@ -611,7 +611,7 @@ def test_tui_main_loop_auth_error_wipes_v2_and_legacy_contexts(monkeypatch):
     runner.active_assessment_id = "ASM-01"
     runner.active_assessment = {"assessment_id": "ASM-01"}
 
-    client.get_session_transcript = MagicMock(side_effect=LinguaLensAuthError("HTTP 401 Session Expired"))
+    client.get_session_transcript = MagicMock(side_effect=PasaScopeAuthError("HTTP 401 Session Expired"))
     monkeypatch.setattr(client, "check_health", lambda: True)
 
     inputs = iter(["", "q"])
@@ -634,12 +634,12 @@ def test_tui_main_loop_auth_error_wipes_v2_and_legacy_contexts(monkeypatch):
 def test_tui_main_loop_direct_v2_route_never_calls_legacy_list_cases(monkeypatch):
     """Selecting V2 at entry must never invoke legacy list_cases even once."""
     from packages.tui.workflow import WorkflowRunner
-    from packages.tui.client import LinguaLensClient, LinguaLensApiError
+    from packages.tui.client import PasaScopeClient, PasaScopeApiError
     from unittest.mock import MagicMock
 
-    client = LinguaLensClient(mock_mode=True)
+    client = PasaScopeClient(mock_mode=True)
     # If list_cases is called, it fails the test immediately
-    client.list_cases = MagicMock(side_effect=LinguaLensApiError("CRITICAL: Legacy list_cases was called on V2 route!"))
+    client.list_cases = MagicMock(side_effect=PasaScopeApiError("CRITICAL: Legacy list_cases was called on V2 route!"))
     monkeypatch.setattr(client, "check_health", lambda: True)
 
     runner = WorkflowRunner(client)
@@ -650,7 +650,7 @@ def test_tui_main_loop_direct_v2_route_never_calls_legacy_list_cases(monkeypatch
     inputs = iter(["c", "q"])
     monkeypatch.setattr("rich.prompt.Prompt.ask", lambda *args, **kwargs: next(inputs))
 
-    # Run main loop: must not raise LinguaLensApiError from list_cases
+    # Run main loop: must not raise PasaScopeApiError from list_cases
     runner.start()
 
     # Legacy list_cases must have ZERO calls!
@@ -660,12 +660,12 @@ def test_tui_main_loop_direct_v2_route_never_calls_legacy_list_cases(monkeypatch
 def test_tui_v2_list_children_api_failure_contained_allows_clean_exit(monkeypatch):
     """When list_children fails with API error, error is contained and allows clean exit via [Q]uit."""
     from packages.tui.workflow import WorkflowRunner
-    from packages.tui.client import LinguaLensClient, LinguaLensApiError
+    from packages.tui.client import PasaScopeClient, PasaScopeApiError
     from unittest.mock import MagicMock
 
-    client = MagicMock(spec=LinguaLensClient)
+    client = MagicMock(spec=PasaScopeClient)
     client.check_health.return_value = True
-    client.list_children.side_effect = LinguaLensApiError("503 Gateway Timeout")
+    client.list_children.side_effect = PasaScopeApiError("503 Gateway Timeout")
 
     runner = WorkflowRunner(client)
 
@@ -681,13 +681,13 @@ def test_tui_v2_list_children_api_failure_contained_allows_clean_exit(monkeypatc
 def test_tui_v2_401_and_403_lifecycle_in_main_error_boundary(monkeypatch):
     """V2 401 clears context and session; V2 403 shows denial and preserves session without logout."""
     from packages.tui.workflow import WorkflowRunner
-    from packages.tui.client import LinguaLensClient, LinguaLensAuthError, LinguaLensPermissionError
+    from packages.tui.client import PasaScopeClient, PasaScopeAuthError, PasaScopePermissionError
     from unittest.mock import MagicMock
 
     # Part 1: 401 on V2
-    client_401 = MagicMock(spec=LinguaLensClient)
+    client_401 = MagicMock(spec=PasaScopeClient)
     client_401.check_health.return_value = True
-    client_401.list_children.side_effect = LinguaLensAuthError("401 Token Expired")
+    client_401.list_children.side_effect = PasaScopeAuthError("401 Token Expired")
 
     runner_401 = WorkflowRunner(client_401)
     runner_401.active_child_id = "c-will-be-cleared"
@@ -703,9 +703,9 @@ def test_tui_v2_401_and_403_lifecycle_in_main_error_boundary(monkeypatch):
     client_401.clear_session.assert_called_once()
 
     # Part 2: 403 on V2
-    client_403 = MagicMock(spec=LinguaLensClient)
+    client_403 = MagicMock(spec=PasaScopeClient)
     client_403.check_health.return_value = True
-    client_403.list_children.side_effect = LinguaLensPermissionError("403 Forbidden Organization")
+    client_403.list_children.side_effect = PasaScopePermissionError("403 Forbidden Organization")
 
     runner_403 = WorkflowRunner(client_403)
     runner_403.active_child_id = "c-keep-403"
@@ -726,10 +726,10 @@ def test_tui_v2_401_and_403_lifecycle_in_main_error_boundary(monkeypatch):
 def test_tui_child_workspace_displays_consent_states(monkeypatch):
     """TUI renders distinct consent states (active, withdrawn, no-record, error) in child workspace."""
     from packages.tui.workflow import WorkflowRunner
-    from packages.tui.client import LinguaLensClient, LinguaLensApiError
+    from packages.tui.client import PasaScopeClient, PasaScopeApiError
     from unittest.mock import MagicMock
 
-    client = MagicMock(spec=LinguaLensClient)
+    client = MagicMock(spec=PasaScopeClient)
     client.check_health.return_value = True
     runner = WorkflowRunner(client)
     runner.active_child_id = "c1"
@@ -759,7 +759,7 @@ def test_tui_child_workspace_displays_consent_states(monkeypatch):
     assert rec_norec is None
 
     # Test 4: Error
-    client.list_consents.side_effect = LinguaLensApiError("API offline")
+    client.list_consents.side_effect = PasaScopeApiError("API offline")
     status_err, rec_err = runner._resolve_consent_state("c1")
     assert status_err == "error"
     assert rec_err is None
@@ -768,10 +768,10 @@ def test_tui_child_workspace_displays_consent_states(monkeypatch):
 def test_tui_record_consent_wizard_active_and_withdrawn_explicit_confirmation(monkeypatch):
     """TUI record consent wizard requires explicit confirmation before mutation for active and withdrawn."""
     from packages.tui.workflow import WorkflowRunner
-    from packages.tui.client import LinguaLensClient
+    from packages.tui.client import PasaScopeClient
     from unittest.mock import MagicMock
 
-    client = MagicMock(spec=LinguaLensClient)
+    client = MagicMock(spec=PasaScopeClient)
     client.check_health.return_value = True
     client.record_consent.return_value = {
         "id": "con-w", "child_id": "c1", "purpose": "clinical_assessment", "scope_version": "2026.1", "status": "active", "version": 1
@@ -801,10 +801,10 @@ def test_tui_record_consent_wizard_active_and_withdrawn_explicit_confirmation(mo
 def test_tui_record_consent_cancel_does_not_call_api(monkeypatch):
     """Cancelling in TUI record consent wizard makes zero calls to record_consent."""
     from packages.tui.workflow import WorkflowRunner
-    from packages.tui.client import LinguaLensClient
+    from packages.tui.client import PasaScopeClient
     from unittest.mock import MagicMock
 
-    client = MagicMock(spec=LinguaLensClient)
+    client = MagicMock(spec=PasaScopeClient)
     client.check_health.return_value = True
     runner = WorkflowRunner(client)
     runner.active_child_id = "c1"
@@ -826,40 +826,40 @@ def test_tui_record_consent_cancel_does_not_call_api(monkeypatch):
 def test_tui_record_consent_401_and_403_handling(monkeypatch):
     """Wizard bubbles 401 to main error boundary and handles 403 by showing denial."""
     from packages.tui.workflow import WorkflowRunner
-    from packages.tui.client import LinguaLensClient, LinguaLensAuthError, LinguaLensPermissionError
+    from packages.tui.client import PasaScopeClient, PasaScopeAuthError, PasaScopePermissionError
     from unittest.mock import MagicMock
     import pytest
 
-    client = MagicMock(spec=LinguaLensClient)
+    client = MagicMock(spec=PasaScopeClient)
     client.check_health.return_value = True
     runner = WorkflowRunner(client)
     runner.active_child_id = "c1"
     runner.active_child = {"id": "c1", "display_code": "C-TUI-01"}
 
     # 401 should be raised out of wizard so main loop error boundary catches it
-    client.record_consent.side_effect = LinguaLensAuthError("401 Token Expired")
+    client.record_consent.side_effect = PasaScopeAuthError("401 Token Expired")
     inputs_401 = iter(["1", "2026.1", "y"])
     monkeypatch.setattr("rich.prompt.Prompt.ask", lambda *args, **kwargs: next(inputs_401))
-    with pytest.raises(LinguaLensAuthError):
+    with pytest.raises(PasaScopeAuthError):
         runner._record_consent_wizard()
 
     # 403 should be caught or raised to error boundary
-    client.record_consent.side_effect = LinguaLensPermissionError("403 Forbidden")
+    client.record_consent.side_effect = PasaScopePermissionError("403 Forbidden")
     inputs_403 = iter(["1", "2026.1", "y"])
     monkeypatch.setattr("rich.prompt.Prompt.ask", lambda *args, **kwargs: next(inputs_403))
-    with pytest.raises(LinguaLensPermissionError):
+    with pytest.raises(PasaScopePermissionError):
         runner._record_consent_wizard()
 
 
 def test_tui_record_consent_409_conflict_shows_guidance(monkeypatch):
     """409 Conflict displays clear guidance and triggers consent history refresh without crash."""
     from packages.tui.workflow import WorkflowRunner
-    from packages.tui.client import LinguaLensClient, LinguaLensConflictError
+    from packages.tui.client import PasaScopeClient, PasaScopeConflictError
     from unittest.mock import MagicMock
 
-    client = MagicMock(spec=LinguaLensClient)
+    client = MagicMock(spec=PasaScopeClient)
     client.check_health.return_value = True
-    client.record_consent.side_effect = LinguaLensConflictError("409 Conflict: Scope version mismatch")
+    client.record_consent.side_effect = PasaScopeConflictError("409 Conflict: Scope version mismatch")
     client.list_consents.return_value = []
 
     runner = WorkflowRunner(client)
@@ -884,10 +884,10 @@ def test_tui_record_consent_409_conflict_shows_guidance(monkeypatch):
 def test_tui_record_consent_wizard_blank_scope_version_rejected(monkeypatch):
     """Empty scope version is rejected client-side in wizard without calling record_consent."""
     from packages.tui.workflow import WorkflowRunner
-    from packages.tui.client import LinguaLensClient
+    from packages.tui.client import PasaScopeClient
     from unittest.mock import MagicMock
 
-    client = MagicMock(spec=LinguaLensClient)
+    client = MagicMock(spec=PasaScopeClient)
     client.check_health.return_value = True
 
     runner = WorkflowRunner(client)
@@ -910,16 +910,16 @@ def test_tui_record_consent_wizard_blank_scope_version_rejected(monkeypatch):
 def test_tui_record_consent_wizard_post_mutation_refresh_401_not_swallowed(monkeypatch):
     """When mutation succeeds but refresh returns 401, 401 is NOT swallowed and bubbles to error boundary."""
     from packages.tui.workflow import WorkflowRunner
-    from packages.tui.client import LinguaLensClient, LinguaLensAuthError
+    from packages.tui.client import PasaScopeClient, PasaScopeAuthError
     from unittest.mock import MagicMock
     import pytest
 
-    client = MagicMock(spec=LinguaLensClient)
+    client = MagicMock(spec=PasaScopeClient)
     client.check_health.return_value = True
     client.record_consent.return_value = {
         "id": "con-ok", "child_id": "c1", "purpose": "clinical_assessment", "scope_version": "2026.1", "status": "active", "version": 1
     }
-    client.list_consents.side_effect = LinguaLensAuthError("401 Session Expired on Refresh")
+    client.list_consents.side_effect = PasaScopeAuthError("401 Session Expired on Refresh")
 
     runner = WorkflowRunner(client)
     runner.active_child_id = "c1"
@@ -928,23 +928,23 @@ def test_tui_record_consent_wizard_post_mutation_refresh_401_not_swallowed(monke
     inputs = iter(["1", "2026.1", "y"])
     monkeypatch.setattr("rich.prompt.Prompt.ask", lambda *args, **kwargs: next(inputs))
 
-    # Must raise LinguaLensAuthError rather than silently swallowing it with except Exception: pass
-    with pytest.raises(LinguaLensAuthError):
+    # Must raise PasaScopeAuthError rather than silently swallowing it with except Exception: pass
+    with pytest.raises(PasaScopeAuthError):
         runner._record_consent_wizard()
 
 
 def test_tui_record_consent_wizard_post_mutation_refresh_403_shows_warning_no_crash(monkeypatch):
     """When mutation succeeds but refresh returns 403, permission denial is displayed without crash or raising unhandled."""
     from packages.tui.workflow import WorkflowRunner
-    from packages.tui.client import LinguaLensClient, LinguaLensPermissionError
+    from packages.tui.client import PasaScopeClient, PasaScopePermissionError
     from unittest.mock import MagicMock
 
-    client = MagicMock(spec=LinguaLensClient)
+    client = MagicMock(spec=PasaScopeClient)
     client.check_health.return_value = True
     client.record_consent.return_value = {
         "id": "con-ok", "child_id": "c1", "purpose": "clinical_assessment", "scope_version": "2026.1", "status": "active", "version": 1
     }
-    client.list_consents.side_effect = LinguaLensPermissionError("403 Forbidden to list consents")
+    client.list_consents.side_effect = PasaScopePermissionError("403 Forbidden to list consents")
 
     runner = WorkflowRunner(client)
     runner.active_child_id = "c1"
@@ -964,14 +964,14 @@ def test_tui_record_consent_wizard_post_mutation_refresh_403_shows_warning_no_cr
 def test_tui_record_consent_wizard_409_refresh_401_not_swallowed(monkeypatch):
     """When mutation returns 409 and authoritative refresh returns 401, 401 is NOT swallowed."""
     from packages.tui.workflow import WorkflowRunner
-    from packages.tui.client import LinguaLensClient, LinguaLensConflictError, LinguaLensAuthError
+    from packages.tui.client import PasaScopeClient, PasaScopeConflictError, PasaScopeAuthError
     from unittest.mock import MagicMock
     import pytest
 
-    client = MagicMock(spec=LinguaLensClient)
+    client = MagicMock(spec=PasaScopeClient)
     client.check_health.return_value = True
-    client.record_consent.side_effect = LinguaLensConflictError("409 Conflict")
-    client.list_consents.side_effect = LinguaLensAuthError("401 Unauthorized during conflict refresh")
+    client.record_consent.side_effect = PasaScopeConflictError("409 Conflict")
+    client.list_consents.side_effect = PasaScopeAuthError("401 Unauthorized during conflict refresh")
 
     runner = WorkflowRunner(client)
     runner.active_child_id = "c1"
@@ -980,7 +980,7 @@ def test_tui_record_consent_wizard_409_refresh_401_not_swallowed(monkeypatch):
     inputs = iter(["1", "2026.1", "y"])
     monkeypatch.setattr("rich.prompt.Prompt.ask", lambda *args, **kwargs: next(inputs))
 
-    with pytest.raises(LinguaLensAuthError):
+    with pytest.raises(PasaScopeAuthError):
         runner._record_consent_wizard()
 
 
@@ -991,10 +991,10 @@ def test_tui_record_consent_wizard_409_refresh_401_not_swallowed(monkeypatch):
 def test_tui_create_assessment_wizard_requires_active_consent(monkeypatch):
     """When consent is not active (no-record or withdrawn), wizard warns and aborts without calling create_assessment."""
     from packages.tui.workflow import WorkflowRunner
-    from packages.tui.client import LinguaLensClient
+    from packages.tui.client import PasaScopeClient
     from unittest.mock import MagicMock
 
-    client = MagicMock(spec=LinguaLensClient)
+    client = MagicMock(spec=PasaScopeClient)
     client.list_consents.return_value = [
         {"id": "con-1", "child_id": "c1", "purpose": "clinical_assessment", "status": "withdrawn", "version": 1}
     ]
@@ -1018,10 +1018,10 @@ def test_tui_create_assessment_wizard_requires_active_consent(monkeypatch):
 def test_tui_create_assessment_wizard_canonical_payload_and_state_isolation(monkeypatch):
     """When consent is active, wizard prompts for purpose & clinician, calls client, and isolates assessment state."""
     from packages.tui.workflow import WorkflowRunner
-    from packages.tui.client import LinguaLensClient
+    from packages.tui.client import PasaScopeClient
     from unittest.mock import MagicMock
 
-    client = MagicMock(spec=LinguaLensClient)
+    client = MagicMock(spec=PasaScopeClient)
     client.list_consents.return_value = [
         {"id": "con-1", "child_id": "c1", "purpose": "clinical_assessment", "status": "active", "version": 1}
     ]
@@ -1061,16 +1061,16 @@ def test_tui_create_assessment_wizard_canonical_payload_and_state_isolation(monk
 def test_tui_create_assessment_wizard_409_conflict_handling(monkeypatch):
     """When create_assessment returns 409 conflict, displays conflict message, re-checks consent, no active assessment."""
     from packages.tui.workflow import WorkflowRunner
-    from packages.tui.client import LinguaLensClient, LinguaLensConflictError
+    from packages.tui.client import PasaScopeClient, PasaScopeConflictError
     from unittest.mock import MagicMock
 
-    client = MagicMock(spec=LinguaLensClient)
+    client = MagicMock(spec=PasaScopeClient)
     # First consent check returns active, second check (after 409) returns withdrawn
     client.list_consents.side_effect = [
         [{"id": "con-1", "child_id": "c1", "purpose": "clinical_assessment", "status": "active", "version": 1}],
         [{"id": "con-2", "child_id": "c1", "purpose": "clinical_assessment", "status": "withdrawn", "version": 2}],
     ]
-    client.create_assessment.side_effect = LinguaLensConflictError("409 Conflict: Active consent required.")
+    client.create_assessment.side_effect = PasaScopeConflictError("409 Conflict: Active consent required.")
 
     runner = WorkflowRunner(client)
     runner.active_child_id = "c1"
@@ -1095,10 +1095,10 @@ def test_tui_create_assessment_wizard_409_conflict_handling(monkeypatch):
 def test_tui_create_assessment_wizard_rejects_invalid_purpose(monkeypatch):
     """When an invalid purpose is entered, TUI displays a validation error and does NOT call create_assessment."""
     from packages.tui.workflow import WorkflowRunner
-    from packages.tui.client import LinguaLensClient
+    from packages.tui.client import PasaScopeClient
     from unittest.mock import MagicMock
 
-    client = MagicMock(spec=LinguaLensClient)
+    client = MagicMock(spec=PasaScopeClient)
     client.list_consents.return_value = [
         {"id": "con-1", "child_id": "c1", "purpose": "clinical_assessment", "status": "active", "version": 1}
     ]
@@ -1130,10 +1130,10 @@ def test_tui_create_assessment_wizard_rejects_invalid_purpose(monkeypatch):
 def test_tui_create_assessment_wizard_all_canonical_purposes(monkeypatch, choice_input, expected_purpose):
     """All 4 canonical purposes in TUI menu map correctly to backend enum."""
     from packages.tui.workflow import WorkflowRunner
-    from packages.tui.client import LinguaLensClient
+    from packages.tui.client import PasaScopeClient
     from unittest.mock import MagicMock
 
-    client = MagicMock(spec=LinguaLensClient)
+    client = MagicMock(spec=PasaScopeClient)
     client.list_consents.return_value = [
         {"id": "con-1", "child_id": "c1", "purpose": "clinical_assessment", "status": "active", "version": 1}
     ]

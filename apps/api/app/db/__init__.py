@@ -1,1 +1,1 @@
-"""Database boundary placeholders for lingualens."""
+"""Database boundary placeholders for pasascope."""

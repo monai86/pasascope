@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Script to clean up accumulated mock test cases, audit logs, and dummy audio files in LinguaLens."""
+"""Script to clean up accumulated mock test cases, audit logs, and dummy audio files in PasaScope."""
 
 from __future__ import annotations
 
@@ -11,7 +11,7 @@ import sys
 
 
 def get_clean_snapshot() -> dict:
-    """Generate a clean, minimal initial seed state for LinguaLens repositories."""
+    """Generate a clean, minimal initial seed state for PasaScope repositories."""
     return {
         "cases": {
             "case_demo_001": {
@@ -145,7 +145,7 @@ def main() -> int:
     ]
 
     print("=" * 60)
-    print(" LinguaLens Mock Data & Test Cache Cleanup")
+    print(" PasaScope Mock Data & Test Cache Cleanup")
     print("=" * 60)
 
     total_cases_removed = 0

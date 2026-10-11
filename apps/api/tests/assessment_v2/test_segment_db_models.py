@@ -119,7 +119,7 @@ def test_segment_migration_creates_and_downgrades_without_removing_transcripts(m
     )
     from app.core.config import get_settings
 
-    with TemporaryDirectory(prefix="lingualens-assessment-v2-segments-") as temp_dir:
+    with TemporaryDirectory(prefix="pasascope-assessment-v2-segments-") as temp_dir:
         database_path = Path(temp_dir) / "assessment-v2-segments.db"
         monkeypatch.setenv("PASASCOPE_ASSESSMENT_DATABASE_URL", f"sqlite:///{database_path}")
         get_settings.cache_clear()
@@ -163,7 +163,7 @@ def test_populated_segment_set_blocks_full_downgrade_after_provenance_downgrade(
     )
     from app.core.config import get_settings
 
-    with TemporaryDirectory(prefix="lingualens-assessment-v2-segment-guard-") as temp_dir:
+    with TemporaryDirectory(prefix="pasascope-assessment-v2-segment-guard-") as temp_dir:
         database_path = Path(temp_dir) / "assessment-v2-segment-guard.db"
         monkeypatch.setenv("PASASCOPE_ASSESSMENT_DATABASE_URL", f"sqlite:///{database_path}")
         get_settings.cache_clear()

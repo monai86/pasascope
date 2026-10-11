@@ -69,12 +69,12 @@ For standalone clinical workstation speech analysis:
 - **Desktop GUI Tool:**
   ```bash
   python scripts/pasascope_gui.py
-  # หรือ alias: python scripts/lingualens_gui.py
+  # หรือ alias: python scripts/pasascope_gui.py
   ```
 - **Desktop TUI (Terminal UI):**
   ```bash
   python scripts/pasascope_tui.py
-  # หรือ alias: python scripts/lingualens_tui.py
+  # หรือ alias: python scripts/pasascope_tui.py
   ```
   Supports live API mode and offline mock mode, V2 child profiles, multi-tier consent registration, and audio playback grant handling.
 
@@ -98,5 +98,5 @@ Before attesting reports for pilot research cases:
 ## 4. Clinical Safety & Non-Diagnostic Disclaimer
 
 > [!WARNING]
-> LinguaLens is a **decision-support research and educational prototype**. It does **not** provide automated autism spectrum diagnoses or replace standardized medical evaluations. All quantitative acoustic biomarkers, diarization boundaries, and AI-generated narratives serve strictly as observational aids requiring review and formal attestation by a licensed clinician.
+> PasaScope is a **decision-support research and educational prototype**. It does **not** provide automated autism spectrum diagnoses or replace standardized medical evaluations. All quantitative acoustic biomarkers, diarization boundaries, and AI-generated narratives serve strictly as observational aids requiring review and formal attestation by a licensed clinician.
 

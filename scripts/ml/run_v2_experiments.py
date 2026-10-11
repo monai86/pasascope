@@ -460,7 +460,7 @@ def run_all_experiments() -> None:
 def _write_quality_report(quality_df: pd.DataFrame) -> None:
     """Generate reports/ml/FEATURE_V2_QUALITY_REPORT.md."""
     generated_date = date.today().isoformat()
-    md_content = f"""# LinguaLens Feature v2 Quality & Distribution Report
+    md_content = f"""# PasaScope Feature v2 Quality & Distribution Report
 **Generated Date:** {generated_date}  
 **Feature Schema:** `features-conversation-v2`  
 **Dataset:** `data/ml/canonical_features_v2.parquet` (1,961 analysis-ready transcripts)  
@@ -500,7 +500,7 @@ def _write_v1_vs_v2_comparison_report(results_df: pd.DataFrame, corpus_audit: di
     en_df = results_df[results_df["model"] == "Elastic-Net"].copy()
 
     generated_date = date.today().isoformat()
-    md_content = f"""# LinguaLens Feature Schema v1 vs v2 Experimental Comparison
+    md_content = f"""# PasaScope Feature Schema v1 vs v2 Experimental Comparison
 **Generated Date:** {generated_date}  
 **Status:** Exploratory retrospective benchmark; not clinical validation  
 **Comparison Source:** `data/ml/results/v1_vs_v2_comparison.csv`  

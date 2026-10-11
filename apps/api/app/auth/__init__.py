@@ -1,1 +1,1 @@
-"""Authentication and authorization helpers for lingualens."""
+"""Authentication and authorization helpers for pasascope."""

@@ -27,7 +27,7 @@ if git -C "$ROOT_DIR" rev-parse --short HEAD >/dev/null 2>&1; then
   COMMIT_SHA="$(git -C "$ROOT_DIR" rev-parse --short HEAD)"
 fi
 
-ORG_NAME="${ORG_NAME:-LinguaLens}"
+ORG_NAME="${ORG_NAME:-PasaScope}"
 ORG_ID="${ORG_ID:-whgbnlqvrgjodiquclnr}"
 ORG_SLUG="${ORG_SLUG:-$ORG_ID}"
 ORG_PLAN="${ORG_PLAN:-FREE}"

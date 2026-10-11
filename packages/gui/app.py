@@ -28,11 +28,11 @@ from packages.gui.export_engine import ClinicalExportEngine
 from packages.gui.radar_renderer import RadarChartRenderer
 from packages.tui.client import (
     DEFAULT_API_URL,
-    LinguaLensApiError,
-    LinguaLensAuthError,
-    LinguaLensClient,
-    LinguaLensPermissionError,
-    LinguaLensServerError,
+    PasaScopeApiError,
+    PasaScopeAuthError,
+    PasaScopeClient,
+    PasaScopePermissionError,
+    PasaScopeServerError,
     PasaScopeClient,
 )
 
@@ -43,7 +43,7 @@ class PasaScopeGUIApp:
     def __init__(
         self,
         root: tk.Tk,
-        client: LinguaLensClient | None = None,
+        client: PasaScopeClient | None = None,
         backend_manager: BackendServerManager | None = None,
     ):
         self.root = root
@@ -51,7 +51,7 @@ class PasaScopeGUIApp:
         self.root.geometry("1180x800")
         self.root.minsize(980, 640)
 
-        self.client = client or LinguaLensClient()
+        self.client = client or PasaScopeClient()
         self.backend_manager = backend_manager
         self.active_case_id: str | None = None
         self.active_session_id: str | None = None
@@ -1105,9 +1105,9 @@ class PasaScopeGUIApp:
 
         # 1. Auth invalidation check: HTTP 401 must be handled for the current auth session
         # regardless of mode switches, selection changes, or cancellation.
-        from packages.tui.client import LinguaLensAuthError
+        from packages.tui.client import PasaScopeAuthError
         if error is not None:
-            is_auth_error = isinstance(error, LinguaLensAuthError) or (
+            is_auth_error = isinstance(error, PasaScopeAuthError) or (
                 hasattr(error, "status_code") and getattr(error, "status_code", None) == 401
             )
             if is_auth_error:
@@ -2054,15 +2054,15 @@ class PasaScopeGUIApp:
         query = self.entry_case_search.get().strip().lower()
         try:
             cases = self.client.list_cases()
-        except LinguaLensAuthError as exc:
+        except PasaScopeAuthError as exc:
             self._handle_auth_error(exc)
             return
-        except LinguaLensPermissionError as exc:
+        except PasaScopePermissionError as exc:
             self._handle_permission_error(exc)
             if hasattr(self, "lbl_status") and self.lbl_status.winfo_exists():
                 self.lbl_status.config(text="⚠️ Permission denied searching cases.")
             return
-        except (LinguaLensApiError, urllib.error.URLError, TimeoutError, ConnectionError, OSError) as exc:
+        except (PasaScopeApiError, urllib.error.URLError, TimeoutError, ConnectionError, OSError) as exc:
             if hasattr(self, "lbl_status") and self.lbl_status.winfo_exists():
                 self.lbl_status.config(text=f"⚠️ Search failed: {exc}")
             return
@@ -2115,15 +2115,15 @@ class PasaScopeGUIApp:
     def _refresh_cases(self) -> bool:
         try:
             cases = self.client.list_cases()
-        except LinguaLensAuthError as exc:
+        except PasaScopeAuthError as exc:
             self._handle_auth_error(exc)
             return False
-        except LinguaLensPermissionError as exc:
+        except PasaScopePermissionError as exc:
             self._handle_permission_error(exc)
             if hasattr(self, "lbl_status") and self.lbl_status.winfo_exists():
                 self.lbl_status.config(text="⚠️ Permission denied listing cases.")
             return False
-        except (LinguaLensApiError, urllib.error.URLError, TimeoutError, ConnectionError, OSError) as exc:
+        except (PasaScopeApiError, urllib.error.URLError, TimeoutError, ConnectionError, OSError) as exc:
             if hasattr(self, "lbl_status") and self.lbl_status.winfo_exists():
                 self.lbl_status.config(text=f"⚠️ Failed to load cases: {exc}")
             return False
@@ -2373,17 +2373,17 @@ class PasaScopeGUIApp:
 
         try:
             sessions = self.client.list_sessions(self.active_case_id)
-        except LinguaLensAuthError as exc:
+        except PasaScopeAuthError as exc:
             self._handle_auth_error(exc)
             self._invalidate_session_context("Authentication Error")
             return False
-        except LinguaLensPermissionError as exc:
+        except PasaScopePermissionError as exc:
             self._handle_permission_error(exc)
             if hasattr(self, "lbl_status") and self.lbl_status.winfo_exists():
                 self.lbl_status.config(text="⚠️ Permission denied listing sessions.")
             self._invalidate_session_context("Permission Denied")
             return False
-        except (LinguaLensApiError, urllib.error.URLError, TimeoutError, ConnectionError, OSError) as exc:
+        except (PasaScopeApiError, urllib.error.URLError, TimeoutError, ConnectionError, OSError) as exc:
             if hasattr(self, "lbl_status") and self.lbl_status.winfo_exists():
                 self.lbl_status.config(text=f"⚠️ Failed to load sessions: {exc}")
             self._invalidate_session_context(f"Failed to load sessions: {exc}")
@@ -2519,10 +2519,10 @@ class PasaScopeGUIApp:
 
         try:
             self.active_transcript = self.client.get_session_transcript(self.active_session_id)
-        except LinguaLensAuthError as exc:
+        except PasaScopeAuthError as exc:
             self._handle_auth_error(exc)
             return False
-        except (LinguaLensApiError, urllib.error.URLError, TimeoutError, ConnectionError, OSError) as exc:
+        except (PasaScopeApiError, urllib.error.URLError, TimeoutError, ConnectionError, OSError) as exc:
             self.lbl_review_status.config(text=f"Transcript Status: ⚠️ Failed to fetch transcript: {exc}", foreground="red")
             return False
 
@@ -4493,11 +4493,11 @@ class PasaScopeGUIApp:
         except (ValueError, TypeError):
             return "Invalid birth month format."
 
-        from packages.tui.validation import validate_child_input, LinguaLensValidationError
+        from packages.tui.validation import validate_child_input, PasaScopeValidationError
         try:
             validate_child_input(trimmed, by, bm)
             return None
-        except (LinguaLensValidationError, ValueError) as err:
+        except (PasaScopeValidationError, ValueError) as err:
             return str(err)
 
 
@@ -4852,8 +4852,8 @@ class PasaScopeGUIApp:
         session_gen: int,
         child_sel_gen: int,
     ) -> None:
-        from packages.tui.client import LinguaLensAuthError, LinguaLensPermissionError
-        if isinstance(error, LinguaLensAuthError) or (
+        from packages.tui.client import PasaScopeAuthError, PasaScopePermissionError
+        if isinstance(error, PasaScopeAuthError) or (
             hasattr(error, "status_code") and getattr(error, "status_code", None) == 401
         ):
             if session_gen == self._get_current_session_generation():
@@ -4867,7 +4867,7 @@ class PasaScopeGUIApp:
         if request_id != self._consent_request_id:
             return
 
-        if isinstance(error, LinguaLensPermissionError):
+        if isinstance(error, PasaScopePermissionError):
             self._update_consent_badge("error", None, error_msg="Permission Denied")
             return
         else:
@@ -5232,10 +5232,10 @@ class PasaScopeGUIApp:
         child_sel_gen: int,
         new_consent: dict[str, Any],
     ) -> None:
-        from packages.tui.client import LinguaLensAuthError, LinguaLensPermissionError
+        from packages.tui.client import PasaScopeAuthError, PasaScopePermissionError
 
         # Invalidate auth is a session-level concern
-        if isinstance(error, LinguaLensAuthError):
+        if isinstance(error, PasaScopeAuthError):
             if session_gen == self._get_current_session_generation():
                 self._handle_auth_error(error, session_generation=session_gen)
             return
@@ -5247,7 +5247,7 @@ class PasaScopeGUIApp:
         if request_id != self._consent_request_id:
             return
 
-        if isinstance(error, LinguaLensPermissionError):
+        if isinstance(error, PasaScopePermissionError):
             self._update_consent_badge("error", None, error_msg="Permission Denied on Refresh")
             messagebox.showwarning(
                 "Consent Recorded (Refresh Denied)",
@@ -5274,10 +5274,10 @@ class PasaScopeGUIApp:
     ) -> None:
         self._set_busy_state(False, "Ready", request_id=request_id)
 
-        from packages.tui.client import LinguaLensAuthError, LinguaLensPermissionError, LinguaLensConflictError
+        from packages.tui.client import PasaScopeAuthError, PasaScopePermissionError, PasaScopeConflictError
 
         # Invalidate auth is a session-level concern: handle current-session 401 even if dialog is closed
-        if isinstance(error, LinguaLensAuthError):
+        if isinstance(error, PasaScopeAuthError):
             if session_gen == self._get_current_session_generation():
                 if win.winfo_exists():
                     win.destroy()
@@ -5296,7 +5296,7 @@ class PasaScopeGUIApp:
 
         dialog_is_valid = win.winfo_exists() and getattr(win, "_dlg_token", None) == dlg_token
 
-        if isinstance(error, LinguaLensPermissionError):
+        if isinstance(error, PasaScopePermissionError):
             if dialog_is_valid:
                 win._is_submitting = False
                 if hasattr(win, "btn_confirm") and win.btn_confirm.winfo_exists():
@@ -5304,7 +5304,7 @@ class PasaScopeGUIApp:
                 messagebox.showerror("Permission Denied", f"You do not have permission to record consent: {error}")
             return
 
-        if isinstance(error, LinguaLensConflictError):
+        if isinstance(error, PasaScopeConflictError):
             if dialog_is_valid:
                 win._is_submitting = False
                 if hasattr(win, "btn_confirm") and win.btn_confirm.winfo_exists():
@@ -5378,7 +5378,7 @@ class PasaScopeGUIApp:
         if not child_id:
             return None
 
-        from packages.tui.client import LinguaLensAuthError, LinguaLensPermissionError
+        from packages.tui.client import PasaScopeAuthError, PasaScopePermissionError
 
         def worker() -> None:
             try:
@@ -5387,12 +5387,12 @@ class PasaScopeGUIApp:
                     lambda: self._on_async_child_selected(req_id, child_data, session_gen),
                     None,
                 )
-            except LinguaLensAuthError as exc:
+            except PasaScopeAuthError as exc:
                 self._queue_callback(
                     lambda e=exc: self._handle_auth_error(e, session_generation=session_gen),
                     exc,
                 )
-            except LinguaLensPermissionError as exc:
+            except PasaScopePermissionError as exc:
                 self._queue_callback(
                     lambda e=exc: self._handle_permission_error(e, request_id=req_id, session_generation=session_gen),
                     exc,
@@ -5416,7 +5416,7 @@ class PasaScopeGUIApp:
         refresh_id = f"refresh-{uuid.uuid4().hex[:8]}"
         self._current_refresh_request_id = refresh_id
         session_gen = self._get_current_session_generation()
-        from packages.tui.client import LinguaLensAuthError, LinguaLensPermissionError
+        from packages.tui.client import PasaScopeAuthError, PasaScopePermissionError
 
         def worker() -> None:
             try:
@@ -5425,13 +5425,13 @@ class PasaScopeGUIApp:
                     lambda: self._on_children_refreshed(refresh_id, children, session_gen, on_success),
                     None,
                 )
-            except LinguaLensAuthError as exc:
+            except PasaScopeAuthError as exc:
                 def _auth_cb(e=exc):
                     self._handle_auth_error(e, session_generation=session_gen)
                     if on_error:
                         on_error(e)
                 self._queue_callback(_auth_cb, exc)
-            except LinguaLensPermissionError as exc:
+            except PasaScopePermissionError as exc:
                 def _perm_cb(e=exc):
                     self._handle_permission_error(e, session_generation=session_gen)
                     if on_error:
@@ -5554,7 +5554,7 @@ class PasaScopeGUIApp:
 
         win = tk.Toplevel(self.root)
         win._dlg_token = str(uuid.uuid4())
-        win.title("Create Child Profile (Assessment V2) — LinguaLens")
+        win.title("Create Child Profile (Assessment V2) — PasaScope")
         win.geometry("450x280")
         win.minsize(400, 240)
         win.bind("<Escape>", lambda e: win.destroy())
@@ -5632,7 +5632,7 @@ class PasaScopeGUIApp:
         child_sel_gen = getattr(self, "_child_selection_generation", 0)
         dlg_token = getattr(win, "_dlg_token", None) if win else None
 
-        from packages.tui.client import LinguaLensAuthError, LinguaLensPermissionError
+        from packages.tui.client import PasaScopeAuthError, PasaScopePermissionError
 
         def worker() -> None:
             try:
@@ -5641,12 +5641,12 @@ class PasaScopeGUIApp:
                     lambda: self._on_create_child_success(win, dlg_token, new_child, session_gen, child_sel_gen),
                     None,
                 )
-            except LinguaLensAuthError as exc:
+            except PasaScopeAuthError as exc:
                 self._queue_callback(
                     lambda e=exc: self._handle_auth_error(e, session_generation=session_gen),
                     exc,
                 )
-            except LinguaLensPermissionError as exc:
+            except PasaScopePermissionError as exc:
                 self._queue_callback(
                     lambda e=exc: self._handle_create_child_permission_error(win, dlg_token, e, session_gen),
                     exc,
@@ -5973,8 +5973,8 @@ class PasaScopeGUIApp:
         asmt_sel_gen: int,
         request_id: str,
     ) -> None:
-        from packages.tui.client import LinguaLensAuthError
-        if isinstance(error, LinguaLensAuthError) or (
+        from packages.tui.client import PasaScopeAuthError
+        if isinstance(error, PasaScopeAuthError) or (
             hasattr(error, "status_code") and getattr(error, "status_code", None) == 401
         ):
             if session_gen == self._get_current_session_generation():
@@ -6423,9 +6423,9 @@ class PasaScopeGUIApp:
         child_sel_gen: int,
         cancel_event: threading.Event | None = None,
     ) -> None:
-        from packages.tui.client import LinguaLensAuthError, LinguaLensPermissionError, LinguaLensConflictError
+        from packages.tui.client import PasaScopeAuthError, PasaScopePermissionError, PasaScopeConflictError
 
-        if isinstance(error, LinguaLensAuthError) or (
+        if isinstance(error, PasaScopeAuthError) or (
             hasattr(error, "status_code") and getattr(error, "status_code", None) == 401
         ):
             if session_gen == self._get_current_session_generation():
@@ -6451,7 +6451,7 @@ class PasaScopeGUIApp:
 
         dialog_is_valid = win.winfo_exists() and getattr(win, "_dlg_token", None) == dlg_token
 
-        if isinstance(error, LinguaLensPermissionError):
+        if isinstance(error, PasaScopePermissionError):
             if dialog_is_valid:
                 win._is_submitting = False
                 if hasattr(win, "btn_confirm") and win.btn_confirm.winfo_exists():
@@ -6459,7 +6459,7 @@ class PasaScopeGUIApp:
                 messagebox.showerror("Permission Denied", f"You do not have permission to create an assessment: {error}")
             return
 
-        if isinstance(error, LinguaLensConflictError) or "409" in str(error):
+        if isinstance(error, PasaScopeConflictError) or "409" in str(error):
             self.active_assessment_id = None
             self.active_assessment = None
             if dialog_is_valid:
@@ -6573,8 +6573,8 @@ class PasaScopeGUIApp:
         session_gen: int,
         child_sel_gen: int,
     ) -> None:
-        from packages.tui.client import LinguaLensAuthError
-        if isinstance(error, LinguaLensAuthError) or (
+        from packages.tui.client import PasaScopeAuthError
+        if isinstance(error, PasaScopeAuthError) or (
             hasattr(error, "status_code") and getattr(error, "status_code", None) == 401
         ):
             if session_gen == self._get_current_session_generation():
@@ -6673,8 +6673,8 @@ class PasaScopeGUIApp:
         child_sel_gen: int,
         created_asmt: dict[str, Any],
     ) -> None:
-        from packages.tui.client import LinguaLensAuthError
-        if isinstance(error, LinguaLensAuthError):
+        from packages.tui.client import PasaScopeAuthError
+        if isinstance(error, PasaScopeAuthError):
             if session_gen == self._get_current_session_generation():
                 self._handle_auth_error(error, session_generation=session_gen)
             return
@@ -6711,8 +6711,3 @@ class PasaScopeGUIApp:
             "Assessment Created (Refresh Failed)",
             f"Assessment was created successfully on server ({created_asmt.get('id')}), but failed to refresh assessments list: {error}. Please refresh manually.",
         )
-
-
-# Backwards compatibility alias
-LinguaLensGUIApp = PasaScopeGUIApp
-

@@ -30,7 +30,7 @@ describe("supabase browser auth bridge", () => {
         invitation_status: "accepted",
         organization_id: "clinic_001",
         organizations: [
-          { organizationId: "clinic_001", label: "LinguaLens Clinic" },
+          { organizationId: "clinic_001", label: "PasaScope Clinic" },
         ],
       },
     })).toMatchObject({
@@ -51,7 +51,7 @@ describe("supabase browser auth bridge", () => {
         membership_active: true,
         invitation_status: "accepted",
         organizations: [
-          { organizationId: "clinic_001", label: "LinguaLens Clinic" },
+          { organizationId: "clinic_001", label: "PasaScope Clinic" },
           { organizationId: "clinic_002", label: "North Review Clinic" },
         ],
       },
@@ -72,7 +72,7 @@ describe("supabase browser auth bridge", () => {
         membership_active: true,
         invitation_status: "accepted",
         organizations: [
-          { organizationId: "clinic_001", label: "LinguaLens Clinic" },
+          { organizationId: "clinic_001", label: "PasaScope Clinic" },
         ],
       },
     })).toMatchObject({
@@ -114,7 +114,7 @@ describe("supabase browser auth bridge", () => {
         invitation_status: "accepted",
         organization_id: "clinic_001",
         organizations: [
-          { organizationId: "clinic_001", label: "LinguaLens Clinic" },
+          { organizationId: "clinic_001", label: "PasaScope Clinic" },
         ],
       },
     }));
@@ -144,7 +144,7 @@ describe("supabase browser auth bridge", () => {
           invitation_status: "accepted",
           organization_id: "clinic_001",
           organization_memberships: [
-            { organization_id: "clinic_001", name: "LinguaLens Clinic", role: "org_admin" },
+            { organization_id: "clinic_001", name: "PasaScope Clinic", role: "org_admin" },
             { organization_id: "clinic_002", name: "North Review Clinic", role: "clinical_supervisor" },
           ],
         },
@@ -163,7 +163,7 @@ describe("supabase browser auth bridge", () => {
         invitation_status: "accepted",
         organization_id: "clinic_001",
         organizations: [
-          { organizationId: "clinic_001", label: "LinguaLens Clinic", role: "org_admin" },
+          { organizationId: "clinic_001", label: "PasaScope Clinic", role: "org_admin" },
           { organizationId: "clinic_002", label: "North Review Clinic", role: "clinical_supervisor" },
         ],
       },
@@ -183,7 +183,7 @@ describe("supabase browser auth bridge", () => {
           invitation_status: "accepted",
           organization_id: "clinic_001",
           organizations: [
-            { organizationId: "clinic_001", label: "LinguaLens Clinic" },
+            { organizationId: "clinic_001", label: "PasaScope Clinic" },
           ],
         },
         user_metadata: {
@@ -269,7 +269,7 @@ describe("supabase browser auth bridge", () => {
         membership_active: true,
         invitation_status: "accepted",
         organizations: [
-          { organizationId: "clinic_001", label: "LinguaLens Clinic", role: "clinical_supervisor" },
+          { organizationId: "clinic_001", label: "PasaScope Clinic", role: "clinical_supervisor" },
           { organizationId: "clinic_002", label: "North Review Clinic", role: "org_admin" },
         ],
       },
@@ -302,7 +302,7 @@ describe("supabase browser auth bridge", () => {
         membership_active: true,
         invitation_status: "accepted",
         organizations: [
-          { organizationId: "clinic_001", label: "LinguaLens Clinic" },
+          { organizationId: "clinic_001", label: "PasaScope Clinic" },
           { organizationId: "clinic_002", label: "North Review Clinic" },
         ],
       },
@@ -327,7 +327,7 @@ describe("supabase browser auth bridge", () => {
         invitation_status: "accepted",
         organization_id: "clinic_001",
         organizations: [
-          { organizationId: "clinic_001", label: "LinguaLens Clinic" },
+          { organizationId: "clinic_001", label: "PasaScope Clinic" },
           { organizationId: "clinic_002", label: "North Review Clinic" },
         ],
       },
@@ -343,7 +343,7 @@ describe("supabase browser auth bridge", () => {
 
   it("publishes a Supabase session payload event for the runtime bridge to consume", () => {
     const listener = vi.fn();
-    window.addEventListener("lingualens:supabase-session-source", listener as EventListener);
+    window.addEventListener("pasascope:supabase-session-source", listener as EventListener);
 
     publishSupabaseSessionPayload({
       user: { id: "user_therapist_001", email: "clinician@clinic.example" },
@@ -351,7 +351,7 @@ describe("supabase browser auth bridge", () => {
     });
 
     expect(listener).toHaveBeenCalledTimes(1);
-    window.removeEventListener("lingualens:supabase-session-source", listener as EventListener);
+    window.removeEventListener("pasascope:supabase-session-source", listener as EventListener);
   });
 
   it("clears the organization hint when browser auth is removed", () => {

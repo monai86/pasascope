@@ -1,1 +1,1 @@
-"""Service layer for lingualens."""
+"""Service layer for pasascope."""

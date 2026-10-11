@@ -49,7 +49,7 @@ describe("final UI remediation contracts", () => {
     expect(tokens).not.toContain("--color-accent-subtle: #b7791f;");
   });
 
-  it("uses only the LinguaLens design system and Tailwind in the active app foundation", () => {
+  it("uses only the PasaScope design system and Tailwind in the active app foundation", () => {
     const packageManifest = JSON.parse(appFile("package.json")) as {
       dependencies?: Record<string, string>;
       devDependencies?: Record<string, string>;

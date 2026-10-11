@@ -181,7 +181,7 @@ class CaptureProcessingWorker:
 
     @contextmanager
     def _materialized_media(self, item: CaptureWorkItem) -> Iterator[Path]:
-        with tempfile.NamedTemporaryFile(prefix="lingualens-capture-", suffix=".media") as temporary:
+        with tempfile.NamedTemporaryFile(prefix="pasascope-capture-", suffix=".media") as temporary:
             destination = Path(temporary.name)
             download_to_path = getattr(self.storage, "download_object_to_path", None)
             if callable(download_to_path):

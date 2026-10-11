@@ -5,7 +5,7 @@ The canonical architecture is defined in
 
 ## Active user-facing surfaces
 
-### lingualens
+### pasascope
 
 - Frontend: `apps/pasascope-app/`
 - API: `apps/api/`
@@ -33,7 +33,7 @@ The canonical architecture is defined in
 - `src/clinical_workflow/`: earlier clinical workflow repository/domain layer
 - historical phase/spec/plan documents under `docs/`
 
-Do not add new lingualens product behavior to legacy surfaces.
+Do not add new pasascope product behavior to legacy surfaces.
 
 ## Retired surfaces
 

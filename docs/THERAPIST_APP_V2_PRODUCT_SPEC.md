@@ -1,6 +1,6 @@
-# lingualens Product Spec
+# pasascope Product Spec
 
-lingualens is a new case-centered workflow surface at
+pasascope is a new case-centered workflow surface at
 `apps/pasascope-app/` backed by the `apps/api/` FastAPI boundary. It is a
 human-in-the-loop clinical decision-support prototype for speech therapists and
 clinicians. It does not diagnose ASD, does not claim Thai clinical validation,
@@ -30,7 +30,7 @@ AI diagnosis.
 
 ## Canonical Workflow
 
-lingualens uses the Therapist Five-Step Workflow:
+pasascope uses the Therapist Five-Step Workflow:
 
 1. Open or create a child case.
 2. Add a therapy or assessment session.

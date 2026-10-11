@@ -1,1 +1,1 @@
-"""Repository implementations for lingualens."""
+"""Repository implementations for pasascope."""

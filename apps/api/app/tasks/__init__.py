@@ -1,1 +1,1 @@
-"""Background task boundaries for lingualens."""
+"""Background task boundaries for pasascope."""

@@ -25,7 +25,7 @@ Setup evidence template:
 
 These values are already decided for the first rollout:
 
-- Supabase organization name: `LinguaLens`
+- Supabase organization name: `PasaScope`
 - Staging project name: `lingualens-staging`
 - Production project name: `lingualens-production`
 - Region for both projects: `ap-southeast-1`
@@ -39,7 +39,7 @@ These values are already decided for the first rollout:
 Confirmed on 2026-06-28 from the operator-provided dashboard state and recorded
 evidence:
 
-- organization `LinguaLens` exists
+- organization `PasaScope` exists
 - staging project `lingualens-staging` exists in `ap-southeast-1`
 - production project `lingualens-production` exists in `ap-southeast-1`
 - staging project ref: `cbhwxklvcpgizeqriqxi`
@@ -100,7 +100,7 @@ This step is now a confirmation step, not a creation step.
 
 Confirm the existing organization record:
 
-- Name: `LinguaLens`
+- Name: `PasaScope`
 - Dashboard URL:
   `https://supabase.com/dashboard/org/whgbnlqvrgjodiquclnr/general`
 - Billing/owner contact: assigned human owner
@@ -115,7 +115,7 @@ Record after confirmation:
 
 Completion check:
 
-- `LinguaLens` appears in the dashboard and the setup evidence
+- `PasaScope` appears in the dashboard and the setup evidence
 - the organization owner is a named launch approver
 - if Codex connector access does not refresh to include the new organization,
   record the permission mismatch in the setup evidence and continue manually in
@@ -123,7 +123,7 @@ Completion check:
 
 ## Step 2. Confirm Staging And Production Projects
 
-Confirm both projects inside the `LinguaLens` organization:
+Confirm both projects inside the `PasaScope` organization:
 
 | Environment | Name | Region | Required now |
 |---|---|---|---|
@@ -144,7 +144,7 @@ Completion check:
 
 - both projects exist
 - both projects are in `ap-southeast-1`
-- both projects are attached to `LinguaLens`
+- both projects are attached to `PasaScope`
 - if connector-based cost/project management is unavailable, capture project
   refs manually from the dashboard and continue with the same evidence package
 
@@ -221,7 +221,7 @@ Record these fields for both staging and production:
 
 | Field | Staging | Production |
 |---|---|---|
-| Organization name | `LinguaLens` | `LinguaLens` |
+| Organization name | `PasaScope` | `PasaScope` |
 | Organization ID | `whgbnlqvrgjodiquclnr` | `whgbnlqvrgjodiquclnr` |
 | Project name | `lingualens-staging` | `lingualens-production` |
 | Project ref | `cbhwxklvcpgizeqriqxi` | `rftslmbgbudqsypknzss` |

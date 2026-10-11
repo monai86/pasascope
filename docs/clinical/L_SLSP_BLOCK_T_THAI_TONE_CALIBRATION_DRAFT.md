@@ -1,4 +1,4 @@
-# LinguaLens L-SLSP Protocol Extension: Block T (Thai Tone Calibration Draft)
+# PasaScope L-SLSP Protocol Extension: Block T (Thai Tone Calibration Draft)
 **Protocol Identifier:** `L-SLSP-BLOCK-T-DRAFT-v1`  
 **Document Status:** Exploratory Research Draft (Not a Validated Clinical Instrument)  
 **Applicability:** Optional 3–4 Minute Research Extension to `L-SLSP-v1` for Thai Language Cohorts  

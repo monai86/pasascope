@@ -134,7 +134,7 @@ def run_smoke(database_path: Path) -> None:
 
 
 def main() -> int:
-    with TemporaryDirectory(prefix="lingualens-assessment-v2-migration-") as temp_dir:
+    with TemporaryDirectory(prefix="pasascope-assessment-v2-migration-") as temp_dir:
         run_smoke(Path(temp_dir) / "assessment-v2.db")
     print("assessment-v2 migration smoke passed")
     return 0

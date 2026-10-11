@@ -118,7 +118,7 @@ We use **pytest** to validate backend services.
 
 ## 🌐 Frontend Application Setup
 
-The maintained frontend surface is the lingualens therapist app only.
+The maintained frontend surface is the pasascope therapist app only.
 
 ### 1. 🩺 Therapist App (`apps/pasascope-app/`)
 Enforces the clinical sign-off, consent gates, and caseload review.
@@ -133,14 +133,14 @@ npm run dev
 
 ---
 
-## ⚙️ lingualens Runtime Modes
+## ⚙️ pasascope Runtime Modes
 
 The active app uses `PASASCOPE_*` backend settings. Legacy v2 env names remain
 supported temporarily during migration. The former
 `VITE_RUNTIME_MODE` settings belonged to the retired Vite therapist app.
 
 1. **JSON repository** (default):
-   - The lingualens API defaults to durable local JSON persistence,
+   - The pasascope API defaults to durable local JSON persistence,
      which survives API restarts.
    - Memory repository mode is only for isolated tests or intentional demo
      resets.

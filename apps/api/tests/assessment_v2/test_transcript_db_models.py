@@ -59,7 +59,7 @@ def test_fresh_assessment_migration_creates_and_downgrades_transcript_revisions(
     from app.assessment_v2.db.migrations_runner import downgrade_assessment_database, upgrade_assessment_database
     from app.core.config import get_settings
 
-    with TemporaryDirectory(prefix="lingualens-assessment-v2-transcript-") as temp_dir:
+    with TemporaryDirectory(prefix="pasascope-assessment-v2-transcript-") as temp_dir:
         database_path = Path(temp_dir) / "assessment-v2-transcript.db"
         monkeypatch.setenv("PASASCOPE_ASSESSMENT_DATABASE_URL", f"sqlite:///{database_path}")
         get_settings.cache_clear()

@@ -63,7 +63,7 @@ describe("AppShell auth gating", () => {
         invitation_status: "accepted",
         organization_id: "clinic_001",
         organizations: [
-          { organizationId: "clinic_001", label: "LinguaLens Clinic" },
+          { organizationId: "clinic_001", label: "PasaScope Clinic" },
         ],
       },
     }));
@@ -75,7 +75,7 @@ describe("AppShell auth gating", () => {
       aal: "aal1",
       organizationId: "clinic_001",
       availableOrganizations: [
-        { organizationId: "clinic_001", label: "LinguaLens Clinic" },
+        { organizationId: "clinic_001", label: "PasaScope Clinic" },
       ],
     }));
 
@@ -101,7 +101,7 @@ describe("AppShell auth gating", () => {
               invitation_status: "accepted",
               organization_id: "clinic_001",
               organizations: [
-                { organizationId: "clinic_001", label: "LinguaLens Clinic" },
+                { organizationId: "clinic_001", label: "PasaScope Clinic" },
               ],
             },
           },
@@ -160,7 +160,7 @@ describe("AppShell auth gating", () => {
         invitation_status: "accepted",
         organization_id: "clinic_001",
         organizations: [
-          { organizationId: "clinic_001", label: "LinguaLens Clinic" },
+          { organizationId: "clinic_001", label: "PasaScope Clinic" },
         ],
       },
     }));
@@ -172,7 +172,7 @@ describe("AppShell auth gating", () => {
       aal: "aal2",
       organizationId: "clinic_001",
       availableOrganizations: [
-        { organizationId: "clinic_001", label: "LinguaLens Clinic" },
+        { organizationId: "clinic_001", label: "PasaScope Clinic" },
       ],
     }));
     getSession.mockResolvedValue({
@@ -188,7 +188,7 @@ describe("AppShell auth gating", () => {
               invitation_status: "accepted",
               organization_id: "clinic_001",
               organizations: [
-                { organizationId: "clinic_001", label: "LinguaLens Clinic" },
+                { organizationId: "clinic_001", label: "PasaScope Clinic" },
               ],
             },
           },

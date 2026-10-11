@@ -21,7 +21,7 @@
 ## Project Surfaces
 - `src/`: Python ML/audio research code and legacy compatibility workflows.
 - `apps/pasascope-app/`: the only active therapist frontend; Next.js + React + TypeScript.
-- `apps/api/`: FastAPI backend for the lingualens therapist workflow.
+- `apps/api/`: FastAPI backend for the pasascope therapist workflow.
 - `shared/`: shared JavaScript models/services used by app surfaces.
 
 ## Clinical Safety Boundary

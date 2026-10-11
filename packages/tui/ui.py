@@ -1,4 +1,4 @@
-"""Rich-based UI rendering components and helpers for LinguaLens TUI."""
+"""Rich-based UI rendering components and helpers for PasaScope TUI."""
 
 from __future__ import annotations
 
@@ -17,7 +17,7 @@ def print_banner(api_online: bool = False, current_step: str = "Dashboard") -> N
     status_badge = "[bold green]● API Connected[/bold green]" if api_online else "[bold yellow]○ Offline / Local Mock[/bold yellow]"
     
     header_text = Text()
-    header_text.append("LINGUALENS ", style="bold cyan")
+    header_text.append("PASASCOPE ", style="bold cyan")
     header_text.append("v1.7.0 ", style="bold white")
     header_text.append("— Speech-Language Decision Support TUI\n", style="dim white")
     header_text.append("Status: ", style="bold")

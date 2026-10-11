@@ -143,7 +143,7 @@ def main() -> int:
     feat_df.to_csv(RESULTS_DIR / "domain_controlled_feature_importance.csv", index=False)
 
     # 3. Compile updated MODEL_RESULTS.md
-    model_report = f"""# LinguaLens ML Model Results & Evaluation Report
+    model_report = f"""# PasaScope ML Model Results & Evaluation Report
 **Generated Date:** 2026-08-23  
 **Status:** Methodologically Rigorous & Validated  
 

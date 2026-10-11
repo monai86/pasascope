@@ -1,4 +1,4 @@
-# LinguaLens UI Redesign Plan
+# PasaScope UI Redesign Plan
 
 Status: Phase 1 implemented 2026-08-16 (this document is the living roadmap for
 the owner-approved redesign).

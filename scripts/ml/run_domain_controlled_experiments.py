@@ -331,7 +331,7 @@ def main() -> int:
     nadig_df = df[df["corpus"] == "Nadig"].copy()
 
     # Document cohorts
-    cohorts_report = f"""# LinguaLens Domain-Controlled Cohort Documentation
+    cohorts_report = f"""# PasaScope Domain-Controlled Cohort Documentation
 **Generated Date:** 2026-08-23  
 **Status:** Canonical & Audited  
 
@@ -620,7 +620,7 @@ To eliminate cross-task and cross-laboratory confounding, two primary corpora co
     # 10. Generate Reports
     # -----------------------------------------------------------------------
     # Report 1: DOMAIN_CONTROLLED_RESULTS.md
-    dom_report = f"""# LinguaLens Domain-Controlled Classification Results
+    dom_report = f"""# PasaScope Domain-Controlled Classification Results
 **Generated Date:** 2026-08-23  
 **Status:** Methodologically Rigorous & Validated  
 
@@ -670,7 +670,7 @@ Tests whether canonical speech-language features distinguish Autism Spectrum Dis
     print(f"Report written: {REPORTS_DIR / 'DOMAIN_CONTROLLED_RESULTS.md'}")
 
     # Report 2: CROSS_CORPUS_RESULTS.md
-    cross_report = f"""# LinguaLens Cross-Corpus Generalization Report
+    cross_report = f"""# PasaScope Cross-Corpus Generalization Report
 **Generated Date:** 2026-08-23  
 **Status:** Methodologically Rigorous & Validated  
 
@@ -700,7 +700,7 @@ Tests whether canonical speech-language features distinguish Autism Spectrum Dis
     print(f"Report written: {REPORTS_DIR / 'CROSS_CORPUS_RESULTS.md'}")
 
     # Report 3: FEATURE_ABLATION_RESULTS.md
-    abl_report = f"""# LinguaLens Feature Family Ablation Results
+    abl_report = f"""# PasaScope Feature Family Ablation Results
 **Generated Date:** 2026-08-23  
 **Status:** Canonical & Audited  
 
@@ -742,7 +742,7 @@ Tests whether canonical speech-language features distinguish Autism Spectrum Dis
     print(f"Report written: {REPORTS_DIR / 'FEATURE_ABLATION_RESULTS.md'}")
 
     # Report 4: IMBALANCE_COMPARISON.md update
-    imb_report = f"""# LinguaLens Class Imbalance Strategy Benchmark
+    imb_report = f"""# PasaScope Class Imbalance Strategy Benchmark
 **Generated Date:** 2026-08-23  
 **Status:** Methodologically Rigorous & Validated  
 
@@ -768,7 +768,7 @@ Tests whether canonical speech-language features distinguish Autism Spectrum Dis
     print(f"Report written: {REPORTS_DIR / 'IMBALANCE_COMPARISON.md'}")
 
     # Report 5: ML_VALIDITY_DECISION.md (Final Decision Gate)
-    decision_report = f"""# LinguaLens ML Validity & Decision Gate Report
+    decision_report = f"""# PasaScope ML Validity & Decision Gate Report
 **Generated Date:** 2026-08-23  
 **Decision Gate Status:** Outcome A — Valid Baseline Signal Confirmed with Clear Domain-Control Boundaries  
 

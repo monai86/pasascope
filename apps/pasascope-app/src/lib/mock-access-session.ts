@@ -1,7 +1,7 @@
 "use client";
 
 export const MOCK_ACCESS_SESSION_KEY = "lingualens.mock-access-session.v1";
-export const MOCK_ACCESS_SESSION_EVENT = "lingualens:mock-access-session-changed";
+export const MOCK_ACCESS_SESSION_EVENT = "pasascope:mock-access-session-changed";
 
 export type MockRole = "therapist" | "clinical_supervisor" | "org_admin";
 

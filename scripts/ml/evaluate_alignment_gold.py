@@ -186,7 +186,7 @@ def main():
     )
     args = parser.parse_args()
 
-    print(f"=== LinguaLens Gold Timing Evaluation ===")
+    print(f"=== PasaScope Gold Timing Evaluation ===")
     print(f"Reading: {args.gold_file}")
 
     results = evaluate_gold_dataset(args.gold_file)

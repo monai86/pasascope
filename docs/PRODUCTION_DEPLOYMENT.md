@@ -2,7 +2,7 @@
 
 Date: 2026-06-28
 
-This is the canonical deployment entrypoint for the maintained lingualens
+This is the canonical deployment entrypoint for the maintained pasascope
 product surfaces:
 
 - frontend: `apps/pasascope-app/`
@@ -17,7 +17,7 @@ Use this guide with the more specific rollout documents:
 
 ## Current Supabase Projects
 
-These projects already exist in `ap-southeast-1` under `LinguaLens`:
+These projects already exist in `ap-southeast-1` under `PasaScope`:
 
 | Environment | Project ref | Dashboard URL | Base URL | JWKS URL | Publishable key |
 |---|---|---|---|---|---|
@@ -151,7 +151,7 @@ Do not promote to production until all are true:
 ## Operator Notes
 
 - The installed Supabase connector currently lacks permission to manage the
-  `LinguaLens` org/projects directly from Codex, so live dashboard actions
+  `PasaScope` org/projects directly from Codex, so live dashboard actions
   still require a human operator.
 - If the operator accidentally copies the JWKS URL into
   `NEXT_PUBLIC_SUPABASE_URL`, the browser auth runtime will be misconfigured.

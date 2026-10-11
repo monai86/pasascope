@@ -12,7 +12,7 @@ import {
 import { saveSupabaseSessionToken } from "@/lib/supabase-session-token";
 
 export const SUPABASE_BROWSER_AUTH_KEY = "lingualens.supabase-browser-auth.v1";
-export const SUPABASE_BROWSER_AUTH_EVENT = "lingualens:supabase-browser-auth-changed";
+export const SUPABASE_BROWSER_AUTH_EVENT = "pasascope:supabase-browser-auth-changed";
 
 export type SupabaseBrowserAuthSnapshot = {
   userId: string;

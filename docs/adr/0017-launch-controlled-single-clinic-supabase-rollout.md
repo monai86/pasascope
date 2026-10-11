@@ -6,7 +6,7 @@ Accepted
 
 ## Context
 
-lingualens is moving from a local research and pilot prototype toward a real
+pasascope is moving from a local research and pilot prototype toward a real
 production SaaS launch. The product already has local foundations for
 organization membership, care-team assignment, report sign-off, invitation
 acceptance, MFA gating, break-glass scaffolding, and tenant-aware backend
@@ -18,7 +18,7 @@ The launch must preserve the production boundary already accepted in
 and the responsive web/PWA-only product surface accepted in
 [0016-responsive-web-pwa-only](/Users/porschecaa/lingualens/docs/adr/0016-responsive-web-pwa-only.md).
 
-The open question is not whether lingualens will eventually support multiple
+The open question is not whether pasascope will eventually support multiple
 clinic tenants. The hard-to-reverse decision is how the first real rollout
 should be constrained so the team can validate security, privacy, and clinical
 workflow controls without taking on unnecessary launch scope.
@@ -30,7 +30,7 @@ organization in Thailand.
 
 The first launch will use:
 
-- Supabase organization `LinguaLens`;
+- Supabase organization `PasaScope`;
 - one staging and one production Supabase project in `ap-southeast-1`;
 - Supabase Auth, Postgres, and private Storage;
 - `apps/api/` as the required clinical policy boundary;

@@ -1,4 +1,4 @@
-"""Bilingual Clinical Report Template for LinguaLens.
+"""Bilingual Clinical Report Template for PasaScope.
 
 Generates professional, printable clinical language assessment reports
 with embedded Spider Radar diagrams, developmental metrics, acoustic profiles,
@@ -189,7 +189,7 @@ def generate_bilingual_clinical_html(
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>LinguaLens Clinical LSA Report — {case_id}</title>
+<title>PasaScope Clinical LSA Report — {case_id}</title>
 <style>
   body {{
     font-family: -apple-system, BlinkMacSystemFont, 'Sarabun', 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
@@ -352,7 +352,7 @@ def generate_bilingual_clinical_html(
 <div class="report-container">
   <div class="header">
     <div>
-      <h1>🗣️ LinguaLens Clinical LSA Report</h1>
+      <h1>🗣️ PasaScope Clinical LSA Report</h1>
       <div class="sub">Language Sample Analysis & Speech-Language Biomarkers Decision Support</div>
     </div>
     <div style="text-align: right;">
@@ -411,11 +411,11 @@ def generate_bilingual_clinical_html(
 
   <div class="safety-box">
     <strong>⚠️ Clinical Safety Boundary & Usage Disclaimer:</strong>
-    LinguaLens is an assistive research and educational prototype designed to streamline transcript review and quantify developmental language markers. It does NOT provide automated medical or diagnostic conclusions. All findings must be interpreted by a certified Speech-Language Pathologist (SLP) or developmental pediatrician in combination with standardized clinical evaluations.
+    PasaScope is an assistive research and educational prototype designed to streamline transcript review and quantify developmental language markers. It does NOT provide automated medical or diagnostic conclusions. All findings must be interpreted by a certified Speech-Language Pathologist (SLP) or developmental pediatrician in combination with standardized clinical evaluations.
   </div>
 
   <div class="footer">
-    LinguaLens v1.7.0 • Department of Medical Technology, Mahidol University • TalkBank / CHILDES Compliant
+    PasaScope v1.7.0 • Department of Medical Technology, Mahidol University • TalkBank / CHILDES Compliant
   </div>
 </div>
 

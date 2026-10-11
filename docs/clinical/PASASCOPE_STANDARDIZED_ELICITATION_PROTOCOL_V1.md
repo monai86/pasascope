@@ -1,4 +1,4 @@
-# LinguaLens Standardized Language-Sampling Protocol v1.0 (L-SLSP-v1)
+# PasaScope Standardized Language-Sampling Protocol v1.0 (L-SLSP-v1)
 **Protocol Version:** 1.0.0-PROSPECTIVE-RESEARCH  
 **Document Status:** Standardized Research Specification (Not a Validated Clinical Diagnostic Instrument)  
 **Target Population:** Children aged 24–72 months undergoing exploratory speech-language assessment  
@@ -9,7 +9,7 @@
 
 Retrospective corpus analyses showed strong site/protocol predictability (exploratory corpus-prediction AUROC: v1 **0.9936**, v2 **0.7679**, combined **0.9817**), warning that models can exploit laboratory-specific elicitation artifacts rather than invariant traits.
 
-The **LinguaLens Standardized Language-Sampling Protocol (L-SLSP-v1)** establishes a reproducible, cross-site standardized language-sampling procedure to minimize examiner variance, standardize acoustic recording fidelity, and provide auditable task/block metadata for prospective research.
+The **PasaScope Standardized Language-Sampling Protocol (L-SLSP-v1)** establishes a reproducible, cross-site standardized language-sampling procedure to minimize examiner variance, standardize acoustic recording fidelity, and provide auditable task/block metadata for prospective research.
 
 ---
 
@@ -46,7 +46,7 @@ The **LinguaLens Standardized Language-Sampling Protocol (L-SLSP-v1)** establish
 
 ## 3. Standardized Session Structure (Tri-Block Architecture)
 
-A standard LinguaLens session consists of three distinct, separable blocks totaling 20–25 minutes. **Blocks must NOT be merged silently; every transcript utterance and acoustic segment must retain its `task_block` tag.**
+A standard PasaScope session consists of three distinct, separable blocks totaling 20–25 minutes. **Blocks must NOT be merged silently; every transcript utterance and acoustic segment must retain its `task_block` tag.**
 
 ```text
 Session Timeline (Total: ~20-25 min)
@@ -119,7 +119,7 @@ When typical interaction stalls, examiners follow standardized rescue protocols:
 
 ## 6. Session Sufficiency Metrics (Continuous QC)
 
-Rather than enforcing arbitrary hard cutoffs, LinguaLens logs continuous sufficiency counters:
+Rather than enforcing arbitrary hard cutoffs, PasaScope logs continuous sufficiency counters:
 
 - `duration_seconds`: Total recorded session length.
 - `usable_child_speech_seconds`: Accumulated phonated child speech.

@@ -65,8 +65,8 @@ Do not add new product behavior to these legacy paths.
 
 ## Desktop and terminal launchers
 
-- `scripts/pasascope_gui.py` (compatibility alias: `scripts/lingualens_gui.py`) — launcher for PasaScope Desktop GUI
-- `scripts/pasascope_tui.py` (compatibility alias: `scripts/lingualens_tui.py`) — launcher for PasaScope Terminal TUI
+- `scripts/pasascope_gui.py` (compatibility alias: `scripts/pasascope_gui.py`) — launcher for PasaScope Desktop GUI
+- `scripts/pasascope_tui.py` (compatibility alias: `scripts/pasascope_tui.py`) — launcher for PasaScope Terminal TUI
 
 ## Generated and local-only files
 

@@ -1,6 +1,6 @@
-# lingualens Threat Model
+# pasascope Threat Model
 
-This threat model covers the production SaaS direction for lingualens. It
+This threat model covers the production SaaS direction for pasascope. It
 does not claim the current local prototype is production-ready.
 
 ## Scope

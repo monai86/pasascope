@@ -1,4 +1,4 @@
-"""Port definitions for LinguaLens clinical data access."""
+"""Port definitions for PasaScope clinical data access."""
 
 from __future__ import annotations
 
@@ -7,7 +7,7 @@ from typing import Any, Callable, Optional, Protocol, runtime_checkable
 
 @runtime_checkable
 class ClinicalDataPort(Protocol):
-    """Abstract port interface for LinguaLens clinical data access.
+    """Abstract port interface for PasaScope clinical data access.
 
     Decouples client transport and in-memory mock execution into discrete adapters.
     """

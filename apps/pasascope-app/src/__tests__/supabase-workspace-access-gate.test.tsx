@@ -41,7 +41,7 @@ describe("SupabaseWorkspaceAccessGate", () => {
       aal: "aal1",
       organizationId: "clinic_001",
       availableOrganizations: [
-        { organizationId: "clinic_001", label: "LinguaLens Clinic" },
+        { organizationId: "clinic_001", label: "PasaScope Clinic" },
       ],
     }));
 
@@ -61,7 +61,7 @@ describe("SupabaseWorkspaceAccessGate", () => {
             id: "factor_totp_001",
             factor_type: "totp",
             status: "unverified",
-            friendly_name: "LinguaLens Authenticator",
+            friendly_name: "PasaScope Authenticator",
           }],
           totp: [],
           phone: [],
@@ -75,13 +75,13 @@ describe("SupabaseWorkspaceAccessGate", () => {
             id: "factor_totp_001",
             factor_type: "totp",
             status: "verified",
-            friendly_name: "LinguaLens Authenticator",
+            friendly_name: "PasaScope Authenticator",
           }],
           totp: [{
             id: "factor_totp_001",
             factor_type: "totp",
             status: "verified",
-            friendly_name: "LinguaLens Authenticator",
+            friendly_name: "PasaScope Authenticator",
           }],
           phone: [],
           webauthn: [],
@@ -93,11 +93,11 @@ describe("SupabaseWorkspaceAccessGate", () => {
       data: {
         id: "factor_totp_001",
         type: "totp",
-        friendly_name: "LinguaLens Authenticator",
+        friendly_name: "PasaScope Authenticator",
         totp: {
           qr_code: "<svg xmlns=\"http://www.w3.org/2000/svg\"></svg>",
           secret: "SECRET-CODE",
-          uri: "otpauth://totp/LinguaLens",
+          uri: "otpauth://totp/PasaScope",
         },
       },
       error: null,
@@ -118,7 +118,7 @@ describe("SupabaseWorkspaceAccessGate", () => {
             invitation_status: "accepted",
             organization_id: "clinic_001",
             organizations: [
-              { organizationId: "clinic_001", label: "LinguaLens Clinic" },
+              { organizationId: "clinic_001", label: "PasaScope Clinic" },
             ],
           },
           user_metadata: {
@@ -142,7 +142,7 @@ describe("SupabaseWorkspaceAccessGate", () => {
               invitation_status: "accepted",
               organization_id: "clinic_001",
               organizations: [
-                { organizationId: "clinic_001", label: "LinguaLens Clinic" },
+                { organizationId: "clinic_001", label: "PasaScope Clinic" },
               ],
             },
             user_metadata: {
@@ -203,7 +203,7 @@ describe("SupabaseWorkspaceAccessGate", () => {
         membership_active: true,
         invitation_status: "accepted",
         organizations: [
-          { organizationId: "clinic_001", label: "LinguaLens Clinic", role: "clinical_supervisor" },
+          { organizationId: "clinic_001", label: "PasaScope Clinic", role: "clinical_supervisor" },
           { organizationId: "clinic_002", label: "North Review Clinic", role: "org_admin" },
         ],
       },
@@ -215,7 +215,7 @@ describe("SupabaseWorkspaceAccessGate", () => {
       role: "clinical_supervisor",
       aal: "aal2",
       availableOrganizations: [
-        { organizationId: "clinic_001", label: "LinguaLens Clinic", role: "clinical_supervisor" },
+        { organizationId: "clinic_001", label: "PasaScope Clinic", role: "clinical_supervisor" },
         { organizationId: "clinic_002", label: "North Review Clinic", role: "org_admin" },
       ],
       suggestedOrganizationId: "clinic_002",
@@ -254,7 +254,7 @@ describe("SupabaseWorkspaceAccessGate", () => {
           invitation_status: "accepted",
           organization_id: "clinic_001",
           organizations: [
-            { organizationId: "clinic_001", label: "LinguaLens Clinic", role: "org_admin" },
+            { organizationId: "clinic_001", label: "PasaScope Clinic", role: "org_admin" },
           ],
         },
       },

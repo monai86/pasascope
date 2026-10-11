@@ -32,7 +32,7 @@ from app.core.security import CurrentUser
 
 
 def test_sqlite_assessment_session_enforces_capture_tenant_foreign_keys() -> None:
-    with TemporaryDirectory(prefix="lingualens-assessment-v2-fk-") as temp_dir:
+    with TemporaryDirectory(prefix="pasascope-assessment-v2-fk-") as temp_dir:
         database_path = Path(temp_dir) / "assessment-v2.db"
         database_url = f"sqlite:///{database_path}"
         engine = get_assessment_engine(database_url)

@@ -1,4 +1,4 @@
-# LinguaLens Staging Verification & Operational Readiness Runbook
+# PasaScope Staging Verification & Operational Readiness Runbook
 
 **Document Version:** 2.0 (Assessment V2 Staging Gate S1)  
 **Date:** 2026-09-12  

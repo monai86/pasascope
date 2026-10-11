@@ -267,7 +267,7 @@ def test_legacy_repository_mode_env_emits_deprecation_warning(monkeypatch):
     get_settings.cache_clear()
 
 
-def test_previous_lingualens_prefix_is_still_read_without_warning(monkeypatch):
+def test_previous_pasascope_prefix_is_still_read_without_warning(monkeypatch):
     monkeypatch.delenv("PASASCOPE_REPOSITORY_MODE", raising=False)
     monkeypatch.delenv("THERAPIST_APP_V2_REPOSITORY_MODE", raising=False)
     monkeypatch.setenv("LINGUALENS_REPOSITORY_MODE", "memory")

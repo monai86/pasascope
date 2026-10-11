@@ -28,13 +28,13 @@ import unittest.mock as mock
 
 import pytest
 
-from packages.gui.app import LinguaLensGUIApp
+from packages.gui.app import PasaScopeGUIApp
 from packages.tui.client import (
     ClientSession,
-    LinguaLensApiError,
-    LinguaLensAuthError,
-    LinguaLensConflictError,
-    LinguaLensPermissionError,
+    PasaScopeApiError,
+    PasaScopeAuthError,
+    PasaScopeConflictError,
+    PasaScopePermissionError,
 )
 from packages.tui.workflow import WorkflowRunner
 
@@ -177,7 +177,7 @@ class FakeB2ApiClient:
         return {"id": "asmt-new-01", "child_id": child_id, "purpose": purpose, "state": "draft"}
 
 
-def _drain_tk_queue(app: LinguaLensGUIApp) -> None:
+def _drain_tk_queue(app: PasaScopeGUIApp) -> None:
     """Drain Tk async queue deterministically on the main thread."""
     while not app._async_queue.empty():
         item = app._async_queue.get_nowait()
@@ -200,7 +200,7 @@ def test_current_session_401_invalidates_gui_and_tui_credentials_and_clinical_st
     monkeypatch.setattr(tk.messagebox, "showinfo", mock.MagicMock())
 
     fake_client = FakeB2ApiClient(initial_generation=1)
-    app = LinguaLensGUIApp(tk_root, client=fake_client)
+    app = PasaScopeGUIApp(tk_root, client=fake_client)
 
     # Populate sensitive clinical state in GUI
     app.active_case_id = "CASE-B2-01"
@@ -227,7 +227,7 @@ def test_current_session_401_invalidates_gui_and_tui_credentials_and_clinical_st
     assert fake_client.get_session().generation == 1
 
     # Trigger 401 for current session (gen 1)
-    auth_err = LinguaLensAuthError("Session expired: HTTP 401", status_code=401)
+    auth_err = PasaScopeAuthError("Session expired: HTTP 401", status_code=401)
     app._handle_auth_error(auth_err, session_generation=1)
 
     # Assert credentials cleared
@@ -291,7 +291,7 @@ def test_cancel_operation_still_triggers_current_session_401_cleanup(
     monkeypatch.setattr(tk.messagebox, "showwarning", mock.MagicMock())
 
     fake_client = FakeB2ApiClient(initial_generation=1)
-    app = LinguaLensGUIApp(tk_root, client=fake_client)
+    app = PasaScopeGUIApp(tk_root, client=fake_client)
 
     app.active_child_id = "child-b2-01"
     app.active_assessment_id = "asmt-b2-01"
@@ -311,7 +311,7 @@ def test_cancel_operation_still_triggers_current_session_401_cleanup(
     app._current_asmt_dialog_token = "new-or-none-token"
 
     # Current session 401 returns from the server for this cancelled request
-    auth_err = LinguaLensAuthError("HTTP 401 Unauthorized", status_code=401)
+    auth_err = PasaScopeAuthError("HTTP 401 Unauthorized", status_code=401)
     app._on_create_assessment_error(
         win=dlg,
         dlg_token="dlg-token-123",
@@ -338,7 +338,7 @@ def test_mode_switch_and_selection_change_still_triggers_current_session_401_cle
     monkeypatch.setattr(tk.messagebox, "showwarning", mock.MagicMock())
 
     fake_client = FakeB2ApiClient(initial_generation=1)
-    app = LinguaLensGUIApp(tk_root, client=fake_client)
+    app = PasaScopeGUIApp(tk_root, client=fake_client)
 
     # Start in legacy mode with active case
     app.current_mode = "legacy"
@@ -351,7 +351,7 @@ def test_mode_switch_and_selection_change_still_triggers_current_session_401_cle
     app._legacy_context_generation += 1
 
     # Current-session 401 arrives from the legacy task
-    auth_err = LinguaLensAuthError("HTTP 401 Unauthorized", status_code=401)
+    auth_err = PasaScopeAuthError("HTTP 401 Unauthorized", status_code=401)
     app._on_task_done(
         result=None,
         callback=None,
@@ -400,7 +400,7 @@ def test_stale_401_from_prior_session_does_not_clear_new_session_or_context(
     monkeypatch.setattr(tk.messagebox, "showwarning", mock.MagicMock())
 
     fake_client = FakeB2ApiClient(initial_generation=1)
-    app = LinguaLensGUIApp(tk_root, client=fake_client)
+    app = PasaScopeGUIApp(tk_root, client=fake_client)
 
     # User re-authenticates to session generation 2
     fake_client.set_session("valid-token-gen2")
@@ -411,7 +411,7 @@ def test_stale_401_from_prior_session_does_not_clear_new_session_or_context(
     app.active_child = {"id": "child-gen2"}
 
     # Late 401 arrives from session generation 1
-    stale_auth_err = LinguaLensAuthError("Old session expired: HTTP 401", status_code=401)
+    stale_auth_err = PasaScopeAuthError("Old session expired: HTTP 401", status_code=401)
     app._handle_auth_error(stale_auth_err, session_generation=1)
 
     # Generation 2 session credentials and context MUST be preserved
@@ -430,10 +430,10 @@ def test_late_success_after_auth_invalidation_does_not_restore_clinical_data_or_
     monkeypatch.setattr(tk.messagebox, "showinfo", mock.MagicMock())
 
     fake_client = FakeB2ApiClient(initial_generation=1)
-    app = LinguaLensGUIApp(tk_root, client=fake_client)
+    app = PasaScopeGUIApp(tk_root, client=fake_client)
 
     # Invalidation happens (session generation bumped)
-    auth_err = LinguaLensAuthError("HTTP 401", status_code=401)
+    auth_err = PasaScopeAuthError("HTTP 401", status_code=401)
     app._handle_auth_error(auth_err, session_generation=1)
 
     assert app.active_child_id is None
@@ -473,9 +473,9 @@ def test_repeated_401_is_idempotent_and_prevents_dialog_storm(
     monkeypatch.setattr(tk.messagebox, "showerror", showerror_mock)
 
     fake_client = FakeB2ApiClient(initial_generation=1)
-    app = LinguaLensGUIApp(tk_root, client=fake_client)
+    app = PasaScopeGUIApp(tk_root, client=fake_client)
 
-    auth_err = LinguaLensAuthError("HTTP 401 Unauthorized", status_code=401)
+    auth_err = PasaScopeAuthError("HTTP 401 Unauthorized", status_code=401)
 
     # Dispatch 3 concurrent 401 errors for generation 1
     app._handle_auth_error(auth_err, session_generation=1)
@@ -496,11 +496,11 @@ def test_403_and_409_and_network_failures_are_not_treated_as_401(
     monkeypatch.setattr(tk.messagebox, "showwarning", mock.MagicMock())
 
     fake_client = FakeB2ApiClient(initial_generation=1)
-    app = LinguaLensGUIApp(tk_root, client=fake_client)
+    app = PasaScopeGUIApp(tk_root, client=fake_client)
     app.active_child_id = "child-b2-01"
 
-    perm_err = LinguaLensPermissionError("HTTP 403 Forbidden", status_code=403)
-    conflict_err = LinguaLensConflictError("HTTP 409 Conflict", status_code=409)
+    perm_err = PasaScopePermissionError("HTTP 403 Forbidden", status_code=403)
+    conflict_err = PasaScopeConflictError("HTTP 409 Conflict", status_code=409)
     net_err = OSError("Connection refused")
 
     # Handle 403
@@ -544,12 +544,12 @@ def test_error_messages_containing_auth_or_401_substrings_do_not_trigger_logout(
     monkeypatch.setattr(tk.messagebox, "showerror", showerror_mock)
 
     fake_client = FakeB2ApiClient(initial_generation=1)
-    app = LinguaLensGUIApp(tk_root, client=fake_client)
+    app = PasaScopeGUIApp(tk_root, client=fake_client)
     app.active_case_id = "CASE-B2-01"
 
-    # Errors that contain "auth" or "401" as substrings but are NOT LinguaLensAuthError
+    # Errors that contain "auth" or "401" as substrings but are NOT PasaScopeAuthError
     err1 = RuntimeError("Author name cannot be empty")
-    err2 = LinguaLensApiError("Internal error code 4010: record unavailable")
+    err2 = PasaScopeApiError("Internal error code 4010: record unavailable")
     err3 = ValueError("Invalid authentication header format")
 
     for err in (err1, err2, err3):
@@ -577,7 +577,7 @@ def test_gui_current_session_401_wipes_all_residual_clinical_displays_and_dialog
     monkeypatch.setattr(tk.messagebox, "showinfo", mock.MagicMock())
 
     fake_client = FakeB2ApiClient(initial_generation=1)
-    app = LinguaLensGUIApp(tk_root, client=fake_client)
+    app = PasaScopeGUIApp(tk_root, client=fake_client)
 
     # 1. Populate text widgets with synthetic sentinel clinical content
     app.txt_chat_view.config(state=tk.NORMAL)
@@ -632,7 +632,7 @@ def test_gui_current_session_401_wipes_all_residual_clinical_displays_and_dialog
     dlg_entry.insert(0, "SENTINEL_DIALOG_SECRET")
 
     # Dispatch current-session 401 through the actual production async queue path
-    auth_err = LinguaLensAuthError("HTTP 401 Unauthorized", status_code=401)
+    auth_err = PasaScopeAuthError("HTTP 401 Unauthorized", status_code=401)
     app._async_queue.put((
         lambda e=auth_err: app._on_task_done(
             None, None, e, task_mode="legacy", expected_gen=app._legacy_context_generation, request_id="task-auth-01", session_gen=1

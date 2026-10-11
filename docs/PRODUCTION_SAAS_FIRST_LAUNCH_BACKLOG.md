@@ -25,7 +25,7 @@ Current remaining count: 11 launch workstreams.
 
 ## 1. Create the real Supabase tenancy skeleton
 
-- [x] Create Supabase organization `LinguaLens`.
+- [x] Create Supabase organization `PasaScope`.
 - [x] Create `lingualens-staging` in `ap-southeast-1`.
 - [x] Create `lingualens-production` in `ap-southeast-1`.
 - [ ] Record remaining owner contacts in deployment docs.

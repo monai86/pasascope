@@ -39,7 +39,7 @@ def test_audit_metadata_json_has_empty_object_server_default(monkeypatch) -> Non
     from app.assessment_v2.db.migrations_runner import downgrade_assessment_database, upgrade_assessment_database
     from app.core.config import get_settings
 
-    with TemporaryDirectory(prefix="lingualens-assessment-v2-default-") as temp_dir:
+    with TemporaryDirectory(prefix="pasascope-assessment-v2-default-") as temp_dir:
         database_path = Path(temp_dir) / "assessment-v2.db"
         monkeypatch.setenv("PASASCOPE_ASSESSMENT_DATABASE_URL", f"sqlite:///{database_path}")
         get_settings.cache_clear()
@@ -61,7 +61,7 @@ def test_downgrade_refuses_to_delete_existing_evidence_jobs(monkeypatch) -> None
     )
     from app.core.config import get_settings
 
-    with TemporaryDirectory(prefix="lingualens-assessment-v2-downgrade-") as temp_dir:
+    with TemporaryDirectory(prefix="pasascope-assessment-v2-downgrade-") as temp_dir:
         database_path = Path(temp_dir) / "assessment-v2.db"
         monkeypatch.setenv("PASASCOPE_ASSESSMENT_DATABASE_URL", f"sqlite:///{database_path}")
         get_settings.cache_clear()

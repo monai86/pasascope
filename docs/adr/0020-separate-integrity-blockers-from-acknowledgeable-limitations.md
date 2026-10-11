@@ -1,6 +1,6 @@
 # Separate integrity blockers from therapist-acknowledgeable limitations
 
-LinguaLens v1.7.0 removes the normal workflow's generic QA-failure override:
+PasaScope v1.7.0 removes the normal workflow's generic QA-failure override:
 typed integrity failures must be remediated, while structurally safe
 limitations may be acknowledged only through version-bound audited records
 that remain visible downstream. Explicit escalation rules promote a limitation

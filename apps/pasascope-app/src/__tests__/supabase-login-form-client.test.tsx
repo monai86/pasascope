@@ -88,7 +88,7 @@ describe("SupabaseLoginFormClient", () => {
       },
       error: null,
     });
-    window.addEventListener("lingualens:supabase-session-source", listener as EventListener);
+    window.addEventListener("pasascope:supabase-session-source", listener as EventListener);
 
     render(<SupabaseLoginFormClient runtimeSettings={runtimeSettings} />);
 
@@ -108,7 +108,7 @@ describe("SupabaseLoginFormClient", () => {
       expect(routerRefresh).toHaveBeenCalled();
     });
 
-    window.removeEventListener("lingualens:supabase-session-source", listener as EventListener);
+    window.removeEventListener("pasascope:supabase-session-source", listener as EventListener);
   });
 
   it("tells an account without an organization membership that it is not provisioned", async () => {

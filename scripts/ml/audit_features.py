@@ -85,7 +85,7 @@ def run_feature_quality_audit() -> None:
     # Differences by Group (ASD vs TD vs SLI)
     group_means = df.groupby("diagnostic_group")[feature_cols].mean().round(3).T
 
-    report_content = f"""# LinguaLens Feature Quality and Distribution Audit
+    report_content = f"""# PasaScope Feature Quality and Distribution Audit
 **Generated Date:** 2026-08-23  
 **Source Dataset:** `data/ml/canonical_features.parquet` ({len(df)} rows)  
 **Schema Version:** `features-basic-v1` ({len(feature_cols)} canonical features)  

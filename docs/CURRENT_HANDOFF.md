@@ -1,4 +1,4 @@
-# LinguaLens Historical Handoff Snapshot
+# PasaScope Historical Handoff Snapshot
 
 Last verified: 2026-09-20 (Assessment V2 continuation merged)
 Handoff base: `fe0f832a` (Assessment V2 continuation)
@@ -25,7 +25,7 @@ before relying on them.
 
 ## Executive summary
 
-LinguaLens มี canonical therapist product เพียงชุดเดียว:
+PasaScope มี canonical therapist product เพียงชุดเดียว:
 
 - Next.js frontend: `apps/pasascope-app/`
 - FastAPI workflow and clinical-policy API: `apps/api/`

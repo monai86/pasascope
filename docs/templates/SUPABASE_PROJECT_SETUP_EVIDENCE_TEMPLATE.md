@@ -9,7 +9,7 @@
 ## Preconditions
 
 - [ ] Launch decision is accepted in `docs/adr/0017-launch-controlled-single-clinic-supabase-rollout.md`.
-- [ ] Target organization name is `LinguaLens`.
+- [ ] Target organization name is `PasaScope`.
 - [ ] Target projects are `lingualens-staging` and `lingualens-production`.
 - [ ] Target region for both projects is `ap-southeast-1`.
 
@@ -17,7 +17,7 @@
 
 | Field | Value | Notes |
 |---|---|---|
-| Organization name | `LinguaLens` |  |
+| Organization name | `PasaScope` |  |
 | Organization ID | {{ORG_ID}} |  |
 | Organization slug | {{ORG_SLUG}} |  |
 | Plan/subscription | {{ORG_PLAN}} |  |

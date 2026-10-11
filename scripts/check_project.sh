@@ -26,7 +26,7 @@ select_python_runtime() {
 }
 
 if ! PYTHON_BIN="$(select_python_runtime)"; then
-    echo "Error: LinguaLens requires Python >=3.11,<3.14; Python 3.12 is recommended." >&2
+    echo "Error: PasaScope requires Python >=3.11,<3.14; Python 3.12 is recommended." >&2
     exit 2
 fi
 

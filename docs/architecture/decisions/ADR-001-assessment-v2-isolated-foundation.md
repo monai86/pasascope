@@ -6,7 +6,7 @@
 
 ## Context
 
-LinguaLens already serves the maintained therapist product through `/api/v1`
+PasaScope already serves the maintained therapist product through `/api/v1`
 and an existing database/migration history. The redesign needs an
 assessment-centric workflow with explicit child, consent, tenant, care-team,
 audit, and optimistic-concurrency boundaries. Rewriting the v1 migration chain

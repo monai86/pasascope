@@ -1,6 +1,6 @@
 # Backup and Restore Runbook
 
-This runbook covers lingualens production-readiness expectations for the
+This runbook covers pasascope production-readiness expectations for the
 active FastAPI API and Postgres/Supabase database. It is a launch gate, not a
 claim that the current local prototype is production-ready.
 
