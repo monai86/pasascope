@@ -13,6 +13,20 @@ def _default_get_utc_now() -> datetime:
     return datetime.now(timezone.utc)
 
 
+_UNINTELLIGIBLE_RE = re.compile(r"\b(?:xxx|yyy)\b")
+
+
+def _finite(value: Any, digits: int, *, scale: float = 1.0) -> float | None:
+    """Round a measured value; NaN or a missing measurement stays missing."""
+    if value is None or value != value:
+        return None
+    return round(value * scale, digits)
+
+
+def _show(value: Any) -> str:
+    return "-" if value is None else str(value)
+
+
 class InMemoryClinicalAdapter:
     """Clinical data adapter managing offline in-memory mock datasets."""
 
@@ -176,7 +190,6 @@ class InMemoryClinicalAdapter:
                     "has_data": True,
                     "metrics": {
                         "mlu_words": 2.25,
-                        "mlu_morphemes": 2.65,
                         "ttr": 0.78,
                         "total_child_words": 9,
                         "unique_words_count": 7,
@@ -468,95 +481,57 @@ class InMemoryClinicalAdapter:
         if not p.exists():
             raise FileNotFoundError(f"Audio/video file not found at: {audio_path}")
 
-        utterances = []
-        acoustic_metrics: dict[str, Any] = {}
-        raw_chat_text: str | None = None
+        # No synthetic fallback: text or acoustic values that did not come from
+        # this recording must never be shown as if they did.
         try:
             from src.audio_pipeline.pipeline import audio_to_cha
             res = audio_to_cha(p, model_size="small", progress_callback=progress_callback)
-            raw_chat_text = getattr(res, "chat_text", None)
-            if res.utterances:
-                for idx, u in enumerate(res.utterances, 1):
-                    raw_words = getattr(u, "words", []) or []
-                    words_list = [
-                        {
-                            "text": getattr(w, "text", "") or "",
-                            "start_time": getattr(w, "start", 0.0),
-                            "end_time": getattr(w, "end", 0.0),
-                            "probability": getattr(w, "probability", 1.0),
-                        }
-                        for w in raw_words
-                    ]
-                    utterances.append({
-                        "id": f"u-{idx}",
-                        "speaker": getattr(u, "speaker", "CHI") or "CHI",
-                        "text": getattr(u, "text", "") or "เสียงพูดในคลิป",
-                        "start_time": getattr(u, "start", (idx - 1) * 2.0),
-                        "end_time": getattr(u, "end", idx * 2.0),
-                        "words": words_list,
-                        "qa_flags": [],
-                    })
-            if res.acoustic_profile:
-                prof = res.acoustic_profile
-                acoustic_metrics = {
-                    "duration_sec": round(prof.duration_sec, 2),
-                    "f0_median_hz": round(prof.f0_median_hz, 1) if prof.f0_median_hz == prof.f0_median_hz else "N/A",
-                    "f0_iqr_hz": round(prof.f0_iqr_hz, 1) if prof.f0_iqr_hz == prof.f0_iqr_hz else "N/A",
-                    "voiced_ratio": round(prof.voiced_ratio * 100, 1),
-                    "pause_ratio": round(prof.pause_ratio * 100, 1),
-                }
-        except Exception:
-            try:
-                from src.audio_pipeline.acoustic_profile import extract_acoustic_profile
-                prof = extract_acoustic_profile(p)
-                acoustic_metrics = {
-                    "duration_sec": round(prof.duration_sec, 2),
-                    "f0_median_hz": round(prof.f0_median_hz, 1) if prof.f0_median_hz == prof.f0_median_hz else "N/A",
-                    "f0_iqr_hz": round(prof.f0_iqr_hz, 1) if prof.f0_iqr_hz == prof.f0_iqr_hz else "N/A",
-                    "voiced_ratio": round(prof.voiced_ratio * 100, 1),
-                    "pause_ratio": round(prof.pause_ratio * 100, 1),
-                }
-            except Exception:
-                acoustic_metrics = {
-                    "duration_sec": 12.5,
-                    "f0_median_hz": 310.5,
-                    "f0_iqr_hz": 24.2,
-                    "voiced_ratio": 78.5,
-                    "pause_ratio": 21.5,
-                }
-            utterances = [
+        except Exception as exc:
+            raise RuntimeError(f"Audio transcription failed for {p.name}: {exc}") from exc
+
+        utterances: list[dict[str, Any]] = []
+        for u in res.utterances or []:
+            text = (getattr(u, "text", "") or "").strip()
+            if not text:
+                continue
+            words_list = [
                 {
-                    "id": "u-1",
-                    "speaker": "INV",
-                    "text": "ไหนลองพูดดูซิครับ",
-                    "start_time": 0.5,
-                    "end_time": 2.1,
-                    "words": [{"text": "ไหนลองพูดดูซิครับ", "start_time": 0.5, "end_time": 2.1, "probability": 0.95}],
-                    "qa_flags": [],
-                },
-                {
-                    "id": "u-2",
-                    "speaker": "CHI",
-                    "text": "รถ แดง วิ่ง เร็ว",
-                    "start_time": 2.8,
-                    "end_time": 4.5,
-                    "words": [
-                        {"text": "รถ", "start_time": 2.8, "end_time": 3.2, "probability": 0.96},
-                        {"text": "แดง", "start_time": 3.3, "end_time": 3.7, "probability": 0.95},
-                        {"text": "วิ่ง", "start_time": 3.8, "end_time": 4.1, "probability": 0.92},
-                        {"text": "เร็ว", "start_time": 4.2, "end_time": 4.5, "probability": 0.98},
-                    ],
-                    "qa_flags": [],
-                },
+                    "text": getattr(w, "text", "") or "",
+                    "start_time": getattr(w, "start", None),
+                    "end_time": getattr(w, "end", None),
+                    "probability": getattr(w, "probability", None),
+                }
+                for w in (getattr(u, "words", []) or [])
             ]
+            utterances.append({
+                "id": f"u-{len(utterances) + 1}",
+                "speaker": getattr(u, "speaker", None) or "UNK",
+                "text": text,
+                "start_time": getattr(u, "start", None),
+                "end_time": getattr(u, "end", None),
+                "words": words_list,
+                "qa_flags": [],
+            })
+
+        acoustic_metrics: dict[str, Any] | None = None
+        prof = res.acoustic_profile
+        if prof is not None:
+            acoustic_metrics = {
+                "audio_duration_sec": _finite(prof.duration_sec, 2),
+                "f0_median_hz": _finite(prof.f0_median_hz, 1),
+                "f0_iqr_hz": _finite(prof.f0_iqr_hz, 1),
+                "voiced_ratio_pct": _finite(prof.voiced_ratio, 1, scale=100),
+                "pause_ratio_pct": _finite(prof.pause_ratio, 1, scale=100),
+            }
 
         tr_id = f"tr-audio-{session_id[-4:]}"
         tr_data = {
             "transcript_id": tr_id,
             "session_id": session_id,
-            "raw_cha": raw_chat_text,
+            "raw_cha": getattr(res, "chat_text", None),
             "status": "pending_review",
             "audio_file": str(p.name),
+            "acoustic_metrics": acoustic_metrics,
             "utterances": utterances,
             "qa_summary": {
                 "total_utterances": len(utterances),
@@ -568,72 +543,17 @@ class InMemoryClinicalAdapter:
         }
         self._mock_data["transcripts"][tr_id] = tr_data
 
-        f0_val = acoustic_metrics.get("f0_median_hz")
-        f0_iqr = acoustic_metrics.get("f0_iqr_hz")
-        voiced_r = acoustic_metrics.get("voiced_ratio")
-        pause_r = acoustic_metrics.get("pause_ratio")
-        dur_sec = acoustic_metrics.get("duration_sec", 10.0)
-
-        try:
-            from src.clinical_speech.thai_lsa import ThaiClinicalLSA
-            lsa_res = ThaiClinicalLSA.analyze_utterances(utterances)
-        except Exception:
-            lsa_res = None
-
-        child_lsa_words = lsa_res.total_child_words if lsa_res else 4
-        feat_data = {
-            "feature_set_id": f"feat-audio-{session_id[-4:]}",
-            "session_id": session_id,
-            "has_data": True,
-            "metrics": {
-                "mlu_words": lsa_res.mlu_words if lsa_res else (4.0 if utterances else 0.0),
-                "mlu_morphemes": round((lsa_res.mlu_words if lsa_res else 4.0) * 1.18, 2) if utterances else 0.0,
-                "ttr": lsa_res.ttr if lsa_res else (1.0 if utterances else 0.0),
-                "total_child_words": child_lsa_words,
-                "unique_words_count": lsa_res.unique_words_count if lsa_res else 4,
-                "total_child_utterances": lsa_res.total_child_utterances if lsa_res else 1,
-                "multi_word_ratio_pct": 100.0,
-                "intelligibility_rate": 0.96,
-                "turn_taking_ratio": 1.0,
-                "turn_taking_count": lsa_res.turn_taking_count if lsa_res else 1,
-                "question_ratio": round((lsa_res.question_count if lsa_res else 0) / max(lsa_res.total_child_utterances if lsa_res else 1, 1), 2),
-                "question_count": lsa_res.question_count if lsa_res else 0,
-                "negation_count": lsa_res.negation_count if lsa_res else 0,
-                "pronoun_count": lsa_res.pronoun_count if lsa_res else 0,
-                "polite_particle_count": lsa_res.polite_particle_count if lsa_res else 0,
-                "adult_utterance_count": sum(1 for u in utterances if u.get("speaker") != "CHI"),
-                "echolalia_count": lsa_res.echolalia_count if lsa_res else 0,
-                "echolalia_ratio": round((lsa_res.echolalia_count if lsa_res else 0) / max(lsa_res.total_child_utterances if lsa_res else 1, 1), 2),
-                "pronoun_reversal_count": 0,
-                "unintelligible_ratio": 0.04,
-                "f0_median_hz": f0_val if f0_val != "N/A" else None,
-                "f0_iqr_hz": f0_iqr if f0_iqr != "N/A" else None,
-                "voiced_ratio_pct": voiced_r,
-                "pause_ratio_pct": pause_r,
-                "speech_rate_wpm": round((child_lsa_words / max(dur_sec, 1.0)) * 60, 1),
-                "audio_duration_sec": dur_sec,
-            },
-            "guideline_links": [
-                {
-                    "construct": "5. Acoustic Prosody & Pitch (ระดับเสียงและน้ำเสียง)",
-                    "status": "Analyzed (จากไฟล์เสียงจริง)",
-                    "description": f"Pitch กลาง {f0_val} Hz, ความกว้างระดับเสียง IQR {f0_iqr} Hz, จังหวะหยุดพัก {pause_r}%",
-                },
-                {
-                    "construct": "6. Thai Clinical Language Structure (โครงสร้างภาษาไทยคลินิก LSA)",
-                    "status": "Analyzed",
-                    "description": f"คำถาม {lsa_res.question_count if lsa_res else 0} ครั้ง, ปฏิเสธ {lsa_res.negation_count if lsa_res else 0} ครั้ง, คำสุภาพ {lsa_res.polite_particle_count if lsa_res else 0} ครั้ง",
-                },
-            ],
-        }
-        self._mock_data["features"][session_id] = feat_data
-
         for s_list in self._mock_data["sessions"].values():
             for s in s_list:
                 if s["session_id"] == session_id:
                     s["transcript_id"] = tr_id
-                    s["feature_set_id"] = feat_data["feature_set_id"]
                     s["status"] = "Needs Review"
+
+        feat_data = self.get_findings(session_id)
+        for s_list in self._mock_data["sessions"].values():
+            for s in s_list:
+                if s["session_id"] == session_id and feat_data.get("feature_set_id"):
+                    s["feature_set_id"] = feat_data["feature_set_id"]
 
         return tr_data
 
@@ -698,12 +618,17 @@ class InMemoryClinicalAdapter:
                         s["status"] = "Reviewed"
         return tr or {}
 
+    def _current_transcript(self, session_id: str) -> dict[str, Any] | None:
+        """Transcript the session points at, else the first one stored for it."""
+        transcripts = self._mock_data["transcripts"]
+        for s_list in self._mock_data["sessions"].values():
+            for s in s_list:
+                if s["session_id"] == session_id and s.get("transcript_id") in transcripts:
+                    return transcripts[s["transcript_id"]]
+        return self.get_session_transcript(session_id)
+
     def get_findings(self, session_id: str) -> dict[str, Any]:
-        tr = None
-        for item in self._mock_data["transcripts"].values():
-            if item.get("session_id") == session_id:
-                tr = item
-                break
+        tr = self._current_transcript(session_id)
 
         if not tr or not tr.get("utterances"):
             return {
@@ -713,163 +638,82 @@ class InMemoryClinicalAdapter:
                 "guideline_links": [],
             }
 
-        child_utts = [u["text"] for u in tr["utterances"] if u.get("speaker") == "CHI"]
-        adult_utts = [u["text"] for u in tr["utterances"] if u.get("speaker") != "CHI"]
-        n_child = len(child_utts)
+        from src.clinical_speech.thai_lsa import ThaiClinicalLSA
 
-        if n_child == 0:
-            return {
-                "session_id": session_id,
-                "has_data": True,
-                "metrics": {
-                    "mlu_words": 0.0,
-                    "mlu_morphemes": 0.0,
-                    "ttr": 0.0,
-                    "total_child_words": 0,
-                    "unique_words_count": 0,
-                    "total_child_utterances": 0,
-                    "multi_word_ratio_pct": 0.0,
-                    "intelligibility_rate": 0.0,
-                    "turn_taking_ratio": 0.0,
-                    "turn_taking_count": 0,
-                    "question_ratio": 0.0,
-                    "adult_utterance_count": len(adult_utts),
-                    "echolalia_count": 0,
-                    "echolalia_ratio": 0.0,
-                    "pronoun_reversal_count": 0,
-                    "unintelligible_ratio": 0.0,
-                    "f0_median_hz": None,
-                    "f0_iqr_hz": None,
-                    "voiced_ratio_pct": None,
-                    "pause_ratio_pct": None,
-                    "speech_rate_wpm": None,
-                    "audio_duration_sec": None,
-                },
-                "guideline_links": [
-                    {
-                        "construct": "1. Expressive Phrase Length (ไวยากรณ์และความยาวประโยค)",
-                        "status": "No Child Utterances",
-                        "description": "ยังไม่พบประโยคพูดของเด็กในตัวอย่างบทสนทนานี้",
-                    }
-                ],
-            }
+        utterances = tr["utterances"]
+        lsa = ThaiClinicalLSA.analyze_utterances(utterances)
+        child_texts = [u.get("text", "") for u in utterances if u.get("speaker") == "CHI"]
+        n_child = len(child_texts)
+        adult_count = len(utterances) - n_child
 
-        try:
-            from src.clinical_speech.thai_lsa import ThaiClinicalLSA
-            lsa = ThaiClinicalLSA.analyze_utterances(tr["utterances"])
-            total_child_words = lsa.total_child_words
-            unique_words = lsa.unique_words_count
-            mlu_w = lsa.mlu_words
-            ttr = lsa.ttr
-            q_count = lsa.question_count
-            neg_count = lsa.negation_count
-            pronoun_count = lsa.pronoun_count
-            particle_count = lsa.polite_particle_count
-            echolalia_cnt = lsa.echolalia_count
-            turn_taking = lsa.turn_taking_count
-        except Exception:
-            all_child_words = [w for t in child_utts for w in t.split() if w.strip()]
-            total_child_words = len(all_child_words)
-            unique_words = len(set(all_child_words))
-            mlu_w = round(total_child_words / n_child, 2)
-            ttr = round(unique_words / max(total_child_words, 1), 2)
-            q_count = sum(1 for t in child_utts if "?" in t or any(qw in t for qw in ["อะไร", "ไหน", "ทำไม", "ใคร"]))
-            neg_count = sum(1 for t in child_utts if any(nw in t for nw in ["ไม่", "ไม่อยาก", "ไม่ใช่"]))
-            pronoun_count = sum(1 for t in child_utts if any(p in t for p in ["ผม", "หนู", "เธอ", "เขา"]))
-            particle_count = sum(1 for t in child_utts if any(p in t for p in ["ครับ", "ค่ะ", "ฮะ"]))
-            echolalia_cnt = sum(1 for i in range(1, len(tr["utterances"])) if tr and tr["utterances"][i]["speaker"] == "CHI" and any(w in tr["utterances"][i-1]["text"] for w in tr["utterances"][i]["text"].split())) if tr else 0
-            turn_taking = min(len(adult_utts), len(child_utts))
-
-        mlu_m = round(mlu_w * 1.18, 2)
-        multi_word = sum(1 for t in child_utts if len(t.split()) >= 2 or len(t) >= 6)
-        multi_word_pct = round((multi_word / n_child) * 100, 1)
-
-        existing_metrics = self._mock_data.get("features", {}).get(session_id, {}).get("metrics", {})
-        has_real_audio = bool(
-            (tr and tr.get("audio_file"))
-            or (existing_metrics.get("f0_median_hz") is not None and existing_metrics.get("f0_median_hz") != "N/A" and "feat-audio" in self._mock_data.get("features", {}).get(session_id, {}).get("feature_set_id", ""))
+        # Share of child utterances the transcript marks as unintelligible
+        # (CHAT xxx / yyy). Undefined when the child did not speak.
+        unintelligible_ratio = (
+            round(sum(1 for t in child_texts if _UNINTELLIGIBLE_RE.search(t)) / n_child, 2)
+            if n_child
+            else None
         )
 
-        if has_real_audio:
-            f0_median = existing_metrics.get("f0_median_hz")
-            f0_iqr = existing_metrics.get("f0_iqr_hz")
-            voiced_ratio = existing_metrics.get("voiced_ratio_pct")
-            pause_ratio = existing_metrics.get("pause_ratio_pct")
-            audio_dur = existing_metrics.get("audio_duration_sec", 10.0)
-            speech_rate = round((total_child_words / max(audio_dur, 1.0)) * 60, 1)
+        # Acoustic values exist only when this transcript came from a recording
+        # that the audio pipeline actually analysed.
+        acoustic = tr.get("acoustic_metrics") or {}
+        audio_dur = acoustic.get("audio_duration_sec")
+        speech_rate = (
+            round((lsa.total_child_words / audio_dur) * 60, 1)
+            if n_child and audio_dur
+            else None
+        )
+        if acoustic:
             acoustic_status = "Analyzed (จากไฟล์เสียงจริง)"
-            acoustic_desc = f"Pitch กลาง {f0_median} Hz, ความกว้างระดับเสียง IQR {f0_iqr} Hz, จังหวะหยุดพัก {pause_ratio}%"
+            acoustic_desc = (
+                f"Pitch กลาง {_show(acoustic.get('f0_median_hz'))} Hz, "
+                f"ความกว้างระดับเสียง IQR {_show(acoustic.get('f0_iqr_hz'))} Hz, "
+                f"จังหวะหยุดพัก {_show(acoustic.get('pause_ratio_pct'))}%"
+            )
         else:
-            f0_median = None
-            f0_iqr = None
-            voiced_ratio = None
-            pause_ratio = None
-            audio_dur = None
-            speech_rate = None
             acoustic_status = "N/A (Text-only - No Audio)"
             acoustic_desc = "การวัดระดับเสียง F0 และ Prosody จำเป็นต้องมีไฟล์บันทึกเสียง (.wav / .mp3 / .m4a)"
 
-        q_ratio = round(q_count / n_child, 2)
-        turn_taking_ratio = round(turn_taking / max(len(adult_utts), 1), 2)
-
-        latencies = []
-        if tr and "utterances" in tr:
-            utts_list = tr["utterances"]
-            for prev_u, curr_u in zip(utts_list, utts_list[1:]):
-                if prev_u.get("speaker") != "CHI" and curr_u.get("speaker") == "CHI":
-                    p_end = prev_u.get("end_time")
-                    c_start = curr_u.get("start_time")
-                    if p_end is not None and c_start is not None and c_start >= p_end:
-                        latencies.append(c_start - p_end)
-        turn_latency = round(sum(latencies) / len(latencies), 2) if latencies else None
-
-        pronoun_rev = sum(1 for t in child_utts if any(p in t for p in ["หนูอยาก", "เธออยาก", "คุณไป"]))
-
         metrics_full = {
-            "mlu_words": mlu_w,
-            "mlu_morphemes": mlu_m,
-            "ttr": ttr,
-            "total_child_words": total_child_words,
-            "unique_words_count": unique_words,
-            "total_child_utterances": len(child_utts),
-            "multi_word_ratio_pct": multi_word_pct,
-            "intelligibility_rate": 0.94,
-            "turn_taking_ratio": turn_taking_ratio,
-            "turn_taking_count": turn_taking,
-            "turn_taking_latency_sec": turn_latency,
-            "question_ratio": q_ratio,
-            "question_count": q_count,
-            "negation_count": neg_count,
-            "pronoun_count": pronoun_count,
-            "polite_particle_count": particle_count,
-            "adult_utterance_count": len(adult_utts),
-            "echolalia_count": echolalia_cnt,
-            "echolalia_ratio": round(echolalia_cnt / n_child, 2),
-            "pronoun_reversal_count": pronoun_rev,
-            "unintelligible_ratio": 0.06,
-            "f0_median_hz": f0_median,
-            "f0_iqr_hz": f0_iqr,
-            "voiced_ratio_pct": voiced_ratio,
-            "pause_ratio_pct": pause_ratio,
+            "mlu_words": lsa.mlu_words,
+            "ttr": lsa.ttr,
+            "total_child_words": lsa.total_child_words,
+            "unique_words_count": lsa.unique_words_count,
+            "total_child_utterances": n_child,
+            "multi_word_ratio_pct": lsa.multi_word_ratio_pct,
+            "intelligibility_rate": None if unintelligible_ratio is None else round(1 - unintelligible_ratio, 2),
+            "turn_taking_ratio": lsa.turn_taking_ratio,
+            "turn_taking_count": lsa.turn_taking_count,
+            "turn_taking_latency_sec": lsa.turn_taking_latency_sec,
+            "question_ratio": lsa.question_ratio,
+            "question_count": lsa.question_count,
+            "negation_count": lsa.negation_count,
+            "pronoun_count": lsa.pronoun_count,
+            "polite_particle_count": lsa.polite_particle_count,
+            "adult_utterance_count": adult_count,
+            "echolalia_count": lsa.echolalia_count,
+            "echolalia_ratio": lsa.echolalia_ratio,
+            "pronoun_reversal_count": lsa.pronoun_reversal_count,
+            "unintelligible_ratio": unintelligible_ratio,
+            "f0_median_hz": acoustic.get("f0_median_hz"),
+            "f0_iqr_hz": acoustic.get("f0_iqr_hz"),
+            "voiced_ratio_pct": acoustic.get("voiced_ratio_pct"),
+            "pause_ratio_pct": acoustic.get("pause_ratio_pct"),
             "speech_rate_wpm": speech_rate,
             "audio_duration_sec": audio_dur,
         }
 
         guidelines_full = [
-            {"construct": "1. Expressive Phrase Length (ไวยากรณ์และความยาวประโยค)", "status": "Emerging Multi-word (2-3 words)" if mlu_w >= 2.0 else "Single Words", "description": f"MLU-w อยู่ที่ {mlu_w} คำ/ประโยค มีสัดส่วนประโยค 2 คำขึ้นไป {multi_word_pct}%"},
-            {"construct": "2. Lexical & Vocabulary Diversity (ความหลากหลายของคำศัพท์)", "status": "Age Expected (สมวัย)" if ttr >= 0.65 else "Low Diversity", "description": f"TTR {ttr} (คำศัพท์ไม่ซ้ำ {unique_words} คำ จากทั้งหมด {total_child_words} คำ)"},
-            {"construct": "3. Pragmatic Turn-Taking (การผลัดกันพูดในบทสนทนา)", "status": "Responsive (ตอบสนองดี)" if turn_taking_ratio >= 0.7 else "Developing", "description": f"Turn-taking ratio {turn_taking_ratio} มีการโต้ตอบคู่สนทนา {turn_taking} ครั้ง"},
-            {"construct": "4. Echolalia & Repetition (การพูดตาม/พูดซ้ำ)", "status": "Low / Monitored" if echolalia_cnt == 0 else "Observed", "description": f"พบ Echolalia {echolalia_cnt} ครั้ง, สลับสรรพนาม {pronoun_rev} ครั้ง"},
-            {"construct": "5. Acoustic Prosody & Pitch (ระดับเสียงและน้ำเสียง)", "status": acoustic_status, "description": acoustic_desc},
+            *lsa.guideline_links,
             {
-                "construct": "6. Thai Clinical Language Structure (โครงสร้างภาษาไทยคลินิก LSA)",
-                "status": "Analyzed",
-                "description": f"คำถาม {q_count} ครั้ง, ปฏิเสธ {neg_count} ครั้ง, คำลงท้ายสุภาพ {particle_count} ครั้ง, สรรพนาม {pronoun_count} ครั้ง",
+                "construct": "Acoustic Prosody & Pitch (ระดับเสียงและน้ำเสียง)",
+                "status": acoustic_status,
+                "description": acoustic_desc,
             },
         ]
 
         self._mock_data["features"][session_id] = {
-            "feature_set_id": f"feat-{session_id[-4:]}",
+            "feature_set_id": f"feat-audio-{session_id[-4:]}" if acoustic else f"feat-{session_id[-4:]}",
             "session_id": session_id,
             "has_data": True,
             "metrics": metrics_full,

@@ -107,23 +107,84 @@ def test_tui_findings_and_report_signoff(tmp_path: Path):
     assert len(signed_report["sha256_hash"]) == 64
 
 
-def test_tui_audio_ingestion_and_acoustic_features(tmp_path: Path):
+def test_tui_audio_ingestion_and_acoustic_features(tmp_path: Path, monkeypatch):
+    import src.audio_pipeline.pipeline as pipeline
+    from src.audio_pipeline.acoustic_profile import AcousticProfile
+    from src.audio_pipeline.whisper_transcribe import UtteranceSegment
+
+    def fake_audio_to_cha(audio_path, **kwargs):
+        return pipeline.PipelineResult(
+            chat_text="@UTF8\n@Begin\n*INV:\tเล่นอะไรดี .\n*CHI:\tเล่น รถ .\n@End\n",
+            chat_path=None,
+            utterances=[
+                UtteranceSegment(start=0.0, end=1.0, text="เล่นอะไรดี", speaker="INV"),
+                UtteranceSegment(start=1.5, end=2.5, text="เล่น รถ", speaker="CHI"),
+                UtteranceSegment(start=3.0, end=3.2, text="  ", speaker="CHI"),
+            ],
+            n_child_utterances=1,
+            n_adult_utterances=1,
+            total_duration_sec=3.2,
+            acoustic_profile=AcousticProfile(
+                duration_sec=3.2, f0_median_hz=298.4, f0_iqr_hz=float("nan"),
+                voiced_ratio=0.6, pause_ratio=0.4, child_speech_rate_wps=2.0,
+            ),
+        )
+
+    monkeypatch.setattr(pipeline, "audio_to_cha", fake_audio_to_cha)
     client = LinguaLensClient(mock_mode=True)
     session_id = "sess-audio-123"
-
-    # Create dummy audio file
     dummy_wav = tmp_path / "sample.wav"
     dummy_wav.write_bytes(b"RIFFdummyWAVEfmt ")
 
     tr = client.ingest_audio_file(session_id, str(dummy_wav))
     assert tr["status"] == "pending_review"
     assert tr["audio_file"] == "sample.wav"
-    assert len(tr["utterances"]) > 0
+    # The blank segment is dropped rather than filled with placeholder text.
+    assert [(u["speaker"], u["text"]) for u in tr["utterances"]] == [("INV", "เล่นอะไรดี"), ("CHI", "เล่น รถ")]
 
-    findings = client.get_findings(session_id)
-    assert "f0_median_hz" in findings["metrics"]
-    assert "voiced_ratio_pct" in findings["metrics"]
-    assert "audio_duration_sec" in findings["metrics"]
+    metrics = client.get_findings(session_id)["metrics"]
+    assert metrics["f0_median_hz"] == 298.4
+    assert metrics["f0_iqr_hz"] is None  # NaN measurement stays missing
+    assert metrics["voiced_ratio_pct"] == 60.0
+    assert metrics["audio_duration_sec"] == 3.2
+    assert metrics["mlu_words"] == 2.0
+    assert metrics["unintelligible_ratio"] == 0.0
+    assert metrics["intelligibility_rate"] == 1.0
+    assert "mlu_morphemes" not in metrics
+
+
+def test_tui_audio_ingestion_failure_raises_instead_of_fabricating(tmp_path: Path, monkeypatch):
+    import src.audio_pipeline.pipeline as pipeline
+
+    def broken_audio_to_cha(audio_path, **kwargs):
+        raise RuntimeError("decoder crashed")
+
+    monkeypatch.setattr(pipeline, "audio_to_cha", broken_audio_to_cha)
+    client = LinguaLensClient(mock_mode=True)
+    before = copy.deepcopy(client._mock_data)
+    dummy_wav = tmp_path / "broken.wav"
+    dummy_wav.write_bytes(b"RIFFdummyWAVEfmt ")
+
+    with pytest.raises(RuntimeError, match="Audio transcription failed"):
+        client.ingest_audio_file("sess-audio-999", str(dummy_wav))
+
+    assert client._mock_data == before
+    assert client.get_findings("sess-audio-999")["has_data"] is False
+
+
+def test_text_only_findings_have_no_acoustic_or_invented_values():
+    client = LinguaLensClient(mock_mode=True)
+    client.ingest_transcript_text("sess-text-001", "*INV:\tเล่นอะไรดี .\n*CHI:\txxx .\n*CHI:\tเล่น รถ .\n")
+
+    findings = client.get_findings("sess-text-001")
+    metrics = findings["metrics"]
+
+    assert metrics["f0_median_hz"] is None
+    assert metrics["speech_rate_wpm"] is None
+    assert metrics["unintelligible_ratio"] == 0.5
+    assert metrics["intelligibility_rate"] == 0.5
+    statuses = " ".join(link["status"] for link in findings["guideline_links"])
+    assert "Age Expected" not in statuses and "สมวัย" not in statuses
 
 
 from packages.tui.client import (

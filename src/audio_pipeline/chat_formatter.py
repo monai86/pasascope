@@ -383,7 +383,7 @@ def utterances_to_chat(
     child_id: str = "CHI001",
     child_age_months: Optional[float] = None,
     child_sex: Optional[str] = None,
-    child_group: str = "ASD",
+    child_group: str = "",
     media_filename: Optional[str] = None,
     language: str = "eng",
     activities: Optional[str] = None,

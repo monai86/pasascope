@@ -221,22 +221,22 @@ class HttpClinicalAdapter:
             guideline_links = [
                 {
                     "construct": "1. Expressive Phrase Length (ไวยากรณ์และความยาวประโยค)",
-                    "status": "Adequate" if (isinstance(mlu, (int, float)) and mlu >= 2.0) else "Emerging (< 2.0 words)",
+                    "status": "Measured",
                     "description": f"MLU-w อยู่ที่ {mlu} คำ/ประโยค",
                 },
                 {
                     "construct": "2. Lexical & Vocabulary Diversity (ความหลากหลายของคำศัพท์)",
-                    "status": "Age Expected" if (isinstance(ttr, (int, float)) and ttr >= 0.5) else "Restricted Diversity",
+                    "status": "Measured",
                     "description": f"TTR {ttr}",
                 },
                 {
                     "construct": "3. Pragmatic Turn-Taking (การผลัดกันพูดในบทสนทนา)",
-                    "status": "Responsive" if (isinstance(turns, (int, float)) and turns >= 0.5) else "Low Interaction",
+                    "status": "Measured",
                     "description": f"Turn-taking ratio {turns}",
                 },
                 {
                     "construct": "4. Echolalia & Repetition (การพูดตาม/พูดซ้ำ)",
-                    "status": "Low / Monitored" if echo == 0 else f"Found {echo} events",
+                    "status": "Not observed" if echo == 0 else f"Observed {echo} — review in context",
                     "description": f"พบ Echolalia {echo} ครั้ง",
                 },
                 {

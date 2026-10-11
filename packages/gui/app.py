@@ -2559,7 +2559,11 @@ class PasaScopeGUIApp:
         else:
             # Build TalkBank CHAT content from utterances
             self.txt_chat_view.insert(tk.END, "@UTF8\n@Begin\n@Languages:\ttha, eng\n@Participants:\tCHI Child, INV Clinician\n", "header")
-            self.txt_chat_view.insert(tk.END, f"@ID:\ttha|PasaScope|CHI|4;00.|male|ASD||Child||\n@Media:\t{self.active_session_id}, audio\n\n", "header")
+            # Age comes from the case; sex and group stay blank because the
+            # viewer does not know them.
+            age_months = self._get_active_case_age_months()
+            chat_age = f"{age_months // 12};{age_months % 12:02d}." if age_months is not None else ""
+            self.txt_chat_view.insert(tk.END, f"@ID:\ttha|PasaScope|CHI|{chat_age}|||||Child||\n@Media:\t{self.active_session_id}, audio\n\n", "header")
 
             for u in self.active_transcript["utterances"]:
                 spk = u.get("speaker", "CHI")
@@ -2607,13 +2611,12 @@ class PasaScopeGUIApp:
 
         # Domain 1: Lexical & Syntactic Development
         self.tree_metrics.insert("", tk.END, values=("1. Lexical & Syntactic", "MLU-words (MLU-w)", str(metrics.get("mlu_words", "-")), "ความยาวประโยคเฉลี่ย (คำต่อประโยค)"))
-        self.tree_metrics.insert("", tk.END, values=("1. Lexical & Syntactic", "MLU-morphemes (MLU-m)", str(metrics.get("mlu_morphemes", "-")), "ความยาวประโยคเฉลี่ย (หน่วยคำต่อประโยค)"))
         self.tree_metrics.insert("", tk.END, values=("1. Lexical & Syntactic", "Type-Token Ratio (TTR)", str(metrics.get("ttr", "-")), "ความหลากหลายของคำศัพท์ (Lexical Diversity)"))
         self.tree_metrics.insert("", tk.END, values=("1. Lexical & Syntactic", "Total Child Words (NTW)", str(metrics.get("total_child_words", "-")), "จำนวนคำทั้งหมดที่เด็กพูดในเซสชัน"))
         self.tree_metrics.insert("", tk.END, values=("1. Lexical & Syntactic", "Unique Words (NDW)", str(metrics.get("unique_words_count", "-")), "จำนวนคำศัพท์ที่ไม่ซ้ำกัน"))
         self.tree_metrics.insert("", tk.END, values=("1. Lexical & Syntactic", "Total Child Utterances", str(metrics.get("total_child_utterances", "-")), "จำนวนประโยคพูดของเด็กทั้งหมด"))
         self.tree_metrics.insert("", tk.END, values=("1. Lexical & Syntactic", "Multi-Word Ratio (%)", f"{metrics.get('multi_word_ratio_pct', '-')}%", "สัดส่วนประโยคที่มีความยาวตั้งแต่ 2 คำขึ้นไป"))
-        self.tree_metrics.insert("", tk.END, values=("1. Lexical & Syntactic", "Intelligibility Rate", f"{round(float(metrics.get('intelligibility_rate', 0.94))*100, 1)}%", "ความชัดเจนของคำพูดที่ฟังเข้าใจได้"))
+        self.tree_metrics.insert("", tk.END, values=("1. Lexical & Syntactic", "Intelligibility Rate", f"{round(float(metrics['intelligibility_rate'])*100, 1)}%" if metrics.get("intelligibility_rate") is not None else "-", "ความชัดเจนของคำพูดที่ฟังเข้าใจได้"))
 
         # Domain 2: Pragmatic & Conversational Interaction
         self.tree_metrics.insert("", tk.END, values=("2. Pragmatics & Interaction", "Turn-Taking Ratio", str(metrics.get("turn_taking_ratio", "-")), "อัตราการผลัดกันพูดในบทสนทนาโต้ตอบ"))
@@ -2627,7 +2630,7 @@ class PasaScopeGUIApp:
         self.tree_metrics.insert("", tk.END, values=("3. Atypical & Repetitive", "Echolalia Count", str(metrics.get("echolalia_count", 0)), "จำนวนครั้งที่พบการพูดตามทันที (Immediate Echolalia)"))
         self.tree_metrics.insert("", tk.END, values=("3. Atypical & Repetitive", "Echolalia Ratio", str(metrics.get("echolalia_ratio", 0.0)), "สัดส่วนการพูดตามเทียบกับประโยคทั้งหมด"))
         self.tree_metrics.insert("", tk.END, values=("3. Atypical & Repetitive", "Pronoun Reversal Count", str(metrics.get("pronoun_reversal_count", 0)), "การสลับการใช้สรรพนาม (เช่น เรียกตัวเองด้วยชื่อ/สรรพนามบุรุษที่ 2)"))
-        self.tree_metrics.insert("", tk.END, values=("3. Atypical & Repetitive", "Unintelligible Ratio", f"{round(float(metrics.get('unintelligible_ratio', 0.06))*100, 1)}%", "สัดส่วนเสียงเปล่งที่ไม่เป็นคำพูด"))
+        self.tree_metrics.insert("", tk.END, values=("3. Atypical & Repetitive", "Unintelligible Ratio", f"{round(float(metrics['unintelligible_ratio'])*100, 1)}%" if metrics.get("unintelligible_ratio") is not None else "-", "สัดส่วนเสียงเปล่งที่ไม่เป็นคำพูด"))
 
         # Domain 4: Acoustic Prosody & Speech Dynamics
         if metrics.get("f0_median_hz") is not None:

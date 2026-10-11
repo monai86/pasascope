@@ -64,7 +64,6 @@ class ThaiLsaMetrics:
     total_child_words: int
     unique_words_count: int
     mlu_words: float
-    mlu_morphemes: float
     ttr: float
     multi_word_ratio_pct: float
     question_count: int
@@ -227,7 +226,6 @@ class ThaiClinicalLSA:
                 total_child_words=0,
                 unique_words_count=0,
                 mlu_words=0.0,
-                mlu_morphemes=0.0,
                 ttr=0.0,
                 multi_word_ratio_pct=0.0,
                 question_count=0,
@@ -270,8 +268,6 @@ class ThaiClinicalLSA:
         total_words = len(all_words)
         unique_words = len(set(all_words))
         mlu_w = round(total_words / n_child, 2)
-        # Thai morpheme estimation: root words + compounding particles (~1.18 factor)
-        mlu_m = round(mlu_w * 1.18, 2)
         ttr = round(unique_words / max(total_words, 1), 2)
         multi_word_pct = round((multi_word_count / n_child) * 100, 1)
 
@@ -355,32 +351,32 @@ class ThaiClinicalLSA:
         pronoun_rev = len(pronoun_reversal_details)
 
         # Formulate Clinical Guideline Interpretation Links
+        # Statuses only say what was counted: no verified Thai norm exists, so
+        # none may read as normal, age-expected, or delayed.
         guidelines = [
             {
                 "construct": "1. Expressive Phrase Length (ไวยากรณ์และความยาวประโยค)",
-                "status": "Multi-word Sentences (3+ words)" if mlu_w >= 3.0 else (
-                    "Emerging Multi-word (2-3 words)" if mlu_w >= 2.0 else "Single Words"
-                ),
+                "status": "Measured (ไม่มีเกณฑ์อ้างอิงภาษาไทย)",
                 "description": f"MLU-w อยู่ที่ {mlu_w} คำ/ประโยค (ประโยค 2 คำขึ้นไป {multi_word_pct}%)",
             },
             {
                 "construct": "2. Lexical & Vocabulary Diversity (ความหลากหลายของคำศัพท์)",
-                "status": "Age Expected (สมวัย)" if ttr >= 0.65 else "Developing Diversity",
+                "status": "Measured (ไม่มีเกณฑ์อ้างอิงภาษาไทย)",
                 "description": f"TTR {ttr} (คำศัพท์ไม่ซ้ำ {unique_words} คำ จากทั้งหมด {total_words} คำ)",
             },
             {
                 "construct": "3. Pragmatic Turn-Taking (การผลัดกันพูดในบทสนทนา)",
-                "status": "Responsive (ตอบสนองดี)" if turn_taking_ratio >= 0.7 else "Developing",
+                "status": "Measured (ไม่มีเกณฑ์อ้างอิงภาษาไทย)",
                 "description": f"Turn-taking ratio {turn_taking_ratio} (โต้ตอบ {turn_taking} ครั้ง, คำถาม {question_count} ครั้ง)",
             },
             {
                 "construct": "4. Functional Syntax (คำถาม/คำปฏิเสธ/สรรพนาม)",
-                "status": "Present (พบการใช้งาน)" if (question_count > 0 or negation_count > 0) else "Emerging",
+                "status": "Observed (พบการใช้งาน)" if (question_count > 0 or negation_count > 0) else "Not observed (ไม่พบในตัวอย่างนี้)",
                 "description": f"พบประโยคคำถาม {question_count} ครั้ง, คำปฏิเสธ {negation_count} ครั้ง, คำสรรพนาม {pronoun_count} ครั้ง, คำลงท้าย {polite_particle_count} ครั้ง",
             },
             {
                 "construct": "5. Repetition & Atypical Patterns (การพูดซ้ำ/สรรพนามสลับ)",
-                "status": "Low / Monitored" if (echolalia_cnt == 0 and pronoun_rev == 0) else "Observed",
+                "status": "Not observed (ไม่พบในตัวอย่างนี้)" if (echolalia_cnt == 0 and pronoun_rev == 0) else "Observed — review in context (ต้องตรวจในบริบท)",
                 "description": f"พบ Echolalia {echolalia_cnt} ครั้ง (ตรงประโยค {echolalia_verbatim_cnt}, ดัดแปลง {echolalia_mitigated_cnt}), สลับสรรพนาม {pronoun_rev} ครั้ง",
             },
         ]
@@ -390,7 +386,6 @@ class ThaiClinicalLSA:
             total_child_words=total_words,
             unique_words_count=unique_words,
             mlu_words=mlu_w,
-            mlu_morphemes=mlu_m,
             ttr=ttr,
             multi_word_ratio_pct=multi_word_pct,
             question_count=question_count,

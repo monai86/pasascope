@@ -60,7 +60,7 @@ def audio_to_cha(
     child_id: str = "CHI001",
     child_age_months: Optional[float] = None,
     child_sex: Optional[str] = None,
-    child_group: str = "ASD",
+    child_group: str = "",
     activities: Optional[str] = None,
     # Formatter options
     unintelligible_threshold: float = 0.30,
@@ -216,7 +216,7 @@ def _cli() -> None:
                     choices=["auto", "english", "thai", "dual_pass", "thai_specialized", "api_openai"])
     ap.add_argument("--age-months", type=float, default=None)
     ap.add_argument("--sex", choices=["male", "female"], default=None)
-    ap.add_argument("--group", default="ASD", help="ASD / TD / DD / ...")
+    ap.add_argument("--group", default="", help="Optional @ID group field (ASD / TD / DD / ...); blank by default.")
     ap.add_argument("--child-id", default="CHI001")
     ap.add_argument("--no-pyannote", action="store_true",
                     help="Skip pyannote and use the pitch-heuristic "

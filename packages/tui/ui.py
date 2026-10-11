@@ -128,7 +128,7 @@ def render_findings_view(findings: dict[str, Any]) -> None:
     m_table.add_row("MLU-words (Mean Length of Utterance)", str(metrics.get("mlu_words", "-")), "ความยาวประโยคเฉลี่ย (จำนวนคำต่อประโยค)")
     m_table.add_row("Type-Token Ratio (TTR)", str(metrics.get("ttr", "-")), "ความหลากหลายของคลังคำศัพท์ (Lexical Diversity)")
     m_table.add_row("Total Child Utterances", str(metrics.get("total_child_utterances", "-")), "จำนวนประโยคพูดของเด็กทั้งหมด")
-    m_table.add_row("Intelligibility Rate", f"{float(metrics.get('intelligibility_rate', 1.0))*100:.0f}%" if "intelligibility_rate" in metrics else "-", "อัตราความชัดเจนของคำพูด")
+    m_table.add_row("Intelligibility Rate", f"{float(metrics['intelligibility_rate'])*100:.0f}%" if metrics.get("intelligibility_rate") is not None else "-", "อัตราความชัดเจนของคำพูด")
     m_table.add_row("Turn-Taking Ratio", str(metrics.get("turn_taking_ratio", "-")), "อัตราการผลัดกันพูดในบทสนทนา")
 
     if "f0_median_hz" in metrics:

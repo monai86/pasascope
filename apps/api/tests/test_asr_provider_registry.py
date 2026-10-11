@@ -13,27 +13,16 @@ EXPECTED_PROVIDER_IDS = frozenset(
         "mock",
         "local_whisper",
         "manual",
-        "whisper",
-        "faster_whisper",
-        "whisperx",
-        "batchalign",
     }
 )
 
-# Compatibility stubs and manual entry report themselves available on purpose;
-# only the dependency-backed provider stays unavailable until installed.
-EXPECTED_AVAILABLE_PROVIDER_IDS = frozenset(
-    {
-        "mock",
-        "manual",
-        "whisper",
-        "faster_whisper",
-        "whisperx",
-        "batchalign",
-    }
-)
+# Local Whisper is opt-in, so only the demo and manual-entry providers are
+# available by default.
+EXPECTED_AVAILABLE_PROVIDER_IDS = frozenset({"mock", "manual"})
 
-PLACEHOLDER_PROVIDER_IDS = frozenset({"whisper", "faster_whisper", "whisperx", "batchalign"})
+# A provider named after an ASR engine must run that engine. These names once
+# belonged to stubs that labelled client-supplied text as engine output.
+RETIRED_PLACEHOLDER_PROVIDER_IDS = frozenset({"whisper", "faster_whisper", "whisperx", "batchalign"})
 
 
 def _supported_ids() -> set[str]:
@@ -75,22 +64,17 @@ def test_list_supported_enumerates_the_whole_registry_once_each():
 
 
 def test_list_available_matches_the_declared_availability():
-    # Stub and manual providers are available by design, so availability is
-    # asserted as the full declared set rather than as one provider plus an
-    # absence check that other providers can hide behind.
+    # Availability is asserted as the full declared set rather than as one
+    # provider plus an absence check that other providers can hide behind.
     available_ids = {p["provider_id"] for p in asr_provider_registry.list_available()}
 
     assert available_ids == EXPECTED_AVAILABLE_PROVIDER_IDS
     assert asr_provider_registry.get("local_whisper").check_availability().available is False
 
 
-def test_provider_metadata_flags_placeholders_and_only_placeholders():
-    by_id = {p["provider_id"]: p for p in asr_provider_registry.list_supported()}
-
-    for provider_id in sorted(PLACEHOLDER_PROVIDER_IDS):
-        assert by_id[provider_id]["is_placeholder"] is True
-    for provider_id in sorted(EXPECTED_PROVIDER_IDS - PLACEHOLDER_PROVIDER_IDS):
-        assert by_id[provider_id].get("is_placeholder", False) is False
+def test_engine_named_placeholder_providers_are_not_registered():
+    for provider_id in sorted(RETIRED_PLACEHOLDER_PROVIDER_IDS):
+        assert provider_id not in asr_provider_registry
 
 
 def test_mock_provider_transcribe_returns_three_lines():

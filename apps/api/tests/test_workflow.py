@@ -13,6 +13,8 @@ from app.main import app
 from app.repositories.mock_repository import JsonFileRepository, MockRepository
 from app.schemas.clinical import OrganizationMembershipCreate, QaIssue, ReviewStatus
 from app.services.ai_review_service import sanitize_for_ai
+from app.services.asr_providers.base import BaseTranscriptionProvider, ProviderAvailability
+from app.services.asr_providers.registry import asr_provider_registry
 from app.services.ml_providers.registry import ml_provider_registry
 from app.tasks.job_queue import get_job_queue
 from app.tasks.worker import run_worker_once
@@ -1496,7 +1498,30 @@ def test_audio_process_warns_when_no_child_speech_is_detected():
     assert "diarization failed" in processed["details"]["asr_draft"]["warnings"]
 
 
-def test_placeholder_asr_provider_failure_is_recorded_as_job_failure():
+class _FailingAsrProvider(BaseTranscriptionProvider):
+    provider_id = "failing_test_provider"
+    provider_name = "FailingTestProvider"
+    provider_version = "test"
+
+    def get_provider_metadata(self) -> dict:
+        return {"provider_id": self.provider_id}
+
+    def check_availability(self) -> ProviderAvailability:
+        return ProviderAvailability(available=True)
+
+    def transcribe(self, audio_ref, config=None):
+        raise RuntimeError("ASR failed")
+
+
+@pytest.fixture
+def failing_asr_provider():
+    provider = _FailingAsrProvider()
+    asr_provider_registry.register(provider)
+    yield provider
+    asr_provider_registry.unregister(provider.provider_id)
+
+
+def test_asr_provider_failure_is_recorded_as_job_failure(failing_asr_provider):
     get_job_queue().clear()
     case_id = client.post(
         "/api/v1/cases",
@@ -1509,7 +1534,7 @@ def test_placeholder_asr_provider_failure_is_recorded_as_job_failure():
     process = client.post(
         f"/api/v1/sessions/{session_id}/audio/process",
         json={
-            "provider": "whisper",
+            "provider": failing_asr_provider.provider_id,
             "duration_seconds": 30,
             "sample_rate_hz": 16000,
             "channels": 1,

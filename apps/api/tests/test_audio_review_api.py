@@ -168,7 +168,6 @@ def test_cancelled_job_is_not_run_by_the_worker_and_completed_job_cannot_be_canc
     "request_body",
     [
         {"provider": "mock"},
-        {"provider": "whisper", "allow_fallback_to_mock": True},
         {"provider": "local_whisper", "allow_fallback_to_mock": True},
     ],
 )
