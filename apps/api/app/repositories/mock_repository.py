@@ -50,7 +50,7 @@ def new_id(prefix: str) -> str:
 class MockRepository:
     """In-memory repository for local demo and contract tests."""
 
-    def __init__(self) -> None:
+    def __init__(self, *, seed_demo: bool = True) -> None:
         self.cases: dict[str, ChildCase] = {}
         self.sessions: dict[str, TherapySession] = {}
         self.transcripts: dict[str, Transcript] = {}
@@ -67,7 +67,8 @@ class MockRepository:
         self.privacy_operations: dict[str, PrivacyOperation] = {}
         self.organization_settings: dict[str, dict[str, object]] = {}
         self.audit_log: list[dict] = []
-        self.seed()
+        if seed_demo:
+            self.seed()
 
     def seed(self) -> None:
         if self.cases:
@@ -99,6 +100,12 @@ class MockRepository:
 
     def clone(self, value):
         return deepcopy(value)
+
+    def delete_feature_set(self, feature_set_id: str) -> None:
+        self.features.pop(feature_set_id, None)
+
+    def delete_ml_result(self, result_id: str) -> None:
+        self.ml_results.pop(result_id, None)
 
     def is_ai_review_enabled(self, organization_id: str) -> bool:
         settings = self.organization_settings.get(organization_id, {})

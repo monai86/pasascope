@@ -1,11 +1,12 @@
 from datetime import datetime, timezone
 
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter, Depends, HTTPException, status
 
 from app.api.v1.dependencies import get_repository
 from app.auth.authorization import assert_clinical_mutation_allowed, require_case, require_session
 from app.core.errors import bad_request, not_found
 from app.core.security import CurrentUser, get_current_user
+from app.repositories.base import SessionVersionConflictError
 from app.repositories.mock_repository import MockRepository
 from app.schemas.clinical import (
     TherapySession,
@@ -59,8 +60,18 @@ def update_session(
     assert_clinical_mutation_allowed(user)
     try:
         ensure_session_consent_active(repo, session_id)
-        patch = TherapySessionUpdate(**payload.model_dump(exclude_unset=True))
-        return repo.update_session(session_id, patch, expected_version=None, actor_id=user.user_id)
+        patch = TherapySessionUpdate(**payload.model_dump(exclude_unset=True, exclude={"expected_version"}))
+        return repo.update_session(
+            session_id,
+            patch,
+            expected_version=payload.expected_version,
+            actor_id=user.user_id,
+        )
+    except SessionVersionConflictError as exc:
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail="Session was changed by another request; reload and retry.",
+        ) from exc
     except ValueError as exc:
         raise bad_request(str(exc)) from exc
 

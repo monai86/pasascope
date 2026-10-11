@@ -198,6 +198,7 @@ class Settings(BaseModel):
     credential_rotation_runbook: str = ""
     reference_artifact_dir: str = "artifacts/reference_evidence/current"
     ml_inference_timeout_seconds: float = 2.0
+    web_concurrency: int = 1
 
     @property
     def resolved_json_repository_path(self) -> Path:
@@ -233,6 +234,10 @@ class Settings(BaseModel):
 
     def validate_runtime_security(self) -> "Settings":
         origins = self.parsed_cors_allowed_origins
+        if self.repository_mode in {"sql", "sqlalchemy"} and self.web_concurrency > 1:
+            # The SQL repository keeps a per-process cache of clinical records;
+            # a second worker would serve and write stale state.
+            raise ValueError("SQL repository mode supports a single API worker; set WEB_CONCURRENCY=1.")
         if not self.mock_mode and (not origins or "*" in origins):
             raise ValueError(
                 "CORS allowed origins must be explicit in production; wildcard or empty origins are not allowed."
@@ -513,6 +518,7 @@ class Settings(BaseModel):
                     "2.0",
                 )
             ),
+            web_concurrency=int(os.getenv("WEB_CONCURRENCY", "1") or "1"),
         ).validate_runtime_security()
 
 

@@ -9,6 +9,7 @@ from app.auth.authorization import (
 )
 from app.core.errors import bad_request, not_found
 from app.core.security import CurrentUser, get_current_user
+from app.repositories.base import CaseVersionConflictError
 from app.repositories.mock_repository import MockRepository, new_id
 from app.schemas.clinical import (
     ChildCase,
@@ -128,8 +129,15 @@ def update_case(
         ensure_case_consent_active(repo, case_id)
     except ValueError as exc:
         raise bad_request(str(exc)) from exc
-    patch = ChildCaseUpdate(**payload.model_dump(exclude_unset=True))
-    return repo.update_case(case_id, patch, expected_version=repo.cases[case_id].version, actor_id=user.user_id)
+    patch = ChildCaseUpdate(**payload.model_dump(exclude_unset=True, exclude={"expected_version"}))
+    expected_version = payload.expected_version or repo.cases[case_id].version
+    try:
+        return repo.update_case(case_id, patch, expected_version=expected_version, actor_id=user.user_id)
+    except CaseVersionConflictError as exc:
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail="Case was changed by another request; reload and retry.",
+        ) from exc
 
 
 @router.post("/{case_id}/grant-consent", response_model=ChildCase)

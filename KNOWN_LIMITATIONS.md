@@ -10,6 +10,7 @@
 - ML output is editable/dismissible decision support trained on limited/public datasets and is not clinically validated.
 - Reports require therapist review. Local finalization is not a production signature or secure caregiver-delivery workflow.
 - Markdown and HTML export are available. PDF export is not yet implemented.
+- The SQL repository keeps a per-process cache of clinical records and writes legacy paths as a whole-snapshot upsert. It must run as a single API worker (`WEB_CONCURRENCY=1`, enforced at startup); a second instance would read and write stale state. Per-request queries need a separate ADR.
 - Production authentication, encrypted private storage, durable queues, deployment monitoring, and audited role enforcement remain future work.
 
 For deeper engineering detail, see the archived v2 known-limitations document in

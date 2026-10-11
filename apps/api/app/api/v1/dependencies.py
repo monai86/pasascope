@@ -12,7 +12,12 @@ def get_repository_singleton():
     if settings.repository_mode in {"sql", "sqlalchemy"}:
         from app.repositories.sqlalchemy_repository import SqlAlchemyRepository
 
-        return SqlAlchemyRepository(settings.database_url, create_schema=settings.sql_create_schema)
+        return SqlAlchemyRepository(
+            settings.database_url,
+            create_schema=settings.sql_create_schema,
+            # Sample records belong to local demo mode only.
+            seed_demo=settings.mock_mode,
+        )
     if settings.repository_mode in {"memory", "mock"}:
         return MockRepository()
     raise RuntimeError(f"Unsupported repository mode: {settings.repository_mode}")

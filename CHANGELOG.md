@@ -28,6 +28,10 @@
   - Evaluation helper routes now require an authenticated user and are closed whenever auth mode is not `mock`, including staging deployments that keep mock mode on.
 
 ### Fixed
+- **SQL repository data loss** (`apps/api/app/repositories/`):
+  - The snapshot write no longer deletes every table before re-inserting; it upserts by primary key and appends only new audit events, so one repository instance can no longer erase records written by another. Consent withdrawal removes feature and ML rows through explicit delete methods.
+  - Sample demo records are seeded only in mock mode. SQL mode refuses to start with more than one API worker.
+  - `PATCH` on cases and sessions accepts an optional `expected_version` and answers 409 on a stale write.
 - **Frontend Dependency Audit**:
   - Remediated `sharp` (CVE-2026-96889) and `source-map-js` (GHSA-68fv-2mgg-jv7q) high severity audit vulnerabilities in production dependency tree.
 

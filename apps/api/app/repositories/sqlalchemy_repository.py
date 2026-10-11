@@ -68,7 +68,13 @@ class SqlAlchemyRepository(MockRepository):
     without changing every route at once.
     """
 
-    def __init__(self, database_url: str, *, create_schema: bool = True) -> None:
+    def __init__(
+        self,
+        database_url: str,
+        *,
+        create_schema: bool = True,
+        seed_demo: bool = True,
+    ) -> None:
         try:
             from sqlalchemy import create_engine
             from sqlalchemy.orm import sessionmaker
@@ -80,7 +86,7 @@ class SqlAlchemyRepository(MockRepository):
         if create_schema:
             Base.metadata.create_all(self.engine)
         self.SessionLocal = sessionmaker(bind=self.engine)
-        super().__init__()
+        super().__init__(seed_demo=seed_demo)
         self.load()
 
     def get_case(self, case_id: str) -> ChildCase | None:
@@ -1172,40 +1178,30 @@ class SqlAlchemyRepository(MockRepository):
                     }
                     for row in db.query(AuditLogRecord).all()
                 ]
-            else:
+            elif self.cases:
+                # Empty database in demo mode: store the seeded sample case.
                 self.save()
 
     def save(self) -> None:
+        """Persist the in-memory snapshot without deleting any row.
+
+        Legacy service paths still mutate the repository dictionaries and rely
+        on this snapshot write. It upserts by primary key and appends only audit
+        events that are not stored yet, so it can never remove records written
+        by another repository instance. Row removal goes through the explicit
+        ``delete_*`` methods.
+        """
         with self.SessionLocal() as db:
-            for model in (
-                AuditLogRecord,
-                PrivacyOperationRecord,
-                ProcessingJobRecord,
-                ReportRecord,
-                OrganizationSettingsRecord,
-                CaseCareTeamAssignmentRecord,
-                OrganizationInvitationRecord,
-                OrganizationMembershipRecord,
-                AiReviewRecord,
-                MLResultRecord,
-                AudioFileRecord,
-                FeatureSetRecord,
-                TranscriptRecord,
-                TherapyGoalRecord,
-                SessionRecord,
-                ChildCaseRecord,
-            ):
-                db.query(model).delete()
             for case in self.cases.values():
-                db.add(self._case_to_record(case))
+                db.merge(self._case_to_record(case))
             for session in self.sessions.values():
-                db.add(self._session_to_record(session))
+                db.merge(self._session_to_record(session))
             for transcript in self.transcripts.values():
-                db.add(self._transcript_to_record(transcript))
+                db.merge(self._transcript_to_record(transcript))
             for feature_set in self.features.values():
-                db.add(self._feature_to_record(feature_set))
+                db.merge(self._feature_to_record(feature_set))
             for result in self.ml_results.values():
-                db.add(MLResultRecord(
+                db.merge(MLResultRecord(
                     result_id=result.result_id,
                     session_id=result.session_id,
                     transcript_id=result.transcript_id,
@@ -1213,9 +1209,9 @@ class SqlAlchemyRepository(MockRepository):
                     created_at=result.generated_at,
                 ))
             for audio_file in self.audio_files.values():
-                db.add(self._audio_to_record(audio_file))
+                db.merge(self._audio_to_record(audio_file))
             for review in self.ai_reviews.values():
-                db.add(AiReviewRecord(
+                db.merge(AiReviewRecord(
                     ai_review_id=review.ai_review_id,
                     session_id=review.session_id,
                     payload=review.model_dump(mode="json"),
@@ -1224,7 +1220,7 @@ class SqlAlchemyRepository(MockRepository):
                     created_at=review.created_at,
                 ))
             for report in self.reports.values():
-                db.add(self._report_to_record(report))
+                db.merge(self._report_to_record(report))
             for membership in self.memberships.values():
                 if db.get(OrganizationRecord, membership.organization_id) is None:
                     db.add(OrganizationRecord(
@@ -1239,7 +1235,7 @@ class SqlAlchemyRepository(MockRepository):
                         display_name=membership.display_name,
                         created_at=membership.created_at,
                     ))
-                db.add(self._membership_to_record(membership))
+                db.merge(self._membership_to_record(membership))
             for invitation in self.invitations.values():
                 if db.get(OrganizationRecord, invitation.organization_id) is None:
                     db.add(OrganizationRecord(
@@ -1248,15 +1244,15 @@ class SqlAlchemyRepository(MockRepository):
                         pilot_mode=False,
                         created_at=invitation.created_at,
                     ))
-                db.add(self._invitation_to_record(invitation))
+                db.merge(self._invitation_to_record(invitation))
             for assignment in self.care_team_assignments.values():
-                db.add(self._care_team_assignment_to_record(assignment))
+                db.merge(self._care_team_assignment_to_record(assignment))
             for goal in self.therapy_goals.values():
-                db.add(self._goal_to_record(goal))
+                db.merge(self._goal_to_record(goal))
             for job in self.jobs.values():
-                db.add(self._job_to_record(job))
+                db.merge(self._job_to_record(job))
             for privacy_operation in self.privacy_operations.values():
-                db.add(self._privacy_operation_to_record(privacy_operation))
+                db.merge(self._privacy_operation_to_record(privacy_operation))
             for organization_id, settings in self.organization_settings.items():
                 if db.get(OrganizationRecord, organization_id) is None:
                     db.add(OrganizationRecord(
@@ -1265,26 +1261,39 @@ class SqlAlchemyRepository(MockRepository):
                         pilot_mode=False,
                         created_at=_utc_now(),
                     ))
-                db.add(OrganizationSettingsRecord(
-                    organization_id=organization_id,
-                    ai_drafting_enabled=bool(settings.get("ai_drafting_enabled", False)),
-                    default_retention_region=str(settings.get("default_retention_region", "local_pilot")),
-                    settings=settings,
-                    created_at=_utc_now(),
-                    updated_at=_utc_now(),
-                ))
+                existing_settings = db.get(OrganizationSettingsRecord, organization_id)
+                if existing_settings is None:
+                    db.add(OrganizationSettingsRecord(
+                        organization_id=organization_id,
+                        ai_drafting_enabled=bool(settings.get("ai_drafting_enabled", False)),
+                        default_retention_region=str(settings.get("default_retention_region", "local_pilot")),
+                        settings=settings,
+                        created_at=_utc_now(),
+                        updated_at=_utc_now(),
+                    ))
+                elif existing_settings.settings != settings:
+                    existing_settings.ai_drafting_enabled = bool(settings.get("ai_drafting_enabled", False))
+                    existing_settings.default_retention_region = str(
+                        settings.get("default_retention_region", "local_pilot")
+                    )
+                    existing_settings.settings = dict(settings)
+                    existing_settings.updated_at = _utc_now()
+            stored_audit_ids = {audit_id for (audit_id,) in db.query(AuditLogRecord.audit_id).all()}
             for item in self.audit_log:
-                db.add(AuditLogRecord(
-                    audit_id=item["audit_id"],
-                    organization_id=item.get("organization_id", "pilot_org_001"),
-                    actor_id=item.get("actor_id", "system"),
-                    action=item["action"],
-                    target_id=item["target_id"],
-                    outcome=item.get("outcome", "success"),
-                    correlation_id=item.get("correlation_id", "local"),
-                    message=item["message"],
-                    timestamp=_parse_datetime(item["timestamp"]),
-                ))
+                if item["audit_id"] not in stored_audit_ids:
+                    db.add(self._audit_to_record(item))
+            db.commit()
+
+    def delete_feature_set(self, feature_set_id: str) -> None:
+        super().delete_feature_set(feature_set_id)
+        with self.SessionLocal() as db:
+            db.query(FeatureSetRecord).filter_by(feature_set_id=feature_set_id).delete()
+            db.commit()
+
+    def delete_ml_result(self, result_id: str) -> None:
+        super().delete_ml_result(result_id)
+        with self.SessionLocal() as db:
+            db.query(MLResultRecord).filter_by(result_id=result_id).delete()
             db.commit()
 
     def add_audit(

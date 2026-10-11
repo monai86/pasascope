@@ -1809,3 +1809,78 @@ def test_break_glass_case_access_persists_sql_audit(tmp_path, monkeypatch):
 
     assert audit.organization_id == "org_tx"
     assert audit.actor_id == "platform_tx"
+
+
+def test_snapshot_save_from_one_instance_never_deletes_rows_written_by_another(tmp_path):
+    pytest.importorskip("sqlalchemy")
+    from sqlalchemy import event
+
+    from app.repositories.sqlalchemy_repository import SqlAlchemyRepository
+
+    url = f"sqlite:///{tmp_path / 'two-instances.db'}"
+    first = SqlAlchemyRepository(url)
+    second = SqlAlchemyRepository(url)  # loads its snapshot before the write below
+    created = first.create_session(
+        "case_demo_001",
+        TherapySessionCreate(session_date="2026-10-11", session_type="language_sample"),
+        actor_id="user_a",
+    )
+    statements: list[str] = []
+    event.listen(second.engine, "before_cursor_execute", lambda conn, cur, statement, *rest: statements.append(statement))
+
+    second.add_audit("job.cancel", "case_demo_001", "Legacy snapshot path.", actor_id="user_b")
+
+    reloaded = SqlAlchemyRepository(url)
+    assert created.session_id in reloaded.sessions
+    assert not [statement for statement in statements if statement.lstrip().upper().startswith("DELETE")]
+    actions = [item["action"] for item in reloaded.audit_log]
+    assert actions.count("session.create") == 1
+    assert actions.count("job.cancel") == 1
+
+
+def test_sql_repository_does_not_seed_demo_records_when_disabled(tmp_path):
+    pytest.importorskip("sqlalchemy")
+    from app.db.models import ChildCaseRecord, SessionRecord
+    from app.repositories.sqlalchemy_repository import SqlAlchemyRepository
+
+    repo = SqlAlchemyRepository(f"sqlite:///{tmp_path / 'no-seed.db'}", seed_demo=False)
+
+    with repo.SessionLocal() as db:
+        assert db.query(ChildCaseRecord).count() == 0
+        assert db.query(SessionRecord).count() == 0
+    assert repo.cases == {}
+
+
+def test_consent_withdrawal_removes_feature_rows_from_sql_storage(tmp_path):
+    pytest.importorskip("sqlalchemy")
+    from app.db.models import FeatureSetRecord
+    from app.repositories.sqlalchemy_repository import SqlAlchemyRepository
+    from app.schemas.clinical import FeatureExtractionRequest, TranscriptManualCreate
+    from app.services import transcript_service
+    from app.services.consent_service import withdraw_consent
+    from app.services.feature_service import extract_features
+
+    url = f"sqlite:///{tmp_path / 'withdraw.db'}"
+    repo = SqlAlchemyRepository(url)
+    transcript = transcript_service.create_from_manual(
+        repo,
+        "session_demo_001",
+        TranscriptManualCreate(text="*THER:\thello .\n*CHI:\thi there ."),
+    )
+    transcript_service.attest(
+        repo,
+        transcript.transcript_id,
+        AttestationRequest(override_qa_failure=True),
+        actor_id="therapist-demo",
+        attested_by="Demo Therapist",
+    )
+    feature_set = extract_features(repo, transcript.transcript_id, FeatureExtractionRequest())
+    with repo.SessionLocal() as db:
+        assert db.get(FeatureSetRecord, feature_set.feature_set_id) is not None
+
+    withdraw_consent(repo, "case_demo_001", "caregiver request", actor_id="therapist-demo")
+
+    reloaded = SqlAlchemyRepository(url)
+    assert feature_set.feature_set_id not in reloaded.features
+    assert reloaded.cases["case_demo_001"].consent_status == "withdrawn"
+    assert reloaded.transcripts[transcript.transcript_id].utterances == []

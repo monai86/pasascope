@@ -154,3 +154,32 @@ def test_evaluation_routes_are_closed_for_supabase_auth_even_in_mock_mode(path, 
 
     assert response.status_code == 403
     assert not (tmp_path / "out").exists()
+
+
+def test_case_and_session_patch_reject_stale_expected_version(client, repo):
+    case_version = repo.cases["case_demo_001"].version
+    session_version = repo.sessions["session_demo_001"].version
+
+    stale_case = client.patch(
+        "/api/v1/cases/case_demo_001", json={"nickname": "x", "expected_version": case_version + 5}, headers=THERAPIST
+    )
+    stale_session = client.patch(
+        "/api/v1/sessions/session_demo_001",
+        json={"notes": "x", "expected_version": session_version + 5},
+        headers=THERAPIST,
+    )
+    current_case = client.patch(
+        "/api/v1/cases/case_demo_001", json={"nickname": "y", "expected_version": case_version}, headers=THERAPIST
+    )
+
+    assert stale_case.status_code == 409
+    assert stale_session.status_code == 409
+    assert current_case.status_code == 200
+    assert repo.cases["case_demo_001"].nickname == "y"
+    assert repo.sessions["session_demo_001"].notes == ""
+
+
+def test_sql_repository_mode_rejects_multiple_api_workers():
+    with pytest.raises(ValueError, match="single API worker"):
+        Settings(repository_mode="sql", web_concurrency=2).validate_runtime_security()
+    Settings(repository_mode="json", web_concurrency=2).validate_runtime_security()

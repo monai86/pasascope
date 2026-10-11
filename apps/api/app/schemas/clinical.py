@@ -116,6 +116,8 @@ class ChildCaseClientUpdate(BaseModel):
     age_months: int | None = Field(default=None, ge=0, le=240)
     language: str | None = Field(default=None, min_length=1, max_length=64)
     notes: str | None = Field(default=None, max_length=2000)
+    # Optional optimistic lock: reject the update if the case changed since it was read.
+    expected_version: int | None = Field(default=None, ge=1)
 
 
 class ChildCase(ChildCaseBase):
@@ -251,6 +253,8 @@ class TherapySessionClientUpdate(BaseModel):
     session_date: str | None = None
     session_type: str | None = None
     notes: str | None = None
+    # Optional optimistic lock: reject the update if the session changed since it was read.
+    expected_version: int | None = Field(default=None, ge=1)
 
 
 class TherapySession(BaseModel):

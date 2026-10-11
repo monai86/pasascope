@@ -105,7 +105,7 @@ def withdraw_consent(repo: MockRepository, case_id: str, reason: str, redact_not
     for feature_id, feature_set in list(repo.features.items()):
         if feature_set.session_id in case_session_ids:
             affected["features"] += 1
-            del repo.features[feature_id]
+            repo.delete_feature_set(feature_id)
             if feature_set.session_id in repo.sessions:
                 repo.sessions[feature_set.session_id].feature_set_id = None
     for review_id, review in list(repo.ai_reviews.items()):
@@ -122,7 +122,7 @@ def withdraw_consent(repo: MockRepository, case_id: str, reason: str, redact_not
     for result_id, result in list(repo.ml_results.items()):
         if result.session_id in case_session_ids:
             affected["ml_results"] += 1
-            del repo.ml_results[result_id]
+            repo.delete_ml_result(result_id)
             repo.sessions[result.session_id].ml_result_id = None
     for report in repo.reports.values():
         if report.case_id == case_id:
