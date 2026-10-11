@@ -39,7 +39,7 @@
 
 ## ลำดับ demo
 
-1. `LINGUALENS_ASR_LOCAL_WHISPER_ENABLED=true bash scripts/start_local.sh`
+1. `PASASCOPE_ASR_LOCAL_WHISPER_ENABLED=true bash scripts/start_local.sh`
 2. เปิดเคส บันทึก consent สร้าง session
 3. อัดเสียงในเบราว์เซอร์แล้วกดอัปโหลด รอร่าง transcript (ป้ายแสดงว่า Whisper เป็นผู้ถอด)
 4. ชี้จุดที่ ASR ผิด แก้ไข แล้ว attest

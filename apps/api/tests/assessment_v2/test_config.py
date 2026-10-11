@@ -40,7 +40,7 @@ def _supabase_private_production_values() -> dict[str, object]:
 
 
 def test_assessment_database_uses_dedicated_environment_variable(monkeypatch: pytest.MonkeyPatch) -> None:
-    monkeypatch.setenv("LINGUALENS_ASSESSMENT_DATABASE_URL", "postgresql+psycopg://v2.example/test")
+    monkeypatch.setenv("PASASCOPE_ASSESSMENT_DATABASE_URL", "postgresql+psycopg://v2.example/test")
 
     settings = Settings.from_env()
 
@@ -59,7 +59,7 @@ def test_assessment_database_defaults_to_isolated_url() -> None:
 def test_assessment_migration_startup_flag_uses_dedicated_environment_variable(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
-    monkeypatch.setenv("LINGUALENS_RUN_ASSESSMENT_MIGRATIONS_ON_STARTUP", "true")
+    monkeypatch.setenv("PASASCOPE_RUN_ASSESSMENT_MIGRATIONS_ON_STARTUP", "true")
 
     settings = Settings.from_env()
 
@@ -69,18 +69,18 @@ def test_assessment_migration_startup_flag_uses_dedicated_environment_variable(
 def test_capture_supabase_storage_configuration_uses_server_environment_variables(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
-    monkeypatch.setenv("LINGUALENS_SUPABASE_STORAGE_URL", "https://project-ref.supabase.co")
-    monkeypatch.setenv("LINGUALENS_SUPABASE_STORAGE_SERVICE_ROLE_KEY", "synthetic-service-role-key")
-    monkeypatch.setenv("LINGUALENS_SUPABASE_STORAGE_BUCKET", "capture-private")
+    monkeypatch.setenv("PASASCOPE_SUPABASE_STORAGE_URL", "https://project-ref.supabase.co")
+    monkeypatch.setenv("PASASCOPE_SUPABASE_STORAGE_SERVICE_ROLE_KEY", "synthetic-service-role-key")
+    monkeypatch.setenv("PASASCOPE_SUPABASE_STORAGE_BUCKET", "capture-private")
     monkeypatch.setenv(
-        "LINGUALENS_SUPABASE_STORAGE_TUS_ENDPOINT",
+        "PASASCOPE_SUPABASE_STORAGE_TUS_ENDPOINT",
         "https://project-ref.supabase.co/storage/v1/upload/resumable",
     )
-    monkeypatch.setenv("LINGUALENS_SUPABASE_STORAGE_SIGNED_UPLOAD_TTL_SECONDS", "7200")
-    monkeypatch.setenv("LINGUALENS_SUPABASE_STORAGE_SIGNED_DOWNLOAD_TTL_SECONDS", "900")
-    monkeypatch.setenv("LINGUALENS_SUPABASE_STORAGE_TUS_CHUNK_SIZE_BYTES", str(6 * 1024 * 1024))
-    monkeypatch.setenv("LINGUALENS_SUPABASE_STORAGE_MAX_UPLOAD_SIZE_BYTES", str(250 * 1024 * 1024))
-    monkeypatch.setenv("LINGUALENS_CAPTURE_WORKER_ORGANIZATION_IDS", "org_alpha,org_beta")
+    monkeypatch.setenv("PASASCOPE_SUPABASE_STORAGE_SIGNED_UPLOAD_TTL_SECONDS", "7200")
+    monkeypatch.setenv("PASASCOPE_SUPABASE_STORAGE_SIGNED_DOWNLOAD_TTL_SECONDS", "900")
+    monkeypatch.setenv("PASASCOPE_SUPABASE_STORAGE_TUS_CHUNK_SIZE_BYTES", str(6 * 1024 * 1024))
+    monkeypatch.setenv("PASASCOPE_SUPABASE_STORAGE_MAX_UPLOAD_SIZE_BYTES", str(250 * 1024 * 1024))
+    monkeypatch.setenv("PASASCOPE_CAPTURE_WORKER_ORGANIZATION_IDS", "org_alpha,org_beta")
 
     settings = Settings.from_env()
 

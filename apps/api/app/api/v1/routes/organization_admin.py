@@ -142,7 +142,7 @@ def get_current_organization_readiness(
             blocked_detail="Production SaaS requires Supabase auth with mock mode disabled.",
             ready_evidence=[f"auth_mode={config.auth_mode}", "mock_mode=false"],
             blocked_evidence=[f"auth_mode={config.auth_mode}", f"mock_mode={str(config.mock_mode).lower()}"],
-            next_action="Configure Supabase auth and set LINGUALENS_MOCK_MODE=false for production-like runtime.",
+            next_action="Configure Supabase auth and set PASASCOPE_MOCK_MODE=false for production-like runtime.",
         ),
         _readiness_item(
             key="invitation_policy",

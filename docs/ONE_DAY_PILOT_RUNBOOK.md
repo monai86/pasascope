@@ -49,12 +49,12 @@ PYTHONPATH=. uvicorn app.main:app --reload --port 8000
 Useful local pilot environment defaults:
 
 ```bash
-LINGUALENS_MOCK_MODE=true
-LINGUALENS_AUTH_MODE=mock
-LINGUALENS_REPOSITORY_MODE=json
-LINGUALENS_STORAGE_MODE=local_private
-LINGUALENS_JOB_QUEUE_MODE=memory
-LINGUALENS_LOCAL_STORAGE_ROOT=.local/storage
+PASASCOPE_MOCK_MODE=true
+PASASCOPE_AUTH_MODE=mock
+PASASCOPE_REPOSITORY_MODE=json
+PASASCOPE_STORAGE_MODE=local_private
+PASASCOPE_JOB_QUEUE_MODE=memory
+PASASCOPE_LOCAL_STORAGE_ROOT=.local/storage
 ```
 
 Use mock headers only for the pilot:

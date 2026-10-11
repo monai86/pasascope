@@ -47,7 +47,7 @@ pytestmark = pytest.mark.assessment_postgres
 
 
 def _database_url() -> URL:
-    value = os.getenv("LINGUALENS_ASSESSMENT_TEST_DATABASE_URL")
+    value = os.getenv("PASASCOPE_ASSESSMENT_TEST_DATABASE_URL")
     if not value:
         pytest.skip("assessment PostgreSQL lease tests require a PostgreSQL URL")
     parsed = make_url(value)

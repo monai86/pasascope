@@ -18,7 +18,7 @@ def test_native_runtime_check_exists_and_does_not_depend_on_docker() -> None:
     assert "docker" not in source.lower()
     assert "subprocess.Popen" in source
     assert "uvicorn" in source
-    assert "LINGUALENS_ASSESSMENT_TEST_DATABASE_URL" in source
+    assert "PASASCOPE_ASSESSMENT_TEST_DATABASE_URL" in source
     assert "assessment-v2 native runtime check passed" in source
     assert "test_postgres_processing_leases.py" in source
     assert "app.assessment_v2.worker_runtime" in source

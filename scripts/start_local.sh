@@ -44,10 +44,10 @@ else
 fi
 
 # On-device speech recognition is opt-in; export this before running the script.
-if [ "${LINGUALENS_ASR_LOCAL_WHISPER_ENABLED:-false}" = "true" ]; then
-    echo -e "${GREEN}✓ Local Whisper transcription enabled (model: ${LINGUALENS_ASR_WHISPER_MODEL_SIZE:-medium}).${NC}"
+if [ "${PASASCOPE_ASR_LOCAL_WHISPER_ENABLED:-false}" = "true" ]; then
+    echo -e "${GREEN}✓ Local Whisper transcription enabled (model: ${PASASCOPE_ASR_WHISPER_MODEL_SIZE:-medium}).${NC}"
 else
-    echo -e "${YELLOW}Local Whisper transcription is off. Set LINGUALENS_ASR_LOCAL_WHISPER_ENABLED=true to transcribe recordings.${NC}"
+    echo -e "${YELLOW}Local Whisper transcription is off. Set PASASCOPE_ASR_LOCAL_WHISPER_ENABLED=true to transcribe recordings.${NC}"
 fi
 
 # Run uvicorn in the background and save PID

@@ -121,7 +121,7 @@ def test_segment_migration_creates_and_downgrades_without_removing_transcripts(m
 
     with TemporaryDirectory(prefix="lingualens-assessment-v2-segments-") as temp_dir:
         database_path = Path(temp_dir) / "assessment-v2-segments.db"
-        monkeypatch.setenv("LINGUALENS_ASSESSMENT_DATABASE_URL", f"sqlite:///{database_path}")
+        monkeypatch.setenv("PASASCOPE_ASSESSMENT_DATABASE_URL", f"sqlite:///{database_path}")
         get_settings.cache_clear()
         try:
             upgrade_assessment_database("0008_transcript_segments")
@@ -165,7 +165,7 @@ def test_populated_segment_set_blocks_full_downgrade_after_provenance_downgrade(
 
     with TemporaryDirectory(prefix="lingualens-assessment-v2-segment-guard-") as temp_dir:
         database_path = Path(temp_dir) / "assessment-v2-segment-guard.db"
-        monkeypatch.setenv("LINGUALENS_ASSESSMENT_DATABASE_URL", f"sqlite:///{database_path}")
+        monkeypatch.setenv("PASASCOPE_ASSESSMENT_DATABASE_URL", f"sqlite:///{database_path}")
         get_settings.cache_clear()
         try:
             upgrade_assessment_database()

@@ -6,8 +6,8 @@ select_python_runtime() {
     local candidate
     local candidates=()
 
-    if [ -n "${LINGUALENS_PYTHON:-}" ]; then
-        candidates+=("$LINGUALENS_PYTHON")
+    if [ -n "${PASASCOPE_PYTHON:-${LINGUALENS_PYTHON:-}}" ]; then
+        candidates+=("${PASASCOPE_PYTHON:-$LINGUALENS_PYTHON}")
     fi
     candidates+=(".venv/bin/python")
     for candidate in .venv*/bin/python; do

@@ -12,7 +12,7 @@
 ## Preconditions
 
 - [ ] Staging Supabase project exists in `ap-southeast-1`.
-- [ ] `LINGUALENS_AUTH_MODE=supabase` is active on staging API.
+- [ ] `PASASCOPE_AUTH_MODE=supabase` is active on staging API.
 - [ ] Public signup is off.
 - [ ] Invitation-only onboarding is enabled.
 - [ ] Claims match `docs/SUPABASE_AUTH_CONTRACT.md`.

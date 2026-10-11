@@ -41,7 +41,7 @@ def test_audit_metadata_json_has_empty_object_server_default(monkeypatch) -> Non
 
     with TemporaryDirectory(prefix="lingualens-assessment-v2-default-") as temp_dir:
         database_path = Path(temp_dir) / "assessment-v2.db"
-        monkeypatch.setenv("LINGUALENS_ASSESSMENT_DATABASE_URL", f"sqlite:///{database_path}")
+        monkeypatch.setenv("PASASCOPE_ASSESSMENT_DATABASE_URL", f"sqlite:///{database_path}")
         get_settings.cache_clear()
         upgrade_assessment_database()
         try:
@@ -63,7 +63,7 @@ def test_downgrade_refuses_to_delete_existing_evidence_jobs(monkeypatch) -> None
 
     with TemporaryDirectory(prefix="lingualens-assessment-v2-downgrade-") as temp_dir:
         database_path = Path(temp_dir) / "assessment-v2.db"
-        monkeypatch.setenv("LINGUALENS_ASSESSMENT_DATABASE_URL", f"sqlite:///{database_path}")
+        monkeypatch.setenv("PASASCOPE_ASSESSMENT_DATABASE_URL", f"sqlite:///{database_path}")
         get_settings.cache_clear()
         upgrade_assessment_database()
         try:

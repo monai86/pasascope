@@ -45,7 +45,7 @@ def _worker_organization_ids(settings, session_factory) -> list[str]:
     dialect_name = getattr(getattr(bind, "dialect", None), "name", None)
     if dialect_name == "postgresql":
         raise ValueError(
-            "LINGUALENS_CAPTURE_WORKER_ORGANIZATION_IDS is required for PostgreSQL RLS polling."
+            "PASASCOPE_CAPTURE_WORKER_ORGANIZATION_IDS is required for PostgreSQL RLS polling."
         )
     return _active_organization_ids(session_factory)
 

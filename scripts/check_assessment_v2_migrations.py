@@ -83,8 +83,8 @@ def _query(database_path: Path, statement: str) -> list[tuple[object, ...]]:
 def run_smoke(database_path: Path) -> None:
     from app.assessment_v2.db.migrations_runner import downgrade_assessment_database, upgrade_assessment_database
 
-    previous = os.environ.get("LINGUALENS_ASSESSMENT_DATABASE_URL")
-    os.environ["LINGUALENS_ASSESSMENT_DATABASE_URL"] = f"sqlite:///{database_path}"
+    previous = os.environ.get("PASASCOPE_ASSESSMENT_DATABASE_URL")
+    os.environ["PASASCOPE_ASSESSMENT_DATABASE_URL"] = f"sqlite:///{database_path}"
     try:
         _clear_settings_cache()
         upgrade_assessment_database()
@@ -127,9 +127,9 @@ def run_smoke(database_path: Path) -> None:
             raise RuntimeError(f"assessment-v2 migration smoke left tables after downgrade: {sorted(remaining)}")
     finally:
         if previous is None:
-            os.environ.pop("LINGUALENS_ASSESSMENT_DATABASE_URL", None)
+            os.environ.pop("PASASCOPE_ASSESSMENT_DATABASE_URL", None)
         else:
-            os.environ["LINGUALENS_ASSESSMENT_DATABASE_URL"] = previous
+            os.environ["PASASCOPE_ASSESSMENT_DATABASE_URL"] = previous
         _clear_settings_cache()
 
 

@@ -152,15 +152,15 @@ Canonical API environment variables:
 
 ```bash
 NEXT_PUBLIC_API_BASE_URL=https://api.example.org/api/v1
-LINGUALENS_REPOSITORY_MODE=sql
-LINGUALENS_DATABASE_URL=postgresql+psycopg://...
-LINGUALENS_STORAGE_MODE=supabase_private
-LINGUALENS_SUPABASE_STORAGE_URL=https://<project-ref>.supabase.co
-LINGUALENS_SUPABASE_STORAGE_SERVICE_ROLE_KEY=<managed-secret>
-LINGUALENS_SUPABASE_STORAGE_BUCKET=clinical-audio
+PASASCOPE_REPOSITORY_MODE=sql
+PASASCOPE_DATABASE_URL=postgresql+psycopg://...
+PASASCOPE_STORAGE_MODE=supabase_private
+PASASCOPE_SUPABASE_STORAGE_URL=https://<project-ref>.supabase.co
+PASASCOPE_SUPABASE_STORAGE_SERVICE_ROLE_KEY=<managed-secret>
+PASASCOPE_SUPABASE_STORAGE_BUCKET=clinical-audio
 # Optional. Point at an approved artifact directory; none ships in the repository,
 # so the reference-evidence provider reports unavailable until this is set.
-# LINGUALENS_REFERENCE_ARTIFACT_DIR=/approved/path/reference-evidence-vN
+# PASASCOPE_REFERENCE_ARTIFACT_DIR=/approved/path/reference-evidence-vN
 ```
 
 Redis is not a baseline deployment dependency. The repository does not provide
@@ -173,12 +173,12 @@ data. Design, implement, and rehearse that lifecycle before production use.
 
 Legacy v2 env names remain supported temporarily for backward compatibility.
 
-When `LINGUALENS_MOCK_MODE=false`, the API validates runtime security at
+When `PASASCOPE_MOCK_MODE=false`, the API validates runtime security at
 startup and rejects demo/default database URLs, localhost Redis URLs, non-SQL
 repositories, local storage, and in-memory job queues. Production secrets must
 come from the deployment platform's managed secret store, not from committed
-files. Production must set `LINGUALENS_SECRET_STORE_PROVIDER` to an
-approved managed secret store and `LINGUALENS_CREDENTIAL_ROTATION_RUNBOOK`
+files. Production must set `PASASCOPE_SECRET_STORE_PROVIDER` to an
+approved managed secret store and `PASASCOPE_CREDENTIAL_ROTATION_RUNBOOK`
 to the active rotation runbook.
 
 Production authentication, provider credentials, retention, storage, and audit

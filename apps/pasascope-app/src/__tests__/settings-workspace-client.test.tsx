@@ -140,7 +140,7 @@ describe("SettingsWorkspaceClient admin lifecycle UX", () => {
               status: "blocked",
               detail: "Production SaaS requires Supabase auth with mock mode disabled.",
               evidence: ["auth_mode=mock", "mock_mode=true"],
-              next_action: "Configure Supabase auth and set LINGUALENS_MOCK_MODE=false for production-like runtime."
+              next_action: "Configure Supabase auth and set PASASCOPE_MOCK_MODE=false for production-like runtime."
             },
             {
               key: "mfa_policy",

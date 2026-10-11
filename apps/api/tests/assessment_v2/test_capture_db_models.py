@@ -233,7 +233,7 @@ def test_capture_migration_seeds_catalog_and_reverses_to_0002(monkeypatch) -> No
 
     with TemporaryDirectory(prefix="lingualens-assessment-v2-capture-") as temp_dir:
         database_path = Path(temp_dir) / "assessment-v2-capture.db"
-        monkeypatch.setenv("LINGUALENS_ASSESSMENT_DATABASE_URL", f"sqlite:///{database_path}")
+        monkeypatch.setenv("PASASCOPE_ASSESSMENT_DATABASE_URL", f"sqlite:///{database_path}")
         get_settings.cache_clear()
         try:
             upgrade_assessment_database("0002_assessment_tenant_integrity")
@@ -345,7 +345,7 @@ def test_fresh_sqlite_migration_catalog_matches_python_protocol_catalog(monkeypa
 
     with TemporaryDirectory(prefix="lingualens-assessment-v2-catalog-parity-") as temp_dir:
         database_path = Path(temp_dir) / "assessment-v2-catalog.db"
-        monkeypatch.setenv("LINGUALENS_ASSESSMENT_DATABASE_URL", f"sqlite:///{database_path}")
+        monkeypatch.setenv("PASASCOPE_ASSESSMENT_DATABASE_URL", f"sqlite:///{database_path}")
         get_settings.cache_clear()
         try:
             upgrade_assessment_database()

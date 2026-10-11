@@ -4,9 +4,9 @@ FastAPI boundary for the case-centered PasaScope clinical workflow.
 
 Local development defaults to a durable JSON repository at
 `.local/lingualens-app-repository.json`. Set
-`LINGUALENS_REPOSITORY_MODE=memory` for isolated test/demo runs, or
-`LINGUALENS_REPOSITORY_MODE=sql` with
-`LINGUALENS_DATABASE_URL` for the SQLAlchemy-backed repository.
+`PASASCOPE_REPOSITORY_MODE=memory` for isolated test/demo runs, or
+`PASASCOPE_REPOSITORY_MODE=sql` with
+`PASASCOPE_DATABASE_URL` for the SQLAlchemy-backed repository.
 
 Legacy v2 env names remain supported temporarily for backward compatibility.
 
@@ -44,7 +44,7 @@ Repository-root invocation is also supported:
 PYTHONPATH=apps/api:src pytest apps/api/tests -q
 ```
 
-`LINGUALENS_DEBUG_FEATURE_OVERRIDE=false` is the default and keeps failed-QA
+`PASASCOPE_DEBUG_FEATURE_OVERRIDE=false` is the default and keeps failed-QA
 or unattested transcripts blocked from feature extraction. Engineering-only runs
 may set it to `true` when they also provide an explicit override reason.
 
@@ -66,7 +66,7 @@ PYTHONPATH=apps/api:src python -m app.assessment_v2.worker_runtime
 ```
 
 The worker uses PostgreSQL `processing_runs` as its queue and requires an
-explicit `LINGUALENS_CAPTURE_WORKER_ORGANIZATION_IDS` allowlist for RLS-safe
+explicit `PASASCOPE_CAPTURE_WORKER_ORGANIZATION_IDS` allowlist for RLS-safe
 tenant polling. Redis/Celery are not required for this path. Docker Compose is
 optional packaging verification; the primary acceptance gate is
 `scripts/check_assessment_v2_native.py`. The workflow is research/education

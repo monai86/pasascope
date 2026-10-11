@@ -34,7 +34,7 @@ from packages.tui.validation import (
 )
 
 DEFAULT_API_URL = os.environ.get("PASASCOPE_API_URL") or os.environ.get(
-    "LINGUALENS_API_URL", "http://localhost:8000/api/v1"
+    "PASASCOPE_API_URL", "http://localhost:8000/api/v1"
 )
 
 

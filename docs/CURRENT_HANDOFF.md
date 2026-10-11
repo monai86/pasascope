@@ -240,7 +240,7 @@ Expected frontend variable names include:
 - `NEXT_PUBLIC_SUPABASE_URL`
 - `NEXT_PUBLIC_SUPABASE_ANON_KEY`
 
-Backend configuration uses the `LINGUALENS_*` names documented in
+Backend configuration uses the `PASASCOPE_*` names documented in
 `apps/api/README.md` and the deployment runbooks. Never place values, bearer
 tokens, service-role keys, database passwords, child identifiers, transcript
 text, audio content, storage keys, or raw clinical URLs in commits, fixtures,

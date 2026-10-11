@@ -160,7 +160,7 @@ def test_evidence_migration_creates_and_downgrades_its_three_tables(monkeypatch)
 
     with TemporaryDirectory(prefix="lingualens-assessment-v2-evidence-") as temp_dir:
         database_path = Path(temp_dir) / "assessment-v2-evidence.db"
-        monkeypatch.setenv("LINGUALENS_ASSESSMENT_DATABASE_URL", f"sqlite:///{database_path}")
+        monkeypatch.setenv("PASASCOPE_ASSESSMENT_DATABASE_URL", f"sqlite:///{database_path}")
         get_settings.cache_clear()
         try:
             upgrade_assessment_database()

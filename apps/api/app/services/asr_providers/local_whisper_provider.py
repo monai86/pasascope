@@ -65,8 +65,8 @@ class LocalWhisperProvider(BaseTranscriptionProvider):
         if not settings.asr_local_whisper_enabled:
             return ProviderAvailability(
                 available=False,
-                reason="Local Whisper is disabled. Set LINGUALENS_ASR_LOCAL_WHISPER_ENABLED=true to enable it.",
-                missing_dependencies=["LINGUALENS_ASR_LOCAL_WHISPER_ENABLED"],
+                reason="Local Whisper is disabled. Set PASASCOPE_ASR_LOCAL_WHISPER_ENABLED=true to enable it.",
+                missing_dependencies=["PASASCOPE_ASR_LOCAL_WHISPER_ENABLED"],
             )
         if settings.storage_mode not in {"local", "local_private"}:
             return ProviderAvailability(

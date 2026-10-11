@@ -1,14 +1,13 @@
 from __future__ import annotations
 
 from logging.config import fileConfig
-import os
 
 from alembic import context
 from sqlalchemy import engine_from_config, pool
 
 from app.assessment_v2.db import models as _models  # noqa: F401  # register all v2 tables
 from app.assessment_v2.db.base import AssessmentBase
-from app.core.config import get_settings
+from app.core.config import get_settings, getenv_compat
 
 
 config = context.config
@@ -20,7 +19,7 @@ target_metadata = AssessmentBase.metadata
 
 
 def _database_url() -> str:
-    return os.getenv("LINGUALENS_ASSESSMENT_DATABASE_URL") or get_settings().assessment_database_url
+    return getenv_compat("PASASCOPE_ASSESSMENT_DATABASE_URL") or get_settings().assessment_database_url
 
 
 def run_migrations_offline() -> None:

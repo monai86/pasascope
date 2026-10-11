@@ -69,8 +69,8 @@ def _psycopg_url(database_url: URL) -> str:
 
 def _admin_url() -> URL:
     value = (
-        os.getenv("LINGUALENS_NATIVE_ADMIN_DATABASE_URL")
-        or os.getenv("LINGUALENS_ASSESSMENT_TEST_DATABASE_URL")
+        os.getenv("PASASCOPE_NATIVE_ADMIN_DATABASE_URL")
+        or os.getenv("PASASCOPE_ASSESSMENT_TEST_DATABASE_URL")
         or DEFAULT_ADMIN_URL
     )
     parsed = make_url(value)
@@ -126,7 +126,7 @@ def _configure_application_role(
 
 
 def _migrate(owner_url: URL, revision: str = "head") -> None:
-    os.environ["LINGUALENS_ASSESSMENT_DATABASE_URL"] = owner_url.render_as_string(hide_password=False)
+    os.environ["PASASCOPE_ASSESSMENT_DATABASE_URL"] = owner_url.render_as_string(hide_password=False)
     if str(API_ROOT) not in sys.path:
         sys.path.insert(0, str(API_ROOT))
     if str(ROOT) not in sys.path:
@@ -140,7 +140,7 @@ def _migrate(owner_url: URL, revision: str = "head") -> None:
 
 
 def _downgrade(owner_url: URL, revision: str) -> None:
-    os.environ["LINGUALENS_ASSESSMENT_DATABASE_URL"] = owner_url.render_as_string(hide_password=False)
+    os.environ["PASASCOPE_ASSESSMENT_DATABASE_URL"] = owner_url.render_as_string(hide_password=False)
     if str(API_ROOT) not in sys.path:
         sys.path.insert(0, str(API_ROOT))
     if str(ROOT) not in sys.path:
@@ -358,13 +358,13 @@ def _api_environment(database_url: URL) -> dict[str, str]:
     environment = os.environ.copy()
     environment.update(
         {
-            "LINGUALENS_ASSESSMENT_DATABASE_URL": database_url.render_as_string(hide_password=False),
-            "LINGUALENS_REPOSITORY_MODE": "json",
-            "LINGUALENS_MOCK_MODE": "true",
-            "LINGUALENS_AUTH_MODE": "mock",
-            "LINGUALENS_RUN_MIGRATIONS_ON_STARTUP": "false",
-            "LINGUALENS_RUN_ASSESSMENT_MIGRATIONS_ON_STARTUP": "false",
-            "LINGUALENS_STORAGE_MODE": "metadata_only",
+            "PASASCOPE_ASSESSMENT_DATABASE_URL": database_url.render_as_string(hide_password=False),
+            "PASASCOPE_REPOSITORY_MODE": "json",
+            "PASASCOPE_MOCK_MODE": "true",
+            "PASASCOPE_AUTH_MODE": "mock",
+            "PASASCOPE_RUN_MIGRATIONS_ON_STARTUP": "false",
+            "PASASCOPE_RUN_ASSESSMENT_MIGRATIONS_ON_STARTUP": "false",
+            "PASASCOPE_STORAGE_MODE": "metadata_only",
             "PYTHONPATH": os.pathsep.join(
                 [str(API_ROOT), str(ROOT / "src"), environment.get("PYTHONPATH", "")]
             ),
@@ -375,7 +375,7 @@ def _api_environment(database_url: URL) -> dict[str, str]:
 
 def _worker_environment(database_url: URL, organization_id: str) -> dict[str, str]:
     environment = _api_environment(database_url)
-    environment["LINGUALENS_CAPTURE_WORKER_ORGANIZATION_IDS"] = organization_id
+    environment["PASASCOPE_CAPTURE_WORKER_ORGANIZATION_IDS"] = organization_id
     return environment
 
 
@@ -852,8 +852,8 @@ def _run_rls(owner_url: URL) -> None:
     environment = os.environ.copy()
     environment.update(
         {
-            "LINGUALENS_ASSESSMENT_TEST_DATABASE_URL": owner_url.render_as_string(hide_password=False),
-            "LINGUALENS_ASSESSMENT_DATABASE_URL": owner_url.render_as_string(hide_password=False),
+            "PASASCOPE_ASSESSMENT_TEST_DATABASE_URL": owner_url.render_as_string(hide_password=False),
+            "PASASCOPE_ASSESSMENT_DATABASE_URL": owner_url.render_as_string(hide_password=False),
             "PYTHONPATH": os.pathsep.join(
                 [str(API_ROOT), str(ROOT / "src"), environment.get("PYTHONPATH", "")]
             ),

@@ -22,8 +22,8 @@ ORIGIN = {"Origin": "http://localhost:3000"}
 
 @pytest.fixture()
 def limited(monkeypatch):
-    monkeypatch.setenv("LINGUALENS_RATE_LIMIT_ENABLED", "true")
-    monkeypatch.setenv("LINGUALENS_RATE_LIMIT_REQUESTS", "2")
+    monkeypatch.setenv("PASASCOPE_RATE_LIMIT_ENABLED", "true")
+    monkeypatch.setenv("PASASCOPE_RATE_LIMIT_REQUESTS", "2")
     get_settings.cache_clear()
     clear_rate_limit_state()
     yield TestClient(app)

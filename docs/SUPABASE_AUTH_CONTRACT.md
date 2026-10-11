@@ -20,21 +20,21 @@ Staging verifier runbook:
 Production-like API auth uses:
 
 ```text
-LINGUALENS_AUTH_MODE=supabase
-LINGUALENS_SUPABASE_JWT_VERIFICATION_MODE=hs256_shared_secret | jwks_json | jwks_url
-LINGUALENS_SUPABASE_JWT_SECRET=<managed-secret-store-value>
-LINGUALENS_SUPABASE_JWT_JWKS_JSON=<managed-jwks-json-when-using-asymmetric-verification>
-LINGUALENS_SUPABASE_JWT_JWKS_URL=<managed-jwks-url-when-using-remote-asymmetric-verification>
-LINGUALENS_SUPABASE_JWT_JWKS_CACHE_TTL_SECONDS=300
-LINGUALENS_SUPABASE_JWT_ISSUER=https://<project-ref>.supabase.co/auth/v1
-LINGUALENS_SUPABASE_JWT_AUDIENCE=authenticated
-LINGUALENS_SUPABASE_REQUIRE_MFA=true
-LINGUALENS_SUPABASE_REQUIRE_INVITATION=true
+PASASCOPE_AUTH_MODE=supabase
+PASASCOPE_SUPABASE_JWT_VERIFICATION_MODE=hs256_shared_secret | jwks_json | jwks_url
+PASASCOPE_SUPABASE_JWT_SECRET=<managed-secret-store-value>
+PASASCOPE_SUPABASE_JWT_JWKS_JSON=<managed-jwks-json-when-using-asymmetric-verification>
+PASASCOPE_SUPABASE_JWT_JWKS_URL=<managed-jwks-url-when-using-remote-asymmetric-verification>
+PASASCOPE_SUPABASE_JWT_JWKS_CACHE_TTL_SECONDS=300
+PASASCOPE_SUPABASE_JWT_ISSUER=https://<project-ref>.supabase.co/auth/v1
+PASASCOPE_SUPABASE_JWT_AUDIENCE=authenticated
+PASASCOPE_SUPABASE_REQUIRE_MFA=true
+PASASCOPE_SUPABASE_REQUIRE_INVITATION=true
 ```
 
 Legacy v2 env names remain supported temporarily for backward compatibility.
 
-When `LINGUALENS_MOCK_MODE=false`, runtime validation requires the
+When `PASASCOPE_MOCK_MODE=false`, runtime validation requires the
 selected Supabase verification material and issuer to be configured, and MFA
 plus invitation acceptance guards must remain enabled. Mock headers are ignored
 in Supabase auth mode.
@@ -64,8 +64,8 @@ Required top-level claims:
 | Claim | Purpose |
 |---|---|
 | `sub` | Stable user ID used as `CurrentUser.user_id`. |
-| `iss` | Must match `LINGUALENS_SUPABASE_JWT_ISSUER`. |
-| `aud` | Must include `LINGUALENS_SUPABASE_JWT_AUDIENCE`. |
+| `iss` | Must match `PASASCOPE_SUPABASE_JWT_ISSUER`. |
+| `aud` | Must include `PASASCOPE_SUPABASE_JWT_AUDIENCE`. |
 | `exp` | Token expiry. Expired tokens fail closed. |
 | `aal` | Must be `aal2` when MFA is required for app access. |
 

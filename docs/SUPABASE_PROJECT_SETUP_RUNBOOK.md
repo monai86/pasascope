@@ -177,11 +177,11 @@ For each project, capture the values needed by the maintained runtime.
 
 Backend verifier inputs for `apps/api`:
 
-- `LINGUALENS_SUPABASE_JWT_ISSUER`
-- `LINGUALENS_SUPABASE_JWT_AUDIENCE`
-- `LINGUALENS_SUPABASE_JWT_VERIFICATION_MODE`
-- `LINGUALENS_SUPABASE_JWT_JWKS_URL` if using remote JWKS
-- `LINGUALENS_SUPABASE_JWT_JWKS_JSON` only if using injected JWKS
+- `PASASCOPE_SUPABASE_JWT_ISSUER`
+- `PASASCOPE_SUPABASE_JWT_AUDIENCE`
+- `PASASCOPE_SUPABASE_JWT_VERIFICATION_MODE`
+- `PASASCOPE_SUPABASE_JWT_JWKS_URL` if using remote JWKS
+- `PASASCOPE_SUPABASE_JWT_JWKS_JSON` only if using injected JWKS
 - secret-store location for the service role and any HS256 secret if used
 
 Frontend browser inputs for `apps/pasascope-app`:
@@ -201,7 +201,7 @@ Completion check:
 
 Before any production promotion work, complete these in order:
 
-1. Configure staging API with `LINGUALENS_AUTH_MODE=supabase`.
+1. Configure staging API with `PASASCOPE_AUTH_MODE=supabase`.
 2. Run
    [docs/SUPABASE_AUTH_STAGING_VERIFIER_RUNBOOK.md](/Users/porschecaa/lingualens/docs/SUPABASE_AUTH_STAGING_VERIFIER_RUNBOOK.md)
    and save evidence under `docs/release_artifacts/auth_verifier/`.

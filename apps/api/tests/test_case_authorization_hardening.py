@@ -230,7 +230,7 @@ def test_withdrawal_reason_is_kept_on_a_privacy_record_not_in_the_audit_log(clie
 
 
 def test_v1_audio_upload_reports_unavailable_storage_instead_of_failing(client, repo, monkeypatch):
-    monkeypatch.setenv("LINGUALENS_STORAGE_MODE", "supabase_private")
+    monkeypatch.setenv("PASASCOPE_STORAGE_MODE", "supabase_private")
     get_settings.cache_clear()
     try:
         response = client.post(

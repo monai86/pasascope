@@ -43,15 +43,23 @@ _SUPABASE_PROJECT_HOST_RE = re.compile(
 )
 
 
-def getenv_compat(new_name: str, legacy_name: str = "", default: str = "") -> str:
-    pasascope_name = new_name.replace("LINGUALENS_", "PASASCOPE_")
-    if pasascope_name in os.environ:
-        return os.environ[pasascope_name]
-    if new_name in os.environ:
-        return os.environ[new_name]
+PREVIOUS_ENV_PREFIX = "LINGUALENS_"
+
+
+def getenv_compat(name: str, legacy_name: str = "", default: str = "") -> str:
+    """Read a ``PASASCOPE_*`` setting, accepting the names it had before.
+
+    The project's previous ``LINGUALENS_*`` spelling is still read, so an
+    existing deployment or ``.env`` file keeps working after the rename.
+    """
+    if name in os.environ:
+        return os.environ[name]
+    previous_name = name.replace("PASASCOPE_", PREVIOUS_ENV_PREFIX, 1)
+    if previous_name in os.environ:
+        return os.environ[previous_name]
     if legacy_name and legacy_name in os.environ:
         warnings.warn(
-            f"{legacy_name} is deprecated; use {new_name} or {pasascope_name} instead.",
+            f"{legacy_name} is deprecated; use {name} instead.",
             DeprecationWarning,
             stacklevel=2,
         )
@@ -322,183 +330,181 @@ class Settings(BaseModel):
     @classmethod
     def from_env(cls) -> "Settings":
         return cls(
-            mock_mode=getenv_compat("LINGUALENS_MOCK_MODE", "THERAPIST_APP_V2_MOCK_MODE", "true").lower() != "false",
-            auth_mode=getenv_compat("LINGUALENS_AUTH_MODE", "THERAPIST_APP_V2_AUTH_MODE", "mock"),
+            mock_mode=getenv_compat("PASASCOPE_MOCK_MODE", "THERAPIST_APP_V2_MOCK_MODE", "true").lower() != "false",
+            auth_mode=getenv_compat("PASASCOPE_AUTH_MODE", "THERAPIST_APP_V2_AUTH_MODE", "mock"),
             supabase_jwt_verification_mode=getenv_compat(
-                "LINGUALENS_SUPABASE_JWT_VERIFICATION_MODE",
+                "PASASCOPE_SUPABASE_JWT_VERIFICATION_MODE",
                 "THERAPIST_APP_V2_SUPABASE_JWT_VERIFICATION_MODE",
                 "hs256_shared_secret",
             ),
-            supabase_jwt_secret=getenv_compat("LINGUALENS_SUPABASE_JWT_SECRET", "THERAPIST_APP_V2_SUPABASE_JWT_SECRET", ""),
+            supabase_jwt_secret=getenv_compat("PASASCOPE_SUPABASE_JWT_SECRET", "THERAPIST_APP_V2_SUPABASE_JWT_SECRET", ""),
             supabase_jwt_jwks_json=getenv_compat(
-                "LINGUALENS_SUPABASE_JWT_JWKS_JSON",
+                "PASASCOPE_SUPABASE_JWT_JWKS_JSON",
                 "THERAPIST_APP_V2_SUPABASE_JWT_JWKS_JSON",
                 "",
             ),
             supabase_jwt_jwks_url=getenv_compat(
-                "LINGUALENS_SUPABASE_JWT_JWKS_URL",
+                "PASASCOPE_SUPABASE_JWT_JWKS_URL",
                 "THERAPIST_APP_V2_SUPABASE_JWT_JWKS_URL",
                 "",
             ),
             supabase_jwt_jwks_cache_ttl_seconds=int(
                 getenv_compat(
-                    "LINGUALENS_SUPABASE_JWT_JWKS_CACHE_TTL_SECONDS",
+                    "PASASCOPE_SUPABASE_JWT_JWKS_CACHE_TTL_SECONDS",
                     "THERAPIST_APP_V2_SUPABASE_JWT_JWKS_CACHE_TTL_SECONDS",
                     "300",
                 )
             ),
-            supabase_jwt_issuer=getenv_compat("LINGUALENS_SUPABASE_JWT_ISSUER", "THERAPIST_APP_V2_SUPABASE_JWT_ISSUER", ""),
+            supabase_jwt_issuer=getenv_compat("PASASCOPE_SUPABASE_JWT_ISSUER", "THERAPIST_APP_V2_SUPABASE_JWT_ISSUER", ""),
             supabase_jwt_audience=getenv_compat(
-                "LINGUALENS_SUPABASE_JWT_AUDIENCE",
+                "PASASCOPE_SUPABASE_JWT_AUDIENCE",
                 "THERAPIST_APP_V2_SUPABASE_JWT_AUDIENCE",
                 "authenticated",
             ),
             supabase_require_mfa=getenv_compat(
-                "LINGUALENS_SUPABASE_REQUIRE_MFA",
+                "PASASCOPE_SUPABASE_REQUIRE_MFA",
                 "THERAPIST_APP_V2_SUPABASE_REQUIRE_MFA",
                 "true",
             ).lower()
             != "false",
             supabase_require_invitation=getenv_compat(
-                "LINGUALENS_SUPABASE_REQUIRE_INVITATION",
+                "PASASCOPE_SUPABASE_REQUIRE_INVITATION",
                 "THERAPIST_APP_V2_SUPABASE_REQUIRE_INVITATION",
                 "true",
             ).lower()
             != "false",
             debug_feature_override=getenv_compat(
-                "LINGUALENS_DEBUG_FEATURE_OVERRIDE",
+                "PASASCOPE_DEBUG_FEATURE_OVERRIDE",
                 "THERAPIST_APP_V2_DEBUG_FEATURE_OVERRIDE",
                 "false",
             ).lower()
             == "true",
-            repository_mode=getenv_compat("LINGUALENS_REPOSITORY_MODE", "THERAPIST_APP_V2_REPOSITORY_MODE", "json"),
+            repository_mode=getenv_compat("PASASCOPE_REPOSITORY_MODE", "THERAPIST_APP_V2_REPOSITORY_MODE", "json"),
             json_repository_path=getenv_compat(
-                "LINGUALENS_JSON_REPOSITORY_PATH",
+                "PASASCOPE_JSON_REPOSITORY_PATH",
                 "THERAPIST_APP_V2_JSON_REPOSITORY_PATH",
                 ".local/lingualens-app-repository.json",
             ),
-            database_url=getenv_compat("LINGUALENS_DATABASE_URL", "THERAPIST_APP_V2_DATABASE_URL", DEFAULT_DATABASE_URL),
+            database_url=getenv_compat("PASASCOPE_DATABASE_URL", "THERAPIST_APP_V2_DATABASE_URL", DEFAULT_DATABASE_URL),
             assessment_database_url=(
-                os.getenv("PASASCOPE_ASSESSMENT_DATABASE_URL")
-                or os.getenv("LINGUALENS_ASSESSMENT_DATABASE_URL")
-                or getenv_compat("LINGUALENS_DATABASE_URL", "THERAPIST_APP_V2_DATABASE_URL", "")
+                getenv_compat("PASASCOPE_ASSESSMENT_DATABASE_URL")
+                or getenv_compat("PASASCOPE_DATABASE_URL", "THERAPIST_APP_V2_DATABASE_URL", "")
                 or DEFAULT_ASSESSMENT_DATABASE_URL
             ),
             sql_create_schema=getenv_compat(
-                "LINGUALENS_SQL_CREATE_SCHEMA",
+                "PASASCOPE_SQL_CREATE_SCHEMA",
                 "THERAPIST_APP_V2_SQL_CREATE_SCHEMA",
                 "true",
             ).lower()
             != "false",
             run_migrations_on_startup=getenv_compat(
-                "LINGUALENS_RUN_MIGRATIONS_ON_STARTUP",
+                "PASASCOPE_RUN_MIGRATIONS_ON_STARTUP",
                 "THERAPIST_APP_V2_RUN_MIGRATIONS_ON_STARTUP",
                 "false",
             ).lower()
             == "true",
             run_assessment_migrations_on_startup=(
-                os.getenv("PASASCOPE_RUN_ASSESSMENT_MIGRATIONS_ON_STARTUP")
-                or os.getenv("LINGUALENS_RUN_ASSESSMENT_MIGRATIONS_ON_STARTUP", "false")
+                getenv_compat("PASASCOPE_RUN_ASSESSMENT_MIGRATIONS_ON_STARTUP", default="false")
             ).lower()
             == "true",
-            job_queue_mode=getenv_compat("LINGUALENS_JOB_QUEUE_MODE", "THERAPIST_APP_V2_JOB_QUEUE_MODE", "memory"),
+            job_queue_mode=getenv_compat("PASASCOPE_JOB_QUEUE_MODE", "THERAPIST_APP_V2_JOB_QUEUE_MODE", "memory"),
             inline_job_worker_enabled=getenv_compat(
-                "LINGUALENS_INLINE_JOB_WORKER_ENABLED",
+                "PASASCOPE_INLINE_JOB_WORKER_ENABLED",
                 "THERAPIST_APP_V2_INLINE_JOB_WORKER_ENABLED",
                 "true",
             ).lower()
             != "false",
-            asr_local_whisper_enabled=getenv_compat("LINGUALENS_ASR_LOCAL_WHISPER_ENABLED", default="false").lower()
+            asr_local_whisper_enabled=getenv_compat("PASASCOPE_ASR_LOCAL_WHISPER_ENABLED", default="false").lower()
             == "true",
-            asr_whisper_model_size=getenv_compat("LINGUALENS_ASR_WHISPER_MODEL_SIZE", default="medium"),
-            asr_language_strategy=getenv_compat("LINGUALENS_ASR_LANGUAGE_STRATEGY", default="thai"),
+            asr_whisper_model_size=getenv_compat("PASASCOPE_ASR_WHISPER_MODEL_SIZE", default="medium"),
+            asr_language_strategy=getenv_compat("PASASCOPE_ASR_LANGUAGE_STRATEGY", default="thai"),
             redis_url=os.getenv("REDIS_URL", DEFAULT_REDIS_URL),
-            storage_mode=getenv_compat("LINGUALENS_STORAGE_MODE", "THERAPIST_APP_V2_STORAGE_MODE", "local_private"),
+            storage_mode=getenv_compat("PASASCOPE_STORAGE_MODE", "THERAPIST_APP_V2_STORAGE_MODE", "local_private"),
             local_storage_root=getenv_compat(
-                "LINGUALENS_LOCAL_STORAGE_ROOT",
+                "PASASCOPE_LOCAL_STORAGE_ROOT",
                 "THERAPIST_APP_V2_LOCAL_STORAGE_ROOT",
                 ".local/storage",
             ),
             supabase_storage_url=getenv_compat(
-                "LINGUALENS_SUPABASE_STORAGE_URL",
+                "PASASCOPE_SUPABASE_STORAGE_URL",
                 "THERAPIST_APP_V2_SUPABASE_STORAGE_URL",
                 "",
             ),
             supabase_storage_service_role_key=getenv_compat(
-                "LINGUALENS_SUPABASE_STORAGE_SERVICE_ROLE_KEY",
+                "PASASCOPE_SUPABASE_STORAGE_SERVICE_ROLE_KEY",
                 "THERAPIST_APP_V2_SUPABASE_STORAGE_SERVICE_ROLE_KEY",
                 "",
             ),
             supabase_storage_bucket=getenv_compat(
-                "LINGUALENS_SUPABASE_STORAGE_BUCKET",
+                "PASASCOPE_SUPABASE_STORAGE_BUCKET",
                 "THERAPIST_APP_V2_SUPABASE_STORAGE_BUCKET",
                 "",
             ),
             supabase_storage_tus_endpoint=getenv_compat(
-                "LINGUALENS_SUPABASE_STORAGE_TUS_ENDPOINT",
+                "PASASCOPE_SUPABASE_STORAGE_TUS_ENDPOINT",
                 "THERAPIST_APP_V2_SUPABASE_STORAGE_TUS_ENDPOINT",
                 "",
             ),
             supabase_storage_signed_upload_ttl_seconds=int(
                 getenv_compat(
-                    "LINGUALENS_SUPABASE_STORAGE_SIGNED_UPLOAD_TTL_SECONDS",
+                    "PASASCOPE_SUPABASE_STORAGE_SIGNED_UPLOAD_TTL_SECONDS",
                     "THERAPIST_APP_V2_SUPABASE_STORAGE_SIGNED_UPLOAD_TTL_SECONDS",
                     str(DEFAULT_SUPABASE_STORAGE_SIGNED_UPLOAD_TTL_SECONDS),
                 )
             ),
             supabase_storage_signed_download_ttl_seconds=int(
                 getenv_compat(
-                    "LINGUALENS_SUPABASE_STORAGE_SIGNED_DOWNLOAD_TTL_SECONDS",
+                    "PASASCOPE_SUPABASE_STORAGE_SIGNED_DOWNLOAD_TTL_SECONDS",
                     "THERAPIST_APP_V2_SUPABASE_STORAGE_SIGNED_DOWNLOAD_TTL_SECONDS",
                     str(DEFAULT_SUPABASE_STORAGE_SIGNED_DOWNLOAD_TTL_SECONDS),
                 )
             ),
             supabase_storage_tus_chunk_size_bytes=int(
                 getenv_compat(
-                    "LINGUALENS_SUPABASE_STORAGE_TUS_CHUNK_SIZE_BYTES",
+                    "PASASCOPE_SUPABASE_STORAGE_TUS_CHUNK_SIZE_BYTES",
                     "THERAPIST_APP_V2_SUPABASE_STORAGE_TUS_CHUNK_SIZE_BYTES",
                     str(SUPABASE_TUS_CHUNK_SIZE_BYTES),
                 )
             ),
             capture_max_upload_size_bytes=int(
                 getenv_compat(
-                    "LINGUALENS_SUPABASE_STORAGE_MAX_UPLOAD_SIZE_BYTES",
+                    "PASASCOPE_SUPABASE_STORAGE_MAX_UPLOAD_SIZE_BYTES",
                     "THERAPIST_APP_V2_SUPABASE_STORAGE_MAX_UPLOAD_SIZE_BYTES",
                     str(DEFAULT_CAPTURE_MAX_UPLOAD_SIZE_BYTES),
                 )
             ),
             capture_worker_organization_ids=os.getenv(
-                "LINGUALENS_CAPTURE_WORKER_ORGANIZATION_IDS", ""
+                "PASASCOPE_CAPTURE_WORKER_ORGANIZATION_IDS", ""
             ),
             cors_allowed_origins=getenv_compat(
-                "LINGUALENS_CORS_ALLOWED_ORIGINS",
+                "PASASCOPE_CORS_ALLOWED_ORIGINS",
                 "THERAPIST_APP_V2_CORS_ALLOWED_ORIGINS",
                 "http://localhost:3000,http://127.0.0.1:3000",
             ),
             csrf_origin_guard_enabled=getenv_compat(
-                "LINGUALENS_CSRF_ORIGIN_GUARD_ENABLED",
+                "PASASCOPE_CSRF_ORIGIN_GUARD_ENABLED",
                 "THERAPIST_APP_V2_CSRF_ORIGIN_GUARD_ENABLED",
                 "true",
             ).lower()
             != "false",
             ai_report_drafting_enabled=getenv_compat(
-                "LINGUALENS_AI_REPORT_DRAFTING_ENABLED",
+                "PASASCOPE_AI_REPORT_DRAFTING_ENABLED",
                 "THERAPIST_APP_V2_AI_REPORT_DRAFTING_ENABLED",
                 "false",
             ).lower()
             == "true",
             rate_limit_enabled=getenv_compat(
-                "LINGUALENS_RATE_LIMIT_ENABLED",
+                "PASASCOPE_RATE_LIMIT_ENABLED",
                 "THERAPIST_APP_V2_RATE_LIMIT_ENABLED",
                 "false",
             ).lower()
             == "true",
             rate_limit_requests=int(
-                getenv_compat("LINGUALENS_RATE_LIMIT_REQUESTS", "THERAPIST_APP_V2_RATE_LIMIT_REQUESTS", "120")
+                getenv_compat("PASASCOPE_RATE_LIMIT_REQUESTS", "THERAPIST_APP_V2_RATE_LIMIT_REQUESTS", "120")
             ),
             rate_limit_window_seconds=int(
                 getenv_compat(
-                    "LINGUALENS_RATE_LIMIT_WINDOW_SECONDS",
+                    "PASASCOPE_RATE_LIMIT_WINDOW_SECONDS",
                     "THERAPIST_APP_V2_RATE_LIMIT_WINDOW_SECONDS",
                     "60",
                 )
@@ -507,46 +513,46 @@ class Settings(BaseModel):
                 0,
                 int(
                     getenv_compat(
-                        "LINGUALENS_RATE_LIMIT_TRUSTED_PROXY_COUNT",
+                        "PASASCOPE_RATE_LIMIT_TRUSTED_PROXY_COUNT",
                         "THERAPIST_APP_V2_RATE_LIMIT_TRUSTED_PROXY_COUNT",
                         "0",
                     )
                 ),
             ),
             observability_enabled=getenv_compat(
-                "LINGUALENS_OBSERVABILITY_ENABLED",
+                "PASASCOPE_OBSERVABILITY_ENABLED",
                 "THERAPIST_APP_V2_OBSERVABILITY_ENABLED",
                 "false",
             ).lower()
             == "true",
             observability_provider=getenv_compat(
-                "LINGUALENS_OBSERVABILITY_PROVIDER",
+                "PASASCOPE_OBSERVABILITY_PROVIDER",
                 "THERAPIST_APP_V2_OBSERVABILITY_PROVIDER",
                 "disabled",
             ),
             critical_alert_route=getenv_compat(
-                "LINGUALENS_CRITICAL_ALERT_ROUTE",
+                "PASASCOPE_CRITICAL_ALERT_ROUTE",
                 "THERAPIST_APP_V2_CRITICAL_ALERT_ROUTE",
                 "",
             ),
             secret_store_provider=getenv_compat(
-                "LINGUALENS_SECRET_STORE_PROVIDER",
+                "PASASCOPE_SECRET_STORE_PROVIDER",
                 "THERAPIST_APP_V2_SECRET_STORE_PROVIDER",
                 "local_env",
             ),
             credential_rotation_runbook=getenv_compat(
-                "LINGUALENS_CREDENTIAL_ROTATION_RUNBOOK",
+                "PASASCOPE_CREDENTIAL_ROTATION_RUNBOOK",
                 "THERAPIST_APP_V2_CREDENTIAL_ROTATION_RUNBOOK",
                 "",
             ),
             reference_artifact_dir=getenv_compat(
-                "LINGUALENS_REFERENCE_ARTIFACT_DIR",
+                "PASASCOPE_REFERENCE_ARTIFACT_DIR",
                 "THERAPIST_APP_V2_REFERENCE_ARTIFACT_DIR",
                 "artifacts/reference_evidence/current",
             ),
             ml_inference_timeout_seconds=float(
                 getenv_compat(
-                    "LINGUALENS_ML_INFERENCE_TIMEOUT_SECONDS",
+                    "PASASCOPE_ML_INFERENCE_TIMEOUT_SECONDS",
                     "THERAPIST_APP_V2_ML_INFERENCE_TIMEOUT_SECONDS",
                     "2.0",
                 )

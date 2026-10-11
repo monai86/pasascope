@@ -22,7 +22,7 @@ ALLOWED_HOSTS = {"localhost", "127.0.0.1", "::1", "postgres"}
 
 
 def _database_url() -> URL:
-    value = os.getenv("LINGUALENS_ASSESSMENT_TEST_DATABASE_URL", DEFAULT_TEST_URL)
+    value = os.getenv("PASASCOPE_ASSESSMENT_TEST_DATABASE_URL", DEFAULT_TEST_URL)
     parsed = make_url(value)
     if parsed.get_backend_name() != "postgresql":
         raise RuntimeError("Assessment PostgreSQL check requires a PostgreSQL URL.")
@@ -94,8 +94,8 @@ def main() -> int:
     _wait_for_postgres()
     _recreate_target_database(database_url)
 
-    os.environ["LINGUALENS_ASSESSMENT_DATABASE_URL"] = database_url.render_as_string(hide_password=False)
-    os.environ["LINGUALENS_ASSESSMENT_TEST_DATABASE_URL"] = database_url.render_as_string(hide_password=False)
+    os.environ["PASASCOPE_ASSESSMENT_DATABASE_URL"] = database_url.render_as_string(hide_password=False)
+    os.environ["PASASCOPE_ASSESSMENT_TEST_DATABASE_URL"] = database_url.render_as_string(hide_password=False)
     os.environ["PYTHONPATH"] = os.pathsep.join(
         [str(ROOT / "apps" / "api"), str(ROOT / "src"), os.environ.get("PYTHONPATH", "")]
     )

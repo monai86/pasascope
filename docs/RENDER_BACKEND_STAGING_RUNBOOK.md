@@ -108,10 +108,10 @@ Recommended:
 Free plan fallback:
 
 - Render free instances do not provide `Pre-Deploy Command` or Shell access.
-- For free-plan staging, set `LINGUALENS_RUN_MIGRATIONS_ON_STARTUP=true`
+- For free-plan staging, set `PASASCOPE_RUN_MIGRATIONS_ON_STARTUP=true`
   temporarily so the API runs `alembic upgrade head` during service startup.
 - After the migration succeeds once, set
-  `LINGUALENS_RUN_MIGRATIONS_ON_STARTUP=false` again and redeploy.
+  `PASASCOPE_RUN_MIGRATIONS_ON_STARTUP=false` again and redeploy.
 
 ## Step 4. Add Backend Environment Variables
 

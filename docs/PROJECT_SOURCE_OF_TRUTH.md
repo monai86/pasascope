@@ -109,7 +109,7 @@ persistence layer หลักของ lingualens.
 13. CORS origins ต้องมาจาก server-side configuration เท่านั้น; production ห้าม
     ใช้ wildcard/empty origins และ unsafe HTTP methods ต้องมี Origin guard ที่
     reject untrusted origins ด้วย generic 403
-14. Production runtime (`LINGUALENS_MOCK_MODE=false`) ต้อง fail-closed ถ้า
+14. Production runtime (`PASASCOPE_MOCK_MODE=false`) ต้อง fail-closed ถ้า
     ยังใช้ repository/storage/job queue แบบ local/demo หรือใช้ database/Redis URL
     default; secrets ต้องมาจาก managed secret store และหมุน credentials ได้
 15. Production database ต้องมี backup/PITR และ restore drill ตาม
@@ -151,7 +151,7 @@ persistence layer หลักของ lingualens.
     `docs/ONE_DAY_PILOT_RUNBOOK.md`. This pilot adds local/SQL tenant
     scaffolding, backend org/care-team guards, and local-private upload intents,
     but it is not full production readiness.
-25. Non-mock runtime must use non-mock auth mode. `LINGUALENS_AUTH_MODE=mock`
+25. Non-mock runtime must use non-mock auth mode. `PASASCOPE_AUTH_MODE=mock`
     is allowed only for local pilot/demo mode; production must use a
     production-capable auth mode such as Supabase. The local Supabase Auth
     scaffold and required JWT claim contract are documented in
@@ -193,7 +193,7 @@ persistence layer หลักของ lingualens.
 
 32. ASR ใน v1 workflow: provider ที่ใช้ชื่อ engine ต้องรัน engine นั้นจริง ห้าม
     register provider ที่ติดป้ายข้อความจาก client เป็นผล ASR. `local_whisper`
-    เป็น opt-in (`LINGUALENS_ASR_LOCAL_WHISPER_ENABLED`) รันบนเครื่อง API เท่านั้น
+    เป็น opt-in (`PASASCOPE_ASR_LOCAL_WHISPER_ENABLED`) รันบนเครื่อง API เท่านั้น
     และต้องปฏิเสธ strategy ที่ส่งเสียงออกนอกเครื่อง. เมื่อถอดเสียงไม่สำเร็จต้องรายงาน
     failed โดยไม่มีข้อความทดแทน ทั้งใน API และใน offline adapter ของ GUI/TUI.
     Web app ต้องไม่เลือก mock provider แทนผู้ใช้
@@ -218,7 +218,7 @@ Gate 1 artifact ล่าสุดมีสถานะ `promoted_candidate` ใ
 - abstention: `0.3166`
 
 Reference evidence เป็น opt-in และ fail-closed: ค่าเริ่มต้นของ
-`LINGUALENS_REFERENCE_ARTIFACT_DIR` (`artifacts/reference_evidence/current`)
+`PASASCOPE_REFERENCE_ARTIFACT_DIR` (`artifacts/reference_evidence/current`)
 ไม่มีอยู่ใน repository และ `candidate-v1` ที่ commit ไว้มี `reference_cells.csv`
 เฉพาะบรรทัดหัวตาราง provider จึงรายงาน `unavailable` จนกว่าจะชี้ไปยัง artifact
 ที่ผ่านการอนุมัติตาม `docs/ML_REFERENCE_EVIDENCE_OPERATIONS.md`

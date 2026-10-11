@@ -62,7 +62,7 @@ the API/RLS/lease suite, and removes only that temporary database and test role
 when it finishes:
 
 ```bash
-export LINGUALENS_NATIVE_ADMIN_DATABASE_URL=postgresql+psycopg://<local-admin>:<password>@127.0.0.1:5432/postgres
+export PASASCOPE_NATIVE_ADMIN_DATABASE_URL=postgresql+psycopg://<local-admin>:<password>@127.0.0.1:5432/postgres
 PYTHONPATH=apps/api:src python scripts/check_assessment_v2_native.py
 ```
 
@@ -83,8 +83,8 @@ volumes when the check finishes. It is not required for native development.
 The v1 and v2 URLs are separate:
 
 ```text
-LINGUALENS_DATABASE_URL=postgresql+psycopg://.../therapist_app_v2
-LINGUALENS_ASSESSMENT_DATABASE_URL=postgresql+psycopg://.../lingualens_assessment_v2
+PASASCOPE_DATABASE_URL=postgresql+psycopg://.../therapist_app_v2
+PASASCOPE_ASSESSMENT_DATABASE_URL=postgresql+psycopg://.../lingualens_assessment_v2
 ```
 
 The web app's `/assessments` route uses `/api/v2`; all existing session screens
@@ -100,7 +100,7 @@ npm run dev
 Supabase Auth supplies the verified identity; FastAPI owns clinical policy and
 PostgreSQL RLS is defense in depth. The v2 slice is research decision support,
 not diagnosis, and does not expose an ASD probability. To roll it back, stop
-mounting `/api/v2` and keep `LINGUALENS_RUN_ASSESSMENT_MIGRATIONS_ON_STARTUP=false`;
+mounting `/api/v2` and keep `PASASCOPE_RUN_ASSESSMENT_MIGRATIONS_ON_STARTUP=false`;
 do not touch the v1 database or migration history.
 
 ### 4. Running Python Unit Tests
@@ -135,7 +135,7 @@ npm run dev
 
 ## ⚙️ lingualens Runtime Modes
 
-The active app uses `LINGUALENS_*` backend settings. Legacy v2 env names remain
+The active app uses `PASASCOPE_*` backend settings. Legacy v2 env names remain
 supported temporarily during migration. The former
 `VITE_RUNTIME_MODE` settings belonged to the retired Vite therapist app.
 
@@ -153,12 +153,12 @@ supported temporarily during migration. The former
    - File uploads are metadata-only.
    
 2. **Memory repository**:
-   - Set `LINGUALENS_REPOSITORY_MODE=memory`.
+   - Set `PASASCOPE_REPOSITORY_MODE=memory`.
    - Use only for isolated tests or intentional resets.
    
 3. **SQL repository**:
-   - Set `LINGUALENS_REPOSITORY_MODE=sql`.
-   - Configure `LINGUALENS_DATABASE_URL`.
+   - Set `PASASCOPE_REPOSITORY_MODE=sql`.
+   - Configure `PASASCOPE_DATABASE_URL`.
    - This remains PostgreSQL-ready scaffolding, not a pilot-hardened deployment.
 
 The frontend API base is configured with

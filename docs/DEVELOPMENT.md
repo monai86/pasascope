@@ -88,7 +88,7 @@ Assessment v2 checks are additive to the current `/api/v1` product:
 ```bash
 PYTHONPATH=apps/api:src pytest apps/api/tests/assessment_v2 -m "not assessment_postgres" -q
 PYTHONPATH=apps/api:src python scripts/check_assessment_v2_migrations.py
-LINGUALENS_NATIVE_ADMIN_DATABASE_URL=postgresql+psycopg://<local-admin>:<password>@127.0.0.1:5432/postgres \
+PASASCOPE_NATIVE_ADMIN_DATABASE_URL=postgresql+psycopg://<local-admin>:<password>@127.0.0.1:5432/postgres \
   PYTHONPATH=apps/api:src python scripts/check_assessment_v2_native.py
 PYTHONPATH=apps/api:src python -m app.assessment_v2.worker_runtime
 ```
@@ -107,7 +107,7 @@ docker compose up -d postgres
 PYTHONPATH=apps/api:src python scripts/check_assessment_v2_compose.py
 ```
 
-The v2 database and Alembic history are separate from `LINGUALENS_DATABASE_URL`
+The v2 database and Alembic history are separate from `PASASCOPE_DATABASE_URL`
 and the v1 history. A fresh v2 database is intentionally empty; no existing
 v1 records or storage objects are imported. Supabase Auth establishes identity,
 FastAPI owns policy, and PostgreSQL RLS is defense in depth. Clients continue
@@ -142,7 +142,7 @@ the root `Dockerfile`, which includes `ffprobe` and `ffmpeg`; the service health
 check verifies both binaries. Capture and evidence V2 use the database-backed
 `processing_runs` table as their durable queue and do not use the legacy Redis
 job-queue contract. Configure private Supabase Storage, a worker database
-connection, and an explicit comma-separated `LINGUALENS_CAPTURE_WORKER_ORGANIZATION_IDS`
+connection, and an explicit comma-separated `PASASCOPE_CAPTURE_WORKER_ORGANIZATION_IDS`
 allowlist before enabling the `capture-pilot` Compose profile; the allowlist is
 required because the worker must not enumerate tenants through an unscoped RLS
 query. The public upload-intent response contains only a short-lived signed

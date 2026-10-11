@@ -196,7 +196,7 @@ def test_active_api_accepts_x_user_id_header_for_user_scoped_routes():
 
 
 def test_repository_mode_defaults_to_json_without_environment_override(monkeypatch):
-    monkeypatch.delenv("LINGUALENS_REPOSITORY_MODE", raising=False)
+    monkeypatch.delenv("PASASCOPE_REPOSITORY_MODE", raising=False)
     monkeypatch.delenv("THERAPIST_APP_V2_REPOSITORY_MODE", raising=False)
     get_settings.cache_clear()
 
@@ -205,10 +205,10 @@ def test_repository_mode_defaults_to_json_without_environment_override(monkeypat
     get_settings.cache_clear()
 
 
-def test_repository_mode_prefers_lingualens_prefix(monkeypatch):
-    monkeypatch.setenv("LINGUALENS_REPOSITORY_MODE", "sql")
+def test_repository_mode_prefers_pasascope_prefix(monkeypatch):
+    monkeypatch.setenv("PASASCOPE_REPOSITORY_MODE", "sql")
     monkeypatch.setenv("THERAPIST_APP_V2_REPOSITORY_MODE", "memory")
-    monkeypatch.setenv("LINGUALENS_DATABASE_URL", "sqlite:///./compat-preferred.db")
+    monkeypatch.setenv("PASASCOPE_DATABASE_URL", "sqlite:///./compat-preferred.db")
     monkeypatch.setenv("THERAPIST_APP_V2_DATABASE_URL", "sqlite:///./compat-legacy.db")
     get_settings.cache_clear()
 
@@ -221,8 +221,8 @@ def test_repository_mode_prefers_lingualens_prefix(monkeypatch):
 
 
 def test_repository_mode_falls_back_to_therapist_prefix(monkeypatch):
-    monkeypatch.delenv("LINGUALENS_REPOSITORY_MODE", raising=False)
-    monkeypatch.delenv("LINGUALENS_DATABASE_URL", raising=False)
+    monkeypatch.delenv("PASASCOPE_REPOSITORY_MODE", raising=False)
+    monkeypatch.delenv("PASASCOPE_DATABASE_URL", raising=False)
     monkeypatch.setenv("THERAPIST_APP_V2_REPOSITORY_MODE", "memory")
     monkeypatch.setenv("THERAPIST_APP_V2_DATABASE_URL", "sqlite:///./compat-fallback.db")
     get_settings.cache_clear()
@@ -235,10 +235,10 @@ def test_repository_mode_falls_back_to_therapist_prefix(monkeypatch):
     get_settings.cache_clear()
 
 
-def test_auth_mode_prefers_lingualens_prefix(monkeypatch):
-    monkeypatch.setenv("LINGUALENS_AUTH_MODE", "supabase")
+def test_auth_mode_prefers_pasascope_prefix(monkeypatch):
+    monkeypatch.setenv("PASASCOPE_AUTH_MODE", "supabase")
     monkeypatch.setenv("THERAPIST_APP_V2_AUTH_MODE", "mock")
-    monkeypatch.setenv("LINGUALENS_MOCK_MODE", "true")
+    monkeypatch.setenv("PASASCOPE_MOCK_MODE", "true")
     get_settings.cache_clear()
 
     assert get_settings().auth_mode == "supabase"
@@ -247,7 +247,7 @@ def test_auth_mode_prefers_lingualens_prefix(monkeypatch):
 
 
 def test_debug_feature_override_falls_back_to_therapist_prefix(monkeypatch):
-    monkeypatch.delenv("LINGUALENS_DEBUG_FEATURE_OVERRIDE", raising=False)
+    monkeypatch.delenv("PASASCOPE_DEBUG_FEATURE_OVERRIDE", raising=False)
     monkeypatch.setenv("THERAPIST_APP_V2_DEBUG_FEATURE_OVERRIDE", "true")
     get_settings.cache_clear()
 
@@ -257,7 +257,7 @@ def test_debug_feature_override_falls_back_to_therapist_prefix(monkeypatch):
 
 
 def test_legacy_repository_mode_env_emits_deprecation_warning(monkeypatch):
-    monkeypatch.delenv("LINGUALENS_REPOSITORY_MODE", raising=False)
+    monkeypatch.delenv("PASASCOPE_REPOSITORY_MODE", raising=False)
     monkeypatch.setenv("THERAPIST_APP_V2_REPOSITORY_MODE", "memory")
     get_settings.cache_clear()
 
@@ -267,8 +267,36 @@ def test_legacy_repository_mode_env_emits_deprecation_warning(monkeypatch):
     get_settings.cache_clear()
 
 
-def test_lingualens_repository_mode_env_does_not_emit_deprecation_warning(monkeypatch):
+def test_previous_lingualens_prefix_is_still_read_without_warning(monkeypatch):
+    monkeypatch.delenv("PASASCOPE_REPOSITORY_MODE", raising=False)
+    monkeypatch.delenv("THERAPIST_APP_V2_REPOSITORY_MODE", raising=False)
     monkeypatch.setenv("LINGUALENS_REPOSITORY_MODE", "memory")
+    monkeypatch.setenv("LINGUALENS_ASR_LOCAL_WHISPER_ENABLED", "true")
+    get_settings.cache_clear()
+
+    with warnings.catch_warnings(record=True) as recorded:
+        warnings.simplefilter("always")
+        settings = get_settings()
+
+    assert settings.repository_mode == "memory"
+    assert settings.asr_local_whisper_enabled is True
+    assert not [warning for warning in recorded if warning.category is DeprecationWarning]
+
+    get_settings.cache_clear()
+
+
+def test_pasascope_prefix_wins_over_the_previous_prefix(monkeypatch):
+    monkeypatch.setenv("PASASCOPE_REPOSITORY_MODE", "json")
+    monkeypatch.setenv("LINGUALENS_REPOSITORY_MODE", "memory")
+    get_settings.cache_clear()
+
+    assert get_settings().repository_mode == "json"
+
+    get_settings.cache_clear()
+
+
+def test_pasascope_repository_mode_env_does_not_emit_deprecation_warning(monkeypatch):
+    monkeypatch.setenv("PASASCOPE_REPOSITORY_MODE", "memory")
     monkeypatch.delenv("THERAPIST_APP_V2_REPOSITORY_MODE", raising=False)
     get_settings.cache_clear()
 
@@ -284,8 +312,8 @@ def test_lingualens_repository_mode_env_does_not_emit_deprecation_warning(monkey
 def test_env_example_defaults_repository_mode_to_json():
     env_example = (repo_root() / ".env.example").read_text(encoding="utf-8")
 
-    assert "LINGUALENS_REPOSITORY_MODE=json" in env_example
-    assert "LINGUALENS_REPOSITORY_MODE=memory" not in env_example
+    assert "PASASCOPE_REPOSITORY_MODE=json" in env_example
+    assert "PASASCOPE_REPOSITORY_MODE=memory" not in env_example
 
 
 def test_case_session_transcript_feature_report_workflow():

@@ -45,7 +45,7 @@
   dependency audits, the Python version matrix, frontend lint/typecheck, the UI
   audit, full Playwright suites, or the benchmark gate; use complete CI
   candidate gates for release/deployment evidence.
-- Native assessment runtime gate (Docker optional): `PYTHONPATH=apps/api:src python scripts/check_assessment_v2_native.py` with `LINGUALENS_NATIVE_ADMIN_DATABASE_URL` configured.
+- Native assessment runtime gate (Docker optional): `PYTHONPATH=apps/api:src python scripts/check_assessment_v2_native.py` with `PASASCOPE_NATIVE_ADMIN_DATABASE_URL` configured.
 
 ## Key Conventions
 - Follow `README.md`, `DEVELOPER_SETUP.md`, `docs/DEVELOPMENT.md`, and `docs/SECURITY.md` for workflow and safety rules.

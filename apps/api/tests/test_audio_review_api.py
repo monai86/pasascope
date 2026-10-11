@@ -100,8 +100,8 @@ def test_local_upload_rejects_bodies_that_do_not_match_the_intent(tmp_path, monk
     from app.main import app
     from app.repositories.mock_repository import MockRepository
 
-    monkeypatch.setenv("LINGUALENS_STORAGE_MODE", "local_private")
-    monkeypatch.setenv("LINGUALENS_LOCAL_STORAGE_ROOT", str(tmp_path))
+    monkeypatch.setenv("PASASCOPE_STORAGE_MODE", "local_private")
+    monkeypatch.setenv("PASASCOPE_LOCAL_STORAGE_ROOT", str(tmp_path))
     get_settings.cache_clear()
     repo = MockRepository()
     app.dependency_overrides[get_repository] = lambda: repo

@@ -85,9 +85,9 @@ _CLINICAL_REVIEW_REPORTS_TENANT_TABLES = (
 
 
 def _test_url() -> str:
-    value = os.getenv("LINGUALENS_ASSESSMENT_TEST_DATABASE_URL")
+    value = os.getenv("PASASCOPE_ASSESSMENT_TEST_DATABASE_URL")
     if not value:
-        pytest.skip("LINGUALENS_ASSESSMENT_TEST_DATABASE_URL is not configured")
+        pytest.skip("PASASCOPE_ASSESSMENT_TEST_DATABASE_URL is not configured")
     return value
 
 
@@ -101,8 +101,8 @@ def rls_database() -> Iterator[tuple[str, str, str, str]]:
     if owner_url.get_backend_name() != "postgresql":
         pytest.skip("assessment PostgreSQL RLS tests require a PostgreSQL URL")
 
-    previous_database_url = os.environ.get("LINGUALENS_ASSESSMENT_DATABASE_URL")
-    os.environ["LINGUALENS_ASSESSMENT_DATABASE_URL"] = owner_url.render_as_string(hide_password=False)
+    previous_database_url = os.environ.get("PASASCOPE_ASSESSMENT_DATABASE_URL")
+    os.environ["PASASCOPE_ASSESSMENT_DATABASE_URL"] = owner_url.render_as_string(hide_password=False)
     from app.core.config import get_settings
     from app.assessment_v2.db.session import get_assessment_session_factory
 
@@ -233,9 +233,9 @@ def rls_database() -> Iterator[tuple[str, str, str, str]]:
         get_assessment_engine.cache_clear()
         get_settings.cache_clear()
         if previous_database_url is None:
-            os.environ.pop("LINGUALENS_ASSESSMENT_DATABASE_URL", None)
+            os.environ.pop("PASASCOPE_ASSESSMENT_DATABASE_URL", None)
         else:
-            os.environ["LINGUALENS_ASSESSMENT_DATABASE_URL"] = previous_database_url
+            os.environ["PASASCOPE_ASSESSMENT_DATABASE_URL"] = previous_database_url
 
 
 def _limited_engine(limited_url: str):

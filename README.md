@@ -309,8 +309,8 @@ reference-band validity.
 The two boundaries are intentionally separate:
 
 ```text
-LINGUALENS_DATABASE_URL             -> v1 Alembic history -> existing product
-LINGUALENS_ASSESSMENT_DATABASE_URL  -> v2 Alembic history -> fresh foundation
+PASASCOPE_DATABASE_URL             -> v1 Alembic history -> existing product
+PASASCOPE_ASSESSMENT_DATABASE_URL  -> v2 Alembic history -> fresh foundation
 ```
 
 Supabase Auth establishes identity, FastAPI applies organization, role,
@@ -330,7 +330,7 @@ staleness, tenant/consent/role denials, and duplicate-enqueue idempotency:
 ```bash
 PYTHONPATH=apps/api:src python scripts/check_api_migrations.py
 PYTHONPATH=apps/api:src python scripts/check_assessment_v2_migrations.py
-LINGUALENS_NATIVE_ADMIN_DATABASE_URL=postgresql+psycopg://<local-admin>:<password>@127.0.0.1:5432/postgres \
+PASASCOPE_NATIVE_ADMIN_DATABASE_URL=postgresql+psycopg://<local-admin>:<password>@127.0.0.1:5432/postgres \
   PYTHONPATH=apps/api:src python scripts/check_assessment_v2_native.py
 ```
 
@@ -342,7 +342,7 @@ can create a child through `/api/v2`, and verifies the runtime role is
 Capture and evidence processing are run from durable `processing_runs` records
 by the same tenant-scoped native worker process. The capture worker requires
 private Supabase Storage configuration for real objects,
-`LINGUALENS_CAPTURE_WORKER_ORGANIZATION_IDS` for tenant-scoped PostgreSQL RLS
+`PASASCOPE_CAPTURE_WORKER_ORGANIZATION_IDS` for tenant-scoped PostgreSQL RLS
 polling, and `ffprobe`/`ffmpeg` for quality checks; missing media tools produce
 an explicit unavailable quality state. Local Compose includes a capture-worker
 image with those tools and runs a polling worker with
@@ -355,7 +355,7 @@ contract. The workflow remains research/education decision support; it does not
 diagnose ASD or expose numeric risk.
 
 Clients remain on `/api/v1` until a later migration plan. Rollback is additive:
-stop mounting `/api/v2` and disable `LINGUALENS_RUN_ASSESSMENT_MIGRATIONS_ON_STARTUP`;
+stop mounting `/api/v2` and disable `PASASCOPE_RUN_ASSESSMENT_MIGRATIONS_ON_STARTUP`;
 do not alter the v1 URL or migration history.
 
 ---
@@ -507,13 +507,13 @@ The therapist web app uses the same pipeline for uploaded recordings when
 on-device transcription is enabled:
 
 ```bash
-LINGUALENS_ASR_LOCAL_WHISPER_ENABLED=true bash scripts/start_local.sh
+PASASCOPE_ASR_LOCAL_WHISPER_ENABLED=true bash scripts/start_local.sh
 ```
 
 Recordings stay on the machine running the API. With the flag off, the app
 reports that transcription is unavailable and offers paste or `.cha` import; it
-never substitutes synthetic text. `LINGUALENS_ASR_WHISPER_MODEL_SIZE` (default
-`medium`) and `LINGUALENS_ASR_LANGUAGE_STRATEGY` (default `thai`) tune it.
+never substitutes synthetic text. `PASASCOPE_ASR_WHISPER_MODEL_SIZE` (default
+`medium`) and `PASASCOPE_ASR_LANGUAGE_STRATEGY` (default `thai`) tune it.
 
 **Evaluating it on Thai recordings:** follow
 [`data/evaluation/README.md`](./data/evaluation/README.md), then run

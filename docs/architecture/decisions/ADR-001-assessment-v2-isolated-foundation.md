@@ -24,7 +24,7 @@ Build the foundation as an additive bounded package under `apps/api/app/assessme
 - Keep `/api/v1` and all existing clients unchanged.
 - Expose only the foundation routes under `/api/v2` for now: child, consent,
   and assessment lifecycle operations.
-- Use `LINGUALENS_ASSESSMENT_DATABASE_URL` with its own Alembic history and a
+- Use `PASASCOPE_ASSESSMENT_DATABASE_URL` with its own Alembic history and a
   fresh database. Do not import, rewrite, or delete v1 records or storage.
 - Let Supabase Auth establish identity, FastAPI enforce organization, role,
   care-team, consent, and workflow policy, and PostgreSQL RLS provide defense
@@ -47,7 +47,7 @@ Positive consequences:
 - Tenant and consent gates are testable independently at service, repository,
   and PostgreSQL RLS layers.
 - Rollback is bounded: stop mounting `/api/v2` and keep
-  `LINGUALENS_RUN_ASSESSMENT_MIGRATIONS_ON_STARTUP=false`; v1 data is untouched.
+  `PASASCOPE_RUN_ASSESSMENT_MIGRATIONS_ON_STARTUP=false`; v1 data is untouched.
 
 Trade-offs:
 

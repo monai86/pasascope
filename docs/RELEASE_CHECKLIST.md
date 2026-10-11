@@ -13,7 +13,7 @@ not for a public self-serve SaaS release.
   transcript benchmark gate. `bash scripts/check_project.sh` is a focused
   local check and is not a substitute for these candidate gates.
 - Browser audio bytes are not persisted in web storage.
-- The selected `LINGUALENS_REPOSITORY_MODE` is tested with anonymized-only child codes.
+- The selected `PASASCOPE_REPOSITORY_MODE` is tested with anonymized-only child codes.
 - Supabase RLS policies are applied and tested for organization isolation,
   assignment-safe metadata boundaries, anonymous denial, and no direct browser
   access to `audit_logs`.

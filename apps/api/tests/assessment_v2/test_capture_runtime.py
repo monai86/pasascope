@@ -23,11 +23,11 @@ def test_capture_worker_uses_durable_database_polling_without_redis_contract() -
     compose = (ROOT / "docker-compose.yml").read_text()
     capture_worker = compose.split("  capture-worker:", 1)[1].split("\n  frontend:", 1)[0]
 
-    assert "LINGUALENS_ASSESSMENT_DATABASE_URL" in capture_worker
-    assert "LINGUALENS_STORAGE_MODE=supabase_private" in capture_worker
-    assert "LINGUALENS_SUPABASE_STORAGE_SERVICE_ROLE_KEY" in capture_worker
-    assert "LINGUALENS_CAPTURE_WORKER_ORGANIZATION_IDS" in capture_worker
-    assert "LINGUALENS_JOB_QUEUE_MODE" not in capture_worker
+    assert "PASASCOPE_ASSESSMENT_DATABASE_URL" in capture_worker
+    assert "PASASCOPE_STORAGE_MODE=supabase_private" in capture_worker
+    assert "PASASCOPE_SUPABASE_STORAGE_SERVICE_ROLE_KEY" in capture_worker
+    assert "PASASCOPE_CAPTURE_WORKER_ORGANIZATION_IDS" in capture_worker
+    assert "PASASCOPE_JOB_QUEUE_MODE" not in capture_worker
     assert "REDIS_URL" not in capture_worker
     assert "      redis:" not in capture_worker
 

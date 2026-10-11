@@ -34,14 +34,14 @@ ISSUER = "https://project-ref.supabase.co/auth/v1"
 def db():
     from sqlalchemy import create_engine
 
-    os.environ["LINGUALENS_DATABASE_URL"] = DATABASE_URL
+    os.environ["PASASCOPE_DATABASE_URL"] = DATABASE_URL
     get_settings.cache_clear()
     try:
         from app.db.migrations_runner import run_alembic_upgrade_head
 
         run_alembic_upgrade_head()
     finally:
-        os.environ.pop("LINGUALENS_DATABASE_URL", None)
+        os.environ.pop("PASASCOPE_DATABASE_URL", None)
         get_settings.cache_clear()
     engine = create_engine(DATABASE_URL)
     hook_sql = (repo_root() / "scripts" / "supabase" / "auth_claims_hook.sql").read_text(encoding="utf-8")

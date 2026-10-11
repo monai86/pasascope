@@ -14,18 +14,12 @@ DEPLOYMENT_LABELS = {"PASASCOPE_APP_ENV"}
 
 
 def _variables_read_by_api() -> set[str]:
-    """Names the API reads, including the PASASCOPE_ alias of every setting.
-
-    ``getenv_compat`` prefers the PASASCOPE_ spelling of a LINGUALENS_ name, so
-    only settings read through it have that alias.
-    """
+    """Every ``PASASCOPE_*`` setting name the API reads."""
 
     names: set[str] = set()
     for path in API_APP.rglob("*.py"):
         source = path.read_text(encoding="utf-8")
-        names.update(re.findall(r'"((?:LINGUALENS|PASASCOPE)_[A-Z0-9_]+|REDIS_URL|WEB_CONCURRENCY)"', source))
-        for name in re.findall(r'getenv_compat\(\s*"(LINGUALENS_[A-Z0-9_]+)"', source):
-            names.add(name.replace("LINGUALENS_", "PASASCOPE_", 1))
+        names.update(re.findall(r'"(PASASCOPE_[A-Z0-9_]+|REDIS_URL|WEB_CONCURRENCY)"', source))
     return names
 
 

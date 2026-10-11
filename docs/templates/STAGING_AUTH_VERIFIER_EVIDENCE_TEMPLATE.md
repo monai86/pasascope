@@ -14,8 +14,8 @@
 ## Preconditions
 
 - [ ] Staging Supabase project exists in `ap-southeast-1`.
-- [ ] `LINGUALENS_AUTH_MODE=supabase` is active on staging API.
-- [ ] `LINGUALENS_MOCK_MODE=false` is active.
+- [ ] `PASASCOPE_AUTH_MODE=supabase` is active on staging API.
+- [ ] `PASASCOPE_MOCK_MODE=false` is active.
 - [ ] Public signup is off.
 - [ ] Invitation-only onboarding is enabled.
 - [ ] MFA is enabled and `aal2` is required before app access.
@@ -26,10 +26,10 @@
 
 | Field | Value | Notes |
 |---|---|---|
-| `LINGUALENS_SUPABASE_JWT_VERIFICATION_MODE` |  |  |
-| `LINGUALENS_SUPABASE_JWT_JWKS_CACHE_TTL_SECONDS` |  |  |
-| `LINGUALENS_SUPABASE_JWT_ISSUER` |  |  |
-| `LINGUALENS_SUPABASE_JWT_AUDIENCE` |  |  |
+| `PASASCOPE_SUPABASE_JWT_VERIFICATION_MODE` |  |  |
+| `PASASCOPE_SUPABASE_JWT_JWKS_CACHE_TTL_SECONDS` |  |  |
+| `PASASCOPE_SUPABASE_JWT_ISSUER` |  |  |
+| `PASASCOPE_SUPABASE_JWT_AUDIENCE` |  |  |
 | Active `kid` observed |  |  |
 
 ## Scenario Results
