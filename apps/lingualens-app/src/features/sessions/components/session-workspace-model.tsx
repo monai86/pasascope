@@ -486,12 +486,10 @@ export function useSessionWorkspace({ sessionId, caseId, transcriptId, reportId,
     setBusy(true);
     setIntakeError("");
     try {
-      const caseRecord = await getBackendCase(caseId).catch(() => undefined);
       await sessionWorkflowService.grantCaseConsent(caseId, {
         signer: consentSigner,
         date: consentDate,
         notes: consentNotes,
-        existingNotes: caseRecord?.notes,
       });
       setCaseConsent("granted");
     } catch {

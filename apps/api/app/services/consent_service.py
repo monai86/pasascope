@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from app.repositories.mock_repository import MockRepository
-from app.schemas.clinical import ConsentWithdrawalResult, ReviewStatus
+from app.schemas.clinical import ChildCase, ChildCaseUpdate, ConsentGrantRequest, ConsentWithdrawalResult, ReviewStatus
 from app.services.storage_service import get_storage_adapter
 
 
@@ -28,6 +28,43 @@ def ensure_report_consent_active(repo: MockRepository, report_id: str) -> None:
 
 def ensure_audio_file_consent_active(repo: MockRepository, audio_file_id: str) -> None:
     ensure_case_consent_active(repo, repo.audio_files[audio_file_id].case_id)
+
+
+class ConsentTransitionError(ValueError):
+    """Raised when a consent state change is not an allowed transition."""
+
+
+def grant_consent(repo: MockRepository, case_id: str, payload: ConsentGrantRequest, *, actor_id: str) -> ChildCase:
+    """Record verified caregiver consent. Only ``pending -> granted`` is allowed."""
+
+    case = repo.cases[case_id]
+    current = case.consent_status.lower()
+    if current == "withdrawn":
+        raise ConsentTransitionError(
+            "Consent was withdrawn for this case and cannot be granted again; open a new case for renewed consent."
+        )
+    if current == "granted":
+        return repo.clone(case)
+    if not payload.confirmation_checked:
+        raise ValueError("Consent verification must be confirmed before it is recorded.")
+    record = f"Consent verified on {payload.consent_date.isoformat()} by {payload.signer}."
+    if payload.notes:
+        record = f"{record} Notes: {payload.notes}"
+    notes = f"{case.notes}\n{record}".strip() if case.notes else record
+    updated = repo.update_case(
+        case_id,
+        ChildCaseUpdate(consent_status="granted", notes=notes),
+        expected_version=case.version,
+        actor_id=actor_id,
+    )
+    repo.add_audit(
+        "consent.grant",
+        case_id,
+        "Caregiver consent verified and recorded.",
+        actor_id=actor_id,
+        organization_id=updated.organization_id,
+    )
+    return updated
 
 
 def withdraw_consent(repo: MockRepository, case_id: str, reason: str, redact_notes: bool = True) -> ConsentWithdrawalResult:

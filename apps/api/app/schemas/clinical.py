@@ -1,10 +1,10 @@
 from __future__ import annotations
 
-from datetime import datetime, timedelta, timezone
+from datetime import date, datetime, timedelta, timezone
 from enum import Enum
 from typing import Any, Literal
 
-from pydantic import BaseModel, Field, field_validator, model_validator
+from pydantic import BaseModel, ConfigDict, Field, field_validator, model_validator
 
 
 LIMITATION_TEXT = (
@@ -101,6 +101,21 @@ class ChildCaseUpdate(BaseModel):
     language: str | None = None
     consent_status: str | None = None
     notes: str | None = None
+
+
+class ChildCaseClientUpdate(BaseModel):
+    """Fields a clinician may change through ``PATCH /cases/{case_id}``.
+
+    Care-team membership and consent state have dedicated, audited routes and
+    are rejected here rather than silently ignored.
+    """
+
+    model_config = ConfigDict(extra="forbid")
+
+    nickname: str | None = Field(default=None, max_length=120)
+    age_months: int | None = Field(default=None, ge=0, le=240)
+    language: str | None = Field(default=None, min_length=1, max_length=64)
+    notes: str | None = Field(default=None, max_length=2000)
 
 
 class ChildCase(ChildCaseBase):
@@ -223,6 +238,19 @@ class TherapySessionUpdate(BaseModel):
     status: ReviewStatus | None = None
     cues_acknowledged_at: str | None = None
     cues_acknowledged_by: str | None = None
+
+
+class TherapySessionClientUpdate(BaseModel):
+    """Fields a clinician may change through ``PATCH /sessions/{session_id}``.
+
+    Workflow status and cue acknowledgement are set by the backend only.
+    """
+
+    model_config = ConfigDict(extra="forbid")
+
+    session_date: str | None = None
+    session_type: str | None = None
+    notes: str | None = None
 
 
 class TherapySession(BaseModel):
@@ -948,6 +976,20 @@ class Report(BaseModel):
 class SignOffRequest(BaseModel):
     signed_by: str = "Demo Therapist"
     attestation: str = "I reviewed and accept responsibility for this report."
+
+
+class ConsentGrantRequest(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    signer: str = Field(min_length=1, max_length=120)
+    consent_date: date
+    notes: str = Field(default="", max_length=1000)
+    confirmation_checked: bool
+
+    @field_validator("signer", "notes")
+    @classmethod
+    def strip_text(cls, value: str) -> str:
+        return value.strip()
 
 
 class ConsentWithdrawalRequest(BaseModel):

@@ -254,7 +254,7 @@ describe("session intake flow", () => {
     vi.stubGlobal("fetch", vi.fn(async (input: RequestInfo | URL, init?: RequestInit) => {
       const url = String(input);
       if (url.endsWith("/settings")) return jsonResponse(mockRuntimeSettings);
-      if (url.endsWith("/cases/case_test_pending") && init?.method === "PATCH") {
+      if (url.endsWith("/cases/case_test_pending/grant-consent") && init?.method === "POST") {
         updateCaseCalled = true;
         updateCasePayload = JSON.parse(init.body as string);
         return jsonResponse({
@@ -299,7 +299,9 @@ describe("session intake flow", () => {
     // Wait for form to unlock and regular details step to show
     expect(await screen.findByLabelText("Child or client")).toBeInTheDocument();
     expect(updateCaseCalled).toBe(true);
-    expect(updateCasePayload.consent_status).toBe("granted");
+    expect(updateCasePayload).not.toHaveProperty("consent_status");
+    expect(updateCasePayload.confirmation_checked).toBe(true);
+    expect(updateCasePayload.signer).toEqual(expect.any(String));
   });
 
   it("shows completed results and keeps report drafting available when optional ML evidence is missing", async () => {

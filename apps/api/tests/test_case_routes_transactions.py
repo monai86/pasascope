@@ -83,4 +83,4 @@ def test_update_case_route_uses_transactional_sql_repository_without_snapshot_sa
     assert row is not None
     assert row.notes == "Route update."
     assert row.version == case.version + 1
-    assert audit.actor_id == "system"
+    assert audit.actor_id == "user_tx"

@@ -500,7 +500,7 @@ describe("cases workspace", () => {
     let patchPayload: any = null;
     vi.stubGlobal("fetch", vi.fn(async (input: RequestInfo | URL, init?: RequestInit) => {
       const url = String(input);
-      if (url.endsWith("/cases/case_demo_pending") && init?.method === "PATCH") {
+      if (url.endsWith("/cases/case_demo_pending/grant-consent") && init?.method === "POST") {
         patchPayload = JSON.parse(init.body as string);
         return jsonResponse({
           case_id: "case_demo_pending",
@@ -578,9 +578,11 @@ describe("cases workspace", () => {
 
     await waitFor(() => {
       expect(patchPayload).not.toBeNull();
-      expect(patchPayload.consent_status).toBe("granted");
-      expect(patchPayload.notes).toContain("Mother");
-      expect(patchPayload.notes).toContain("Verified on phone call.");
+      expect(patchPayload).not.toHaveProperty("consent_status");
+      expect(patchPayload.signer).toBe("Mother");
+      expect(patchPayload.notes).toBe("Verified on phone call.");
+      expect(patchPayload.consent_date).toMatch(/^\d{4}-\d{2}-\d{2}$/);
+      expect(patchPayload.confirmation_checked).toBe(true);
     });
 
     const createButton = screen.getByRole("link", { name: "Create new session" });

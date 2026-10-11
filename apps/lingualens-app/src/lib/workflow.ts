@@ -1813,10 +1813,32 @@ export async function createBackendCase(payload: Partial<BackendCase>): Promise<
   });
 }
 
-export async function updateBackendCase(caseId: string, payload: Partial<BackendCase>): Promise<BackendCase> {
+// Care-team membership and consent state are not editable through PATCH; the
+// backend rejects them. Consent uses grantBackendCaseConsent / withdrawBackendCaseConsent.
+export type BackendCaseUpdate = Pick<BackendCase, "nickname" | "age_months" | "language" | "notes">;
+
+export async function updateBackendCase(caseId: string, payload: Partial<BackendCaseUpdate>): Promise<BackendCase> {
   return apiRequest<BackendCase>(`/cases/${caseId}`, {
     method: "PATCH",
     body: JSON.stringify(payload)
+  });
+}
+
+export type ConsentVerification = {
+  signer: string;
+  consentDate: string;
+  notes?: string;
+};
+
+export async function grantBackendCaseConsent(caseId: string, verification: ConsentVerification): Promise<BackendCase> {
+  return apiRequest<BackendCase>(`/cases/${caseId}/grant-consent`, {
+    method: "POST",
+    body: JSON.stringify({
+      signer: verification.signer,
+      consent_date: verification.consentDate,
+      notes: verification.notes ?? "",
+      confirmation_checked: true
+    })
   });
 }
 

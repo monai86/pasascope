@@ -1,12 +1,31 @@
 from fastapi import APIRouter, Depends, HTTPException, status
 
 from app.api.v1.dependencies import get_repository
-from app.auth.authorization import assert_case_creation_allowed, filter_cases_for_user, require_case
-from app.core.errors import not_found
+from app.auth.authorization import (
+    assert_case_creation_allowed,
+    assert_clinical_mutation_allowed,
+    filter_cases_for_user,
+    require_case,
+)
+from app.core.errors import bad_request, not_found
 from app.core.security import CurrentUser, get_current_user
 from app.repositories.mock_repository import MockRepository, new_id
-from app.schemas.clinical import ChildCase, ChildCaseCreate, ChildCaseUpdate, ConsentWithdrawalRequest, ConsentWithdrawalResult, TimelineEvent
-from app.services.consent_service import withdraw_consent
+from app.schemas.clinical import (
+    ChildCase,
+    ChildCaseClientUpdate,
+    ChildCaseCreate,
+    ChildCaseUpdate,
+    ConsentGrantRequest,
+    ConsentWithdrawalRequest,
+    ConsentWithdrawalResult,
+    TimelineEvent,
+)
+from app.services.consent_service import (
+    ConsentTransitionError,
+    ensure_case_consent_active,
+    grant_consent,
+    withdraw_consent,
+)
 
 router = APIRouter(prefix="/cases", tags=["cases"])
 
@@ -98,12 +117,36 @@ def get_case(case_id: str, user: CurrentUser = Depends(get_current_user), repo: 
 @router.patch("/{case_id}", response_model=ChildCase)
 def update_case(
     case_id: str,
-    payload: ChildCaseUpdate,
+    payload: ChildCaseClientUpdate,
+    user: CurrentUser = Depends(get_current_user),
+    repo: MockRepository = Depends(get_repository),
+):
+    # Care-team access is the gate here: an org admin with an explicit
+    # care-team grant may edit descriptive case fields.
+    require_case(repo, case_id, user)
+    try:
+        ensure_case_consent_active(repo, case_id)
+    except ValueError as exc:
+        raise bad_request(str(exc)) from exc
+    patch = ChildCaseUpdate(**payload.model_dump(exclude_unset=True))
+    return repo.update_case(case_id, patch, expected_version=repo.cases[case_id].version, actor_id=user.user_id)
+
+
+@router.post("/{case_id}/grant-consent", response_model=ChildCase)
+def grant_case_consent(
+    case_id: str,
+    payload: ConsentGrantRequest,
     user: CurrentUser = Depends(get_current_user),
     repo: MockRepository = Depends(get_repository),
 ):
     require_case(repo, case_id, user)
-    return repo.update_case(case_id, payload, expected_version=repo.cases[case_id].version, actor_id="system")
+    assert_clinical_mutation_allowed(user)
+    try:
+        return grant_consent(repo, case_id, payload, actor_id=user.user_id)
+    except ConsentTransitionError as exc:
+        raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail=str(exc)) from exc
+    except ValueError as exc:
+        raise bad_request(str(exc)) from exc
 
 
 @router.get("/{case_id}/timeline", response_model=list[TimelineEvent])

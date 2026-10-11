@@ -59,6 +59,7 @@ SAFE_PATH_SEGMENTS = {
     "sign-off",
     "export",
     "withdraw-consent",
+    "grant-consent",
     "private",
     "v2",
     "children",

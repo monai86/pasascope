@@ -7,7 +7,7 @@ import {
   getBackendCaseTimeline,
   getCaseFeatureTrend,
   listBackendCaseGoals,
-  updateBackendCase,
+  grantBackendCaseConsent,
   withdrawBackendCaseConsent,
   type BackendCase,
   type BackendGoal,
@@ -120,9 +120,10 @@ export function useCasesWorkspace(caseId?: string): CasesWorkspaceViewModel {
     setConsentBusy(true);
     setConsentMsg("");
     try {
-      await updateBackendCase(currentCase.case_id, {
-        consent_status: "granted",
-        notes: `${currentCase.notes || ""}\nConsent verified on ${consentDate} by ${consentSigner}. Notes: ${consentNotes}`.trim(),
+      await grantBackendCaseConsent(currentCase.case_id, {
+        signer: consentSigner,
+        consentDate,
+        notes: consentNotes,
       });
       if (currentCaseIdRef.current === targetCaseId) {
         setLocalConsent("granted");

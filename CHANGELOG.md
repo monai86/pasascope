@@ -19,6 +19,13 @@
   - Applied unified clinical design system styling and single-sourced therapist clinical copy.
   - Switched bundle budget measurements to direct build artifact analysis (covering dynamic routes and gzip sizes).
 
+### Security
+- **Case, session and evaluation authorization** (`apps/api/`, `apps/lingualens-app/`):
+  - `PATCH /api/v1/cases/{case_id}` no longer accepts `care_team_user_ids`, `primary_therapist_user_id` or `consent_status` (422). Care-team changes stay on the organization-admin care-team route; the route now also requires a clinical role and active consent, and audits the acting user.
+  - Added `POST /api/v1/cases/{case_id}/grant-consent` for the audited `pending -> granted` transition. Withdrawn consent is final for a case (409); the frontend consent forms use this endpoint.
+  - `PATCH /api/v1/sessions/{session_id}` no longer accepts `status` or cue-acknowledgement fields (422).
+  - Evaluation helper routes now require an authenticated user and are closed whenever auth mode is not `mock`, including staging deployments that keep mock mode on.
+
 ### Fixed
 - **Frontend Dependency Audit**:
   - Remediated `sharp` (CVE-2026-96889) and `source-map-js` (GHSA-68fv-2mgg-jv7q) high severity audit vulnerabilities in production dependency tree.

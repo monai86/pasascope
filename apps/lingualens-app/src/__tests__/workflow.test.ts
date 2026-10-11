@@ -15,6 +15,7 @@ import {
   serializeTranscriptLines,
   updateProfileEvidenceReview,
   createBackendCase,
+  grantBackendCaseConsent,
   updateBackendCase,
   withdrawBackendCaseConsent
 } from "@/lib/workflow";
@@ -495,6 +496,38 @@ describe("simplified transcript intake", () => {
       expect(requestedMethod).toBe("PATCH");
       expect(JSON.parse(requestedBody)).toEqual(payload);
       expect(result).toEqual({ case_id: "CASE-001", nickname: "Ethan Updated" });
+    });
+
+    it("calls POST /cases/{caseId}/grant-consent with the verification record when granting consent", async () => {
+      let requestedUrl = "";
+      let requestedMethod = "";
+      let requestedBody = "";
+
+      vi.stubGlobal("fetch", vi.fn(async (input: RequestInfo | URL, init?: RequestInit) => {
+        requestedUrl = String(input);
+        requestedMethod = init?.method ?? "GET";
+        requestedBody = String(init?.body ?? "");
+        return new Response(JSON.stringify({ case_id: "CASE-001", consent_status: "granted" }), {
+          status: 200,
+          headers: { "content-type": "application/json" }
+        });
+      }));
+
+      const result = await grantBackendCaseConsent("CASE-001", {
+        signer: "Mother",
+        consentDate: "2026-10-11",
+        notes: "Phone call"
+      });
+
+      expect(requestedUrl).toBe("http://localhost:8000/api/v1/cases/CASE-001/grant-consent");
+      expect(requestedMethod).toBe("POST");
+      expect(JSON.parse(requestedBody)).toEqual({
+        signer: "Mother",
+        consent_date: "2026-10-11",
+        notes: "Phone call",
+        confirmation_checked: true
+      });
+      expect(result.consent_status).toBe("granted");
     });
 
     it("calls POST /cases/{caseId}/withdraw-consent with JSON body when withdrawing consent", async () => {
