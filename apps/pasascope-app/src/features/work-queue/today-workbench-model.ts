@@ -8,17 +8,34 @@ export type TodayQueueGroupKey =
   | "ready_for_signoff"
   | "recently_completed";
 
+/**
+ * What the next step for a case is. The view turns a kind into its task
+ * name, reason and action label in the interface language, so this model
+ * carries no display text of its own.
+ */
+export type TodayTaskKind =
+  | "report_regeneration"
+  | "report_safety_review"
+  | "signed_report"
+  | "report_signoff"
+  | "report_review"
+  | "session_processing"
+  | "transcript_review_attested"
+  | "transcript_review"
+  | "session_followup"
+  | "session_intake"
+  | "start_session";
+
 export type TodayQueueItem = {
   id: string;
   caseId: string;
   caseLabel: string;
   sessionDate?: string;
-  taskType: string;
+  kind: TodayTaskKind;
   workflowStatus: string;
+  /** Lower-cased backend priority, e.g. "low", "moderate", "high". */
   reviewPriority: string;
-  reason: string;
   group: TodayQueueGroupKey;
-  actionLabel: string;
   href: string;
 };
 
@@ -39,19 +56,16 @@ export type TodayWorkbenchModel = {
   };
 };
 
-export const todayQueueGroups: Array<{
-  key: TodayQueueGroupKey;
-  label: string;
-  description: string;
-}> = [
-  { key: "needs_action", label: "Needs action", description: "Blocked, stale, failed, or incomplete work requiring a therapist decision." },
-  { key: "processing", label: "Processing", description: "Backend work is still running. No completion is assumed." },
-  { key: "ready_for_review", label: "Ready for review", description: "Persisted transcript or report material is ready for therapist review." },
-  { key: "ready_for_signoff", label: "Ready for sign-off", description: "Reviewed report drafts awaiting the therapist’s final decision." },
-  { key: "recently_completed", label: "Recently completed", description: "Recently signed work available as an immutable record." },
+/** Queue groups in the order they are shown and ranked. */
+export const todayQueueGroups: readonly TodayQueueGroupKey[] = [
+  "needs_action",
+  "processing",
+  "ready_for_review",
+  "ready_for_signoff",
+  "recently_completed",
 ];
 
-const groupRank = new Map(todayQueueGroups.map((group, index) => [group.key, index]));
+const groupRank = new Map(todayQueueGroups.map((group, index) => [group, index]));
 
 export function buildTodayWorkbench(
   cases: BackendCase[],
@@ -95,108 +109,86 @@ function buildCaseQueueItem(caseItem: BackendCase, report?: BackendReport): Toda
     caseId: caseItem.case_id,
     caseLabel: caseLabel(caseItem),
     sessionDate: caseItem.latest_session_date,
-    reviewPriority: normalizedDisplayStatus(caseItem.review_priority || "low"),
+    reviewPriority: normalizeStatus(caseItem.review_priority) || "low",
   };
 
   if (reportStatus === "stale") {
     return {
       ...base,
-      taskType: "Report regeneration",
+      kind: "report_regeneration",
       workflowStatus: "Stale",
-      reason: "A newer transcript invalidated the existing report draft.",
       group: "needs_action",
-      actionLabel: "Regenerate report",
       href: reportHref(report, caseItem.case_id),
     };
   }
   if (isFailed(reportStatus)) {
     return {
       ...base,
-      taskType: "Report safety review",
+      kind: "report_safety_review",
       workflowStatus: normalizedDisplayStatus(reportStatus),
-      reason: "The persisted report is blocked or failed and requires therapist review.",
       group: "needs_action",
-      actionLabel: "Review report",
       href: reportHref(report, caseItem.case_id),
     };
   }
   if (isSigned(reportStatus)) {
     return {
       ...base,
-      taskType: "Signed report",
+      kind: "signed_report",
       workflowStatus: normalizedDisplayStatus(reportStatus),
-      reason: "The signed snapshot is complete and remains immutable.",
       group: "recently_completed",
-      actionLabel: "View signed report",
       href: reportHref(report, caseItem.case_id),
     };
   }
   if (report && isReadyForSignoff(reportStatus, report.therapist_signoff_status)) {
     return {
       ...base,
-      taskType: "Report sign-off",
+      kind: "report_signoff",
       workflowStatus: normalizedDisplayStatus(reportStatus),
-      reason: "A reviewed report draft is ready for the therapist’s sign-off decision.",
       group: "ready_for_signoff",
-      actionLabel: "Review for sign-off",
       href: reportHref(report, caseItem.case_id),
     };
   }
   if (report && ["draft", "needs review", "needs_review"].includes(reportStatus)) {
     return {
       ...base,
-      taskType: "Report review",
+      kind: "report_review",
       workflowStatus: normalizedDisplayStatus(reportStatus),
-      reason: "A persisted report draft is ready for therapist review.",
       group: "ready_for_review",
-      actionLabel: "Review report",
       href: reportHref(report, caseItem.case_id),
     };
   }
   if (sessionStatus === "processing") {
     return {
       ...base,
-      taskType: "Session processing",
+      kind: "session_processing",
       workflowStatus: "Processing",
-      reason: "Backend processing is still in progress.",
       group: "processing",
-      actionLabel: "View case",
       href: caseHref(caseItem.case_id),
     };
   }
   if (["needs review", "needs_review", "attested", "ready"].includes(sessionStatus)) {
     return {
       ...base,
-      taskType: "Transcript review",
+      kind: sessionStatus === "attested" ? "transcript_review_attested" : "transcript_review",
       workflowStatus: normalizedDisplayStatus(sessionStatus),
-      reason: sessionStatus === "attested"
-        ? "The reviewed transcript is ready for the next backend-permitted workflow step."
-        : "The persisted session is ready for therapist transcript review.",
       group: "ready_for_review",
-      actionLabel: "Open case",
       href: caseHref(caseItem.case_id),
     };
   }
   if (isFailed(sessionStatus)) {
     return {
       ...base,
-      taskType: "Session follow-up",
+      kind: "session_followup",
       workflowStatus: normalizedDisplayStatus(sessionStatus),
-      reason: "The persisted session is blocked or failed and requires therapist action.",
       group: "needs_action",
-      actionLabel: "Review case",
       href: caseHref(caseItem.case_id),
     };
   }
   return {
     ...base,
-    taskType: caseItem.latest_session_date ? "Session intake" : "Start session",
+    kind: caseItem.latest_session_date ? "session_intake" : "start_session",
     workflowStatus: normalizedDisplayStatus(caseItem.latest_session_status || "Not started"),
-    reason: caseItem.latest_session_date
-      ? "The persisted session is incomplete and needs the therapist’s next input."
-      : "No persisted session is available for this case yet.",
     group: "needs_action",
-    actionLabel: caseItem.latest_session_date ? "Continue case" : "Start session",
     href: caseItem.latest_session_date ? caseHref(caseItem.case_id) : `/cases?intent=start-session&case_id=${encodeURIComponent(caseItem.case_id)}`,
   };
 }

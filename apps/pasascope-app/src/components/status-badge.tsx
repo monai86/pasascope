@@ -1,3 +1,5 @@
+"use client";
+
 import type { LucideIcon } from "lucide-react";
 import {
   AlertTriangle,
@@ -16,7 +18,9 @@ import {
   XCircle,
 } from "lucide-react";
 
+import { statusMessages } from "@/components/status.messages";
 import { badgeToneClasses, type BadgeTone } from "@/components/ui/badge";
+import { useMessages } from "@/i18n/locale-provider";
 import { cn } from "@/lib/cn";
 
 export type WorkflowStatus =
@@ -74,6 +78,7 @@ function matchStatus(status: string): WorkflowStatus | null {
 }
 
 export function StatusBadge({ status }: { status: string }) {
+  const labels = useMessages(statusMessages);
   const matched = matchStatus(status);
   // An unrecognised status keeps its own text and takes the neutral draft look.
   const { tone, icon: Icon, pulse } = presentation[matched ?? "Draft"];
@@ -89,7 +94,7 @@ export function StatusBadge({ status }: { status: string }) {
       )}
     >
       <Icon size={14} aria-hidden="true" className="shrink-0" />
-      <span>{matched ?? status}</span>
+      <span>{matched ? labels[matched] : status}</span>
     </span>
   );
 }

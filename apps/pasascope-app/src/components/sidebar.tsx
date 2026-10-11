@@ -67,7 +67,8 @@ export function Sidebar({
       </div>
 
       <div className="p-3">
-        <Button href="/cases?intent=start-session" onClick={onClose} icon={Plus} className="w-full">
+        {/* Outlined, so the page's own primary action is the only solid azure button. */}
+        <Button href="/cases?intent=start-session" onClick={onClose} icon={Plus} variant="secondary" className="w-full">
           {t.newSession}
         </Button>
       </div>

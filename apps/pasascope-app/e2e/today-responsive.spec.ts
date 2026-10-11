@@ -52,7 +52,7 @@ for (const viewport of desktopViewports) {
     await seedQueueCases(request, `TODAY-${viewport.name}`);
     await page.setViewportSize(viewport);
     await page.goto("/today");
-    await expect(page.getByRole("heading", { name: "Work Queue" })).toBeVisible();
+    await expect(page.getByRole("heading", { name: "Today", exact: true })).toBeVisible();
     await expect(page.getByRole("heading", { name: "Prioritized queue" })).toBeVisible();
 
     const primaryWorkbench = page.getByTestId("today-primary-workbench");
@@ -84,7 +84,7 @@ for (const viewport of requiredViewports) {
   test(`Today renders one focused action and one contextual surface at ${viewport.name}`, async ({ page }) => {
     await page.setViewportSize(viewport);
     await page.goto("/today");
-    await expect(page.getByRole("heading", { name: "Work Queue" })).toBeVisible();
+    await expect(page.getByRole("heading", { name: "Today", exact: true })).toBeVisible();
     await expect(page.getByRole("heading", { name: "Prioritized queue" })).toBeVisible();
 
     const startSession = page.getByRole("link", { name: "Start session", exact: true });

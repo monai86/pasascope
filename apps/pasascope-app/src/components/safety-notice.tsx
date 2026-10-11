@@ -1,21 +1,24 @@
+"use client";
+
 import { ShieldCheck } from "lucide-react";
 
-import { SAFETY_NOTICE_DEFAULT } from "@/lib/clinical-safety-copy";
+import { cn } from "@/lib/cn";
+import { useSafetyCopy } from "@/lib/safety-copy";
 
 export function SafetyNotice({
-  children = SAFETY_NOTICE_DEFAULT,
+  children,
   className = ""
 }: {
   children?: React.ReactNode;
   className?: string;
 }) {
+  const safety = useSafetyCopy();
+
   return (
-    <aside
-      className={`rounded-card border border-line bg-surface-muted px-4 py-3 text-sm text-ink-muted ${className}`}
-    >
+    <aside className={cn("rounded-card border border-line bg-surface-muted px-4 py-3 text-sm text-ink-muted", className)}>
       <div className="flex items-start gap-3">
         <ShieldCheck size={18} aria-hidden="true" className="mt-0.5 shrink-0 text-brand" />
-        <p className="leading-6">{children}</p>
+        <p className="leading-6">{children ?? safety.SAFETY_NOTICE_DEFAULT}</p>
       </div>
     </aside>
   );

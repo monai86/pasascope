@@ -26,7 +26,7 @@ test("the canonical workbench reflows at the 200 percent zoom equivalent", async
   await setTherapistSession(page);
   await page.goto("/today", { waitUntil: "networkidle" });
 
-  await expect(page.getByRole("heading", { name: "Work Queue" })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Today", exact: true })).toBeVisible();
   await expect(page.getByRole("link", { name: "Start session", exact: true })).toBeVisible();
   await expectNoHorizontalOverflow(page);
   await page.screenshot({

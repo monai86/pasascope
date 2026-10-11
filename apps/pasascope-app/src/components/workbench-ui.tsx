@@ -1,8 +1,10 @@
+"use client";
+
 import type { LucideIcon } from "lucide-react";
 import { ShieldCheck } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
-import { SAFETY_NOTICE_DEFAULT } from "@/lib/clinical-safety-copy";
+import { useSafetyCopy } from "@/lib/safety-copy";
 
 type IconTone = "brand" | "success" | "warning" | "danger" | "info";
 
@@ -53,11 +55,13 @@ export function PrimaryActionButton({
   );
 }
 
-export function SafetyNote({ children = SAFETY_NOTICE_DEFAULT }: { children?: React.ReactNode }) {
+export function SafetyNote({ children }: { children?: React.ReactNode }) {
+  const safety = useSafetyCopy();
+
   return (
     <p className="flex items-center justify-center gap-2 px-2 py-3 text-center text-xs font-medium text-ink-subtle">
       <ShieldCheck size={16} aria-hidden="true" className="shrink-0 text-brand" />
-      {children}
+      {children ?? safety.SAFETY_NOTICE_DEFAULT}
     </p>
   );
 }

@@ -3,6 +3,7 @@ import { describe, expect, it, vi } from "vitest";
 
 import { TodayWorkbenchView } from "@/features/work-queue/components/today-workbench-view";
 import { buildTodayWorkbench } from "@/features/work-queue/today-workbench-model";
+import { todayMessages } from "@/features/work-queue/today.messages";
 
 const cases = [
   {
@@ -61,8 +62,11 @@ describe("Today focused workbench", () => {
       "ready_for_review",
     ]);
     expect(model.items.find((item) => item.caseId === "case-stale")).toMatchObject({
-      actionLabel: "Regenerate report",
+      kind: "report_regeneration",
       href: "/sessions/session-stale?view=report&case_id=case-stale&report_id=report-stale",
+    });
+    expect(todayMessages.en.tasks.report_regeneration).toMatchObject({
+      action: "Regenerate report",
       reason: expect.stringMatching(/newer transcript/i),
     });
     expect(model.items.every((item) => item.caseLabel.startsWith("C-"))).toBe(true);
@@ -75,7 +79,7 @@ describe("Today focused workbench", () => {
     expect(screen.getByRole("heading", { name: "Needs action" })).toBeInTheDocument();
     expect(screen.getByRole("heading", { name: "Processing" })).toBeInTheDocument();
     expect(screen.getByRole("heading", { name: "Ready for review" })).toBeInTheDocument();
-    expect(screen.getByRole("heading", { name: "Work Queue" })).toBeInTheDocument();
+    expect(screen.getByRole("heading", { name: "Today", level: 1 })).toBeInTheDocument();
 
     for (const row of screen.getAllByTestId("today-queue-row")) {
       expect(within(row).getAllByRole("link")).toHaveLength(1);
@@ -96,7 +100,18 @@ describe("Today focused workbench", () => {
     expect(within(hero).getAllByRole("link")).toHaveLength(1);
     const topItem = model.items[0];
     expect(within(hero).getByRole("heading", { name: new RegExp(topItem.caseLabel) })).toBeInTheDocument();
-    expect(within(hero).getByRole("link", { name: topItem.actionLabel })).toHaveAttribute("href", topItem.href);
+    expect(within(hero).getByRole("link", { name: todayMessages.en.tasks[topItem.kind].action })).toHaveAttribute("href", topItem.href);
+  });
+
+  it("names every task and queue group in both interface languages", () => {
+    for (const locale of ["en", "th"] as const) {
+      for (const copy of Object.values(todayMessages[locale].tasks)) {
+        expect(copy.task && copy.reason && copy.action).toBeTruthy();
+      }
+      for (const copy of Object.values(todayMessages[locale].groups)) {
+        expect(copy.label && copy.description).toBeTruthy();
+      }
+    }
   });
 
   it("shows honest loading, empty, and unavailable states with retry", () => {
