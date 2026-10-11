@@ -11,6 +11,8 @@ import { PageHeader } from "@/components/page-header";
 import { StatusBadge } from "@/components/status-badge";
 import { CreateCaseForm } from "@/features/cases/components/create-case-form";
 import type { CaseListViewModel } from "@/features/cases/hooks/use-cases-workspace";
+import { useMessages } from "@/i18n/locale-provider";
+import { defineMessages } from "@/i18n/messages";
 import type { BackendCase } from "@/lib/workflow";
 
 function ageLabel(caseItem: BackendCase) {
@@ -95,6 +97,12 @@ function nextAction(caseItem: BackendCase) {
   return { label: "Start session", href: `/cases?intent=start-session&case_id=${encodeURIComponent(caseItem.case_id)}` };
 }
 
+// Only the header action is translated so far; the rest of Cases is English.
+const caseListMessages = defineMessages({
+  en: { startAssessment: "Start developmental assessment" },
+  th: { startAssessment: "เริ่มการประเมินพัฒนาการ" },
+});
+
 export function CaseList({
   model,
   canFilterByClinician = false,
@@ -107,6 +115,7 @@ export function CaseList({
   initialQuery?: string;
 }) {
   const { cases } = model;
+  const t = useMessages(caseListMessages);
   const [query, setQuery] = useState(initialQuery);
   const [statusFilter, setStatusFilter] = useState("all");
   const [consentFilter, setConsentFilter] = useState("all");
@@ -165,7 +174,7 @@ export function CaseList({
             actions={
               <>
                 <ActionButton href="/assessments" tone="secondary">
-                  เริ่มการประเมินพัฒนาการ
+                  {t.startAssessment}
                 </ActionButton>
                 {canCreateCase ? (
                   <ActionButton

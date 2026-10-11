@@ -98,52 +98,52 @@ export function SessionIntakeSteps({ model }: { model: SessionIntakeViewModel })
               </div>
               <div className="grid gap-4 md:grid-cols-2">
                 <Field>
-                  <label htmlFor="session-child-client" className="text-sm font-semibold text-ink">Child or client</label>
+                  <label htmlFor="session-child-client" className="block text-sm font-semibold text-ink">Child or client</label>
                   <input
                     id="session-child-client"
                     type="text"
                     value={sessionDetails.childClient}
                     onChange={(event) => setSessionDetails((current) => ({ ...current, childClient: event.target.value }))}
-                    className="min-h-11 rounded-panel border border-line bg-surface px-4 py-3 text-sm text-ink outline-none focus:ring-2 focus:ring-brand"
+                    className="block min-h-11 w-full rounded-control border border-line-strong bg-surface px-3.5 py-2.5 text-sm text-ink outline-none transition focus-visible:border-brand focus-visible:ring-4 focus-visible:ring-[color:var(--color-focus-ring)]"
                   />
                 </Field>
                 <Field>
-                  <label htmlFor="session-clinician" className="text-sm font-semibold text-ink">Clinician</label>
+                  <label htmlFor="session-clinician" className="block text-sm font-semibold text-ink">Clinician</label>
                   <input
                     id="session-clinician"
                     type="text"
                     value={sessionDetails.clinician}
                     onChange={(event) => setSessionDetails((current) => ({ ...current, clinician: event.target.value }))}
-                    className="min-h-11 rounded-panel border border-line bg-surface px-4 py-3 text-sm text-ink outline-none focus:ring-2 focus:ring-brand"
+                    className="block min-h-11 w-full rounded-control border border-line-strong bg-surface px-3.5 py-2.5 text-sm text-ink outline-none transition focus-visible:border-brand focus-visible:ring-4 focus-visible:ring-[color:var(--color-focus-ring)]"
                   />
                 </Field>
                 <Field>
-                  <label htmlFor="session-date" className="text-sm font-semibold text-ink">Session date</label>
+                  <label htmlFor="session-date" className="block text-sm font-semibold text-ink">Session date</label>
                   <input
                     id="session-date"
                     type="date"
                     value={sessionDetails.sessionDate}
                     onChange={(event) => setSessionDetails((current) => ({ ...current, sessionDate: event.target.value }))}
-                    className="min-h-11 rounded-panel border border-line bg-surface px-4 py-3 text-sm text-ink outline-none focus:ring-2 focus:ring-brand"
+                    className="block min-h-11 w-full rounded-control border border-line-strong bg-surface px-3.5 py-2.5 text-sm text-ink outline-none transition focus-visible:border-brand focus-visible:ring-4 focus-visible:ring-[color:var(--color-focus-ring)]"
                   />
                 </Field>
                 <Field>
-                  <label htmlFor="session-time" className="text-sm font-semibold text-ink">Session time</label>
+                  <label htmlFor="session-time" className="block text-sm font-semibold text-ink">Session time</label>
                   <input
                     id="session-time"
                     type="time"
                     value={sessionDetails.sessionTime}
                     onChange={(event) => setSessionDetails((current) => ({ ...current, sessionTime: event.target.value }))}
-                    className="min-h-11 rounded-panel border border-line bg-surface px-4 py-3 text-sm text-ink outline-none focus:ring-2 focus:ring-brand"
+                    className="block min-h-11 w-full rounded-control border border-line-strong bg-surface px-3.5 py-2.5 text-sm text-ink outline-none transition focus-visible:border-brand focus-visible:ring-4 focus-visible:ring-[color:var(--color-focus-ring)]"
                   />
                 </Field>
                 <Field>
-                  <label htmlFor="session-setting" className="text-sm font-semibold text-ink">Setting</label>
+                  <label htmlFor="session-setting" className="block text-sm font-semibold text-ink">Setting</label>
                   <select
                     id="session-setting"
                     value={sessionDetails.setting}
                     onChange={(event) => setSessionDetails((current) => ({ ...current, setting: event.target.value }))}
-                    className="min-h-11 rounded-panel border border-line bg-surface px-4 py-3 text-sm text-ink outline-none focus:ring-2 focus:ring-brand"
+                    className="block min-h-11 w-full rounded-control border border-line-strong bg-surface px-3.5 py-2.5 text-sm text-ink outline-none transition focus-visible:border-brand focus-visible:ring-4 focus-visible:ring-[color:var(--color-focus-ring)]"
                   >
                     <option value="clinic">Clinic</option>
                     <option value="home">Home</option>
@@ -151,12 +151,12 @@ export function SessionIntakeSteps({ model }: { model: SessionIntakeViewModel })
                   </select>
                 </Field>
                 <Field>
-                  <label htmlFor="session-duration" className="text-sm font-semibold text-ink">Duration</label>
+                  <label htmlFor="session-duration" className="block text-sm font-semibold text-ink">Duration</label>
                   <select
                     id="session-duration"
                     value={sessionDetails.durationMinutes}
                     onChange={(event) => setSessionDetails((current) => ({ ...current, durationMinutes: event.target.value }))}
-                    className="min-h-11 rounded-panel border border-line bg-surface px-4 py-3 text-sm text-ink outline-none focus:ring-2 focus:ring-brand"
+                    className="block min-h-11 w-full rounded-control border border-line-strong bg-surface px-3.5 py-2.5 text-sm text-ink outline-none transition focus-visible:border-brand focus-visible:ring-4 focus-visible:ring-[color:var(--color-focus-ring)]"
                   >
                     <option value="30">30 minutes</option>
                     <option value="45">45 minutes</option>
@@ -166,12 +166,12 @@ export function SessionIntakeSteps({ model }: { model: SessionIntakeViewModel })
                 </Field>
               </div>
               <Field>
-                <label htmlFor="session-goals" className="text-sm font-semibold text-ink">Session goals</label>
+                <label htmlFor="session-goals" className="block text-sm font-semibold text-ink">Session goals</label>
                 <textarea
                   id="session-goals"
                   value={sessionDetails.sessionGoals}
                   onChange={(event) => setSessionDetails((current) => ({ ...current, sessionGoals: event.target.value }))}
-                  className="min-h-32 rounded-panel border border-line bg-surface px-4 py-3 text-sm text-ink outline-none focus:ring-2 focus:ring-brand"
+                  className="block min-h-32 w-full rounded-control border border-line-strong bg-surface px-3.5 py-2.5 text-sm text-ink outline-none transition focus-visible:border-brand focus-visible:ring-4 focus-visible:ring-[color:var(--color-focus-ring)]"
                 />
               </Field>
               <SafetyNotice>
@@ -353,30 +353,30 @@ export function SessionIntakeSteps({ model }: { model: SessionIntakeViewModel })
               </div>
               <div className="grid gap-4 md:grid-cols-2">
                 <Field className="md:col-span-2">
-                  <label htmlFor="speaker-labels" className="text-sm font-semibold text-ink">Speaker labels</label>
+                  <label htmlFor="speaker-labels" className="block text-sm font-semibold text-ink">Speaker labels</label>
                   <textarea
                     id="speaker-labels"
                     value={transcriptSetup.speakerLabels}
                     onChange={(event) => setTranscriptSetup((current) => ({ ...current, speakerLabels: event.target.value }))}
-                    className="min-h-28 rounded-panel border border-line bg-surface px-4 py-3 text-sm text-ink outline-none focus:ring-2 focus:ring-brand"
+                    className="block min-h-28 w-full rounded-control border border-line-strong bg-surface px-3.5 py-2.5 text-sm text-ink outline-none transition focus-visible:border-brand focus-visible:ring-4 focus-visible:ring-[color:var(--color-focus-ring)]"
                   />
                 </Field>
                 <Field className="md:col-span-2">
-                  <label htmlFor="session-metadata" className="text-sm font-semibold text-ink">Session metadata</label>
+                  <label htmlFor="session-metadata" className="block text-sm font-semibold text-ink">Session metadata</label>
                   <textarea
                     id="session-metadata"
                     value={transcriptSetup.sessionMetadata}
                     onChange={(event) => setTranscriptSetup((current) => ({ ...current, sessionMetadata: event.target.value }))}
-                    className="min-h-28 rounded-panel border border-line bg-surface px-4 py-3 text-sm text-ink outline-none focus:ring-2 focus:ring-brand"
+                    className="block min-h-28 w-full rounded-control border border-line-strong bg-surface px-3.5 py-2.5 text-sm text-ink outline-none transition focus-visible:border-brand focus-visible:ring-4 focus-visible:ring-[color:var(--color-focus-ring)]"
                   />
                 </Field>
                 <Field>
-                  <label htmlFor="transcript-language" className="text-sm font-semibold text-ink">Language</label>
+                  <label htmlFor="transcript-language" className="block text-sm font-semibold text-ink">Language</label>
                   <select
                     id="transcript-language"
                     value={transcriptSetup.language}
                     onChange={(event) => setTranscriptSetup((current) => ({ ...current, language: event.target.value }))}
-                    className="min-h-11 rounded-panel border border-line bg-surface px-4 py-3 text-sm text-ink outline-none focus:ring-2 focus:ring-brand"
+                    className="block min-h-11 w-full rounded-control border border-line-strong bg-surface px-3.5 py-2.5 text-sm text-ink outline-none transition focus-visible:border-brand focus-visible:ring-4 focus-visible:ring-[color:var(--color-focus-ring)]"
                   >
                     <option value="eng">English</option>
                     <option value="tha">Thai</option>
@@ -384,12 +384,12 @@ export function SessionIntakeSteps({ model }: { model: SessionIntakeViewModel })
                   </select>
                 </Field>
                 <Field>
-                  <label htmlFor="sample-type" className="text-sm font-semibold text-ink">Sample type</label>
+                  <label htmlFor="sample-type" className="block text-sm font-semibold text-ink">Sample type</label>
                   <select
                     id="sample-type"
                     value={transcriptSetup.sampleType}
                     onChange={(event) => setTranscriptSetup((current) => ({ ...current, sampleType: event.target.value }))}
-                    className="min-h-11 rounded-panel border border-line bg-surface px-4 py-3 text-sm text-ink outline-none focus:ring-2 focus:ring-brand"
+                    className="block min-h-11 w-full rounded-control border border-line-strong bg-surface px-3.5 py-2.5 text-sm text-ink outline-none transition focus-visible:border-brand focus-visible:ring-4 focus-visible:ring-[color:var(--color-focus-ring)]"
                   >
                     <option value="conversation">Conversation</option>
                     <option value="play">Play-based interaction</option>
