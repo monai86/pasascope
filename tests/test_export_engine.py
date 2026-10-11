@@ -22,7 +22,25 @@ def test_radar_svg_generation():
     assert "</svg>" in svg
     assert "<polygon" in svg
     assert "MLU-w" in svg
-    assert "TD Benchmark Norm" in svg
+    # The chart shows this session only; no reference line or norm label.
+    assert "Norm" not in svg.replace("no norm comparison", "")
+    assert "TD " not in svg
+    assert "stroke-dasharray" not in svg
+
+
+def test_radar_positions_depend_only_on_the_measured_value():
+    import re
+
+    def child_polygon(metrics):
+        return re.search(r'<polygon points="([^"]+)" fill="rgba', RadarChartRenderer.render_svg(metrics)).group(1)
+
+    base = {"mlu_words": 3.0, "ttr": 0.5, "turn_taking_ratio": 0.5, "total_child_utterances": 10}
+
+    # Age used to pick a different "norm" and move the same value on the chart.
+    assert child_polygon(base) == child_polygon({**base, "age_months": 30}) == child_polygon({**base, "age_months": 58})
+    assert child_polygon(base) != child_polygon({**base, "mlu_words": 4.0})
+    # MLU 3.0 on a 0-6 axis sits halfway up the top spoke (centre y=158, radius 113).
+    assert child_polygon(base).split()[0] == "200.0,101.5"
 
 
 def test_bilingual_clinical_html_report_generation():

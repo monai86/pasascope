@@ -1729,7 +1729,7 @@ class PasaScopeGUIApp:
 
         # Sub-tab 1: Spider / Radar Diagram View
         self.subtab_radar = ttk.Frame(self.findings_notebook, padding=8)
-        self.findings_notebook.add(self.subtab_radar, text="Normative Spider Profile")
+        self.findings_notebook.add(self.subtab_radar, text="Session Spider Profile")
 
         radar_split = ttk.Frame(self.subtab_radar)
         radar_split.pack(fill=tk.BOTH, expand=True)
@@ -1742,7 +1742,7 @@ class PasaScopeGUIApp:
         self.canvas_radar.bind("<Configure>", self._on_canvas_radar_resize)
 
         # Right Summary Panel
-        sum_frame = ttk.LabelFrame(radar_split, text="Benchmark Comparison vs TD Norms", padding=10)
+        sum_frame = ttk.LabelFrame(radar_split, text="Measured Values (no norm comparison)", padding=10)
         sum_frame.pack(side=tk.RIGHT, fill=tk.BOTH, expand=True)
 
         self.txt_radar_summary = tk.Text(
@@ -1914,7 +1914,7 @@ class PasaScopeGUIApp:
             self._draw_spider_diagram(findings.get("metrics", {}))
 
     def _get_active_case_age_months(self) -> int | None:
-        """Estimate active case child age in months from case metadata for normative comparisons."""
+        """Estimate active case child age in months from case metadata."""
         if not self.active_case_id:
             return None
         try:
@@ -1934,15 +1934,14 @@ class PasaScopeGUIApp:
             return None
 
     def _draw_spider_diagram(self, metrics: dict[str, Any]) -> None:
-        """Render native radar chart comparing Child values vs Typical Development (TD) Norms."""
+        """Render the radar chart of this session's measured values."""
         if not hasattr(self, "radar_renderer") or self.radar_renderer is None:
             self.radar_renderer = RadarChartRenderer(
                 canvas=self.canvas_radar,
                 summary_widget=getattr(self, "txt_radar_summary", None),
                 font_family=self.font_family,
             )
-        age_months = self._get_active_case_age_months()
-        self.radar_renderer.draw(metrics, age_months=age_months)
+        self.radar_renderer.draw(metrics)
 
     # --- Tab 5: Report UI (Data Ground Truth & Clinical Decision Support) ---
     def _build_tab_report(self) -> None:

@@ -15,6 +15,7 @@
   - Intelligibility is computed from transcript markers instead of fixed values; the MLU-morpheme estimate (MLU-words × 1.18) is removed.
   - Guideline statuses such as "Age Expected" are replaced with descriptive statuses; no Thai norm backs them.
   - CHAT headers no longer default the group to ASD or hard-code age and sex.
+  - The desktop GUI radar chart and its SVG export no longer draw a "TD norm" line or percent-of-norm figures; the age-bracket benchmark values had no source. The chart now plots the session's measured values on fixed display scales.
   - Engine-named placeholder ASR providers (`whisper`, `faster_whisper`, `whisperx`, `batchalign`) are unregistered.
 - **Thai cue parity** (`apps/api/`): echolalia and pronoun cues for Thai utterances use the same rules as the desktop GUI; the pronoun cue is reported as not computed, rather than 0, when it cannot be assessed.
 
