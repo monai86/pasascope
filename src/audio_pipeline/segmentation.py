@@ -25,6 +25,12 @@ from .whisper_transcribe import UtteranceSegment, WordSegment
 MIN_SEGMENT_DURATION = 0.2          # seconds — drop if shorter
 MAX_INTRA_TURN_GAP = 0.3            # seconds — merge same-speaker if gap < this
 MIN_GAP_FOR_SPLIT = 0.6             # seconds — split same-speaker if gap > this
+# Pause that may hide a change of speaker. Whisper often returns a whole
+# exchange as one segment, and a segment can only get one speaker label, so
+# segments are cut at these pauses before speakers are assigned. In scripted
+# Thai dialogues word gaps inside a turn were at most 0.12 s and gaps between
+# turns at least 0.30 s; 0.25 s sits between the two.
+PRE_DIARIZATION_SPLIT_GAP = 0.25
 
 
 def _merge_segments(a: UtteranceSegment, b: UtteranceSegment) -> UtteranceSegment:
@@ -100,6 +106,30 @@ def _split_at_long_silences(
             language=seg.language,
         ))
     return out
+
+
+def drop_short_segments(
+    utterances: Sequence[UtteranceSegment],
+    min_duration: float = MIN_SEGMENT_DURATION,
+) -> List[UtteranceSegment]:
+    """Remove recogniser segments too short to be speech (likely noise)."""
+    return [u for u in utterances if (u.end - u.start) >= min_duration]
+
+
+def split_at_pauses(
+    utterances: Sequence[UtteranceSegment],
+    min_gap: float = PRE_DIARIZATION_SPLIT_GAP,
+) -> List[UtteranceSegment]:
+    """Cut each segment wherever consecutive words are more than ``min_gap`` apart.
+
+    Run this before speaker assignment so that each side of a pause can get
+    its own speaker; ``clean_segments`` re-joins neighbours that turn out to
+    belong to the same speaker.
+    """
+    pieces: List[UtteranceSegment] = []
+    for utterance in sorted(utterances, key=lambda u: u.start):
+        pieces.extend(_split_at_long_silences(utterance, min_gap=min_gap))
+    return pieces
 
 
 def clean_segments(

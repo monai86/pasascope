@@ -72,6 +72,8 @@ CSV_COLUMNS = [
     "sample_id",
     "wer_all",
     "cer_all",
+    "gold_utterances",
+    "hyp_utterances",
     "wer_child",
     "cer_child",
     "gold_child_utterances",
@@ -154,6 +156,8 @@ def score_sample(
         "sample_id": sample_id,
         "wer_all": _error_rate(jiwer.wer, _words(gold), _words(hypothesis)),
         "cer_all": _error_rate(jiwer.cer, _characters(gold), _characters(hypothesis)),
+        "gold_utterances": len(gold),
+        "hyp_utterances": len(hypothesis),
         "wer_child": _error_rate(jiwer.wer, _words(gold_child), _words(hyp_child)),
         "cer_child": _error_rate(jiwer.cer, _characters(gold_child), _characters(hyp_child)),
         "gold_child_utterances": len(gold_child),
@@ -189,6 +193,7 @@ def aggregate(rows: list[dict]) -> dict:
         "samples": len(rows),
         "mean_wer_all": _mean_of(rows, "wer_all"),
         "mean_cer_all": _mean_of(rows, "cer_all"),
+        "mean_abs_utterance_count_difference": _mean_abs_difference(rows, "gold_utterances", "hyp_utterances"),
         "mean_wer_child": _mean_of(rows, "wer_child"),
         "mean_cer_child": _mean_of(rows, "cer_child"),
         "mean_abs_mlu_words_difference": _mean_abs_difference(rows, "gold_mlu_words", "hyp_mlu_words"),
@@ -225,6 +230,7 @@ def render_markdown(rows: list[dict], summary: dict, *, model_size: str, strateg
         "|---|---|",
         f"| Word error rate, all speakers | {_cell(summary['mean_wer_all'])} |",
         f"| Character error rate, all speakers | {_cell(summary['mean_cer_all'])} |",
+        f"| Absolute utterance-count difference (draft vs gold) | {_cell(summary['mean_abs_utterance_count_difference'])} |",
         f"| Word error rate, child only | {_cell(summary['mean_wer_child'])} |",
         f"| Character error rate, child only | {_cell(summary['mean_cer_child'])} |",
         f"| Absolute MLU-words difference (draft vs gold) | {_cell(summary['mean_abs_mlu_words_difference'])} |",
@@ -234,13 +240,14 @@ def render_markdown(rows: list[dict], summary: dict, *, model_size: str, strateg
         "",
         "## Per sample",
         "",
-        "| Sample | WER all | CER all | WER child | CER child | Child utts (gold/draft) | "
+        "| Sample | WER all | CER all | Utterances (gold/draft) | WER child | CER child | Child utts (gold/draft) | "
         "MLU-w (gold/draft) | TTR (gold/draft) | Echolalia (gold/draft) | RTF |",
-        "|---|---|---|---|---|---|---|---|---|---|",
+        "|---|---|---|---|---|---|---|---|---|---|---|",
     ]
     for row in rows:
         lines.append(
             f"| {row['sample_id']} | {_cell(row['wer_all'])} | {_cell(row['cer_all'])} | "
+            f"{row['gold_utterances']}/{row['hyp_utterances']} | "
             f"{_cell(row['wer_child'])} | {_cell(row['cer_child'])} | "
             f"{_pair(row, 'gold_child_utterances', 'hyp_child_utterances')} | "
             f"{_pair(row, 'gold_mlu_words', 'hyp_mlu_words')} | {_pair(row, 'gold_ttr', 'hyp_ttr')} | "

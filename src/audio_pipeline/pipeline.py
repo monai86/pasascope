@@ -27,7 +27,7 @@ from .acoustic_profile import AcousticProfile, compute_acoustic_profile
 from .chat_formatter import utterances_to_chat, write_chat
 from .chatter_validator import ValidationReport, validate_chat_file
 from .diarization import BaseDiarizer, get_diarizer
-from .segmentation import clean_segments
+from .segmentation import clean_segments, drop_short_segments, split_at_pauses
 from .whisper_transcribe import LanguageStrategy, WhisperTranscriber
 
 
@@ -164,10 +164,15 @@ def audio_to_cha(
             child_age_months=child_age_months,
             enrollment_audio_path=enrollment_audio_path,
         )
+    # Cut at pauses first: a recogniser segment that spans a whole exchange
+    # would otherwise receive a single speaker label.
+    utterances = split_at_pauses(drop_short_segments(utterances))
     utterances = diarizer.assign(audio_path, utterances)
 
     # ---- 3. Clean / re-segment -------------------------------------------
-    utterances = clean_segments(utterances)
+    # Pieces were already filtered for noise above; a short piece here is a
+    # short utterance ("ไม่", "เอา") and must be kept.
+    utterances = clean_segments(utterances, min_duration=0.0)
 
     # ---- 4. CHAT formatting ----------------------------------------------
     if progress_callback:

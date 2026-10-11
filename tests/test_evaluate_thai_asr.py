@@ -128,7 +128,7 @@ def test_text_only_run_blanks_speaker_dependent_figures(tmp_path):
     assert rows[0]["wer_child"] is None and rows[0]["hyp_mlu_words"] is None
     assert summary["mean_wer_child"] is None and summary["mean_abs_mlu_words_difference"] is None
     markdown = (tmp_path / "reports" / "thai_asr_evaluation.md").read_text(encoding="utf-8")
-    assert "| clip01 | 0.0 | 0.0 | - | - | - | - | - | - | - |" in markdown
+    assert "| clip01 | 0.0 | 0.0 | 3/3 | - | - | - | - | - | - | - |" in markdown
 
 
 def test_word_scores_do_not_depend_on_spacing_inside_thai_text():

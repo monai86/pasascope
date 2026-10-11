@@ -1,7 +1,7 @@
-sample_id,wer_all,cer_all,wer_child,cer_child,gold_child_utterances,hyp_child_utterances,gold_mlu_words,hyp_mlu_words,gold_ttr,hyp_ttr,gold_echolalia_count,hyp_echolalia_count,audio_seconds,processing_seconds,real_time_factor
-synthetic_echo_01,0.0,0.0,,,,,,,,,,,,,
-synthetic_echo_02,0.0,0.0,,,,,,,,,,,,,
-synthetic_echo_03,0.0323,0.0086,,,,,,,,,,,,,
-synthetic_plain_01,0.0,0.0,,,,,,,,,,,,,
-synthetic_plain_02,0.0606,0.0171,,,,,,,,,,,,,
-synthetic_plain_03,0.1935,0.0196,,,,,,,,,,,,,
+sample_id,wer_all,cer_all,gold_utterances,hyp_utterances,wer_child,cer_child,gold_child_utterances,hyp_child_utterances,gold_mlu_words,hyp_mlu_words,gold_ttr,hyp_ttr,gold_echolalia_count,hyp_echolalia_count,audio_seconds,processing_seconds,real_time_factor
+synthetic_echo_01,0.0968,0.0,8,8,,,,,,,,,,,16.91,12.85,0.76
+synthetic_echo_02,0.0,0.0,8,8,,,,,,,,,,,17.52,8.6,0.49
+synthetic_echo_03,0.0968,0.0086,8,8,,,,,,,,,,,17.67,8.27,0.47
+synthetic_plain_01,0.1923,0.0,8,8,,,,,,,,,,,17.95,7.84,0.44
+synthetic_plain_02,0.0606,0.0171,8,8,,,,,,,,,,,18.7,12.09,0.65
+synthetic_plain_03,0.129,0.0196,8,8,,,,,,,,,,,17.69,7.85,0.44

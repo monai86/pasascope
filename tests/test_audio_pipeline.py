@@ -832,3 +832,57 @@ def test_non_wav_input_is_decoded_to_wav_before_the_pipeline(tmp_path, monkeypat
     wav.write_bytes(b"RIFF")
     fake_pipeline(wav)
     assert seen == {"ran_on": wav, "existed": True}
+
+
+def test_segments_are_cut_at_pauses_before_speakers_are_assigned(tmp_path, monkeypatch):
+    """One recogniser segment spanning an exchange must yield one utterance per turn."""
+    from src.audio_pipeline import pipeline
+    from src.audio_pipeline.whisper_transcribe import UtteranceSegment, WordSegment
+
+    words = [
+        WordSegment("เล่น", 0.0, 0.4, 0.9), WordSegment("รถ", 0.4, 0.7, 0.9), WordSegment("ไหม", 0.7, 1.0, 0.9),
+        WordSegment("เล่น", 1.4, 1.8, 0.9),                                     # child, after a 0.4 s pause
+        WordSegment("รถ", 2.2, 2.5, 0.9), WordSegment("สี", 2.5, 2.7, 0.9), WordSegment("อะไร", 2.7, 3.1, 0.9),
+        WordSegment("แดง", 3.5, 3.62, 0.9),                                     # 0.12 s child reply
+    ]
+    whole_exchange = UtteranceSegment(start=0.0, end=3.62, text="เล่นรถไหมเล่นรถสีอะไรแดง", words=words)
+
+    class FakeTranscriber:
+        def __init__(self, **kwargs):
+            pass
+
+        def transcribe(self, audio_path, progress_callback=None):
+            return [whole_exchange]
+
+    class AlternatingDiarizer:
+        def assign(self, audio_path, utterances):
+            seen["pieces"] = [u.text for u in utterances]
+            for index, utterance in enumerate(utterances):
+                utterance.speaker = "INV" if index % 2 == 0 else "CHI"
+            return list(utterances)
+
+    seen = {}
+    monkeypatch.setattr(pipeline, "WhisperTranscriber", FakeTranscriber)
+    monkeypatch.setattr(pipeline, "compute_acoustic_profile", lambda *args, **kwargs: None)
+    wav = tmp_path / "clip.wav"
+    wav.write_bytes(b"RIFF")
+
+    result = pipeline.audio_to_cha(wav, diarizer=AlternatingDiarizer(), validate=False)
+
+    assert seen["pieces"] == ["เล่นรถไหม", "เล่น", "รถสีอะไร", "แดง"]
+    assert [(u.speaker, u.text) for u in result.utterances] == [
+        ("INV", "เล่นรถไหม"), ("CHI", "เล่น"), ("INV", "รถสีอะไร"), ("CHI", "แดง"),
+    ]
+
+
+def test_same_speaker_pieces_separated_by_a_brief_pause_are_rejoined():
+    from src.audio_pipeline.segmentation import clean_segments, split_at_pauses
+    from src.audio_pipeline.whisper_transcribe import UtteranceSegment, WordSegment
+
+    words = [WordSegment("one", 0.0, 0.3, 0.9), WordSegment("two", 0.57, 0.9, 0.9), WordSegment("three", 1.5, 1.9, 0.9)]
+    pieces = split_at_pauses([UtteranceSegment(start=0.0, end=1.9, text="one two three", words=words)])
+    assert [p.text for p in pieces] == ["one", "two", "three"]
+    for piece in pieces:
+        piece.speaker = "CHI"
+
+    assert [u.text for u in clean_segments(pieces, min_duration=0.0)] == ["one two", "three"]
