@@ -51,6 +51,7 @@ import {
   getMlDecisionSupport,
   getMlReadiness,
   updateProfileEvidenceReview,
+  updateCueReview,
 } from "@/services/adapters/analysis-adapter";
 import { canApplyMlDecisionSupportSettlement, canApplyTranscriptSaveSettlement, canSettleWorkflowRequest, derivePipelineStatus, sessionWorkflowReducer } from "@/features/sessions/state/session-workflow-reducer";
 import { sessionWorkflowService } from "@/features/sessions/services/session-workflow-service";
@@ -953,6 +954,30 @@ export function useSessionWorkspace({ sessionId, caseId, transcriptId, reportId,
     }
   }
 
+  async function handleCueReview(cueCode: string, status: "acknowledged" | "dismissed") {
+    if (!state.mlDecisionSupport) return;
+    setBusy(true);
+    try {
+      const mlDecisionSupport = await updateCueReview(state.mlDecisionSupport.resultId, cueCode, status);
+      persist({
+        ...state,
+        mlDecisionSupport,
+        statusMessage: status === "acknowledged"
+          ? "Cue confirmed after checking the transcript."
+          : "Cue dismissed; the provider output is kept for audit.",
+        error: undefined
+      });
+    } catch {
+      persist({
+        ...state,
+        statusMessage: "Cue review was not saved.",
+        error: "Backend unavailable. The cue was not changed."
+      });
+    } finally {
+      setBusy(false);
+    }
+  }
+
   const sessionContext: SessionContext = {
     sessionId: state.backendSessionId ?? state.sessionId ?? sessionId,
     caseId: state.caseId || caseId,
@@ -981,6 +1006,7 @@ export function useSessionWorkspace({ sessionId, caseId, transcriptId, reportId,
         onGenerateMlDecisionSupport: handleGenerateMlDecisionSupport,
         onGenerateAiReview: handleGenerateAiReview,
         onProfileEvidenceReview: handleProfileEvidenceReview,
+        onCueReview: handleCueReview,
         onApproveReviewedCues: handleApproveReviewedCues,
         backendUnavailable,
       },

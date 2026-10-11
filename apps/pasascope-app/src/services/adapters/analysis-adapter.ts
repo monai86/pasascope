@@ -41,6 +41,7 @@ type BackendMlDecisionSupport = {
     severity: "info" | "review" | "caution";
     explanation: string;
     supporting_features: Record<string, string | number | boolean | null>;
+    evidence?: Array<{ adult_utterance_id?: string; child_utterance_id: string; category?: string }>;
     limitations: string[];
     recommended_next_review_step: string;
     review_state: { status: "unreviewed" | "acknowledged" | "dismissed" };
@@ -170,6 +171,19 @@ export async function acknowledgeSessionCues(sessionId: string): Promise<Session
     acknowledgedAt: result.acknowledged_at,
     acknowledgedBy: result.acknowledged_by,
   };
+}
+
+/** Records the therapist's decision on one review cue after checking it in the transcript. */
+export async function updateCueReview(
+  resultId: string,
+  cueCode: string,
+  status: "acknowledged" | "dismissed"
+): Promise<MlDecisionSupport> {
+  const result = await apiRequest<BackendMlDecisionSupport>(
+    `/ml-results/${resultId}/cues/${encodeURIComponent(cueCode)}`,
+    { method: "PATCH", body: JSON.stringify({ status, therapist_note: "" }) }
+  );
+  return normalizeMlResult(result);
 }
 
 export async function updateProfileEvidenceReview(
@@ -351,6 +365,11 @@ function normalizeMlResult(result: BackendMlDecisionSupport): MlDecisionSupport 
       severity: cue.severity,
       explanation: cue.explanation,
       supportingFeatures: cue.supporting_features,
+      evidence: (cue.evidence ?? []).map((item) => ({
+        adultUtteranceId: item.adult_utterance_id,
+        childUtteranceId: item.child_utterance_id,
+        category: item.category,
+      })),
       limitations: cue.limitations,
       recommendedNextReviewStep: cue.recommended_next_review_step,
       reviewStatus: cue.review_state.status
@@ -383,6 +402,7 @@ export const analysisAdapter = {
   getMlDecisionSupport,
   acknowledgeSessionCues,
   updateProfileEvidenceReview,
+  updateCueReview,
   getMlReadiness,
   getAiReview,
   generateAiReview,

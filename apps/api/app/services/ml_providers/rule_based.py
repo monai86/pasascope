@@ -41,6 +41,7 @@ class RuleBasedReviewCueProvider(BaseMLProvider):
         del context
         cfg = {**DEFAULT_CONFIG, **(config or {})}
         values = {item.name: item.value for item in features.features}
+        evidence = {item.name: item.evidence for item in features.features}
         if features.insufficient_data or int(values.get("child_utterance_count") or 0) < cfg["minimum_child_utterances"]:
             return MLProviderResult(
                 status="insufficient_data",
@@ -81,7 +82,11 @@ class RuleBasedReviewCueProvider(BaseMLProvider):
         ):
             value = values.get(name)
             if isinstance(value, (int, float)) and value > 0:
-                cues.append(_cue(code, "review", title, "A transparent transcript heuristic produced one or more review cues.", {name: value}, step))
+                cues.append(_cue(
+                    code, "review", title,
+                    "A transparent transcript heuristic produced one or more review cues.",
+                    {name: value}, step, evidence.get(name, []),
+                ))
         return MLProviderResult(
             status="completed",
             cues=cues,
@@ -92,13 +97,22 @@ class RuleBasedReviewCueProvider(BaseMLProvider):
         )
 
 
-def _cue(code: str, severity: str, title: str, explanation: str, features: dict, step: str) -> ReviewCue:
+def _cue(
+    code: str,
+    severity: str,
+    title: str,
+    explanation: str,
+    features: dict,
+    step: str,
+    evidence: list[dict[str, str]] | None = None,
+) -> ReviewCue:
     return ReviewCue(
         cue_code=code,
         severity=severity,
         title=title,
         explanation=explanation,
         supporting_features=features,
+        evidence=evidence or [],
         limitations=["This heuristic may miss relevant context or flag non-clinical patterns."],
         recommended_next_review_step=step,
     )

@@ -16,6 +16,7 @@ export {
   getMlDecisionSupport as getBackendMlDecisionSupport,
   acknowledgeSessionCues,
   updateProfileEvidenceReview,
+  updateCueReview,
   getMlReadiness as getBackendMlReadiness,
   getAiReview,
   generateAiReview,
@@ -182,6 +183,8 @@ export type MlDecisionSupport = {
     severity: "info" | "review" | "caution";
     explanation: string;
     supportingFeatures: Record<string, string | number | boolean | null>;
+    /** Utterances the cue was derived from, by transcript line id. */
+    evidence?: Array<{ adultUtteranceId?: string; childUtteranceId: string; category?: string }>;
     limitations: string[];
     recommendedNextReviewStep: string;
     reviewStatus: "unreviewed" | "acknowledged" | "dismissed";

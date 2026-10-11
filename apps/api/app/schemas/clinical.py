@@ -481,6 +481,8 @@ class FeatureValue(BaseModel):
     insufficient_data: bool = False
     warnings: list[str] = Field(default_factory=list)
     interpretation_hint: str = "Descriptive language sample value; therapist interpretation required."
+    # Utterances a cue count was derived from, by id only (no transcript text).
+    evidence: list[dict[str, str]] = Field(default_factory=list)
 
 
 class FeatureExtractionRequest(BaseModel):
@@ -534,6 +536,8 @@ class ReviewCue(BaseModel):
     title: str
     explanation: str
     supporting_features: dict[str, float | int | str | bool | None] = Field(default_factory=dict)
+    # Utterance ids behind the cue, so the therapist can check each one in context.
+    evidence: list[dict[str, str]] = Field(default_factory=list)
     limitations: list[str] = Field(default_factory=list)
     recommended_next_review_step: str
     not_diagnostic: bool = True

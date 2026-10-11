@@ -44,6 +44,7 @@ export function SessionFindingsView({
   onGenerateMlDecisionSupport,
   onGenerateAiReview,
   onProfileEvidenceReview,
+  onCueReview,
   onApproveReviewedCues,
   backendUnavailable
 }: {
@@ -59,6 +60,7 @@ export function SessionFindingsView({
     status: "reviewed" | "disagreement",
     therapistNote?: string
   ) => void;
+  onCueReview?: (cueCode: string, status: "acknowledged" | "dismissed") => void;
   onApproveReviewedCues: () => void | Promise<void>;
   backendUnavailable?: boolean;
 }) {
@@ -273,6 +275,9 @@ export function SessionFindingsView({
             recommendedReviewPoints={recommendedReviewPoints}
             busy={busy}
             onProfileEvidenceReview={onProfileEvidenceReview}
+            onCueReview={onCueReview}
+            transcriptLines={currentFindingsState.transcriptLines}
+            transcriptHref={resolveSessionHref("transcript", sessionContext.sessionId)}
           />
 
           <div className="space-y-6">

@@ -76,3 +76,38 @@ def test_thai_pronoun_cue_is_missing_not_zero_without_the_thai_module(monkeypatc
 
     assert features["pronoun_reversal_cue_count"].value is None
     assert any("Thai" in warning for warning in features["pronoun_reversal_cue_count"].warnings)
+
+
+def test_cues_point_at_the_utterances_they_came_from():
+    from app.services.ml_providers.base import MLProviderContext
+    from app.services.ml_providers.rule_based import RuleBasedReviewCueProvider
+    from app.schemas.clinical import FeatureSet
+
+    features = _features(TURNS)
+    lsa = ThaiClinicalLSA.analyze_utterances(
+        [{"id": f"utt_{index}", "speaker": speaker, "text": text} for index, (speaker, text) in enumerate(TURNS)]
+    )
+
+    assert features["echolalia_cue_count"].evidence == [
+        {"adult_utterance_id": "utt_0", "child_utterance_id": "utt_1", "category": "mitigated"},
+        {"adult_utterance_id": "utt_2", "child_utterance_id": "utt_3", "category": "immediate_verbatim"},
+    ]
+    assert [pair["child_utterance_id"] for pair in features["echolalia_cue_count"].evidence] == [
+        detail["child_id"] for detail in lsa.echolalia_details
+    ]
+    assert features["pronoun_reversal_cue_count"].evidence == [{"child_utterance_id": "utt_6"}]
+    # Evidence is ids only: no transcript text is copied into the feature record.
+    assert all("เล่น" not in value for pair in features["echolalia_cue_count"].evidence for value in pair.values())
+
+    feature_set = FeatureSet(
+        feature_set_id="fs_parity", session_id="session_parity", transcript_id="tr_parity",
+        transcript_version=1, therapist_attested=True, features=list(features.values()),
+    )
+    context = MLProviderContext(
+        case_id="case_parity", session_id="session_parity", transcript_id="tr_parity",
+        age_months=48, language="tha", session_type="therapy_session", task_type=None,
+    )
+    cues = {cue.cue_code: cue for cue in RuleBasedReviewCueProvider().predict(feature_set, context).cues}
+
+    assert cues["echolalia_review_cue"].evidence == features["echolalia_cue_count"].evidence
+    assert cues["pronoun_reversal_review_cue"].evidence == [{"child_utterance_id": "utt_6"}]

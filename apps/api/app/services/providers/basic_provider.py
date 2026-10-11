@@ -378,7 +378,9 @@ class BasicFeatureProvider(BaseFeatureProvider):
             )
 
         # None means "not computed", which is different from "none found".
-        pronoun_cues = _pronoun_cue_count(child)
+        pronoun_evidence = _pronoun_cue_evidence(child)
+        pronoun_cues = None if pronoun_evidence is None else sum(count for _, count in pronoun_evidence)
+        echolalia_pairs = _echolalia_pairs(all_utts)
 
         # ---- Build FeatureValue list ----------------------------------------
         def fv(
@@ -392,6 +394,7 @@ class BasicFeatureProvider(BaseFeatureProvider):
             insufficient_data: bool = False,
             hint: str = "Descriptive language sample value; therapist interpretation required.",
             extra_warnings: list[str] | None = None,
+            evidence: list[dict[str, str]] | None = None,
         ) -> FeatureValue:
             return FeatureValue(
                 name=name,
@@ -408,6 +411,7 @@ class BasicFeatureProvider(BaseFeatureProvider):
                 insufficient_data=insufficient_data or insufficient,
                 interpretation_hint=hint,
                 warnings=extra_warnings or [],
+                evidence=evidence or [],
             )
 
         values: list[FeatureValue] = [
@@ -500,13 +504,15 @@ class BasicFeatureProvider(BaseFeatureProvider):
                     if pronoun_cues is None
                     else None
                 ),
+                evidence=[{"child_utterance_id": utterance_id} for utterance_id, _ in pronoun_evidence or []],
             ),
             fv(
                 "echolalia_cue_count",
-                _echolalia_cues(all_utts),
+                len(echolalia_pairs),
                 unit="review cues",
                 value_type="integer",
                 hint="Review cue only; therapist context required.",
+                evidence=echolalia_pairs,
             ),
             fv(
                 "limited_reciprocal_question_cue",
@@ -607,33 +613,49 @@ def _pronoun_cue(text: str) -> int | None:
     return len(re.findall(r"\b(?:you am|me am|my want|i are)\b", text, re.I))
 
 
-def _pronoun_cue_count(child: Sequence[Utterance]) -> int | None:
-    cues = [_pronoun_cue(u.text) for u in child]
-    return None if any(cue is None for cue in cues) else sum(cues)
+def _pronoun_cue_evidence(child: Sequence[Utterance]) -> list[tuple[str, int]] | None:
+    """(utterance id, cue count) for each flagged child utterance; None if not computable."""
+    flagged: list[tuple[str, int]] = []
+    for utterance in child:
+        cues = _pronoun_cue(utterance.text)
+        if cues is None:
+            return None
+        if cues:
+            flagged.append((utterance.utterance_id, cues))
+    return flagged
 
 
-def _echolalia_cues(utterances: Sequence[Utterance]) -> int:
+def _echolalia_pairs(utterances: Sequence[Utterance]) -> list[dict[str, str]]:
     """
-    Count CHI utterances that echo the preceding adult utterance.
+    Adult/child utterance pairs where the child echoes the preceding adult turn.
 
     English keeps the verbatim rule (lowercased, whitespace-stripped). Thai
     uses the shared Thai rule, which also accepts an added polite particle or
     a mostly repeated utterance, and only looks at the directly preceding turn.
     """
     thai = _thai_lsa()
-    count = 0
-    previous_adult = ""
+    pairs: list[dict[str, str]] = []
+    previous_adult: Utterance | None = None
     previous_was_adult = False
     for utt in utterances:
         speaker = str(utt.speaker).upper()
         if speaker != "CHI":
-            previous_adult = utt.text.strip().lower()
+            previous_adult = utt
             previous_was_adult = True
             continue
-        if thai is not None and _THAI_CHARS.search(utt.text):
-            if previous_was_adult and thai.detect_echolalia(previous_adult, utt.text)[0]:
-                count += 1
-        elif previous_adult and utt.text.strip().lower() == previous_adult:
-            count += 1
+        category = None
+        if previous_adult is not None:
+            adult_text = previous_adult.text.strip().lower()
+            if thai is not None and _THAI_CHARS.search(utt.text):
+                if previous_was_adult:
+                    category = thai.detect_echolalia(adult_text, utt.text)[0]
+            elif adult_text and utt.text.strip().lower() == adult_text:
+                category = "immediate_verbatim"
+        if category and previous_adult is not None:
+            pairs.append({
+                "adult_utterance_id": previous_adult.utterance_id,
+                "child_utterance_id": utt.utterance_id,
+                "category": category,
+            })
         previous_was_adult = False
-    return count
+    return pairs
