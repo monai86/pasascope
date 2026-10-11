@@ -485,7 +485,7 @@ class InMemoryClinicalAdapter:
         # this recording must never be shown as if they did.
         try:
             from src.audio_pipeline.pipeline import audio_to_cha
-            res = audio_to_cha(p, model_size="small", progress_callback=progress_callback)
+            res = audio_to_cha(p, model_size="medium", progress_callback=progress_callback)
         except Exception as exc:
             raise RuntimeError(f"Audio transcription failed for {p.name}: {exc}") from exc
 

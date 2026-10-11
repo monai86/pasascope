@@ -1,0 +1,13 @@
+@UTF8
+@Begin
+@Languages:	tha
+@Comment:	Synthetic text-to-speech dialogue; not a real session.
+*INV:	ดูรูปนี้สิครับ เห็นอะไร .
+*CHI:	เห็นนกสองตัว .
+*INV:	นกกำลังทำอะไรอยู่ .
+*CHI:	กำลังบิน .
+*INV:	บินไปไหนครับ .
+*CHI:	บินไปบนต้นไม้ .
+*INV:	ต้นไม้สูงไหม .
+*CHI:	สูงมาก .
+@End

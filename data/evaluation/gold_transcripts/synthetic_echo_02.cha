@@ -1,0 +1,13 @@
+@UTF8
+@Begin
+@Languages:	tha
+@Comment:	Synthetic text-to-speech dialogue; not a real session.
+*INV:	หนูอยากกินขนมไหม .
+*CHI:	อยากกินขนมไหม .
+*INV:	นี่คือลูกบอลสีฟ้า .
+*CHI:	ลูกบอลสีฟ้า .
+*INV:	โยนลูกบอลมาให้ครูหน่อย .
+*CHI:	โยนลูกบอล .
+*INV:	ขอบคุณครับ .
+*CHI:	เอาอีก .
+@End

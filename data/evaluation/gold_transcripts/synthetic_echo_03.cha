@@ -1,0 +1,13 @@
+@UTF8
+@Begin
+@Languages:	tha
+@Comment:	Synthetic text-to-speech dialogue; not a real session.
+*INV:	ในรูปนี้มีสัตว์อะไรบ้าง .
+*CHI:	มีสัตว์อะไรบ้าง .
+*INV:	นี่คือแมวตัวใหญ่ .
+*CHI:	แมวตัวใหญ่ .
+*INV:	แมวร้องยังไงครับ .
+*CHI:	เหมียว .
+*INV:	แล้วหมาอยู่ที่ไหน .
+*CHI:	หมาอยู่ที่ไหน .
+@End

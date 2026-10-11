@@ -513,7 +513,7 @@ LINGUALENS_ASR_LOCAL_WHISPER_ENABLED=true bash scripts/start_local.sh
 Recordings stay on the machine running the API. With the flag off, the app
 reports that transcription is unavailable and offers paste or `.cha` import; it
 never substitutes synthetic text. `LINGUALENS_ASR_WHISPER_MODEL_SIZE` (default
-`small`) and `LINGUALENS_ASR_LANGUAGE_STRATEGY` (default `thai`) tune it.
+`medium`) and `LINGUALENS_ASR_LANGUAGE_STRATEGY` (default `thai`) tune it.
 
 **Evaluating it on Thai recordings:** follow
 [`data/evaluation/README.md`](./data/evaluation/README.md), then run

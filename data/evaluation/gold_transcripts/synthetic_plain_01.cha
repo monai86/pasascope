@@ -1,0 +1,13 @@
+@UTF8
+@Begin
+@Languages:	tha
+@Comment:	Synthetic text-to-speech dialogue; not a real session.
+*INV:	สวัสดีครับ วันนี้สบายดีไหม .
+*CHI:	สบายดีครับ .
+*INV:	เมื่อเช้ากินอะไรมา .
+*CHI:	กินข้าวกับไข่ .
+*INV:	อร่อยไหมครับ .
+*CHI:	อร่อยมาก .
+*INV:	วันนี้ใครมาส่ง .
+*CHI:	แม่มาส่ง .
+@End

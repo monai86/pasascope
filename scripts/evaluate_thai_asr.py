@@ -1,11 +1,14 @@
 """Evaluate the on-device ASR pipeline against hand-corrected Thai transcripts.
 
-For every recording in ``data/evaluation/audio_samples/`` that has a gold
+For every recording in ``.local/evaluation/audio_samples/`` that has a gold
 transcript ``data/evaluation/gold_transcripts/<same stem>.cha`` this script:
 
   1. runs the audio pipeline (Whisper -> speaker separation -> CHAT),
-  2. saves the draft to ``data/evaluation/hypothesis_transcripts/<stem>.cha``,
+  2. saves the draft to ``.local/evaluation/hypothesis_transcripts/<stem>.cha``,
   3. scores the draft against the gold transcript.
+
+Recordings and drafts live under ``.local/`` so audio never enters the
+repository; gold transcripts are tracked.
 
 Thai has no spaces between words, so the word error rate is computed on
 ``tokenize_thai_words`` tokens and the character error rate is reported next to
@@ -19,6 +22,12 @@ Outputs:
 Usage:
     python scripts/evaluate_thai_asr.py
     python scripts/evaluate_thai_asr.py --score-only   # reuse saved drafts
+    python scripts/evaluate_thai_asr.py --text-only    # single-voice samples
+
+``--text-only`` reports recognition accuracy only. Use it for samples where
+every turn was spoken by the same voice (for example text-to-speech), because
+speaker separation cannot work on them and speaker-dependent figures would be
+meaningless.
 """
 
 from __future__ import annotations
@@ -42,9 +51,22 @@ from packages.cha.parser import parse_cha_file  # noqa: E402
 from src.clinical_speech.thai_lsa import ThaiClinicalLSA, tokenize_thai_words  # noqa: E402
 
 EVALUATION_DIR = PROJECT_ROOT / "data" / "evaluation"
+LOCAL_DIR = PROJECT_ROOT / ".local" / "evaluation"
 REPORT_DIR = PROJECT_ROOT / "reports" / "metrics"
 AUDIO_SUFFIXES = {".wav", ".mp3", ".m4a", ".mp4", ".webm", ".ogg", ".flac"}
 CHILD = "CHI"
+SPEAKER_DEPENDENT_COLUMNS = [
+    "wer_child",
+    "cer_child",
+    "gold_child_utterances",
+    "hyp_child_utterances",
+    "gold_mlu_words",
+    "hyp_mlu_words",
+    "gold_ttr",
+    "hyp_ttr",
+    "gold_echolalia_count",
+    "hyp_echolalia_count",
+]
 
 CSV_COLUMNS = [
     "sample_id",
@@ -66,6 +88,7 @@ CSV_COLUMNS = [
 ]
 
 _NON_TEXT = re.compile(r"[^\wก-๙]+")
+_THAI_INNER_SPACE = re.compile(r"(?<=[\u0e00-\u0e7f])\s+(?=[\u0e00-\u0e7f])")
 
 
 @dataclass(frozen=True)
@@ -95,7 +118,13 @@ def draft_chat_text(pipeline_result) -> str:
 
 
 def _words(turns: list[Turn]) -> str:
-    return " ".join(token.lower() for turn in turns for token in tokenize_thai_words(turn.text))
+    """Space-separated words. Spaces inside Thai text are removed first, because
+    Thai segmentation depends on them and transcribers place them differently."""
+    return " ".join(
+        token.lower()
+        for turn in turns
+        for token in tokenize_thai_words(_THAI_INNER_SPACE.sub("", turn.text))
+    )
 
 
 def _characters(turns: list[Turn]) -> str:
@@ -151,6 +180,7 @@ def _mean_of(rows: list[dict], key: str) -> float | None:
 
 
 def _mean_abs_difference(rows: list[dict], gold_key: str, hyp_key: str) -> float | None:
+    rows = [row for row in rows if row[gold_key] is not None and row[hyp_key] is not None]
     return round(mean(abs(row[gold_key] - row[hyp_key]) for row in rows), 4) if rows else None
 
 
@@ -172,6 +202,10 @@ def aggregate(rows: list[dict]) -> dict:
 
 def _cell(value) -> str:
     return "-" if value is None else str(value)
+
+
+def _pair(row: dict, gold_key: str, hyp_key: str) -> str:
+    return "-" if row[gold_key] is None else f"{row[gold_key]}/{row[hyp_key]}"
 
 
 def render_markdown(rows: list[dict], summary: dict, *, model_size: str, strategy: str) -> str:
@@ -208,9 +242,9 @@ def render_markdown(rows: list[dict], summary: dict, *, model_size: str, strateg
         lines.append(
             f"| {row['sample_id']} | {_cell(row['wer_all'])} | {_cell(row['cer_all'])} | "
             f"{_cell(row['wer_child'])} | {_cell(row['cer_child'])} | "
-            f"{row['gold_child_utterances']}/{row['hyp_child_utterances']} | "
-            f"{row['gold_mlu_words']}/{row['hyp_mlu_words']} | {row['gold_ttr']}/{row['hyp_ttr']} | "
-            f"{row['gold_echolalia_count']}/{row['hyp_echolalia_count']} | {_cell(row['real_time_factor'])} |"
+            f"{_pair(row, 'gold_child_utterances', 'hyp_child_utterances')} | "
+            f"{_pair(row, 'gold_mlu_words', 'hyp_mlu_words')} | {_pair(row, 'gold_ttr', 'hyp_ttr')} | "
+            f"{_pair(row, 'gold_echolalia_count', 'hyp_echolalia_count')} | {_cell(row['real_time_factor'])} |"
         )
     lines += [
         "",
@@ -240,7 +274,7 @@ def write_reports(rows: list[dict], summary: dict, report_dir: Path, *, model_si
     return csv_path, markdown_path
 
 
-def find_samples(evaluation_dir: Path, *, score_only: bool) -> list[tuple[str, Path | None, Path]]:
+def find_samples(evaluation_dir: Path, local_dir: Path, *, score_only: bool) -> list[tuple[str, Path | None, Path]]:
     """(sample id, audio path or None, gold path) for every scorable sample."""
     gold_dir = evaluation_dir / "gold_transcripts"
     samples = []
@@ -250,7 +284,7 @@ def find_samples(evaluation_dir: Path, *, score_only: bool) -> list[tuple[str, P
             continue
         audio = sorted(
             path
-            for path in (evaluation_dir / "audio_samples").glob(f"{gold_path.stem}.*")
+            for path in (local_dir / "audio_samples").glob(f"{gold_path.stem}.*")
             if path.suffix.lower() in AUDIO_SUFFIXES
         )
         if audio:
@@ -264,14 +298,18 @@ def evaluate(
     evaluation_dir: Path,
     report_dir: Path,
     *,
-    model_size: str = "small",
+    model_size: str = "medium",
     strategy: str = "thai",
     score_only: bool = False,
+    text_only: bool = False,
+    local_dir: Path | None = None,
 ) -> tuple[list[dict], dict]:
-    hypothesis_dir = evaluation_dir / "hypothesis_transcripts"
+    """``local_dir`` holds recordings and drafts; it defaults to ``evaluation_dir``."""
+    local_dir = local_dir or evaluation_dir
+    hypothesis_dir = local_dir / "hypothesis_transcripts"
     hypothesis_dir.mkdir(parents=True, exist_ok=True)
     rows = []
-    for sample_id, audio_path, gold_path in find_samples(evaluation_dir, score_only=score_only):
+    for sample_id, audio_path, gold_path in find_samples(evaluation_dir, local_dir, score_only=score_only):
         gold = turns_from_cha(gold_path)
         hypothesis_path = hypothesis_dir / f"{sample_id}.cha"
         audio_seconds = processing_seconds = None
@@ -300,6 +338,8 @@ def evaluate(
                 processing_seconds=processing_seconds,
             )
         )
+        if text_only:
+            rows[-1].update(dict.fromkeys(SPEAKER_DEPENDENT_COLUMNS))
         print(f"[ok] {sample_id}: WER {rows[-1]['wer_all']}  CER {rows[-1]['cer_all']}")
     summary = aggregate(rows)
     if rows:
@@ -312,11 +352,22 @@ def evaluate(
 
 def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__.split("\n")[0])
-    parser.add_argument("--evaluation-dir", type=Path, default=EVALUATION_DIR)
+    parser.add_argument("--evaluation-dir", type=Path, default=EVALUATION_DIR, help="Holds gold_transcripts/.")
+    parser.add_argument(
+        "--local-dir",
+        type=Path,
+        default=None,
+        help="Holds audio_samples/ and hypothesis_transcripts/ (default: .local/evaluation).",
+    )
     parser.add_argument("--report-dir", type=Path, default=REPORT_DIR)
-    parser.add_argument("--model", default="small", choices=["tiny", "base", "small", "medium", "large-v3"])
+    parser.add_argument("--model", default="medium", choices=["tiny", "base", "small", "medium", "large-v3"])
     parser.add_argument("--strategy", default="thai", choices=["auto", "thai", "english", "dual_pass", "thai_specialized"])
     parser.add_argument("--score-only", action="store_true", help="Score saved drafts instead of re-running ASR.")
+    parser.add_argument(
+        "--text-only",
+        action="store_true",
+        help="Report recognition accuracy only; leave speaker-dependent figures blank.",
+    )
     args = parser.parse_args()
     rows, _ = evaluate(
         args.evaluation_dir,
@@ -324,6 +375,8 @@ def main() -> int:
         model_size=args.model,
         strategy=args.strategy,
         score_only=args.score_only,
+        text_only=args.text_only,
+        local_dir=args.local_dir or (LOCAL_DIR if args.evaluation_dir == EVALUATION_DIR else None),
     )
     return 0 if rows else 1
 

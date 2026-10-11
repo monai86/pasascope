@@ -1,0 +1,13 @@
+@UTF8
+@Begin
+@Languages:	tha
+@Comment:	Synthetic text-to-speech dialogue; not a real session.
+*INV:	วันนี้เราจะเล่นอะไรกันดี .
+*CHI:	เล่นอะไรกันดี .
+*INV:	เล่นรถไหมครับ .
+*CHI:	เล่นรถไหมครับ .
+*INV:	รถคันนี้สีอะไร .
+*CHI:	สีแดง .
+*INV:	เก่งมากครับ .
+*CHI:	รถวิ่งเร็ว .
+@End

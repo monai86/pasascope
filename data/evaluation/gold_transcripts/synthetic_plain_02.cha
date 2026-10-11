@@ -1,0 +1,13 @@
+@UTF8
+@Begin
+@Languages:	tha
+@Comment:	Synthetic text-to-speech dialogue; not a real session.
+*INV:	หนูชอบของเล่นชิ้นไหน .
+*CHI:	ชอบรถไฟ .
+*INV:	รถไฟวิ่งไปที่ไหน .
+*CHI:	ไปบ้านคุณยาย .
+*INV:	บ้านคุณยายอยู่ไกลไหม .
+*CHI:	ไกลมากเลย .
+*INV:	ไปถึงแล้วจะทำอะไร .
+*CHI:	จะเล่นกับน้องหมา .
+@End

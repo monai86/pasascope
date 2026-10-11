@@ -28,9 +28,14 @@ device. It is not a second product.
 
 ## Research Output
 
-- `reports/metrics/thai_asr_evaluation.*`: draft-versus-gold transcript
-  accuracy and feature drift on local Thai recordings
-  (`scripts/evaluate_thai_asr.py`).
+- `reports/metrics/feature_agreement_clan.*`: the app's language-sample
+  measures against CLAN on 1,961 TalkBank transcripts.
+- `reports/metrics/thai_asr_public.*`: Thai recognition accuracy by model size
+  on public adult read speech (FLEURS).
+- `reports/metrics/thai_asr_evaluation.*`: draft-versus-gold accuracy on
+  scripted Thai dialogues (`scripts/evaluate_thai_asr.py`).
+- `reports/metrics/echolalia_cue_check.md`: the Thai echolalia rule against 40
+  labelled turn pairs.
 - `reports/metrics/transcript_review_time.csv`: time from draft to attestation
   (`scripts/report_transcript_review_time.py`).
 - `reports/ml/`: the classifier study on public English corpora. It separates

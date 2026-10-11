@@ -17,8 +17,8 @@
 |---|---|---|
 | ที่มาและปัญหา | การถอดเสียงและวิเคราะห์ language sample ด้วยมือใช้เวลามาก | วรรณกรรมใน `docs/REFERENCES.md` |
 | การออกแบบระบบ | Web app + API (`apps/lingualens-app`, `apps/api`) และ GUI offline (`packages/gui`) | `docs/PROJECT_SOURCE_OF_TRUTH.md`, `docs/DATA_FLOW_DIAGRAM.md` |
-| AI ส่วนที่ 1: ถอดเสียง | Whisper บนเครื่อง + แยกผู้พูดเด็ก/ผู้ใหญ่ (`src/audio_pipeline`, provider `local_whisper`) | `reports/metrics/thai_asr_evaluation.md` |
-| AI ส่วนที่ 2: ตัวชี้วัดภาษา | MLU-w, TTR, การผลัดกันพูด, echolalia cue, pronoun cue (`src/clinical_speech/thai_lsa.py`) | ส่วน feature drift ใน `thai_asr_evaluation.md`, เทสต์ `apps/api/tests/test_thai_feature_parity.py` |
+| AI ส่วนที่ 1: ถอดเสียง | Whisper บนเครื่อง + แยกผู้พูดเด็ก/ผู้ใหญ่ (`src/audio_pipeline`, provider `local_whisper`) | `reports/metrics/thai_asr_public.md`, `reports/metrics/thai_asr_evaluation.md` |
+| AI ส่วนที่ 2: ตัวชี้วัดภาษา | MLU-w, TTR, การผลัดกันพูด, echolalia cue, pronoun cue (`src/clinical_speech/thai_lsa.py`) | `reports/metrics/feature_agreement_clan.md`, `reports/metrics/echolalia_cue_check.md` |
 | Human-in-the-loop | แก้ transcript, attest, ยืนยันหรือปัดตก cue, sign-off รายงาน | `reports/metrics/transcript_review_time.csv`, audit log |
 | ผลการทดลองโมเดลจำแนก | การศึกษา classifier บนคลังข้อมูลภาษาอังกฤษสาธารณะ | `reports/ml/MODEL_RESULTS.md`, `reports/ml/ML_VALIDITY_DECISION.md`, `reports/ml/LEAKAGE_AND_CONFOUNDING_AUDIT.md` |
 | ข้อจำกัด | ดูหัวข้อด้านล่าง | `KNOWN_LIMITATIONS.md` |
@@ -49,18 +49,41 @@
 
 ทดลองล่วงหน้าบนเครื่องที่จะใช้จริง ครั้งแรกที่ถอดเสียงจะช้ากว่าเพราะต้องโหลดโมเดล
 
+## ผลการประเมินที่มีแล้ว (ไม่ต้องอัดเสียงเอง)
+
+ไม่มีชุดข้อมูลเสียงเด็กไทยให้ใช้ การประเมินจึงแยกเป็นสี่ส่วน แต่ละส่วนตอบคำถามหนึ่งข้อด้วยข้อมูลที่หาได้
+ทุกส่วนรันซ้ำได้ตาม `data/evaluation/README.md`
+
+| คำถาม | ข้อมูล | ผล | ไฟล์ |
+|---|---|---|---|
+| ระบบคำนวณตัวชี้วัดจาก transcript ถูกไหม | transcript TalkBank 1,961 ไฟล์จาก 12 คลัง (ASD 136 ไฟล์) เทียบกับ CLAN | จำนวนคำ r = 0.997 ต่างกันค่ากลาง 4.7%; TTR r = 0.92; จำนวนประโยคเด็ก r = 0.86 | `reports/metrics/feature_agreement_clan.md` |
+| Whisper ถอดภาษาไทยแม่นแค่ไหน | FLEURS ไทย 30 คลิป 5.4 นาที (ผู้ใหญ่อ่านประโยคทางการ) | CER เฉลี่ย: `small` 29.2%, `medium` 20.3% | `reports/metrics/thai_asr_public.md` |
+| ถอดบทสนทนาแบบห้องบำบัดได้ไหม | บทสนทนาไทยสังเคราะห์ 6 บท 48 ผลัดพูด (เสียง TTS) | CER เฉลี่ย: `medium` 0.8%, `small` 6.7% | `reports/metrics/thai_asr_evaluation.md` |
+| กฎตรวจ echolalia จับถูกไหม | คู่ประโยคไทย 40 คู่ที่ติดป้ายไว้ | จับ echo ได้ 20 จาก 20; จับผิด 4 จาก 20 คำตอบปกติ (precision 83%) | `reports/metrics/echolalia_cue_check.md` |
+
+ข้อค้นพบที่ใช้เขียนในเล่มได้:
+
+- ขนาดโมเดลมีผลมากกับภาษาไทย ระบบจึงเปลี่ยนค่าเริ่มต้นจาก `small` เป็น `medium`
+- ความแม่นยำขึ้นกับเนื้อหา: ประโยคสั้นคำง่ายแบบในห้องบำบัดถอดได้ดีกว่าประโยคทางการที่มีศัพท์เฉพาะและชื่อต่างประเทศมาก
+- WER ของภาษาไทยสูงกว่า CER มาก เพราะคำที่สะกดผิดหนึ่งคำถูกตัดเป็นหลายคำผิด ให้รายงาน CER เป็นหลัก
+- ระบบนับจำนวนคำใกล้เคียง CLAN แต่นับชนิดคำมากกว่าราว 21% ค่าจากระบบจึงเทียบกับเกณฑ์ที่อิง CLAN โดยตรงไม่ได้
+- กฎ echolalia ไม่พลาด echo ในชุดทดสอบ แต่จับคำตอบปกติที่ใช้คำซ้ำกับผู้ใหญ่ด้วย (เช่น "อยากกินขนมครับ") จึงต้องให้นักบำบัดยืนยัน
+- การประเมินนี้ทำให้พบและแก้บั๊กสามจุด: ข้อความไทยถูกแทรกช่องว่างระหว่างตัวอักษรเมื่อคลิปมีหลายประโยค, CHAT ที่ export แตกคำไทยเป็นชิ้น และตัวนับคำนับรหัส CHAT เป็นคำ
+
 ## สิ่งที่ต้องเขียนเป็นข้อจำกัด
 
-- ยังไม่มีข้อมูลเสียงเด็กไทยจริง ผล ASR มาจากเสียงจำลองของผู้ใหญ่จำนวนน้อย
-- Whisper ไม่ได้ฝึกมาสำหรับเสียงเด็กเล็ก และการแยกผู้พูดอาศัยความต่างของเสียง
-- echolalia cue และ pronoun cue เป็นกฎอย่างง่าย คำตอบปกติที่ใช้คำซ้ำกับผู้ใหญ่อาจถูกจับได้
+- ไม่มีข้อมูลเสียงเด็กไทย ความแม่นยำของ ASR วัดจากเสียงผู้ใหญ่และเสียงสังเคราะห์เท่านั้น
+- การแยกผู้พูดเด็ก/ผู้ใหญ่ยังไม่ได้ประเมินกับภาษาไทย เพราะเสียงสังเคราะห์เป็นเสียงเดียวกันทุกบท
+- ชุดทดสอบ echolalia เขียนขึ้นเอง ไม่ได้สุ่มจาก session จริง จึงไม่ใช่ค่าความแม่นยำในการใช้งานจริง
+- การเทียบกับ CLAN ทำกับ transcript ภาษาอังกฤษ
+- Whisper ไม่ได้ฝึกมาสำหรับเสียงเด็กเล็ก
+- echolalia cue และ pronoun cue เป็นกฎอย่างง่าย ตรวจได้เฉพาะการพูดตามทันที
 - ไม่มีเกณฑ์อ้างอิงของเด็กไทย ระบบจึงไม่บอกว่าค่าใดปกติหรือผิดปกติ
 - กราฟ radar ใน GUI แสดงเฉพาะค่าที่วัดได้ของ session นั้นบนสเกลคงที่ ไม่ได้เทียบกับเด็กคนอื่น
 - โมเดลจำแนกศึกษาบนข้อมูลภาษาอังกฤษเท่านั้น
 
-## สิ่งที่ยังต้องทำเพื่อให้มีตัวเลขในเล่ม
+## สิ่งที่ทำเพิ่มได้ถ้ามีเวลา
 
-1. อัดเสียงจำลอง 5–10 คลิปและถอด gold transcript ตาม `data/evaluation/README.md`
-2. รัน `python scripts/evaluate_thai_asr.py` แล้วนำตารางจาก `reports/metrics/thai_asr_evaluation.md` ไปใช้
-3. อัปโหลดคลิปเดียวกันผ่าน Web app แก้ร่างจน attest แล้วรัน `python scripts/report_transcript_review_time.py`
-4. จับเวลาถอดเองทั้งคลิปของชุดเดียวกัน เพื่อเทียบกับเวลาแก้ร่าง
+1. ทดสอบกับเสียงเด็กจริงภาษาอังกฤษหนึ่งคลิปเป็นกรณีศึกษา: ถอด gold ด้วยมือ วางไฟล์ตาม `data/evaluation/README.md` แล้วรัน `python scripts/evaluate_thai_asr.py --strategy english` จะได้ผลการแยกผู้พูดกับเสียงเด็กจริง
+2. อัปโหลดคลิปผ่าน Web app แก้ร่างจน attest แล้วรัน `python scripts/report_transcript_review_time.py` เพื่อเทียบเวลาแก้ร่างกับเวลาถอดเองทั้งคลิป
+3. เมื่ออัดเสียงไทยสองคนได้ ให้รัน `python scripts/evaluate_thai_asr.py` (ไม่ใส่ `--text-only`) เพื่อประเมินการแยกผู้พูดในภาษาไทย

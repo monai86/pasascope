@@ -112,8 +112,3 @@ data/raw/talkbank/**
 data/curated/english_child_transcripts/**
 data/clan/raw_outputs/**
 
-# ASR evaluation recordings and generated drafts stay local
-data/evaluation/audio_samples/*
-!data/evaluation/audio_samples/.gitkeep
-data/evaluation/hypothesis_transcripts/*
-!data/evaluation/hypothesis_transcripts/.gitkeep

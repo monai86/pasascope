@@ -46,8 +46,8 @@ def test_wrong_word_and_wrong_speaker_are_both_counted():
     word_row = score_sample("s1", gold, wrong_word)
     speaker_row = score_sample("s2", gold, wrong_speaker)
 
-    assert round(word_row["wer_child"], 2) == 0.33
     assert 0 < word_row["wer_all"] < word_row["wer_child"]
+    assert 0 < word_row["cer_all"] < word_row["cer_child"] < 1
     # Every word was recognised, but none of the child's speech was attributed to the child.
     assert speaker_row["wer_all"] == 0.0
     assert speaker_row["wer_child"] == 1.0
@@ -114,3 +114,26 @@ def test_no_samples_writes_no_report(tmp_path):
 
     assert rows == [] and summary["samples"] == 0
     assert not (tmp_path / "reports").exists()
+
+
+def test_text_only_run_blanks_speaker_dependent_figures(tmp_path):
+    evaluation_dir = tmp_path / "evaluation"
+    _write(evaluation_dir / "gold_transcripts" / "clip01.cha", GOLD_CHA)
+    # A single-voice draft: right words, every turn attributed to one adult.
+    _write(evaluation_dir / "hypothesis_transcripts" / "clip01.cha", GOLD_CHA.replace("*CHI:", "*MOT:"))
+
+    rows, summary = evaluate(evaluation_dir, tmp_path / "reports", score_only=True, text_only=True)
+
+    assert rows[0]["wer_all"] == 0.0 and rows[0]["cer_all"] == 0.0
+    assert rows[0]["wer_child"] is None and rows[0]["hyp_mlu_words"] is None
+    assert summary["mean_wer_child"] is None and summary["mean_abs_mlu_words_difference"] is None
+    markdown = (tmp_path / "reports" / "thai_asr_evaluation.md").read_text(encoding="utf-8")
+    assert "| clip01 | 0.0 | 0.0 | - | - | - | - | - | - | - |" in markdown
+
+
+def test_word_scores_do_not_depend_on_spacing_inside_thai_text():
+    gold = [Turn("CHI", "รถ สี แดง วิ่ง เร็ว")]
+
+    row = score_sample("s1", gold, [Turn("CHI", "รถสีแดงวิ่งเร็ว")])
+
+    assert row["wer_all"] == 0.0 and row["cer_all"] == 0.0

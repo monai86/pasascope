@@ -1,19 +1,35 @@
 # ชุดข้อมูลประเมิน ASR ภาษาไทย
 
-โฟลเดอร์นี้ใช้วัดว่าร่าง transcript จาก Whisper ใกล้เคียงกับ transcript ที่คนถอดเองแค่ไหน
+ชุดนี้ใช้วัดว่าร่าง transcript จาก Whisper ใกล้เคียงกับ transcript ที่คนถอดเองแค่ไหน
 ผลที่ได้ใช้เป็นตัวเลขในบทผลการทดลองของ term paper
 
 | โฟลเดอร์ | ใส่อะไร |
 |---|---|
-| `audio_samples/` | ไฟล์เสียง เช่น `clip01.wav` (รองรับ wav, mp3, m4a, mp4, webm, ogg, flac) |
-| `gold_transcripts/` | transcript ที่คนถอดและตรวจแล้ว ชื่อเดียวกับไฟล์เสียง เช่น `clip01.cha` |
-| `hypothesis_transcripts/` | ร่างจาก ASR สคริปต์สร้างให้เอง ไม่ต้องแก้ด้วยมือ |
+| `.local/evaluation/audio_samples/` | ไฟล์เสียง เช่น `clip01.wav` (รองรับ wav, mp3, m4a, mp4, webm, ogg, flac) |
+| `data/evaluation/gold_transcripts/` | transcript ที่คนถอดและตรวจแล้ว ชื่อเดียวกับไฟล์เสียง เช่น `clip01.cha` |
+| `.local/evaluation/hypothesis_transcripts/` | ร่างจาก ASR สคริปต์สร้างให้เอง ไม่ต้องแก้ด้วยมือ |
+
+## การประเมินที่ไม่ต้องอัดเสียงเอง
+
+โครงการนี้ไม่มีชุดข้อมูลเสียงเด็กไทย การประเมินจึงแยกเป็นส่วนที่ทำได้ด้วยข้อมูลที่มีอยู่
+แต่ละส่วนตอบคำถามคนละข้อ และรันซ้ำได้ด้วยคำสั่งเดียว
+
+| คำถาม | ข้อมูล | คำสั่ง | ผลลัพธ์ |
+|---|---|---|---|
+| ระบบคำนวณ feature จาก transcript ถูกไหม | transcript TalkBank 1,961 ไฟล์ เทียบกับ CLAN | `python scripts/evaluate_feature_agreement_clan.py` | `reports/metrics/feature_agreement_clan.md` |
+| Whisper ถอดภาษาไทยได้แม่นแค่ไหน | FLEURS ภาษาไทย (ผู้ใหญ่อ่านประโยค, CC BY 4.0) ดาวน์โหลดอัตโนมัติ | `python scripts/evaluate_thai_asr_public.py --clips 30 --models small medium` | `reports/metrics/thai_asr_public.md` |
+| ถอดบทสนทนาแบบในห้องบำบัดได้ไหม | บทสนทนาไทยสังเคราะห์ด้วยเสียง TTS ของ macOS | `python scripts/build_synthetic_thai_dialogues.py` แล้ว `python scripts/evaluate_thai_asr.py --text-only` | `reports/metrics/thai_asr_evaluation.md` |
+| กฎตรวจ echolalia จับถูกไหม | คู่ประโยค 40 คู่ที่ติดป้ายไว้ใน `echolalia_labelled_pairs.csv` | `python scripts/evaluate_echolalia_cue.py` | `reports/metrics/echolalia_cue_check.md` |
+
+สิ่งที่ชุดนี้ยังวัดไม่ได้คือความแม่นยำกับเสียงเด็กจริง และการแยกผู้พูดเด็ก/ผู้ใหญ่ในภาษาไทย
+เพราะเสียงสังเคราะห์เป็นเสียงเดียวกันทุกบท ต้องเขียนเป็นข้อจำกัดในเล่ม
+ส่วนด้านล่างคือวิธีเพิ่มข้อมูลของคุณเองเมื่อมีโอกาสอัดเสียง
 
 ## ข้อห้าม
 
 ห้ามใส่เสียงเด็กจริง ชื่อจริง หรือข้อมูลที่ระบุตัวบุคคลได้ในโฟลเดอร์นี้
 ให้ใช้เสียงจำลองที่ผู้ใหญ่เล่นบทนักบำบัดกับเด็กเท่านั้น
-ไฟล์ใน `audio_samples/` และ `hypothesis_transcripts/` ถูก git ignore ไว้แล้ว
+ไฟล์เสียงและร่างอยู่ใต้ `.local/` (โฟลเดอร์ที่ root ของ repo) ซึ่งไม่ถูก commit และตัวตรวจ repo จะไม่ยอมให้มีไฟล์เสียงที่อื่น
 
 ## วิธีอัดเสียงจำลอง
 
@@ -57,7 +73,7 @@
 ```bash
 python scripts/evaluate_thai_asr.py                 # ถอดเสียงแล้วให้คะแนน
 python scripts/evaluate_thai_asr.py --score-only    # ให้คะแนนจากร่างที่บันทึกไว้ ไม่ถอดใหม่
-python scripts/evaluate_thai_asr.py --model medium  # เทียบขนาดโมเดล
+python scripts/evaluate_thai_asr.py --model small   # เทียบขนาดโมเดล (ค่าเริ่มต้นคือ medium)
 ```
 
 ผลลัพธ์อยู่ที่ `reports/metrics/thai_asr_evaluation.csv` และ `.md`

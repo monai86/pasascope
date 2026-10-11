@@ -124,7 +124,7 @@ def test_pipeline_segments_become_reviewable_lines(whisper_enabled, monkeypatch,
     assert result.status == "completed"
     assert calls["path"] == recording
     assert calls["kwargs"]["strategy"] == "thai"
-    assert calls["kwargs"]["model_size"] == "small"
+    assert calls["kwargs"]["model_size"] == "medium"
     assert calls["kwargs"]["child_age_months"] == 48
     assert [(line.speaker, line.text) for line in result.transcript_lines] == [
         ("INV", "ไหนลองพูดซิ"),

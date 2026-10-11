@@ -8,6 +8,10 @@
   - The web app selects `local_whisper` when available, verifies the upload before transcription, and waits in proportion to clip length. It no longer requests the synthetic mock provider.
   - Browser recording types (`audio/webm`, `audio/ogg`) are accepted at upload.
 - **Thai ASR evaluation** (`scripts/evaluate_thai_asr.py`, `scripts/report_transcript_review_time.py`): draft-versus-gold error rates, child-speech attribution, feature drift, processing time, and draft-to-attestation review time. See `data/evaluation/README.md`.
+- **Evaluation without own recordings** (`scripts/`, `reports/metrics/`): feature agreement with CLAN on 1,961 TalkBank transcripts, Thai recognition accuracy by model size on FLEURS, scripted text-to-speech Thai dialogues, and a labelled check of the Thai echolalia rule.
+
+### Changed
+- **Default Whisper model is `medium`** (`apps/api/`, `packages/tui/`): on the Thai samples above it roughly halves to eliminates the character errors of `small`, at about 1.3x the processing time.
 
 ### Fixed
 - **Fabricated results removed** (`packages/tui/`, `packages/gui/`, `src/`):
@@ -17,6 +21,8 @@
   - CHAT headers no longer default the group to ASD or hard-code age and sex.
   - The desktop GUI radar chart and its SVG export no longer draw a "TD norm" line or percent-of-norm figures; the age-bracket benchmark values had no source. The chart now plots the session's measured values on fixed display scales.
   - Engine-named placeholder ASR providers (`whisper`, `faster_whisper`, `whisperx`, `batchalign`) are unregistered.
+- **Thai transcript text** (`src/audio_pipeline/`): multi-utterance Thai drafts no longer have spaces inserted between characters, and exported CHAT no longer splits Thai words into fragments.
+- **Feature word counts** (`apps/api/`): CHAT annotation codes are no longer counted as words.
 - **Thai cue parity** (`apps/api/`): echolalia and pronoun cues for Thai utterances use the same rules as the desktop GUI; the pronoun cue is reported as not computed, rather than 0, when it cannot be assessed.
 
 ### Added

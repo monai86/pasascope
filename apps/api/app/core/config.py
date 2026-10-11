@@ -181,7 +181,7 @@ class Settings(BaseModel):
     inline_job_worker_enabled: bool = True
     # Local Whisper runs on this machine only; recordings are never sent out.
     asr_local_whisper_enabled: bool = False
-    asr_whisper_model_size: str = "small"
+    asr_whisper_model_size: str = "medium"
     asr_language_strategy: str = "thai"
     redis_url: str = DEFAULT_REDIS_URL
     storage_mode: str = "local_private"
@@ -410,7 +410,7 @@ class Settings(BaseModel):
             != "false",
             asr_local_whisper_enabled=getenv_compat("LINGUALENS_ASR_LOCAL_WHISPER_ENABLED", default="false").lower()
             == "true",
-            asr_whisper_model_size=getenv_compat("LINGUALENS_ASR_WHISPER_MODEL_SIZE", default="small"),
+            asr_whisper_model_size=getenv_compat("LINGUALENS_ASR_WHISPER_MODEL_SIZE", default="medium"),
             asr_language_strategy=getenv_compat("LINGUALENS_ASR_LANGUAGE_STRATEGY", default="thai"),
             redis_url=os.getenv("REDIS_URL", DEFAULT_REDIS_URL),
             storage_mode=getenv_compat("LINGUALENS_STORAGE_MODE", "THERAPIST_APP_V2_STORAGE_MODE", "local_private"),
