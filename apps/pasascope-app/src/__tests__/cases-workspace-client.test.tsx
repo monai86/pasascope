@@ -596,7 +596,8 @@ describe("cases workspace", () => {
   it("clicking withdraw consent calls the withdraw API and marks consent as withdrawn", async () => {
     let withdrawCalled = false;
     let withdrawPayload: any = null;
-    vi.spyOn(window, "confirm").mockImplementation(() => true);
+    // The confirmation is the app's own dialog; a native confirm() must not appear.
+    const nativeConfirm = vi.spyOn(window, "confirm").mockImplementation(() => true);
 
     vi.stubGlobal("fetch", vi.fn(async (input: RequestInfo | URL, init?: RequestInit) => {
       const url = String(input);
@@ -653,6 +654,15 @@ describe("cases workspace", () => {
 
     await act(async () => {
       fireEvent.click(withdrawButton);
+    });
+
+    // Nothing is sent until the therapist confirms in the dialog.
+    const dialog = screen.getByRole("dialog", { name: "Withdraw consent for this case?" });
+    expect(withdrawCalled).toBe(false);
+    expect(nativeConfirm).not.toHaveBeenCalled();
+
+    await act(async () => {
+      fireEvent.click(within(dialog).getByRole("button", { name: "Withdraw consent" }));
     });
 
     await waitFor(() => {

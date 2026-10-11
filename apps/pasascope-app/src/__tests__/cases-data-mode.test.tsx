@@ -1,4 +1,4 @@
-import { render, screen } from "@testing-library/react";
+import { fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { beforeEach, expect, test, vi } from "vitest";
 
 import { CasesWorkspaceClient } from "@/components/cases-workspace-client";
@@ -57,3 +57,56 @@ test.each(["timeline", "goals"])(
     expect(screen.queryByText("Add communication goals when the care plan is ready.")).not.toBeInTheDocument();
   },
 );
+
+test("lets the therapist retry when cases cannot be loaded", async () => {
+  let attempts = 0;
+  vi.stubGlobal("fetch", vi.fn(async (input: RequestInfo | URL) => {
+    if (String(input).endsWith("/cases")) {
+      attempts += 1;
+      if (attempts === 1) throw new Error("offline");
+      return new Response(JSON.stringify([]), { status: 200, headers: { "content-type": "application/json" } });
+    }
+    return new Response(JSON.stringify({ mock_mode: true, auth_mode: "mock" }), { status: 200, headers: { "content-type": "application/json" } });
+  }));
+
+  render(<CasesWorkspaceClient />);
+
+  expect(await screen.findByRole("alert")).toHaveTextContent("Cases are unavailable");
+  fireEvent.click(screen.getByRole("button", { name: "Try again" }));
+
+  await waitFor(() => expect(attempts).toBe(2));
+  expect(await screen.findByRole("heading", { name: "No cases yet" })).toBeInTheDocument();
+});
+
+test("offers the way back to Cases when a single case cannot be loaded", async () => {
+  vi.stubGlobal("fetch", vi.fn(async () => new Response("not found", { status: 404 })));
+
+  render(<CasesWorkspaceClient caseId="missing-case" />);
+
+  expect(await screen.findByRole("alert")).toHaveTextContent("Case could not be loaded");
+  expect(screen.getByRole("link", { name: "Back to Cases" })).toHaveAttribute("href", "/cases");
+});
+
+test("tells an empty caseload apart from filters that match nothing", async () => {
+  vi.stubGlobal("fetch", vi.fn(async (input: RequestInfo | URL) => {
+    if (String(input).endsWith("/cases")) {
+      return new Response(JSON.stringify([
+        { case_id: "case-1", child_code: "C-1001", consent_status: "granted", language: "Thai" },
+      ]), { status: 200, headers: { "content-type": "application/json" } });
+    }
+    return new Response(JSON.stringify({ mock_mode: true, auth_mode: "mock" }), { status: 200, headers: { "content-type": "application/json" } });
+  }));
+
+  render(<CasesWorkspaceClient />);
+
+  const search = await screen.findByRole("searchbox", { name: "Search cases" });
+  fireEvent.change(search, { target: { value: "no such case" } });
+
+  expect(screen.getByRole("heading", { name: "No cases match these filters" })).toBeInTheDocument();
+  expect(screen.queryByRole("heading", { name: "No cases yet" })).not.toBeInTheDocument();
+
+  fireEvent.click(screen.getByRole("button", { name: "Clear filters" }));
+
+  expect(search).toHaveValue("");
+  expect(screen.queryByRole("heading", { name: "No cases match these filters" })).not.toBeInTheDocument();
+});

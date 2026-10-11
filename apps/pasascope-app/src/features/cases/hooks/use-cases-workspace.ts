@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState, type Dispatch, type SetStateAction } from "react";
+import { type Dispatch, type SetStateAction, useCallback, useEffect, useRef, useState } from "react";
 
 import { casesAdapter } from "@/features/cases/services/cases-adapter";
 import {
@@ -52,12 +52,17 @@ export type CaseDetailViewModel = {
 
 export type CasesWorkspaceViewModel =
   | { status: "loading" }
-  | { status: "unavailable" }
-  | { status: "error" }
+  | { status: "unavailable"; retry: () => void }
+  | { status: "error"; retry: () => void }
   | { status: "list"; list: CaseListViewModel }
   | { status: "detail"; detail: CaseDetailViewModel };
 
-async function loadCasesResource(identity: string, signal: AbortSignal): Promise<CasesResource> {
+// A retry is a new request lifetime, which the resource hook keys by identity,
+// so the attempt number rides on the identity after this separator.
+const ATTEMPT_SEPARATOR = "#attempt:";
+
+async function loadCasesResource(identityWithAttempt: string, signal: AbortSignal): Promise<CasesResource> {
+  const identity = identityWithAttempt.split(ATTEMPT_SEPARATOR)[0];
   if (identity === "cases:list") {
     return { kind: "list", cases: await casesAdapter.list(signal) };
   }
@@ -80,8 +85,10 @@ async function loadCasesResource(identity: string, signal: AbortSignal): Promise
 }
 
 export function useCasesWorkspace(caseId?: string): CasesWorkspaceViewModel {
+  const [attempt, setAttempt] = useState(0);
+  const retry = useCallback(() => setAttempt((current) => current + 1), []);
   const resource = useRemoteResource(
-    caseId ? `cases:detail:${caseId}` : "cases:list",
+    `${caseId ? `cases:detail:${caseId}` : "cases:list"}${ATTEMPT_SEPARATOR}${attempt}`,
     loadCasesResource,
   );
   const data = resource.status === "success" || resource.status === "stale" ? resource.data : undefined;
@@ -159,7 +166,7 @@ export function useCasesWorkspace(caseId?: string): CasesWorkspaceViewModel {
   }
 
   if (resource.status === "loading" || resource.status === "idle") return { status: "loading" };
-  if (resource.status === "error") return { status: caseId ? "error" : "unavailable" };
+  if (resource.status === "error") return { status: caseId ? "error" : "unavailable", retry };
   if (!data) return { status: "loading" };
   if (data.kind === "list") return { status: "list", list: { cases: data.cases } };
 

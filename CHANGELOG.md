@@ -20,10 +20,15 @@ Therapist app redesign in progress on `feat/redesign-sky`. The version is bumped
 - **Real users are no longer linked to a seeded demo session** from the dashboard, its unavailable state, or the retired `/assistant` page.
 - **Top bar**: the notification bell with a hard-coded count of 3 is removed, and the search field now opens Cases filtered by the query.
 - **Styling that was silently not applied**: the shell rendered in the system font instead of Noto Sans Thai; several Assessment buttons were transparent because their colour variable was never defined; `dark:` classes followed the operating system in a light-only product.
-- **Accessibility**: the mobile navigation drawer traps focus, closes on Escape and is out of the tab order while closed; dialogs trap and restore focus; the sign-in page has an h1 and no text under 12px.
+- **A fake pitch line is removed from audio review**: the "F0 Pitch" toggle drew a sine wave over the waveform. The app measures no pitch contour, so the toggle and the overlay are gone.
+- **Audio review shortcuts no longer take over the browser's**: speaker assignment and loop used Cmd/Ctrl+1..4 and Cmd/Ctrl+L, which switch tabs and focus the address bar. They are now Alt+1..4, Alt+L and Alt+R.
+- **Speaker colours are consistent and colour-vision safe**: the child is coral and the clinician blue in the waveform, its legend and the utterance list, with the speaker code always written beside the colour; other speakers are neutral.
+- **Cases**: an empty caseload and a search that matches nothing now show different messages, each with its way forward; load failures offer a retry; withdrawing consent asks for confirmation in an accessible dialog instead of a native browser prompt.
+- **Accessibility**: the mobile navigation drawer traps focus, closes on Escape and is out of the tab order while closed; dialogs trap and restore focus; the sign-in page has an h1 and no text under 12px; on a phone, content scrolled into view stays above the fixed action bars.
 
 ### Removed
 - The dashboard "workflow pillars" block, which duplicated the navigation.
+- The previous raster logo files, replaced by the SVG mark.
 
 ## [v1.7.1] - 2026-10-10
 

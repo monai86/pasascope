@@ -1,6 +1,5 @@
 "use client";
 
-import Image from "next/image";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import type { ReactNode } from "react";
@@ -13,6 +12,8 @@ import {
   Users,
   UploadCloud,
 } from "lucide-react";
+
+import { PasaScopeLogoMark } from "@/components/pasascope-logo";
 
 type DemoNavItem = {
   href: string;
@@ -40,9 +41,7 @@ export function DemoShell({ children }: { children: ReactNode }) {
         {/* Sidebar */}
         <aside className="sticky top-0 hidden h-dvh w-20 shrink-0 border-r border-line bg-surface-muted px-3 py-6 md:flex md:flex-col md:items-center lg:w-[17.5rem] lg:px-5 lg:items-stretch">
           <Link href="/demo/dashboard" className="flex items-center gap-3 rounded-panel px-2 py-2">
-            <span className="grid h-12 w-12 shrink-0 place-items-center overflow-hidden rounded-[1rem] border border-line bg-white">
-              <Image src="/logo-mark.png" alt="" width={48} height={48} className="h-12 w-12 object-cover" />
-            </span>
+            <PasaScopeLogoMark size="sm" />
             <span className="hidden lg:block">
               <span className="block text-lg font-normal tracking-[-0.03em] text-ink">PasaScope</span>
               <span className="block text-sm text-ink-muted">Therapist Workspace</span>
@@ -112,9 +111,7 @@ export function DemoShell({ children }: { children: ReactNode }) {
           {/* Top bar */}
           <header className="sticky top-0 z-30 flex h-16 items-center justify-between border-b border-line bg-white px-6">
             <div className="flex items-center gap-3 md:hidden">
-              <span className="grid h-9 w-9 shrink-0 place-items-center overflow-hidden rounded-xl border border-line bg-white">
-                <Image src="/logo-mark.png" alt="" width={36} height={36} className="h-9 w-9 object-cover" />
-              </span>
+              <PasaScopeLogoMark size="xs" />
               <span className="text-sm font-semibold">PasaScope</span>
             </div>
             <div className="hidden md:block" />

@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useMemo, useState } from "react";
-import { ArrowRight, Filter, Plus, Search } from "lucide-react";
+import { ArrowRight, Filter, FolderPlus, Plus, Search, SearchX } from "lucide-react";
 
 import { ActionButton } from "@/components/action-button";
 import { DataTable } from "@/components/data-table";
@@ -114,6 +114,13 @@ export function CaseList({
   const [sortBy, setSortBy] = useState<"latest-activity" | "next-action">("latest-activity");
   const [selectedCaseId, setSelectedCaseId] = useState(cases[0]?.case_id ?? "");
   const [showCreateForm, setShowCreateForm] = useState(false);
+
+  function clearFilters() {
+    setQuery("");
+    setStatusFilter("all");
+    setConsentFilter("all");
+    setClinicianFilter("all");
+  }
 
   const stageOptions = useMemo(() => {
     const statuses = Array.from(new Set(cases.map((item) => item.latest_session_status ?? "Draft")));
@@ -371,12 +378,27 @@ export function CaseList({
               </ul>
             </>
           ) : (
-            <EmptyState
-              title="No cases yet"
-              description={canCreateCase
-                ? "Create a de-identified case before recording consent or starting a session."
-                : "Ask an assigned therapist to create a de-identified case before starting a session."}
-            />
+            cases.length === 0 ? (
+              <EmptyState
+                icon={FolderPlus}
+                title="No cases yet"
+                description={canCreateCase
+                  ? "Create a de-identified case before recording consent or starting a session."
+                  : "Ask an assigned therapist to create a de-identified case before starting a session."}
+                action={canCreateCase && !showCreateForm ? (
+                  <ActionButton icon={Plus} onClick={() => setShowCreateForm(true)}>Create the first case</ActionButton>
+                ) : undefined}
+              />
+            ) : (
+              // Cases exist but the search and filters hide them all: say so,
+              // and offer the way back rather than "no cases".
+              <EmptyState
+                icon={SearchX}
+                title="No cases match these filters"
+                description="Change the search text or filters, or clear them to see every case."
+                action={<ActionButton tone="secondary" onClick={clearFilters}>Clear filters</ActionButton>}
+              />
+            )
           )}
 
           <footer className="control-strip rounded-xl border border-line bg-white px-4 py-3 text-xs font-medium text-ink-muted shadow-2xs">

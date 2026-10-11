@@ -5,6 +5,7 @@ import { useState, type FormEvent, type ReactNode } from "react";
 import { Activity, ArrowRight, CalendarDays, CircleDot, Gauge, ShieldCheck, Users } from "lucide-react";
 
 import { ActionButton } from "@/components/action-button";
+import { ConfirmDialog } from "@/components/ui/confirm-dialog";
 import { CaregiverConsentForm } from "@/components/caregiver-consent-form";
 import { DataTable } from "@/components/data-table";
 import { LanguageProgressChart } from "@/features/dashboard/components/language-progress-chart";
@@ -141,13 +142,29 @@ export function CaseDetail({ model }: { model: CaseDetailViewModel }) {
     void consent.grantConsent();
   }
 
+  const [withdrawDialogOpen, setWithdrawDialogOpen] = useState(false);
+
   function handleWithdrawConsent() {
-    if (!confirm("Are you sure you want to withdraw consent? This will redact child details and disable clinical workflows for this case.")) return;
+    setWithdrawDialogOpen(true);
+  }
+
+  function confirmWithdrawConsent() {
+    setWithdrawDialogOpen(false);
     void consent.withdrawConsent();
   }
 
   return (
     <div className="space-y-6">
+      <ConfirmDialog
+        open={withdrawDialogOpen}
+        title="Withdraw consent for this case?"
+        description="This will redact child details and disable clinical workflows for this case. New sessions stay blocked until consent is granted again."
+        confirmLabel="Withdraw consent"
+        cancelLabel="Keep consent"
+        destructive
+        onConfirm={confirmWithdrawConsent}
+        onCancel={() => setWithdrawDialogOpen(false)}
+      />
       <PageHeader
         title={caseLabel(caseItem)}
         description="Use the persisted case record to review workflow progress, referral context, and therapist-owned next steps."

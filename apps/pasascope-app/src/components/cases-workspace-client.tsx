@@ -1,5 +1,7 @@
 "use client";
 
+import { Button } from "@/components/ui/button";
+import { ErrorState } from "@/components/ui/error-state";
 import { CaseDetail } from "@/features/cases/components/case-detail";
 import { CaseList } from "@/features/cases/components/case-list";
 import { StartSessionSelector } from "@/features/cases/components/start-session-selector";
@@ -36,23 +38,26 @@ export function CasesWorkspaceClient({ caseId, intent, preselectedCaseId, initia
 
   if (model.status === "unavailable") {
     return (
-      <section className="workspace-panel p-5" role="alert">
-        <h1 className="text-xl font-semibold text-ink">Cases are unavailable</h1>
-        <p className="mt-2 text-sm text-ink-muted">
-          The backend cases service could not be reached. Try again when the service is available.
-        </p>
-      </section>
+      <ErrorState
+        className="bg-surface"
+        title="Cases are unavailable"
+        description="The backend cases service could not be reached. Try again when the service is available."
+        retryLabel="Try again"
+        onRetry={model.retry}
+      />
     );
   }
 
   if (model.status === "error") {
     return (
-      <section className="workspace-panel p-5" role="alert">
-        <h1 className="text-xl font-semibold text-ink">Case could not be loaded</h1>
-        <p className="mt-2 text-sm text-ink-muted">
-          The requested backend case was not returned. Check the case link or try again.
-        </p>
-      </section>
+      <ErrorState
+        className="bg-surface"
+        title="Case could not be loaded"
+        description="The requested backend case was not returned. Check the case link or try again."
+        retryLabel="Try again"
+        onRetry={model.retry}
+        action={<Button href="/cases" variant="ghost">Back to Cases</Button>}
+      />
     );
   }
 
@@ -70,8 +75,9 @@ export function CasesWorkspaceClient({ caseId, intent, preselectedCaseId, initia
 
 function CaseListSkeleton() {
   return (
-    <section className="workspace-panel p-4">
-      <div className="space-y-3 animate-pulse motion-reduce:animate-none">
+    <section className="workspace-panel p-4" role="status" aria-live="polite">
+      <span className="sr-only">Loading cases…</span>
+      <div className="space-y-3 animate-pulse motion-reduce:animate-none" aria-hidden="true">
         <div className="h-12 rounded-card bg-surface-muted" />
         <div className="h-12 rounded-card bg-surface-muted" />
         <div className="h-12 rounded-card bg-surface-muted" />
