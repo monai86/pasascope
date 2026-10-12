@@ -62,7 +62,7 @@ export function CaregiverConsentForm({
   const notesId = `${idPrefix}-consent-notes`;
   const t = useMessages(consentMessages);
   const thaiFirst = useLocale().locale === "th";
-  const confirmationOnly = useAppMode().publicSignup;
+  const { publicSignup: confirmationOnly, externalTranscription } = useAppMode();
   return (
     <form onSubmit={onSubmit} className="space-y-4">
       <label className="flex cursor-pointer items-start gap-3 text-sm font-medium text-ink">
@@ -79,6 +79,11 @@ export function CaregiverConsentForm({
           <span className="text-xs leading-5 text-ink-muted">{thaiFirst ? CONFIRMATION_EN : CONFIRMATION_TH}</span>
         </span>
       </label>
+      {externalTranscription ? (
+        <p className="rounded-xl border border-[color:var(--color-attention-border)] bg-[color:var(--color-warning-bg)] p-3 text-sm text-[color:var(--color-warning-text)]">
+          {t.externalTranscription}
+        </p>
+      ) : null}
 
       {/* The public app asks only for the confirmation; signer and date take their defaults. */}
       {confirmationOnly ? null : (

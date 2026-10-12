@@ -23,6 +23,25 @@ describe("transcription provider selection", () => {
     await expect(findAvailableTranscriptionProvider()).resolves.toBe("local_whisper");
   });
 
+  it("uses the hosted service when it is the one switched on", async () => {
+    stubProviders([
+      { provider_id: "mock", available: true },
+      { provider_id: "local_whisper", available: false },
+      { provider_id: "hosted_whisper", available: true }
+    ]);
+
+    await expect(findAvailableTranscriptionProvider()).resolves.toBe("hosted_whisper");
+  });
+
+  it("prefers on-device Whisper over the hosted service", async () => {
+    stubProviders([
+      { provider_id: "hosted_whisper", available: true },
+      { provider_id: "local_whisper", available: true }
+    ]);
+
+    await expect(findAvailableTranscriptionProvider()).resolves.toBe("local_whisper");
+  });
+
   it("never selects the synthetic mock provider when Whisper is unavailable", async () => {
     stubProviders([
       { provider_id: "mock", available: true },

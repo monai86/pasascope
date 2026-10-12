@@ -5,6 +5,7 @@ import { Mic, Pause, Play, RotateCcw, Square, Trash2 } from "lucide-react";
 
 import { audioCaptureMessages } from "@/components/audio-capture.messages";
 import { useMessages } from "@/i18n/locale-provider";
+import { useAppMode } from "@/lib/app-mode";
 
 export type RecordingMetadata = {
   recordingStatus: "idle" | "recording" | "paused" | "stopped" | "interrupted" | "error";
@@ -35,6 +36,7 @@ export function BrowserAudioRecorder({
   const [audioUrl, setAudioUrl] = useState("");
   const [error, setError] = useState("");
   const t = useMessages(audioCaptureMessages).recorder;
+  const { externalTranscription } = useAppMode();
   const [privacyNotice, setPrivacyNotice] = useState(hadUnsavedRecording);
   const [amplitudes, setAmplitudes] = useState<number[]>(() => Array.from({ length: 24 }, () => 8));
   const recorderRef = useRef<MediaRecorder | null>(null);
@@ -379,7 +381,7 @@ export function BrowserAudioRecorder({
 
       {privacyNotice ? <p className="mt-4 rounded-xl border border-[color:var(--color-attention-border)] bg-[color:var(--color-warning-bg)] p-3 text-sm font-semibold text-[color:var(--color-warning-text)]">{t.clearedForPrivacy}</p> : null}
       {error ? <p className="mt-4 rounded-xl border border-[color:var(--color-danger-border)] bg-[color:var(--color-danger-bg)] p-3 text-sm font-semibold text-[color:var(--color-danger-text)]" role="alert">{error}</p> : null}
-      <p className="mt-3 text-sm font-semibold text-brand">{t.experimental}</p>
+      <p className="mt-3 text-sm font-semibold text-brand">{externalTranscription ? t.experimentalExternal : t.experimental}</p>
       <p className="mt-1 text-xs text-ink-muted">{t.memoryOnly}</p>
     </div>
   );

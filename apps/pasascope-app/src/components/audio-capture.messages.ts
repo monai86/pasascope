@@ -17,6 +17,7 @@ type AudioCaptureCopy = {
     delete: string;
     clearedForPrivacy: string;
     experimental: string;
+    experimentalExternal: string;
     memoryOnly: string;
     errors: { unsupported: string; interrupted: string; permissionDenied: string; notStarted: string; empty: string };
   };
@@ -70,6 +71,8 @@ export const audioCaptureMessages = defineMessages<AudioCaptureCopy>({
       clearedForPrivacy: "Unsaved recording was cleared for privacy. Please record again.",
       experimental:
         "Transcription is experimental. After you upload, the recording is transcribed on this server and the draft must be reviewed.",
+      experimentalExternal:
+        "Transcription is experimental. After you upload, the recording is sent to an external transcription service. The draft has no speaker labels and must be reviewed.",
       memoryOnly: "Audio stays in memory only while this page is open. It is not uploaded automatically.",
       errors: {
         unsupported: "Audio recording is not supported in this browser.",
@@ -108,6 +111,7 @@ export const audioCaptureMessages = defineMessages<AudioCaptureCopy>({
       transcribedBy: (provider) => `Transcribed by: ${provider}`,
       providers: {
         local_whisper: "Whisper (on this server)",
+        hosted_whisper: "Whisper (external service)",
         mock: "Synthetic demo text — not speech recognition",
         manual: "Manual entry",
       },
@@ -138,6 +142,8 @@ export const audioCaptureMessages = defineMessages<AudioCaptureCopy>({
       delete: "ลบ",
       clearedForPrivacy: "เสียงที่ยังไม่ได้บันทึกเก็บถูกล้างออกเพื่อความเป็นส่วนตัว กรุณาบันทึกเสียงใหม่",
       experimental: "การถอดเสียงยังอยู่ในขั้นทดลอง เมื่ออัปโหลดแล้ว เสียงจะถูกถอดบนเซิร์ฟเวอร์นี้ และต้องทบทวนร่างที่ได้",
+      experimentalExternal:
+        "การถอดเสียงยังอยู่ในขั้นทดลอง เมื่ออัปโหลดแล้ว เสียงจะถูกส่งไปยังบริการถอดเสียงภายนอก ร่างที่ได้ยังไม่ระบุผู้พูด และต้องทบทวนก่อนใช้",
       memoryOnly: "เสียงอยู่ในหน่วยความจำเฉพาะขณะเปิดหน้านี้ และไม่ถูกอัปโหลดเองโดยอัตโนมัติ",
       errors: {
         unsupported: "เบราว์เซอร์นี้ไม่รองรับการบันทึกเสียง",
@@ -175,6 +181,7 @@ export const audioCaptureMessages = defineMessages<AudioCaptureCopy>({
       transcribedBy: (provider) => `ถอดเสียงโดย: ${provider}`,
       providers: {
         local_whisper: "Whisper (บนเซิร์ฟเวอร์นี้)",
+        hosted_whisper: "Whisper (บริการภายนอก)",
         mock: "ข้อความสังเคราะห์สำหรับสาธิต ไม่ใช่การรู้จำเสียงพูด",
         manual: "ป้อนเอง",
       },

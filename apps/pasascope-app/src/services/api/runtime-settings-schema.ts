@@ -35,6 +35,8 @@ export const runtimeSettingsSchema = z.object({
   }),
   pipeline_settings: z.object({
     audio_processing: z.string(),
+    transcription_provider: z.string().nullable().optional(),
+    transcription_external: z.boolean().optional(),
     job_queue_mode: z.string(),
     repository_mode: z.string(),
     storage_mode: z.string(),

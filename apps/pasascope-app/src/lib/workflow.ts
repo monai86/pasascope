@@ -1788,6 +1788,7 @@ export async function uploadAudioBlobToBackend(
 }
 
 export const LOCAL_WHISPER_PROVIDER_ID = "local_whisper";
+export const HOSTED_WHISPER_PROVIDER_ID = "hosted_whisper";
 
 type BackendTranscriptionProvider = { provider_id: string; available: boolean };
 
@@ -1799,8 +1800,12 @@ type BackendTranscriptionProvider = { provider_id: string; available: boolean };
 export async function findAvailableTranscriptionProvider(): Promise<string | null> {
   const providers = await apiGet<BackendTranscriptionProvider[]>("/transcription-providers");
   if (!Array.isArray(providers)) return null;
-  const localWhisper = providers.find((item) => item.provider_id === LOCAL_WHISPER_PROVIDER_ID);
-  return localWhisper?.available ? localWhisper.provider_id : null;
+  // On-device transcription is preferred; the hosted service is used only when
+  // it is the one the operator switched on.
+  for (const providerId of [LOCAL_WHISPER_PROVIDER_ID, HOSTED_WHISPER_PROVIDER_ID]) {
+    if (providers.some((item) => item.provider_id === providerId && item.available)) return providerId;
+  }
+  return null;
 }
 
 /** How long to wait for a transcription job before giving up, in milliseconds. */
