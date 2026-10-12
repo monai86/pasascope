@@ -20,6 +20,7 @@ import { casesMessages, type CaseStage } from "@/features/cases/cases.messages";
 import { formatDateTime } from "@/i18n/format";
 import { useLocale, useMessages } from "@/i18n/locale-provider";
 import { useSafetyCopy } from "@/lib/safety-copy";
+import { useGateReason } from "@/lib/gate-reason";
 import { grantConsentBlockedReason } from "@/lib/workflow-gates";
 import type { BackendCase, BackendGoal, BackendTimelineEvent } from "@/lib/workflow";
 
@@ -106,6 +107,7 @@ export function CaseDetail({ model }: { model: CaseDetailViewModel }) {
   const { shared, detail: t } = useMessages(casesMessages);
   const statusLabels = useMessages(statusMessages) as Record<string, string>;
   const safety = useSafetyCopy();
+  const gate = useGateReason();
   const statusLabel = (status?: string) => (status ? statusLabels[status] ?? status : statusLabels.Draft);
   const isConsentGranted = localConsent.toLowerCase() === "granted";
   const localWorkflowStage = shared.stages[getLocalWorkflowStage(caseItem, localConsent)];
@@ -228,7 +230,7 @@ export function CaseDetail({ model }: { model: CaseDetailViewModel }) {
                   onNotesChange={setConsentNotes}
                   onSubmit={handleGrantConsent}
                   submitLabel={shared.verifyConsent}
-                  submitBlockedReason={grantConsentBlockedReason({ checked: consentChecked, busy: consentBusy })}
+                  submitBlockedReason={gate(grantConsentBlockedReason({ checked: consentChecked, busy: consentBusy }))}
                   reasonId="case-grant-consent-reason"
                   idPrefix="case"
                 />

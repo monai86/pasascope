@@ -15,6 +15,7 @@ import { QaBadge } from "@/components/transcript-editor-support";
 import { QA_INTERPRETATION_NOTE } from "@/lib/clinical-safety-copy";
 import { attestTranscriptBlockedReason, exportTranscriptBlockedReason } from "@/lib/workflow-gates";
 import type { PersistenceStatus, TranscriptQaStatus } from "@/lib/workflow";
+import { useGateReason } from "@/lib/gate-reason";
 
 type QaDetailsProps = {
   qaStatus: TranscriptQaStatus;
@@ -111,13 +112,14 @@ export function TranscriptReviewControls({
   onAttest,
   onExport,
 }: ReviewControlsProps) {
-  const attestBlockedReason = attestTranscriptBlockedReason({
+  const gate = useGateReason();
+  const attestBlockedReason = gate(attestTranscriptBlockedReason({
     busy,
     attested,
     linesCount,
     qaStatus,
-  });
-  const exportBlockedReason = exportTranscriptBlockedReason({ busy, linesCount });
+  }));
+  const exportBlockedReason = gate(exportTranscriptBlockedReason({ busy, linesCount }));
   const [secondaryOpen, setSecondaryOpen] = useState(canAttest || attested);
 
   useEffect(() => {

@@ -17,6 +17,7 @@ import {
 import { intakeMessages } from "@/features/sessions/intake/intake.messages";
 import type { SessionIntakeViewModel } from "@/features/sessions/intake/session-intake-view";
 import { useMessages } from "@/i18n/locale-provider";
+import { useGateReason } from "@/lib/gate-reason";
 import { useSafetyCopy } from "@/lib/safety-copy";
 import { prepareTranscriptIntake } from "@/lib/workflow";
 import {
@@ -46,17 +47,18 @@ export function SessionIntakeSteps({ model }: { model: SessionIntakeViewModel })
   } = model;
   const t = useMessages(intakeMessages);
   const safety = useSafetyCopy();
+  const gate = useGateReason();
 
   const startTranscriptReviewBlockedReasonText = canStartTranscriptReview
     ? undefined
-    : startTranscriptReviewBlockedReason({
+    : gate(startTranscriptReviewBlockedReason({
         sessionDetailsComplete,
         transcriptSetupComplete,
         sourceReadyForReview,
         selectedSource,
-      });
-  const continueToSourceMaterialReason = continueToSourceMaterialBlockedReason({ sessionDetailsComplete });
-  const grantConsentReason = grantConsentBlockedReason({ checked: consentChecked, busy });
+      }));
+  const continueToSourceMaterialReason = gate(continueToSourceMaterialBlockedReason({ sessionDetailsComplete }));
+  const grantConsentReason = gate(grantConsentBlockedReason({ checked: consentChecked, busy }));
 
   return (
     <>

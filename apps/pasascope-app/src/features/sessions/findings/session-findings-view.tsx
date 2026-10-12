@@ -33,6 +33,7 @@ import { useSafetyCopy } from "@/lib/safety-copy";
 import { formatDate } from "@/i18n/format";
 import { useLocale, useMessages } from "@/i18n/locale-provider";
 import type { WorkflowState } from "@/lib/workflow";
+import { useGateReason } from "@/lib/gate-reason";
 
 export function SessionFindingsView({
   sessionContext,
@@ -88,16 +89,17 @@ export function SessionFindingsView({
   );
   const reportReady = isResultsReportReady(state);
   const missingReferenceData = hasMissingReferenceData(currentFindingsState);
-  const regenerateFindingsReason = regenerateFindingsBlockedReason(state);
-  const evidenceReviewReason = generateEvidenceReviewBlockedReason({
+  const gate = useGateReason();
+  const regenerateFindingsReason = gate(regenerateFindingsBlockedReason(state));
+  const evidenceReviewReason = gate(generateEvidenceReviewBlockedReason({
     backendUnavailable,
     readiness: currentFindingsState.mlReadiness,
-  });
-  const approveCuesReason = approveReviewedCuesBlockedReason({
+  }));
+  const approveCuesReason = gate(approveReviewedCuesBlockedReason({
     busy,
     findingsStale,
     hasReviewableCues: Boolean(currentFindingsState.mlDecisionSupport) || signalCards.length > 0,
-  });
+  }));
 
   useEffect(() => {
     setInterpretationDraft(interpretationDraftSeed);

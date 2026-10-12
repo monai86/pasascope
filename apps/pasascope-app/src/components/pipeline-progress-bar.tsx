@@ -2,7 +2,8 @@
 
 import { Check } from "lucide-react";
 
-import { EVIDENCE_REVIEW_NOUN } from "@/lib/workflow-glossary";
+import { pipelineMessages } from "@/components/pipeline.messages";
+import { useMessages } from "@/i18n/locale-provider";
 
 export type PipelineState =
   | "awaiting_consent"
@@ -17,15 +18,15 @@ export type PipelineState =
 /** The source path chosen in Session Intake; narrows which pipeline stages apply. */
 export type PipelinePath = "recording" | "audio" | "cha" | "paste";
 
-const pipelineStages: Array<{ id: PipelineState; label: string }> = [
-  { id: "awaiting_consent", label: "Consent" },
-  { id: "ready_for_audio", label: "Ready" },
-  { id: "uploading", label: "Upload" },
-  { id: "transcribing", label: "ASR" },
-  { id: "cha_generating", label: "CHA" },
-  { id: "review_required", label: "Review" },
-  { id: "ml_pending", label: EVIDENCE_REVIEW_NOUN },
-  { id: "report_ready", label: "Report" }
+const pipelineStages: Array<{ id: PipelineState }> = [
+  { id: "awaiting_consent" },
+  { id: "ready_for_audio" },
+  { id: "uploading" },
+  { id: "transcribing" },
+  { id: "cha_generating" },
+  { id: "review_required" },
+  { id: "ml_pending" },
+  { id: "report_ready" }
 ];
 
 /**
@@ -88,10 +89,11 @@ type PipelineProgressBarProps = {
 };
 
 export function PipelineProgressBar({ currentStatus, path }: PipelineProgressBarProps) {
+  const t = useMessages(pipelineMessages);
   const stages = path
     ? pathStageIds[path]
         .map((id) => pipelineStages.find((stage) => stage.id === id))
-        .filter((stage): stage is { id: PipelineState; label: string } => Boolean(stage))
+        .filter((stage): stage is { id: PipelineState } => Boolean(stage))
     : pipelineStages;
   const statusLower = (currentStatus || "").toLowerCase().replace(/_/g, " ").trim();
   const canonicalStage = canonicalPipelineStageForStatus(statusLower);
@@ -111,16 +113,16 @@ export function PipelineProgressBar({ currentStatus, path }: PipelineProgressBar
     <section className="grid gap-4 rounded-panel border border-line bg-white p-5">
       <div className="flex items-center justify-between gap-3">
         <h2 className="text-sm font-semibold uppercase tracking-[0.1em] text-ink-subtle">
-          Pipeline Status
+          {t.title}
         </h2>
         <p className="text-xs font-medium text-brand-strong">
-          Stage {activeIndex + 1} of {stages.length}: {stages[activeIndex].label}
+          {t.stage(activeIndex + 1, stages.length, t.stages[stages[activeIndex].id])}
         </p>
       </div>
       <div
         className="relative grid grid-cols-2 gap-3 sm:flex sm:items-start sm:justify-between sm:gap-0"
         role="img"
-        aria-label={`Pipeline Progress: ${stages[activeIndex].label}`}
+        aria-label={t.progress(t.stages[stages[activeIndex].id])}
       >
         {/* Progress bar line background */}
         <div className="absolute left-0 top-4 hidden h-0.5 w-full bg-line sm:block" />
@@ -154,7 +156,7 @@ export function PipelineProgressBar({ currentStatus, path }: PipelineProgressBar
                     : "text-ink-muted"
                 }`}
               >
-                {stage.label}
+                {t.stages[stage.id]}
               </span>
             </div>
           );

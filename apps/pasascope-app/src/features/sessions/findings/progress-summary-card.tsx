@@ -2,6 +2,7 @@
 
 import type { AiAssistanceArea, AiReview, WorkflowState } from "@/lib/workflow";
 import { generateAiReviewBlockedReason } from "@/lib/workflow-gates";
+import { useGateReason } from "@/lib/gate-reason";
 
 /**
  * AI-assisted Progress Summary card for the Findings view. Surfaces the same
@@ -25,7 +26,8 @@ export function ProgressSummaryCard({
   const progressSummaryArea: AiAssistanceArea | undefined = aiReview?.assistanceAreas.find(
     (area) => area.area === "Progress Summary"
   );
-  const aiReviewReason = generateAiReviewBlockedReason(state);
+  const gate = useGateReason();
+  const aiReviewReason = gate(generateAiReviewBlockedReason(state));
 
   return (
     <section aria-labelledby="findings-progress-summary-title" className="rounded-shell border border-line bg-surface p-6">

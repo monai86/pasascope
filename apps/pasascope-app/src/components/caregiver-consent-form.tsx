@@ -3,18 +3,18 @@
 import type { FormEvent } from "react";
 
 import { ActionButton } from "@/components/action-button";
+import { audioCaptureMessages } from "@/components/audio-capture.messages";
+import { useLocale, useMessages } from "@/i18n/locale-provider";
 
 /**
  * Shared caregiver-consent verification form used by both the Case detail page
  * and the Session Intake consent gate, so the two surfaces never drift apart in
  * fields or wording.
  *
- * Bilingual labeling policy: the therapist workspace UI is English, so field
- * labels (Signer relationship / Consent date / Verification notes) are English.
- * The caregiver-consent confirmation statement is the one clinically sensitive
- * phrase a Thai-speaking therapist must verify unambiguously, so it renders in
- * English with a Thai translation beneath it. No other surface in the workspace
- * mixes languages.
+ * Bilingual labeling policy: field labels follow the interface language. The
+ * caregiver-consent confirmation statement is the one clinically sensitive
+ * phrase a therapist must verify unambiguously, so it always renders in both
+ * languages, with the interface language first.
  */
 
 const CONFIRMATION_EN = "I verify that written or verbal caregiver consent has been obtained.";
@@ -59,6 +59,8 @@ export function CaregiverConsentForm({
   const signerId = `${idPrefix}-consent-signer`;
   const dateId = `${idPrefix}-consent-date`;
   const notesId = `${idPrefix}-consent-notes`;
+  const t = useMessages(audioCaptureMessages).consent;
+  const thaiFirst = useLocale().locale === "th";
   return (
     <form onSubmit={onSubmit} className="space-y-4">
       <label className="flex cursor-pointer items-start gap-3 text-sm font-medium text-ink">
@@ -71,14 +73,14 @@ export function CaregiverConsentForm({
           required
         />
         <span className="grid gap-1">
-          <span>{CONFIRMATION_EN}</span>
-          <span className="text-xs leading-5 text-ink-muted">{CONFIRMATION_TH}</span>
+          <span>{thaiFirst ? CONFIRMATION_TH : CONFIRMATION_EN}</span>
+          <span className="text-xs leading-5 text-ink-muted">{thaiFirst ? CONFIRMATION_EN : CONFIRMATION_TH}</span>
         </span>
       </label>
 
       <div className="grid gap-4 sm:grid-cols-2">
         <label htmlFor={signerId} className="grid gap-1 text-sm font-medium text-ink">
-          Signer relationship
+          {t.signer}
           <input
             id={signerId}
             type="text"
@@ -86,13 +88,13 @@ export function CaregiverConsentForm({
             value={signer}
             onChange={(event) => onSignerChange(event.target.value)}
             disabled={busy}
-            placeholder="e.g. Parent, Guardian"
+            placeholder={t.signerPlaceholder}
             required
           />
         </label>
 
         <label htmlFor={dateId} className="grid gap-1 text-sm font-medium text-ink">
-          Consent date
+          {t.date}
           <input
             id={dateId}
             type="date"
@@ -106,14 +108,14 @@ export function CaregiverConsentForm({
       </div>
 
       <label htmlFor={notesId} className="grid gap-1 text-sm font-medium text-ink">
-        Verification notes
+        {t.notes}
         <textarea
           id={notesId}
           className="min-h-24 w-full resize-y rounded-card border border-line bg-surface p-4 text-sm text-ink outline-none focus-visible:ring-4 focus-visible:ring-[color:var(--color-focus-ring)]"
           value={notes}
           onChange={(event) => onNotesChange(event.target.value)}
           disabled={busy}
-          placeholder="Add any verification comments, reference document numbers, or meeting details here."
+          placeholder={t.notesPlaceholder}
         />
       </label>
 
@@ -123,7 +125,7 @@ export function CaregiverConsentForm({
           disabled={busy || !checked}
           aria-describedby={submitBlockedReason && reasonId ? reasonId : undefined}
         >
-          {busy ? "Verifying..." : submitLabel}
+          {busy ? t.verifying : submitLabel}
         </ActionButton>
       </div>
 

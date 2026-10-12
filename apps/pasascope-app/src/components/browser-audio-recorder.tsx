@@ -3,6 +3,9 @@
 import { useEffect, useRef, useState } from "react";
 import { Mic, Pause, Play, RotateCcw, Square, Trash2 } from "lucide-react";
 
+import { audioCaptureMessages } from "@/components/audio-capture.messages";
+import { useMessages } from "@/i18n/locale-provider";
+
 export type RecordingMetadata = {
   recordingStatus: "idle" | "recording" | "paused" | "stopped" | "interrupted" | "error";
   durationSeconds: number;
@@ -31,6 +34,7 @@ export function BrowserAudioRecorder({
   const [durationSeconds, setDurationSeconds] = useState(initialDurationSeconds);
   const [audioUrl, setAudioUrl] = useState("");
   const [error, setError] = useState("");
+  const t = useMessages(audioCaptureMessages).recorder;
   const [privacyNotice, setPrivacyNotice] = useState(hadUnsavedRecording);
   const [amplitudes, setAmplitudes] = useState<number[]>(() => Array.from({ length: 24 }, () => 8));
   const recorderRef = useRef<MediaRecorder | null>(null);
@@ -80,7 +84,7 @@ export function BrowserAudioRecorder({
     durationRef.current = 0;
 
     if (typeof window === "undefined" || typeof window.MediaRecorder === "undefined" || !navigator.mediaDevices?.getUserMedia) {
-      fail("Audio recording is not supported in this browser.");
+      fail(t.errors.unsupported);
       return;
     }
 
@@ -98,7 +102,7 @@ export function BrowserAudioRecorder({
       recorder.ondataavailable = (event) => {
         if (event.data.size > 0) chunksRef.current.push(event.data);
       };
-      recorder.onerror = () => interruptRecording("Recording was interrupted. Please record again.");
+      recorder.onerror = () => interruptRecording(t.errors.interrupted);
       recorder.onstop = () => finalizeRecording(recorder.mimeType || mimeType || "audio/webm", createdAt);
       attachTrackEndedHandler(stream);
       recorder.start(250);
@@ -115,8 +119,8 @@ export function BrowserAudioRecorder({
       });
     } catch (cause) {
       const message = cause instanceof DOMException && (cause.name === "NotAllowedError" || cause.name === "SecurityError")
-        ? "Microphone permission was denied."
-        : "Microphone could not be started. Check the device and try again.";
+        ? t.errors.permissionDenied
+        : t.errors.notStarted;
       fail(message);
     }
   }
@@ -190,7 +194,7 @@ export function BrowserAudioRecorder({
     chunksRef.current = [];
     recorderRef.current = null;
     if (blob.size === 0) {
-      fail("The recording was empty. Please record again.");
+      fail(t.errors.empty);
       return;
     }
     audioBlobRef.current = blob;
@@ -262,7 +266,7 @@ export function BrowserAudioRecorder({
   function attachTrackEndedHandler(stream: MediaStream) {
     const track = stream.getAudioTracks()[0];
     if (!track) return;
-    const handler = () => interruptRecording("Recording was interrupted. Please record again.");
+    const handler = () => interruptRecording(t.errors.interrupted);
     trackEndedHandlerRef.current = handler;
     track.addEventListener("ended", handler);
   }
@@ -321,15 +325,7 @@ export function BrowserAudioRecorder({
     };
   }
 
-  const statusText = status === "recording"
-    ? "Recording"
-    : status === "paused"
-      ? "Paused"
-      : status === "stopped"
-        ? "Recording ready"
-        : status === "interrupted"
-          ? "Interrupted"
-          : "Ready to record";
+  const statusText = t.status[status === "error" ? "idle" : status];
 
   return (
     <div>
@@ -338,7 +334,7 @@ export function BrowserAudioRecorder({
         {statusText}
       </div>
       <p className="text-5xl font-bold tracking-normal text-ink">{formatDuration(durationSeconds)}</p>
-      <div className="mx-auto mt-8 flex h-28 max-w-sm items-center justify-center gap-1.5" aria-label="Microphone amplitude">
+      <div className="mx-auto mt-8 flex h-28 max-w-sm items-center justify-center gap-1.5" aria-label={t.amplitude}>
         {amplitudes.map((height, index) => (
           <span key={index} className={`w-1.5 rounded-full ${status === "recording" ? "bg-brand" : "bg-tint-strong"}`} style={{ height }} />
         ))}
@@ -346,45 +342,45 @@ export function BrowserAudioRecorder({
 
       <div className="mt-6 flex flex-wrap items-center justify-center gap-3">
         {status === "idle" || status === "error" || status === "interrupted" ? (
-          <button type="button" className="grid h-20 w-20 place-items-center rounded-full bg-brand text-white" aria-label="Start recording" onClick={startRecording}>
+          <button type="button" className="grid h-20 w-20 place-items-center rounded-full bg-brand text-white" aria-label={t.start} onClick={startRecording}>
             <Mic size={32} aria-hidden="true" />
           </button>
         ) : null}
         {status === "recording" ? (
-          <button type="button" className="grid h-20 w-20 place-items-center rounded-full bg-brand text-white" aria-label="Pause recording" onClick={pauseRecording}>
+          <button type="button" className="grid h-20 w-20 place-items-center rounded-full bg-brand text-white" aria-label={t.pause} onClick={pauseRecording}>
             <Pause size={32} fill="currentColor" aria-hidden="true" />
           </button>
         ) : null}
         {status === "paused" ? (
-          <button type="button" className="grid h-20 w-20 place-items-center rounded-full bg-brand text-white" aria-label="Resume recording" onClick={resumeRecording}>
+          <button type="button" className="grid h-20 w-20 place-items-center rounded-full bg-brand text-white" aria-label={t.resume} onClick={resumeRecording}>
             <Play size={32} fill="currentColor" aria-hidden="true" />
           </button>
         ) : null}
-        <button type="button" className="grid h-14 w-14 place-items-center rounded-full border border-line bg-surface text-ink-muted disabled:opacity-35" aria-label="Stop recording" onClick={stopRecording} disabled={status !== "recording" && status !== "paused"}>
+        <button type="button" className="grid h-14 w-14 place-items-center rounded-full border border-line bg-surface text-ink-muted disabled:opacity-35" aria-label={t.stop} onClick={stopRecording} disabled={status !== "recording" && status !== "paused"}>
           <Square size={20} fill="currentColor" aria-hidden="true" />
         </button>
       </div>
 
       {audioUrl ? (
         <div className="mt-5 rounded-panel border border-line bg-surface p-4">
-          <audio className="w-full" controls src={audioUrl} aria-label="Recorded audio playback" />
+          <audio className="w-full" controls src={audioUrl} aria-label={t.playback} />
           <div className="mt-3 flex flex-wrap justify-center gap-2">
             <button type="button" className="inline-flex min-h-11 items-center gap-2 rounded-xl border border-brand px-4 py-2 text-sm font-semibold text-brand" onClick={rerecord}>
               <RotateCcw size={17} aria-hidden="true" />
-              Re-record
+              {t.rerecord}
             </button>
-            <button type="button" className="inline-flex min-h-11 items-center gap-2 rounded-xl border border-[color:var(--color-danger-border)] px-4 py-2 text-sm font-semibold text-[color:var(--color-danger-text)]" onClick={deleteRecording} aria-label="Delete recording">
+            <button type="button" className="inline-flex min-h-11 items-center gap-2 rounded-xl border border-[color:var(--color-danger-border)] px-4 py-2 text-sm font-semibold text-[color:var(--color-danger-text)]" onClick={deleteRecording} aria-label={t.deleteLabel}>
               <Trash2 size={17} aria-hidden="true" />
-              Delete
+              {t.delete}
             </button>
           </div>
         </div>
       ) : null}
 
-      {privacyNotice ? <p className="mt-4 rounded-xl border border-[color:var(--color-attention-border)] bg-[color:var(--color-warning-bg)] p-3 text-sm font-semibold text-[color:var(--color-warning-text)]">Unsaved recording was cleared for privacy. Please record again.</p> : null}
+      {privacyNotice ? <p className="mt-4 rounded-xl border border-[color:var(--color-attention-border)] bg-[color:var(--color-warning-bg)] p-3 text-sm font-semibold text-[color:var(--color-warning-text)]">{t.clearedForPrivacy}</p> : null}
       {error ? <p className="mt-4 rounded-xl border border-[color:var(--color-danger-border)] bg-[color:var(--color-danger-bg)] p-3 text-sm font-semibold text-[color:var(--color-danger-text)]" role="alert">{error}</p> : null}
-      <p className="mt-3 text-sm font-semibold text-brand">Transcription is experimental. After you upload, the recording is transcribed on this server and the draft must be reviewed.</p>
-      <p className="mt-1 text-xs text-ink-muted">Audio stays in memory only while this page is open. It is not uploaded automatically.</p>
+      <p className="mt-3 text-sm font-semibold text-brand">{t.experimental}</p>
+      <p className="mt-1 text-xs text-ink-muted">{t.memoryOnly}</p>
     </div>
   );
 }
