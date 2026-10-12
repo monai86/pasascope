@@ -37,6 +37,7 @@ export const shellMessages = defineMessages({
       confirmingWorkspace: "Confirming runtime settings",
       workspaceUnavailable: "Runtime settings unavailable",
       signedInWorkspace: "Supabase-authenticated workspace",
+      personalWorkspace: "Personal workspace",
       localWorkspace: "Local clinician workspace",
     },
     blocked: {
@@ -82,6 +83,7 @@ export const shellMessages = defineMessages({
       confirmingWorkspace: "กำลังยืนยันการตั้งค่าระบบ",
       workspaceUnavailable: "ไม่สามารถอ่านการตั้งค่าระบบได้",
       signedInWorkspace: "พื้นที่ทำงานที่ลงชื่อเข้าใช้แล้ว",
+      personalWorkspace: "พื้นที่ทำงานส่วนตัว",
       localWorkspace: "พื้นที่ทำงานบนเครื่องนี้",
     },
     blocked: {

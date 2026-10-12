@@ -15,6 +15,7 @@ import { resolveSessionHref } from "@/features/sessions/state/session-view";
 import { useMessages } from "@/i18n/locale-provider";
 import type { TranscriptLine, WorkflowState } from "@/lib/workflow";
 import { useStatusText } from "@/features/sessions/state/use-status-text";
+import { useAppMode } from "@/lib/app-mode";
 
 export type SessionTranscriptViewProps = {
   sessionContext: SessionContext;
@@ -48,19 +49,25 @@ export function SessionTranscriptView({
   audioUrl,
 }: SessionTranscriptViewProps) {
   const t = useMessages(sessionMessages).transcript;
+  const { openGates } = useAppMode();
   const reviewChecklist = [
     { label: t.readiness.checklist.saved, complete: state.transcriptSaveStatus === "saved" },
-    { label: t.readiness.checklist.qa, complete: state.qaStatus !== "not_run" && state.qaStatus !== "fail" },
-    { label: t.readiness.checklist.attested, complete: state.transcriptAttested },
+    ...(openGates
+      ? []
+      : [
+          { label: t.readiness.checklist.qa, complete: state.qaStatus !== "not_run" && state.qaStatus !== "fail" },
+          { label: t.readiness.checklist.attested, complete: state.transcriptAttested },
+        ]),
     { label: t.readiness.checklist.extracted, complete: state.featuresExtracted },
   ];
-  const reportBlockedReason = getReviewReportBlockedReason(state, t.readiness.blocked);
+  const reportBlockedReason = getReviewReportBlockedReason(state, t.readiness.blocked, openGates);
   const [reviewMode, setReviewMode] = useState<"audio" | "classic">(audioUrl ? "audio" : "classic");
   const guide = getTranscriptGuide(state, t.guide, {
     busy,
     findingsHref: resolveSessionHref("findings", sessionContext.sessionId),
     onAttest,
     onExtractFeatures,
+    openGates,
   });
 
   return (
@@ -120,6 +127,7 @@ export function SessionTranscriptView({
                 findingsStale={Boolean(state.featuresExtracted && state.transcriptSaveStatus === "unsaved")}
               />
               {/* Saving, QA and attestation live in the text editor; point to them from here. */}
+              {openGates ? null : (
               <div className="flex flex-col gap-3 rounded-panel border border-line bg-surface p-4 sm:flex-row sm:items-center sm:justify-between">
                 <p className="text-sm text-ink-muted">
                   {state.transcriptAttested
@@ -130,6 +138,7 @@ export function SessionTranscriptView({
                   {t.continueToAttestation}
                 </Button>
               </div>
+              )}
             </>
           ) : (
             <TranscriptEditorPanel
@@ -217,7 +226,7 @@ type TranscriptCopy = (typeof sessionMessages)["en"]["transcript"];
 function getTranscriptGuide(
   state: WorkflowState,
   copy: TranscriptCopy["guide"],
-  actions: { busy: boolean; findingsHref: string; onAttest: () => void; onExtractFeatures: () => void },
+  actions: { busy: boolean; findingsHref: string; onAttest: () => void; onExtractFeatures: () => void; openGates?: boolean },
 ): { prompt: string; primaryAction?: SessionGuideAction } {
   // Attestation is the server's record that the saved transcript was reviewed,
   // and any later edit clears it, so an attested transcript needs no re-check
@@ -241,6 +250,20 @@ function getTranscriptGuide(
     };
   }
   if (state.transcriptSaveStatus !== "saved") return { prompt: copy.unsaved };
+  if (actions.openGates) {
+    // No QA or attestation step: a saved transcript goes straight to analysis.
+    return {
+      prompt: copy.readyToAnalyze,
+      primaryAction: state.backendTranscriptId
+        ? {
+            label: actions.busy ? copy.extracting : copy.analyze,
+            onClick: actions.onExtractFeatures,
+            disabled: actions.busy,
+            testId: "extract-features-button",
+          }
+        : undefined,
+    };
+  }
   if (state.qaStatus === "not_run") return { prompt: copy.qaNotRun };
   if (state.qaStatus === "fail") return { prompt: copy.qaFailed };
   return {
@@ -251,8 +274,9 @@ function getTranscriptGuide(
   };
 }
 
-function getReviewReportBlockedReason(state: WorkflowState, copy: TranscriptCopy["readiness"]["blocked"]) {
+function getReviewReportBlockedReason(state: WorkflowState, copy: TranscriptCopy["readiness"]["blocked"], openGates = false) {
   if (state.transcriptSaveStatus !== "saved") return copy.unsaved;
+  if (openGates) return state.featuresExtracted ? undefined : copy.noFeatures;
   if (state.qaStatus === "not_run") return copy.qaNotRun;
   if (state.qaStatus === "fail") return copy.qaFailed;
   if (state.error && state.statusMessage === "Attestation failed.") return copy.attestFailed;

@@ -11,7 +11,7 @@ import type { WorkflowState } from "@/lib/workflow";
  * report draft cannot exist without extracted features. That keeps the rail
  * consistent on views that load only part of the state, such as Report.
  */
-export function sessionCompletion(state: WorkflowState): Record<SessionView, boolean> {
+export function sessionCompletion(state: WorkflowState, openGates = false): Record<SessionView, boolean> {
   const attested = state.transcriptAttested && state.transcriptReviewStatus === "reviewed";
   const currentReport =
     state.reportStatus === "draft" || state.reportStatus === "reviewed" || state.reportStatus === "finalized";
@@ -20,8 +20,10 @@ export function sessionCompletion(state: WorkflowState): Record<SessionView, boo
 
   return {
     intake: state.transcriptReady || attested || Boolean(state.backendTranscriptId),
-    transcript: attested,
+    // With open gates there is no attestation step: the transcript is done once it has been analysed.
+    transcript: attested || (openGates && state.featuresExtracted),
     findings: findingsCurrent && (state.featuresExtracted || currentReport),
-    report: state.reportStatus === "finalized",
+    // With open gates a saved draft is the finished report; sign-off is optional.
+    report: state.reportStatus === "finalized" || (openGates && currentReport),
   };
 }

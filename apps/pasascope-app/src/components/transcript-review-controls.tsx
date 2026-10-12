@@ -16,6 +16,7 @@ import { QA_INTERPRETATION_NOTE } from "@/lib/clinical-safety-copy";
 import { attestTranscriptBlockedReason, exportTranscriptBlockedReason } from "@/lib/workflow-gates";
 import type { PersistenceStatus, TranscriptQaStatus } from "@/lib/workflow";
 import { useGateReason } from "@/lib/gate-reason";
+import { useAppMode } from "@/lib/app-mode";
 
 type QaDetailsProps = {
   qaStatus: TranscriptQaStatus;
@@ -112,6 +113,7 @@ export function TranscriptReviewControls({
   onAttest,
   onExport,
 }: ReviewControlsProps) {
+  const { openGates } = useAppMode();
   const gate = useGateReason();
   const attestBlockedReason = gate(attestTranscriptBlockedReason({
     busy,
@@ -166,6 +168,7 @@ export function TranscriptReviewControls({
               <MessageSquarePlus size={16} aria-hidden="true" />
               Add Note
             </button>
+            {openGates ? null : (
             <button
               type="button"
               onClick={onAttest}
@@ -177,6 +180,7 @@ export function TranscriptReviewControls({
               {attested ? <CheckCircle2 size={17} aria-hidden="true" /> : <ShieldCheck size={17} aria-hidden="true" />}
               {attested ? "Transcript attested" : "Attest transcript"}
             </button>
+            )}
             <button
               type="button"
               onClick={onExport}
@@ -188,7 +192,7 @@ export function TranscriptReviewControls({
               Export reviewed .cha
             </button>
           </div>
-          {attestBlockedReason ? (
+          {attestBlockedReason && !openGates ? (
             <p
               id="transcript-attest-reason"
               role="status"

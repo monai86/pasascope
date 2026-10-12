@@ -70,6 +70,8 @@ function ReportSummaryIdentityScope({ caseId, sessionId, transcriptId, reportId 
     hasSnapshotIntegrityError,
     signedSnapshotVerified,
     signedActionsBlocked,
+    canExport,
+    openGates,
     canRenderReportMetadata,
     isEditorLocked,
     transcriptUnlocked,
@@ -109,7 +111,9 @@ function ReportSummaryIdentityScope({ caseId, sessionId, transcriptId, reportId 
       ? "generate"
       : state.reportSaveStatus === "unsaved" || state.reportSaveStatus === "failed"
         ? "save"
-        : "finalize";
+        : openGates
+          ? undefined
+          : "finalize";
 
   const reportSections = useMemo(() => reportSectionDefinitions.map((section) => {
     if (section.title !== "Strengths" || !state.featureSummary.length) return section;
@@ -142,7 +146,7 @@ function ReportSummaryIdentityScope({ caseId, sessionId, transcriptId, reportId 
               ? "unavailable"
               : "local_draft",
           activeView: "report",
-          completion: sessionCompletion(state),
+          completion: sessionCompletion(state, openGates),
         }}
       />      <SessionGuide
         testId="report-guide"
@@ -285,9 +289,9 @@ function ReportSummaryIdentityScope({ caseId, sessionId, transcriptId, reportId 
         <div className="mt-4 border-t border-line pt-4">
           <p className="text-xs font-semibold uppercase tracking-[0.12em] text-ink-muted">{t.export.title}</p>
           <div className="mt-2 flex flex-wrap gap-2">
-            <button className="inline-flex items-center gap-2 rounded-card border border-line bg-surface px-4 py-3 text-sm font-bold text-brand disabled:opacity-50" disabled={!isFinalized || signedActionsBlocked} onClick={() => void handleExport("markdown")}><Download size={18} aria-hidden="true" />{t.export.markdown}</button>
-            <button className="inline-flex items-center gap-2 rounded-card border border-line bg-surface px-4 py-3 text-sm font-bold text-brand disabled:opacity-50" disabled={!isFinalized || signedActionsBlocked} onClick={() => void handleExport("html")}><Download size={18} aria-hidden="true" />{t.export.html}</button>
-            {isFinalized && state.backendReportId && !signedActionsBlocked ? (
+            <button className="inline-flex items-center gap-2 rounded-card border border-line bg-surface px-4 py-3 text-sm font-bold text-brand disabled:opacity-50" disabled={!canExport} onClick={() => void handleExport("markdown")}><Download size={18} aria-hidden="true" />{t.export.markdown}</button>
+            <button className="inline-flex items-center gap-2 rounded-card border border-line bg-surface px-4 py-3 text-sm font-bold text-brand disabled:opacity-50" disabled={!canExport} onClick={() => void handleExport("html")}><Download size={18} aria-hidden="true" />{t.export.html}</button>
+            {canExport && state.backendReportId ? (
               <Link
                 href={`/reports/print?report_id=${encodeURIComponent(state.backendReportId)}`}
                 target="_blank"
@@ -420,8 +424,8 @@ function ReportSummaryIdentityScope({ caseId, sessionId, transcriptId, reportId 
             <h2 className="text-lg font-bold text-ink">{t.states.title}</h2>
             <dl className="mt-4 grid gap-3 sm:grid-cols-3">
               <ReportProvenanceItem label={t.states.save} value={isSnapshotIntegrityChecking ? t.states.verifyingSnapshot : hasSnapshotIntegrityError ? t.states.integrityError : isNotStarted ? t.states.neverGenerated : label(reportSaveStateLabel(state.reportSaveStatus, isFinalized, isStale))} />
-              <ReportProvenanceItem label={t.states.signOff} value={isSnapshotIntegrityChecking ? t.states.signedVerifying : hasSnapshotIntegrityError ? t.states.signedInvalid : isFinalized ? t.states.signed : isStale ? t.states.blockedRegenerate : isNotStarted ? t.states.blockedGenerate : t.states.confirmationRequired} />
-              <ReportProvenanceItem label={t.states.reportExport} value={isSnapshotIntegrityChecking ? t.states.blockedVerifying : hasSnapshotIntegrityError ? t.states.blockedIntegrity : isFinalized ? t.states.eligible : isStale ? t.states.blockedRegenerate : isNotStarted ? t.states.blockedGenerate : t.states.afterSignOff} />
+              {openGates && !isFinalized ? null : <ReportProvenanceItem label={t.states.signOff} value={isSnapshotIntegrityChecking ? t.states.signedVerifying : hasSnapshotIntegrityError ? t.states.signedInvalid : isFinalized ? t.states.signed : isStale ? t.states.blockedRegenerate : isNotStarted ? t.states.blockedGenerate : t.states.confirmationRequired} />}
+              <ReportProvenanceItem label={t.states.reportExport} value={canExport && !isFinalized ? t.states.eligible : isSnapshotIntegrityChecking ? t.states.blockedVerifying : hasSnapshotIntegrityError ? t.states.blockedIntegrity : isFinalized ? t.states.eligible : isStale ? t.states.blockedRegenerate : isNotStarted ? t.states.blockedGenerate : t.states.afterSignOff} />
               <ReportProvenanceItem label={t.states.cuesAcknowledgement} value={state.cuesAcknowledgedAt ? `${state.cuesAcknowledgedBy ?? t.states.therapist} — ${formatDate(state.cuesAcknowledgedAt, locale)}` : t.states.notRecorded} />
             </dl>
           </section>
@@ -503,7 +507,7 @@ function ReportSummaryIdentityScope({ caseId, sessionId, transcriptId, reportId 
         </details>
         </> : null}
 
-        {!isFinalized && !isFailedSafety && !isStale && (
+        {!openGates && !isFinalized && !isFailedSafety && !isStale && (
           <WorkspacePanel className="p-5 space-y-4 animate-fade-in border border-line">
             <h2 className="text-lg font-bold text-ink">{t.signOff.title}</h2>
             <div className="rounded-panel border border-line bg-surface p-4">
@@ -532,6 +536,8 @@ function ReportSummaryIdentityScope({ caseId, sessionId, transcriptId, reportId 
           </WorkspacePanel>
         )}
 
+        {openGates && !isFinalized ? null : (
+          <>
         <WorkspacePanel className="p-5">
           <h2 className="text-lg font-bold text-ink">{t.share.title}</h2>
           <p className="mt-2 text-sm leading-6 text-ink-muted">
@@ -559,6 +565,8 @@ function ReportSummaryIdentityScope({ caseId, sessionId, transcriptId, reportId 
         >
           {isFinalized ? t.signOff.finalized : backendUnavailable ? t.signOff.finalizeOnlineOnly : t.signOff.finalize}
         </Button>
+          </>
+        )}
         {isFinalized ? (
           <button
             type="button"

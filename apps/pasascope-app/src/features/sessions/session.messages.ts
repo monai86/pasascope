@@ -37,6 +37,8 @@ type SessionCopy = {
       qaNotRun: string;
       qaFailed: string;
       readyToAttest: string;
+      readyToAnalyze: string;
+      analyze: string;
       attest: string;
       attesting: string;
     };
@@ -107,6 +109,8 @@ export const sessionMessages = defineMessages<SessionCopy>({
         qaFailed: "QA found issues that block attestation. Fix them, save, and run QA again.",
         readyToAttest: "The draft is saved and QA is complete. Attest the transcript to confirm your review.",
         attest: "Attest this transcript",
+        readyToAnalyze: "The transcript is saved. Analyse it to see the language-sample measures.",
+        analyze: "Analyse this transcript",
         attesting: "Recording attestation...",
       },
       asrCaution: "Experimental ASR can be inaccurate. Verify wording, timestamps, and speaker labels before attestation.",
@@ -178,6 +182,8 @@ export const sessionMessages = defineMessages<SessionCopy>({
         qaFailed: "การตรวจคุณภาพพบปัญหาที่ทำให้ยังรับรองไม่ได้ แก้ไข บันทึก แล้วตรวจคุณภาพอีกครั้ง",
         readyToAttest: "บันทึกร่างและตรวจคุณภาพเรียบร้อยแล้ว รับรองบทถอดเสียงเพื่อยืนยันว่าคุณทบทวนแล้ว",
         attest: "รับรองบทถอดเสียงนี้",
+        readyToAnalyze: "บันทึกบทถอดเสียงแล้ว กดวิเคราะห์เพื่อดูค่าทางภาษาของตัวอย่าง",
+        analyze: "วิเคราะห์บทถอดเสียงนี้",
         attesting: "กำลังบันทึกการรับรอง...",
       },
       asrCaution: "การถอดเสียงอัตโนมัติยังอยู่ในขั้นทดลองและอาจคลาดเคลื่อน ตรวจถ้อยคำ เวลา และรหัสผู้พูดก่อนรับรอง",

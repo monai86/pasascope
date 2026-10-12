@@ -120,9 +120,40 @@ export function resolveAalFromSession(session: SupabaseSessionLike): "aal1" | "a
   return null;
 }
 
+export const PUBLIC_SIGNUP_FLAG = "pasascope.public_signup";
+
+/** Set from the API's runtime settings; see SupabaseAuthRuntimeBridge. */
+export function isPublicSignupMode(): boolean {
+  return typeof window !== "undefined" && window.sessionStorage.getItem(PUBLIC_SIGNUP_FLAG) === "true";
+}
+
+export function personalOrganizationId(userId: string): string {
+  return `personal_${userId}`;
+}
+
 export function buildSupabaseBrowserAuthSnapshotFromSession(
   session: SupabaseSessionLike,
 ): SupabaseBrowserAuthSnapshot | null {
+  if (isPublicSignupMode()) {
+    // Public app: a signed-in user is a therapist in a workspace of their own.
+    // The API derives the same workspace from the token, so nothing here
+    // grants access; it only tells the screens who is signed in.
+    if (!session?.user?.id || !session.user.email) return null;
+    const organizationId = personalOrganizationId(session.user.id);
+    return {
+      userId: session.user.id,
+      email: session.user.email,
+      displayName: extractDisplayName(session.user.user_metadata),
+      aal: resolveAalFromSession(session) ?? "aal1",
+      appMetadata: {
+        role: "therapist",
+        membership_active: true,
+        invitation_status: "accepted",
+        organization_id: organizationId,
+        organizations: [{ organizationId, label: organizationId, role: "therapist" }],
+      },
+    };
+  }
   const resolvedAal = resolveAalFromSession(session);
   if (!session?.user?.id || !session.user.email || !resolvedAal) {
     return null;

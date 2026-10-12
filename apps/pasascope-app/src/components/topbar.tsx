@@ -10,6 +10,7 @@ import { shellMessages } from "@/components/shell.messages";
 import { Button } from "@/components/ui/button";
 import { useMessages } from "@/i18n/locale-provider";
 import { signOutSupabaseWorkspace } from "@/lib/supabase-workspace-logout";
+import { useAppMode } from "@/lib/app-mode";
 import { useRuntimeSettings } from "@/lib/use-runtime-settings";
 import { useSupabaseAccessSession } from "@/lib/use-supabase-access-session";
 
@@ -19,6 +20,7 @@ export function Topbar({ showSearch = true }: { /** Off where the page has its o
   const [query, setQuery] = useState("");
   const runtimeSettings = useRuntimeSettings();
   const supabaseSession = useSupabaseAccessSession();
+  const { publicSignup } = useAppMode();
   const isSupabaseRuntime = runtimeSettings.status === "success" && runtimeSettings.data.auth_mode === "supabase";
   const clinicianLabel = runtimeSettings.status !== "success"
     ? runtimeSettings.status === "loading" ? t.user.verifying : t.user.unavailable
@@ -28,7 +30,7 @@ export function Topbar({ showSearch = true }: { /** Off where the page has its o
   const workspaceLabel = runtimeSettings.status !== "success"
     ? runtimeSettings.status === "loading" ? t.user.confirmingWorkspace : t.user.workspaceUnavailable
     : isSupabaseRuntime
-      ? `${t.user.signedInWorkspace}${supabaseSession?.role ? ` · ${supabaseSession.role}` : ""}`
+      ? publicSignup ? t.user.personalWorkspace : `${t.user.signedInWorkspace}${supabaseSession?.role ? ` · ${supabaseSession.role}` : ""}`
       : t.user.localWorkspace;
   const showLogout = isSupabaseRuntime || Boolean(supabaseSession?.stage && supabaseSession.stage !== "signed_out");
 
@@ -69,9 +71,11 @@ export function Topbar({ showSearch = true }: { /** Off where the page has its o
           {t.refresh}
         </Button>
 
-        <div className="hidden min-w-0 shrink overflow-hidden xl:block xl:max-w-[15rem] 2xl:max-w-[18rem]">
-          <ActiveOrganizationSummary />
-        </div>
+        {publicSignup ? null : (
+          <div className="hidden min-w-0 shrink overflow-hidden xl:block xl:max-w-[15rem] 2xl:max-w-[18rem]">
+            <ActiveOrganizationSummary />
+          </div>
+        )}
 
         <LanguageToggle />
 

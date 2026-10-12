@@ -13,6 +13,10 @@ export const runtimeSettingsSchema = z.object({
   user_roles: z.array(z.string()),
   access_model: z.object({
     invitation_only: z.boolean(),
+    // Public app mode: anyone who signs up gets a personal workspace, and
+    // review gates may be open (no attestation or sign-off step).
+    public_signup: z.boolean().optional(),
+    review_gates: z.enum(["strict", "open"]).optional(),
     required_app_aal: z.enum(["aal1", "aal2"]),
     active_organization_session: z.string(),
     production_mock_mode: z.string(),

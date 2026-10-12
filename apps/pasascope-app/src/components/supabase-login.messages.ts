@@ -28,6 +28,7 @@ type SupabaseLoginCopy = {
   connectingGoogle: string;
   continueWithGoogle: string;
   policyToggle: string;
+  publicNote: { stored: string; boundary: string };
   policy: {
     invitationTitle: string;
     invitationOn: string;
@@ -91,6 +92,10 @@ export const supabaseLoginMessages = defineMessages<SupabaseLoginCopy>({
     connectingGoogle: "Connecting Google...",
     continueWithGoogle: "Continue with Google",
     policyToggle: "Clinical Security & Access Protocol Details",
+    publicNote: {
+      stored: "Your account keeps the cases, recordings, transcripts and reports you create. Only you can open them, and you can delete a case at any time.",
+      boundary: "PasaScope is a research and education prototype. It describes a language sample; it does not diagnose, and it has no Thai clinical validation.",
+    },
     policy: {
       invitationTitle: "Invitation-only access",
       invitationOn: "Public signup is off. Only users with an accepted invitation can continue to account access.",
@@ -156,6 +161,10 @@ export const supabaseLoginMessages = defineMessages<SupabaseLoginCopy>({
     connectingGoogle: "กำลังเชื่อมต่อ Google...",
     continueWithGoogle: "ดำเนินการต่อด้วย Google",
     policyToggle: "รายละเอียดด้านความปลอดภัยและการเข้าถึง",
+    publicNote: {
+      stored: "บัญชีของคุณเก็บเคส ไฟล์เสียง บทถอดเสียง และรายงานที่คุณสร้าง มีเพียงคุณที่เปิดดูได้ และลบเคสได้ทุกเมื่อ",
+      boundary: "PasaScope เป็นต้นแบบเพื่อการวิจัยและการศึกษา ใช้บรรยายตัวอย่างภาษาเท่านั้น ไม่ได้วินิจฉัย และยังไม่ผ่านการตรวจสอบทางคลินิกกับเด็กไทย",
+    },
     policy: {
       invitationTitle: "เข้าใช้ได้เฉพาะผู้ได้รับเชิญ",
       invitationOn: "ปิดการสมัครสาธารณะ เฉพาะผู้ที่ตอบรับคำเชิญแล้วเท่านั้นจึงเข้าถึงบัญชีได้",

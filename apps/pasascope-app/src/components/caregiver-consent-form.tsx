@@ -5,6 +5,7 @@ import type { FormEvent } from "react";
 import { ActionButton } from "@/components/action-button";
 import { consentMessages } from "@/components/consent.messages";
 import { useLocale, useMessages } from "@/i18n/locale-provider";
+import { useAppMode } from "@/lib/app-mode";
 
 /**
  * Shared caregiver-consent verification form used by both the Case detail page
@@ -61,6 +62,7 @@ export function CaregiverConsentForm({
   const notesId = `${idPrefix}-consent-notes`;
   const t = useMessages(consentMessages);
   const thaiFirst = useLocale().locale === "th";
+  const confirmationOnly = useAppMode().publicSignup;
   return (
     <form onSubmit={onSubmit} className="space-y-4">
       <label className="flex cursor-pointer items-start gap-3 text-sm font-medium text-ink">
@@ -78,6 +80,9 @@ export function CaregiverConsentForm({
         </span>
       </label>
 
+      {/* The public app asks only for the confirmation; signer and date take their defaults. */}
+      {confirmationOnly ? null : (
+        <>
       <div className="grid gap-4 sm:grid-cols-2">
         <label htmlFor={signerId} className="grid gap-1 text-sm font-medium text-ink">
           {t.signer}
@@ -118,6 +123,8 @@ export function CaregiverConsentForm({
           placeholder={t.notesPlaceholder}
         />
       </label>
+        </>
+      )}
 
       <div className="flex flex-wrap gap-3">
         <ActionButton

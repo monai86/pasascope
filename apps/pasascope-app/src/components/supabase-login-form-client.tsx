@@ -49,11 +49,13 @@ export function SupabaseLoginFormClient({
 
   useEffect(() => {
     if (supabaseSession?.stage === "authenticated") {
-      router.replace(resolvePostLoginRoute(supabaseSession.role));
+      router.replace(runtimeSettings.access_model?.public_signup === true ? "/today" : resolvePostLoginRoute(supabaseSession.role));
     }
-  }, [supabaseSession?.stage, supabaseSession?.role, router]);
+  }, [supabaseSession?.stage, supabaseSession?.role, router, runtimeSettings.access_model?.public_signup]);
 
   const invitationOnly = runtimeSettings.access_model?.invitation_only !== false;
+  const publicSignup = runtimeSettings.access_model?.public_signup === true;
+  const landingPath = publicSignup ? "/today" : "/dashboard";
   const browserClientStatus = getSupabaseBrowserClientConfigStatus();
   const [mode, setMode] = useState<"signin" | "signup">("signin");
   const t = useMessages(supabaseLoginMessages);
@@ -105,7 +107,7 @@ export function SupabaseLoginFormClient({
             setIsGoogleSubmitting(false);
           } else if (data?.session) {
             publishSupabaseSessionPayload(data.session);
-            router.replace("/dashboard");
+            router.replace(landingPath);
           }
         }).catch((err) => {
           setErrorMessage(err instanceof Error ? err.message : "Exchange failed");
@@ -113,7 +115,7 @@ export function SupabaseLoginFormClient({
         });
       }
     }
-  }, [browserClient, router]);
+  }, [browserClient, router, landingPath]);
   const configStatusLabel = browserClientStatus.configured
     ? "NEXT_PUBLIC_SUPABASE_URL and NEXT_PUBLIC_SUPABASE_ANON_KEY detected."
     : browserClientStatus.missingUrl || browserClientStatus.missingAnonKey
@@ -140,7 +142,7 @@ export function SupabaseLoginFormClient({
       const { error } = await browserClient.auth.signInWithOAuth({
         provider: "google",
         options: {
-          redirectTo: typeof window === "undefined" ? undefined : `${window.location.origin}/dashboard`,
+          redirectTo: typeof window === "undefined" ? undefined : `${window.location.origin}${landingPath}`,
         },
       });
 
@@ -185,7 +187,7 @@ export function SupabaseLoginFormClient({
             display_name: fullName.trim() || undefined,
             clinical_role: roleTab === "admin" ? "clinic_admin" : roleTab === "parent" ? "parent_guardian" : "therapist_slp",
           },
-          emailRedirectTo: typeof window === "undefined" ? undefined : `${window.location.origin}/dashboard`,
+          emailRedirectTo: typeof window === "undefined" ? undefined : `${window.location.origin}${landingPath}`,
         },
       });
 
@@ -197,7 +199,7 @@ export function SupabaseLoginFormClient({
       if (data.session) {
         publishSupabaseSessionPayload(data.session);
         setStatusMessage(t.status.signUpSignedIn);
-        router.push(resolvePostLoginRoute(data.session.user?.app_metadata?.role));
+        router.push(publicSignup ? landingPath : resolvePostLoginRoute(data.session.user?.app_metadata?.role));
         router.refresh();
       } else {
         setStatusMessage(t.status.signUpConfirmEmail);
@@ -242,7 +244,7 @@ export function SupabaseLoginFormClient({
 
       publishSupabaseSessionPayload(data.session ?? null);
       setStatusMessage(t.status.signInAccepted);
-      router.push(resolvePostLoginRoute(data.session?.user?.app_metadata?.role));
+      router.push(publicSignup ? landingPath : resolvePostLoginRoute(data.session?.user?.app_metadata?.role));
       router.refresh();
     } catch (error) {
       setErrorMessage(error instanceof Error ? error.message : t.errors.signInFailed);
@@ -321,7 +323,8 @@ export function SupabaseLoginFormClient({
         </p>
       </div>
 
-      {/* Role Tabs (Clinician / Admin / Parent) */}
+      {/* Role tabs apply only where accounts carry an organization role. */}
+      {publicSignup ? null : (
       <div className="mb-5 grid grid-cols-3 gap-1 rounded-xl border border-line bg-surface-muted p-1 text-xs font-semibold">
         <button
           type="button"
@@ -359,6 +362,7 @@ export function SupabaseLoginFormClient({
           <span>{t.roles.parent}</span>
         </button>
       </div>
+      )}
 
       {/* Sign-in / Sign-up Mode Selector */}
       <div className="mb-5 flex items-center justify-between text-xs">
@@ -395,7 +399,7 @@ export function SupabaseLoginFormClient({
             {t.modes.signUp}
           </button>
         </div>
-        <span className="text-xs text-ink-subtle font-medium">{t.modes.invitationOnly}</span>
+        {publicSignup ? null : <span className="text-xs text-ink-subtle font-medium">{t.modes.invitationOnly}</span>}
       </div>
 
       {/* Form */}
@@ -579,7 +583,12 @@ export function SupabaseLoginFormClient({
         </button>
       </div>
 
-      {/* Collapsible Clinical Security & Access Protocol (maintaining all test contracts) */}
+      {publicSignup ? (
+        <div className="mt-4 space-y-2 border-t border-line pt-3 text-xs leading-relaxed text-ink-muted">
+          <p>{t.publicNote.stored}</p>
+          <p>{t.publicNote.boundary}</p>
+        </div>
+      ) : (
       <div className="mt-4 pt-3 border-t border-line">
         <button
           type="button"
@@ -642,6 +651,7 @@ export function SupabaseLoginFormClient({
           </div>
         </div>
       </div>
+      )}
     </div>
   );
 }

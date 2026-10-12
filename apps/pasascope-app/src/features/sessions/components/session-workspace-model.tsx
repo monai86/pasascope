@@ -60,6 +60,7 @@ import { sessionCompletion } from "@/features/sessions/state/session-completion"
 import type { SessionIntakeSource, SessionIntakeStepId } from "@/features/sessions/intake/session-intake-view";
 import type { SessionContext } from "@/features/sessions/components/session-context-header";
 import { SessionWorkflowView, type SessionWorkflowViewModel } from "@/features/sessions/components/session-workspace-view";
+import { useAppMode } from "@/lib/app-mode";
 
 
 export type SessionWorkspaceProps = {
@@ -97,6 +98,7 @@ function SessionWorkspaceIdentityScope({ sessionId, caseId, transcriptId, report
  * views so transport state cannot leak into layout components.
  */
 export function useSessionWorkspace({ sessionId, caseId, transcriptId, reportId, view = "intake", mode }: SessionWorkspaceIdentityProps): SessionWorkflowViewModel {
+  const { openGates } = useAppMode();
   const hasLocator = Boolean(sessionId || transcriptId || caseId || reportId);
   const [state, setState] = useState<WorkflowState>(() => hasLocator
     ? createIdentityScopedWorkflowState({ workflowLoading: true, statusMessage: "Loading persisted workflow..." })
@@ -667,7 +669,11 @@ export function useSessionWorkspace({ sessionId, caseId, transcriptId, reportId,
   }
 
   async function handleAnalyze() {
-    if (!isTranscriptUnlocked(state)) {
+    if (openGates && state.transcriptSaveStatus !== "saved") {
+      persist({ ...state, statusMessage: "Unsaved transcript edits.", error: "Save transcript edits before running QA." });
+      return;
+    }
+    if (!openGates && !isTranscriptUnlocked(state)) {
       persist({
         ...state,
         statusMessage: `${FEATURE_EXTRACTION_NOUN} is locked until the transcript is reviewed and attested.`,
@@ -697,6 +703,8 @@ export function useSessionWorkspace({ sessionId, caseId, transcriptId, reportId,
       persist({
         ...sessionWorkflowReducer(analyzingState, { type: "findings-succeeded", findings: backendAnalysis }),
         mlReadiness,
+        // With open gates the server records the attestation when analysis starts.
+        ...(openGates ? { transcriptAttested: true, transcriptReviewStatus: "reviewed" as const } : {}),
       });
       router.push(workflowSessionHref("findings", analyzingState));
     } catch {
@@ -711,7 +719,7 @@ export function useSessionWorkspace({ sessionId, caseId, transcriptId, reportId,
   }
 
   async function handleGenerateReport() {
-    if (!isTranscriptUnlocked(state)) {
+    if (!openGates && !isTranscriptUnlocked(state)) {
       persist({
         ...state,
         statusMessage: "Report generation is locked until the transcript is reviewed and attested.",
@@ -952,7 +960,7 @@ export function useSessionWorkspace({ sessionId, caseId, transcriptId, reportId,
         ? "unavailable"
         : "local_draft",
     activeView: view,
-    completion: sessionCompletion(state),
+    completion: sessionCompletion(state, openGates),
   };
 
   if (view === "findings") {

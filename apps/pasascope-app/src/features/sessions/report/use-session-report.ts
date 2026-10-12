@@ -27,6 +27,7 @@ import {
   validateSignedSnapshotEnvelope,
   verifySignedSnapshotHash,
 } from "@/features/sessions/report/session-report-model";
+import { useAppMode } from "@/lib/app-mode";
 
 export type SessionReportViewProps = {
   caseId?: string;
@@ -36,6 +37,7 @@ export type SessionReportViewProps = {
 };
 
 export function useSessionReport({ caseId, sessionId, transcriptId, reportId }: SessionReportViewProps) {
+  const { openGates } = useAppMode();
   const hasLocator = Boolean(reportId || sessionId);
   const [state, setState] = useState<WorkflowState>(() => hasLocator
     ? createIdentityScopedWorkflowState({ workflowLoading: true, statusMessage: "Loading persisted report..." })
@@ -302,7 +304,7 @@ export function useSessionReport({ caseId, sessionId, transcriptId, reportId }: 
   }
 
   async function handleExport(format: "markdown" | "html") {
-    if (!state.reportId || !isFinalized || signedActionsBlocked) return;
+    if (!state.reportId || !canExport) return;
     try {
       const exported = await sessionReportService.export(state.reportId, format);
       downloadTextFile(exported.content, exported.filename, exported.content_type);
@@ -422,6 +424,12 @@ export function useSessionReport({ caseId, sessionId, transcriptId, reportId }: 
     }
   }
 
+  // A signed report can always be exported. With open gates a saved, current
+  // draft can be exported too; sign-off is then optional.
+  const canExport = isFinalized
+    ? !signedActionsBlocked
+    : openGates && !isNotStarted && !isStale && !isFailedSafety && state.reportSaveStatus !== "unsaved" && state.reportSaveStatus !== "saving";
+
   const isFinalizeDisabled = busy ||
     state.reportStatus === "not_started" ||
     isStale ||
@@ -466,6 +474,8 @@ export function useSessionReport({ caseId, sessionId, transcriptId, reportId }: 
     hasSnapshotIntegrityError,
     signedSnapshotVerified,
     signedActionsBlocked,
+    canExport,
+    openGates,
     canRenderReportMetadata,
     isEditorLocked,
     transcriptUnlocked,
