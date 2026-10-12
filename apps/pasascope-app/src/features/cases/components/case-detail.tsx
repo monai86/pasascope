@@ -15,17 +15,20 @@ import { SafetyNotice } from "@/components/safety-notice";
 import { StatCard } from "@/components/stat-card";
 import { StatusBadge } from "@/components/status-badge";
 import type { CaseDetailViewModel } from "@/features/cases/hooks/use-cases-workspace";
-import {
-  DECISION_SUPPORT_ONLY,
-  THERAPIST_REVIEW_SIGNOFF_REQUIRED,
-  THERAPIST_SIGNOFF_CLAUSE,
-} from "@/lib/clinical-safety-copy";
+import { statusMessages } from "@/components/status.messages";
+import { casesMessages, type CaseStage } from "@/features/cases/cases.messages";
+import { formatDateTime } from "@/i18n/format";
+import { useLocale, useMessages } from "@/i18n/locale-provider";
+import { useSafetyCopy } from "@/lib/safety-copy";
 import { grantConsentBlockedReason } from "@/lib/workflow-gates";
 import type { BackendCase, BackendGoal, BackendTimelineEvent } from "@/lib/workflow";
 
-function ageLabel(caseItem: BackendCase) {
-  if (caseItem.age_months == null) return "Age not recorded";
-  return `${Math.floor(caseItem.age_months / 12)}y ${caseItem.age_months % 12}m`;
+type Copy = typeof casesMessages.en;
+type Shared = Copy["shared"];
+
+function ageLabel(caseItem: BackendCase, shared: Shared) {
+  if (caseItem.age_months == null) return shared.ageNotRecorded;
+  return shared.age(Math.floor(caseItem.age_months / 12), caseItem.age_months % 12);
 }
 
 function caseLabel(caseItem: BackendCase) {
@@ -34,10 +37,6 @@ function caseLabel(caseItem: BackendCase) {
 
 function codeLabel(caseItem: BackendCase) {
   return caseItem.child_code ?? caseItem.anonymized_child_code ?? caseItem.case_id;
-}
-
-function languageLabel(caseItem: BackendCase) {
-  return caseItem.language ?? "Language not recorded";
 }
 
 function clinicianLabel(userId: string) {
@@ -49,15 +48,15 @@ function clinicianLabel(userId: string) {
     .join(" ");
 }
 
-function primaryClinician(caseItem: BackendCase) {
+function primaryClinician(caseItem: BackendCase, shared: Shared) {
   if (caseItem.primary_therapist_user_id) return clinicianLabel(caseItem.primary_therapist_user_id);
   const assigned = caseItem.care_team_user_ids ?? [];
-  return assigned.length ? clinicianLabel(assigned[0]) : "Not assigned";
+  return assigned.length ? clinicianLabel(assigned[0]) : shared.notAssigned;
 }
 
-function clinicianList(caseItem: BackendCase) {
+function clinicianList(caseItem: BackendCase, shared: Shared) {
   const assigned = caseItem.care_team_user_ids ?? [];
-  return assigned.length ? assigned.map(clinicianLabel).join(", ") : "No clinician assigned";
+  return assigned.length ? assigned.map(clinicianLabel).join(", ") : shared.noClinicianAssigned;
 }
 
 function childInitials(caseItem: BackendCase) {
@@ -66,55 +65,27 @@ function childInitials(caseItem: BackendCase) {
   return words.slice(0, 2).map((word) => word[0]?.toUpperCase() ?? "").join("") || codeLabel(caseItem).slice(-2);
 }
 
-function consentLabel(value?: string) {
-  if (!value) return "Unknown";
-  return value.charAt(0).toUpperCase() + value.slice(1);
+function consentLabel(value: string | undefined, shared: Shared) {
+  if (!value) return shared.consentUnknown;
+  return shared.consentStates[value.toLowerCase()] ?? value;
 }
 
-function buildUpcomingTasks(caseItem: BackendCase, timeline: BackendTimelineEvent[], goals: BackendGoal[], consent: string) {
-  const tasks: string[] = [];
-  if (consent && consent.toLowerCase() !== "granted") {
-    tasks.push("Confirm consent status before creating or reopening sessions.");
-  }
-  if (timeline.some((event) => event.status === "Needs Review")) {
-    tasks.push("Review the latest session transcript before downstream workflow steps.");
-  }
-  if (goals.length === 0) {
-    tasks.push("Add communication goals when the care plan is ready.");
-  }
-  if (!tasks.length) {
-    tasks.push("Open the latest session workspace and confirm the next therapist-reviewed step.");
-  }
-  return tasks;
+// Only tasks the therapist can act on from here; goals cannot be added in this app yet.
+function buildUpcomingTasks(timeline: BackendTimelineEvent[], consent: string, tasks: Copy["detail"]["tasks"]) {
+  const result: string[] = [];
+  if (consent && consent.toLowerCase() !== "granted") result.push(tasks.consent);
+  if (timeline.some((event) => event.status === "Needs Review")) result.push(tasks.review);
+  if (!result.length) result.push(tasks.fallback);
+  return result;
 }
 
-function getLocalWorkflowStage(caseItem: BackendCase, consent: string) {
-  if (consent && consent.toLowerCase() !== "granted") return "Consent follow-up";
-  if (caseItem.latest_session_status === "Needs Review") return "Transcript review";
-  if (caseItem.latest_report_status === "Ready") return "Report sign-off";
-  if (caseItem.latest_session_status === "Attested") return "Report drafting";
-  if (caseItem.latest_session_date) return "Session in progress";
-  return "Intake ready";
-}
-
-function getProgressSnapshot(caseItem: BackendCase, localWorkflowStage: string) {
-  return [
-    {
-      label: "Workflow stage",
-      value: localWorkflowStage,
-      helper: caseItem.latest_session_status ?? "Draft"
-    },
-    {
-      label: "Latest session",
-      value: caseItem.latest_session_date ?? "Not started",
-      helper: caseItem.latest_session_status ?? "Draft"
-    },
-    {
-      label: "Report status",
-      value: caseItem.latest_report_status ?? "Draft",
-      helper: THERAPIST_REVIEW_SIGNOFF_REQUIRED
-    }
-  ];
+function getLocalWorkflowStage(caseItem: BackendCase, consent: string): CaseStage {
+  if (consent && consent.toLowerCase() !== "granted") return "consent";
+  if (caseItem.latest_session_status === "Needs Review") return "transcript";
+  if (caseItem.latest_report_status === "Ready") return "signOff";
+  if (caseItem.latest_session_status === "Attested") return "drafting";
+  if (caseItem.latest_session_date) return "session";
+  return "intake";
 }
 
 export function CaseDetail({ model }: { model: CaseDetailViewModel }) {
@@ -132,10 +103,18 @@ export function CaseDetail({ model }: { model: CaseDetailViewModel }) {
     consentBusy,
     consentMsg,
   } = consent;
+  const { shared, detail: t } = useMessages(casesMessages);
+  const statusLabels = useMessages(statusMessages) as Record<string, string>;
+  const safety = useSafetyCopy();
+  const statusLabel = (status?: string) => (status ? statusLabels[status] ?? status : statusLabels.Draft);
   const isConsentGranted = localConsent.toLowerCase() === "granted";
-  const localWorkflowStage = getLocalWorkflowStage(caseItem, localConsent);
-  const snapshot = getProgressSnapshot(caseItem, localWorkflowStage);
-  const tasks = buildUpcomingTasks(caseItem, timeline, goals, localConsent);
+  const localWorkflowStage = shared.stages[getLocalWorkflowStage(caseItem, localConsent)];
+  const snapshot = [
+    { label: t.workflowStage, value: localWorkflowStage, helper: statusLabel(caseItem.latest_session_status) },
+    { label: t.latestSession, value: caseItem.latest_session_date ?? shared.notStarted, helper: statusLabel(caseItem.latest_session_status) },
+    { label: t.reportStatus, value: statusLabel(caseItem.latest_report_status), helper: safety.THERAPIST_REVIEW_SIGNOFF_REQUIRED },
+  ];
+  const tasks = buildUpcomingTasks(timeline, localConsent, t.tasks);
 
   function handleGrantConsent(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -157,22 +136,22 @@ export function CaseDetail({ model }: { model: CaseDetailViewModel }) {
     <div className="space-y-6">
       <ConfirmDialog
         open={withdrawDialogOpen}
-        title="Withdraw consent for this case?"
-        description="This will redact child details and disable clinical workflows for this case. New sessions stay blocked until consent is granted again."
-        confirmLabel="Withdraw consent"
-        cancelLabel="Keep consent"
+        title={t.withdrawTitle}
+        description={t.withdrawBody}
+        confirmLabel={t.withdrawConfirm}
+        cancelLabel={t.withdrawCancel}
         destructive
         onConfirm={confirmWithdrawConsent}
         onCancel={() => setWithdrawDialogOpen(false)}
       />
       <PageHeader
         title={caseLabel(caseItem)}
-        description="Use the persisted case record to review workflow progress, referral context, and therapist-owned next steps."
+        description={t.description}
         meta={[
-          `Case ${codeLabel(caseItem)}`,
-          `${ageLabel(caseItem)}`,
-          `${localWorkflowStage}`,
-          `${primaryClinician(caseItem)}`
+          t.caseCode(codeLabel(caseItem)),
+          ageLabel(caseItem, shared),
+          localWorkflowStage,
+          primaryClinician(caseItem, shared)
         ]}
         actions={
           <ActionButton
@@ -180,7 +159,7 @@ export function CaseDetail({ model }: { model: CaseDetailViewModel }) {
             disabled={!isConsentGranted}
             className={!isConsentGranted ? "opacity-50 cursor-not-allowed" : ""}
           >
-            Create new session
+            {t.createSession}
           </ActionButton>
         }
       />
@@ -194,17 +173,17 @@ export function CaseDetail({ model }: { model: CaseDetailViewModel }) {
               {childInitials(caseItem)}
             </div>
             <div>
-              <h2 className="text-xl font-bold text-ink">Case profile</h2>
+              <h2 className="text-xl font-bold text-ink">{t.profile}</h2>
               <p className="mt-0.5 text-xs text-ink-muted font-mono">
-                {codeLabel(caseItem)} · {languageLabel(caseItem)}
+                {codeLabel(caseItem)} · {caseItem.language ?? shared.languageNotRecorded}
               </p>
             </div>
           </div>
           <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
-            <HeaderMeta label="Case status" value={localWorkflowStage} icon={Activity} />
-            <HeaderMeta label="Primary therapist" value={primaryClinician(caseItem)} icon={Users} />
-            <HeaderMeta label="Consent status" value={consentLabel(localConsent)} icon={ShieldCheck} />
-            <HeaderMeta label="Latest session" value={caseItem.latest_session_date ?? "Not started"} icon={CalendarDays} />
+            <HeaderMeta label={t.caseStatus} value={localWorkflowStage} icon={Activity} />
+            <HeaderMeta label={t.primaryTherapist} value={primaryClinician(caseItem, shared)} icon={Users} />
+            <HeaderMeta label={t.consentStatus} value={consentLabel(localConsent, shared)} icon={ShieldCheck} />
+            <HeaderMeta label={t.latestSession} value={caseItem.latest_session_date ?? shared.notStarted} icon={CalendarDays} />
           </div>
         </div>
       </section>
@@ -218,10 +197,10 @@ export function CaseDetail({ model }: { model: CaseDetailViewModel }) {
                   <CircleDot className="mt-1 h-5 w-5 shrink-0 text-[color:var(--color-warning-text)]" aria-hidden="true" />
                   <div className="grid gap-1">
                     <h2 className="text-base font-bold text-[color:var(--color-warning-text)]">
-                      Caregiver Consent Verification Required
+                      {t.consentRequiredTitle}
                     </h2>
                     <p className="text-xs leading-relaxed text-[color:var(--color-warning-text)]">
-                      This case requires verified caregiver consent. Session recording, audio processing, and clinical observation workflows are locked until consent is obtained and verified.
+                      {t.consentRequiredBody}
                     </p>
                   </div>
                 </div>
@@ -230,10 +209,10 @@ export function CaseDetail({ model }: { model: CaseDetailViewModel }) {
               <section className="rounded-2xl border border-line bg-surface grid gap-4 p-6 shadow-2xs">
                 <div className="grid gap-1 pb-3 border-b border-[color:var(--color-border)]/60">
                   <h2 className="text-base font-bold text-ink">
-                    Consent Verification Form
+                    {t.consentFormTitle}
                   </h2>
                   <p className="text-xs text-ink-muted">
-                    Please verify consent credentials below to unlock the clinical intake and session workflows.
+                    {t.consentFormBody}
                   </p>
                 </div>
 
@@ -248,7 +227,7 @@ export function CaseDetail({ model }: { model: CaseDetailViewModel }) {
                   notes={consentNotes}
                   onNotesChange={setConsentNotes}
                   onSubmit={handleGrantConsent}
-                  submitLabel="Verify and Grant Consent"
+                  submitLabel={shared.verifyConsent}
                   submitBlockedReason={grantConsentBlockedReason({ checked: consentChecked, busy: consentBusy })}
                   reasonId="case-grant-consent-reason"
                   idPrefix="case"
@@ -261,10 +240,10 @@ export function CaseDetail({ model }: { model: CaseDetailViewModel }) {
                 <div className="flex flex-wrap items-center gap-3">
                   <span className="inline-flex min-h-8 items-center gap-2 rounded-xl border border-brand-border bg-brand px-3 text-xs font-bold text-white shadow-2xs">
                     <ShieldCheck size={14} aria-hidden="true" />
-                    Consent Active
+                    {t.consentActive}
                   </span>
                   <p className="text-xs font-bold text-brand">
-                    Caregiver consent has been verified and clinical workflows are unlocked.
+                    {t.consentActiveBody}
                   </p>
                 </div>
                 <ActionButton
@@ -274,7 +253,7 @@ export function CaseDetail({ model }: { model: CaseDetailViewModel }) {
                   disabled={consentBusy}
                   className="hover:border-[color:var(--color-danger-text)] hover:bg-[color:var(--color-danger-bg)] hover:text-[color:var(--color-danger-text)]"
                 >
-                  Withdraw Consent
+                  {t.withdraw}
                 </ActionButton>
               </div>
             </section>
@@ -291,29 +270,29 @@ export function CaseDetail({ model }: { model: CaseDetailViewModel }) {
           )}
 
           <section className="grid gap-6 lg:grid-cols-2">
-            <InfoCard title="Overview">
-              <DetailRow label="Child label" value={caseLabel(caseItem)} />
-              <DetailRow label="Age" value={ageLabel(caseItem)} />
-              <DetailRow label="Language" value={languageLabel(caseItem)} />
-              <DetailRow label="Referral/context" value={caseItem.notes?.trim() || "Referral or intake context has not been added yet."} />
+            <InfoCard title={t.overview}>
+              <DetailRow label={t.childLabel} value={caseLabel(caseItem)} />
+              <DetailRow label={t.age} value={ageLabel(caseItem, shared)} />
+              <DetailRow label={t.language} value={caseItem.language ?? shared.languageNotRecorded} />
+              <DetailRow label={t.referral} value={caseItem.notes?.trim() || t.referralEmpty} />
             </InfoCard>
 
-            <InfoCard title="Care team">
-              <DetailRow label="Primary clinician" value={primaryClinician(caseItem)} />
-              <DetailRow label="Assigned clinicians" value={clinicianList(caseItem)} />
+            <InfoCard title={t.careTeam}>
+              <DetailRow label={t.primaryClinician} value={primaryClinician(caseItem, shared)} />
+              <DetailRow label={t.assignedClinicians} value={clinicianList(caseItem, shared)} />
               <p className="mt-4 text-sm leading-6 text-ink-muted">
-                This is a read-only care-team summary. Organization administrators manage assignments in the role-gated Team section of Settings.
+                {t.careTeamNote}
               </p>
             </InfoCard>
 
-            <InfoCard title="Goals">
+            <InfoCard title={t.goals}>
               {goals.length ? (
                 <div className="space-y-3">
                   {goals.map((goal) => (
                     <div key={goal.goal_id} className="rounded-card border border-line bg-surface-muted p-4">
                       <p className="font-medium text-ink">{goal.title}</p>
                       <p className="mt-1 text-sm text-ink-muted">
-                        {goal.target?.trim() || "Target not yet documented."}
+                        {goal.target?.trim() || t.goalTargetEmpty}
                       </p>
                       {goal.notes?.trim() ? (
                         <p className="mt-2 text-sm leading-6 text-ink-muted">{goal.notes}</p>
@@ -322,37 +301,37 @@ export function CaseDetail({ model }: { model: CaseDetailViewModel }) {
                   ))}
                 </div>
               ) : (
-                <p className="text-sm leading-6 text-ink-muted">No communication goals recorded yet.</p>
+                <p className="text-sm leading-6 text-ink-muted">{t.goalsEmpty}</p>
               )}
             </InfoCard>
           </section>
 
-          <InfoCard title="Sessions">
+          <InfoCard title={t.sessions}>
             {timeline.length ? (
               <SessionHistory timeline={timeline} />
             ) : (
-              <p className="text-sm leading-6 text-ink-muted">No sessions recorded yet for this case.</p>
+              <p className="text-sm leading-6 text-ink-muted">{t.sessionsEmpty}</p>
             )}
           </InfoCard>
 
-          <InfoCard title="Language progress">
+          <InfoCard title={t.languageProgress}>
             <LanguageProgressChart trends={model.featureTrend} />
           </InfoCard>
 
-          <InfoCard title="Reports">
+          <InfoCard title={t.reports}>
             <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
               <div>
                 <StatusBadge status={caseItem.latest_report_status ?? "Not started"} />
                 <p className="mt-3 text-sm leading-6 text-ink-muted">
-                  Report status reflects backend workflow state. {THERAPIST_SIGNOFF_CLAUSE} before export.
+                  {t.reportNote(safety.THERAPIST_SIGNOFF_CLAUSE)}
                 </p>
               </div>
-              <ActionButton href="/reports" tone="secondary">Open Reports</ActionButton>
+              <ActionButton href="/reports" tone="secondary">{t.openReports}</ActionButton>
             </div>
           </InfoCard>
 
           <section className="grid gap-6 lg:grid-cols-2">
-            <InfoCard title="Upcoming tasks">
+            <InfoCard title={t.upcomingTasks}>
               <ul className="space-y-3 text-sm leading-6 text-ink-muted">
                 {tasks.map((task) => (
                   <li key={task} className="flex gap-3">
@@ -363,21 +342,21 @@ export function CaseDetail({ model }: { model: CaseDetailViewModel }) {
               </ul>
             </InfoCard>
 
-            <InfoCard title="Recent notes">
+            <InfoCard title={t.recentNotes}>
               <p className="text-sm leading-6 text-ink-muted">
-                {caseItem.notes?.trim() || "No recent therapist notes recorded yet."}
+                {caseItem.notes?.trim() || t.notesEmpty}
               </p>
             </InfoCard>
           </section>
 
           <SafetyNotice>
-            {DECISION_SUPPORT_ONLY} Case detail is a workflow summary and referral/context record. It does not display diagnostic conclusions.
+            {safety.DECISION_SUPPORT_ONLY} {t.safetyNote}
           </SafetyNotice>
         </div>
 
         <aside className="space-y-4">
           <section className="rounded-2xl border border-line bg-surface p-6 shadow-2xs">
-            <h2 className="text-base font-bold text-ink pb-3 border-b border-[color:var(--color-border)]/60">Progress</h2>
+            <h2 className="text-base font-bold text-ink pb-3 border-b border-[color:var(--color-border)]/60">{t.progress}</h2>
             <div className="mt-4 grid gap-3">
               {snapshot.map((item) => (
                 <StatCard key={item.label} label={item.label} value={item.value} helper={item.helper} icon={Gauge} />
@@ -393,30 +372,32 @@ export function CaseDetail({ model }: { model: CaseDetailViewModel }) {
 const SESSION_HISTORY_PREVIEW = 4;
 
 function SessionHistory({ timeline }: { timeline: BackendTimelineEvent[] }) {
+  const t = useMessages(casesMessages).detail;
+  const { locale } = useLocale();
   const [expanded, setExpanded] = useState(false);
   const visible = expanded ? timeline : timeline.slice(0, SESSION_HISTORY_PREVIEW);
 
   return (
     <div className="space-y-3">
       <DataTable
-        caption="Case session history"
+        caption={t.historyCaption}
         columns={[
-          { key: "session", header: "Session" },
-          { key: "date", header: "Date" },
-          { key: "status", header: "Status" },
-          { key: "nextAction", header: "Next action" }
+          { key: "session", header: t.historyColumns.session },
+          { key: "date", header: t.historyColumns.date },
+          { key: "status", header: t.historyColumns.status },
+          { key: "nextAction", header: t.historyColumns.nextAction }
         ]}
         rows={visible.map((event) => ({
           id: event.event_id,
           session: <span className="font-medium">{event.label}</span>,
-          date: new Date(event.occurred_at).toLocaleString(),
+          date: formatDateTime(event.occurred_at, locale),
           status: <StatusBadge status={event.status} />,
           nextAction: (
             <Link
               href={`/sessions/${encodeURIComponent(event.target_id)}?view=intake`}
               className="inline-flex min-h-11 items-center gap-2 rounded-card border border-line px-4 py-2 font-medium text-ink transition hover:border-brand-strong hover:bg-brand-soft"
             >
-              Open session workspace
+              {t.openSession}
               <ArrowRight size={16} aria-hidden="true" />
             </Link>
           )
@@ -429,7 +410,7 @@ function SessionHistory({ timeline }: { timeline: BackendTimelineEvent[] }) {
           aria-expanded={expanded}
           className="inline-flex min-h-11 items-center gap-2 rounded-card px-2 text-sm font-medium text-brand-strong transition hover:bg-brand-soft"
         >
-          {expanded ? "Show fewer sessions" : `Show all sessions (${timeline.length})`}
+          {expanded ? t.showFewer : t.showAll(timeline.length)}
         </button>
       )}
     </div>

@@ -5,7 +5,9 @@ import { ErrorState } from "@/components/ui/error-state";
 import { CaseDetail } from "@/features/cases/components/case-detail";
 import { CaseList } from "@/features/cases/components/case-list";
 import { StartSessionSelector } from "@/features/cases/components/start-session-selector";
+import { casesMessages } from "@/features/cases/cases.messages";
 import { useCasesWorkspace } from "@/features/cases/hooks/use-cases-workspace";
+import { useMessages } from "@/i18n/locale-provider";
 import { useConfirmedRuntimeSettings } from "@/lib/confirmed-runtime-settings";
 import { useMockAccessSession } from "@/lib/use-mock-access-session";
 import { useSupabaseAccessSession } from "@/lib/use-supabase-access-session";
@@ -20,6 +22,7 @@ type CasesWorkspaceClientProps = {
 
 export function CasesWorkspaceClient({ caseId, intent, preselectedCaseId, initialQuery = "" }: CasesWorkspaceClientProps) {
   const model = useCasesWorkspace(caseId);
+  const t = useMessages(casesMessages).workspace;
   const runtimeSettings = useConfirmedRuntimeSettings();
   const mockSession = useMockAccessSession();
   const supabaseSession = useSupabaseAccessSession();
@@ -40,9 +43,9 @@ export function CasesWorkspaceClient({ caseId, intent, preselectedCaseId, initia
     return (
       <ErrorState
         className="bg-surface"
-        title="Cases are unavailable"
-        description="The backend cases service could not be reached. Try again when the service is available."
-        retryLabel="Try again"
+        title={t.unavailableTitle}
+        description={t.unavailableBody}
+        retryLabel={t.retry}
         onRetry={model.retry}
       />
     );
@@ -52,11 +55,11 @@ export function CasesWorkspaceClient({ caseId, intent, preselectedCaseId, initia
     return (
       <ErrorState
         className="bg-surface"
-        title="Case could not be loaded"
-        description="The requested backend case was not returned. Check the case link or try again."
-        retryLabel="Try again"
+        title={t.errorTitle}
+        description={t.errorBody}
+        retryLabel={t.retry}
         onRetry={model.retry}
-        action={<Button href="/cases" variant="ghost">Back to Cases</Button>}
+        action={<Button href="/cases" variant="ghost">{t.backToCases}</Button>}
       />
     );
   }
@@ -74,9 +77,10 @@ export function CasesWorkspaceClient({ caseId, intent, preselectedCaseId, initia
 }
 
 function CaseListSkeleton() {
+  const t = useMessages(casesMessages).workspace;
   return (
     <section className="workspace-panel p-4" role="status" aria-live="polite">
-      <span className="sr-only">Loading cases…</span>
+      <span className="sr-only">{t.loading}</span>
       <div className="space-y-3 animate-pulse motion-reduce:animate-none" aria-hidden="true">
         <div className="h-12 rounded-card bg-surface-muted" />
         <div className="h-12 rounded-card bg-surface-muted" />

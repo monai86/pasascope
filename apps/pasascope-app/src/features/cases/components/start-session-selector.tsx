@@ -7,7 +7,9 @@ import { ArrowLeft, ShieldCheck } from "lucide-react";
 import { ActionButton } from "@/components/action-button";
 import { PageHeader } from "@/components/page-header";
 import { SafetyNotice } from "@/components/safety-notice";
-import { THERAPIST_REVIEW_AND_CONSENT_REQUIRED } from "@/lib/clinical-safety-copy";
+import { casesMessages } from "@/features/cases/cases.messages";
+import { useMessages } from "@/i18n/locale-provider";
+import { useSafetyCopy } from "@/lib/safety-copy";
 import { createBackendSessionForCase, type BackendCase } from "@/lib/workflow";
 
 function caseLabel(caseItem: BackendCase) {
@@ -24,6 +26,8 @@ function canStartSession(caseItem: BackendCase) {
 
 export function StartSessionSelector({ cases, preselectedCaseId }: { cases: BackendCase[]; preselectedCaseId?: string }) {
   const router = useRouter();
+  const { shared, start: t } = useMessages(casesMessages);
+  const safety = useSafetyCopy();
   const preselected = preselectedCaseId
     ? cases.find((caseItem) => caseItem.case_id === preselectedCaseId && canStartSession(caseItem))
     : undefined;
@@ -44,12 +48,12 @@ export function StartSessionSelector({ cases, preselectedCaseId }: { cases: Back
     if (!selectedCase || busy) return;
 
     setBusy(true);
-    setMessage("Creating the session…");
+    setMessage(t.creating);
     try {
       const session = await createBackendSessionForCase(selectedCase.case_id);
       router.push(`/sessions/${encodeURIComponent(session.session_id)}?view=intake`);
     } catch (error) {
-      setMessage(error instanceof Error ? error.message : "The session could not be created. Please retry.");
+      setMessage(error instanceof Error ? error.message : t.failed);
       setBusy(false);
     }
   }
@@ -57,32 +61,32 @@ export function StartSessionSelector({ cases, preselectedCaseId }: { cases: Back
   return (
     <div className="space-y-6">
       <PageHeader
-        title="Choose a case to start a session"
-        description="Select one consented case. PasaScope creates the session on the backend before opening Intake."
-        meta={["No session is created until you confirm"]}
-        actions={<ActionButton href="/cases" tone="ghost"><ArrowLeft size={16} aria-hidden="true" />Back to Cases</ActionButton>}
+        title={t.title}
+        description={t.description}
+        meta={[t.meta]}
+        actions={<ActionButton href="/cases" tone="ghost"><ArrowLeft size={16} aria-hidden="true" />{t.backToCases}</ActionButton>}
       />
 
       <form className="workspace-panel p-4 sm:p-5" onSubmit={handleSubmit}>
         <fieldset disabled={busy}>
-          <legend className="text-lg font-semibold text-ink">Available cases</legend>
+          <legend className="text-lg font-semibold text-ink">{t.available}</legend>
           <p className="mt-1 text-sm leading-6 text-ink-muted">
-            Cases without active consent remain visible for context but cannot be selected.
+            {t.availableNote}
           </p>
           {preselected ? (
             <p className="mt-3 rounded-card border border-line bg-surface-muted px-3 py-2 text-sm text-ink-muted">
-              Case {codeLabel(preselected)} was preselected from the previous screen. You can still choose another consented case.
+              {t.preselected(codeLabel(preselected))}
             </p>
           ) : null}
           {!hasConsentedCase ? (
             <div className="mt-4 rounded-card border border-[color:var(--color-attention-border)] bg-[color:var(--color-warning-bg)] p-4 text-[color:var(--color-warning-text)]">
-              <h2 className="font-semibold">No consented cases available</h2>
+              <h2 className="font-semibold">{t.noneTitle}</h2>
               <p className="mt-1 text-sm leading-6">
-                Confirm consent from the case record before starting a session.
+                {t.noneBody}
               </p>
             </div>
           ) : null}
-          <ul className="mt-4 grid gap-3" aria-label="Cases available for a new session">
+          <ul className="mt-4 grid gap-3" aria-label={t.listLabel}>
             {cases.map((caseItem) => {
               const allowed = canStartSession(caseItem);
               const selected = selectedCaseId === caseItem.case_id;
@@ -105,12 +109,12 @@ export function StartSessionSelector({ cases, preselectedCaseId }: { cases: Back
                     <span className="min-w-0 flex-1">
                       <span className="block font-semibold text-ink">{caseLabel(caseItem)}</span>
                       <span className="mt-1 block text-sm text-ink-muted">
-                        {codeLabel(caseItem)} · {caseItem.language ?? "Language not recorded"}
+                        {codeLabel(caseItem)} · {caseItem.language ?? shared.languageNotRecorded}
                       </span>
                     </span>
                     <span className="inline-flex min-h-8 shrink-0 items-center gap-2 rounded-card border border-line px-3 text-xs font-semibold text-ink-muted">
                       <ShieldCheck size={14} aria-hidden="true" />
-                      {allowed ? "Consent active" : "Consent required"}
+                      {allowed ? t.consentActive : t.consentRequired}
                     </span>
                   </label>
                 </li>
@@ -121,7 +125,7 @@ export function StartSessionSelector({ cases, preselectedCaseId }: { cases: Back
 
         <div className="mt-5 flex flex-col gap-3 sm:flex-row sm:items-center">
           <ActionButton type="submit" disabled={!selectedCase || busy}>
-            {busy ? "Creating session…" : selectedCase ? `Start session for ${codeLabel(selectedCase)}` : "Start session"}
+            {busy ? t.creatingButton : selectedCase ? t.startFor(codeLabel(selectedCase)) : t.start}
           </ActionButton>
           <p className="text-sm text-ink-muted" role="status" aria-live="polite">
             {message}
@@ -130,7 +134,7 @@ export function StartSessionSelector({ cases, preselectedCaseId }: { cases: Back
       </form>
 
       <SafetyNotice>
-        Starting a session does not generate findings or a report. {THERAPIST_REVIEW_AND_CONSENT_REQUIRED}
+        {t.safetyNote} {safety.THERAPIST_REVIEW_AND_CONSENT_REQUIRED}
       </SafetyNotice>
     </div>
   );

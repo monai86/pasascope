@@ -11,13 +11,16 @@ import { PageHeader } from "@/components/page-header";
 import { StatusBadge } from "@/components/status-badge";
 import { CreateCaseForm } from "@/features/cases/components/create-case-form";
 import type { CaseListViewModel } from "@/features/cases/hooks/use-cases-workspace";
+import { statusMessages } from "@/components/status.messages";
+import { casesMessages, type CaseNextAction, type CaseStage } from "@/features/cases/cases.messages";
 import { useMessages } from "@/i18n/locale-provider";
-import { defineMessages } from "@/i18n/messages";
 import type { BackendCase } from "@/lib/workflow";
 
-function ageLabel(caseItem: BackendCase) {
-  if (caseItem.age_months == null) return "Age not recorded";
-  return `${Math.floor(caseItem.age_months / 12)}y ${caseItem.age_months % 12}m`;
+type Shared = (typeof casesMessages.en)["shared"];
+
+function ageLabel(caseItem: BackendCase, shared: Shared) {
+  if (caseItem.age_months == null) return shared.ageNotRecorded;
+  return shared.age(Math.floor(caseItem.age_months / 12), caseItem.age_months % 12);
 }
 
 function caseLabel(caseItem: BackendCase) {
@@ -28,8 +31,8 @@ function codeLabel(caseItem: BackendCase) {
   return caseItem.child_code ?? caseItem.anonymized_child_code ?? caseItem.case_id;
 }
 
-function languageLabel(caseItem: BackendCase) {
-  return caseItem.language ?? "Language not recorded";
+function languageLabel(caseItem: BackendCase, shared: Shared) {
+  return caseItem.language ?? shared.languageNotRecorded;
 }
 
 function clinicianLabel(userId: string) {
@@ -41,15 +44,15 @@ function clinicianLabel(userId: string) {
     .join(" ");
 }
 
-function primaryClinician(caseItem: BackendCase) {
+function primaryClinician(caseItem: BackendCase, shared: Shared) {
   if (caseItem.primary_therapist_user_id) return clinicianLabel(caseItem.primary_therapist_user_id);
   const assigned = caseItem.care_team_user_ids ?? [];
-  return assigned.length ? clinicianLabel(assigned[0]) : "Not assigned";
+  return assigned.length ? clinicianLabel(assigned[0]) : shared.notAssigned;
 }
 
-function clinicianList(caseItem: BackendCase) {
+function clinicianList(caseItem: BackendCase, shared: Shared) {
   const assigned = caseItem.care_team_user_ids ?? [];
-  return assigned.length ? assigned.map(clinicianLabel).join(", ") : "No clinician assigned";
+  return assigned.length ? assigned.map(clinicianLabel).join(", ") : shared.noClinicianAssigned;
 }
 
 function childInitials(caseItem: BackendCase) {
@@ -58,50 +61,35 @@ function childInitials(caseItem: BackendCase) {
   return words.slice(0, 2).map((word) => word[0]?.toUpperCase() ?? "").join("") || codeLabel(caseItem).slice(-2);
 }
 
-function consentLabel(value?: string) {
-  if (!value) return "Unknown";
-  return value.charAt(0).toUpperCase() + value.slice(1);
+function consentLabel(value: string | undefined, shared: Shared) {
+  if (!value) return shared.consentUnknown;
+  return shared.consentStates[value.toLowerCase()] ?? value;
 }
 
-function priorityLabel(value?: string) {
-  if (!value) return "Priority not set";
-  return `${value.charAt(0).toUpperCase()}${value.slice(1)} priority`;
+function workflowStage(caseItem: BackendCase): CaseStage {
+  if (caseItem.consent_status && caseItem.consent_status !== "granted") return "consent";
+  if (caseItem.latest_session_status === "Needs Review") return "transcript";
+  if (caseItem.latest_report_status === "Ready") return "signOff";
+  if (caseItem.latest_session_status === "Attested") return "drafting";
+  if (caseItem.latest_session_date) return "session";
+  return "intake";
 }
 
-function reportLabel(value?: string) {
-  return `Report ${value ?? "not started"}`;
-}
-
-function workflowStage(caseItem: BackendCase) {
-  if (caseItem.consent_status && caseItem.consent_status !== "granted") return "Consent follow-up";
-  if (caseItem.latest_session_status === "Needs Review") return "Transcript review";
-  if (caseItem.latest_report_status === "Ready") return "Report sign-off";
-  if (caseItem.latest_session_status === "Attested") return "Report drafting";
-  if (caseItem.latest_session_date) return "Session in progress";
-  return "Intake ready";
-}
-
-function nextAction(caseItem: BackendCase) {
+function nextAction(caseItem: BackendCase): { key: CaseNextAction; href: string } {
   if (caseItem.consent_status && caseItem.consent_status !== "granted") {
-    return { label: "Review consent", href: `/cases/${caseItem.case_id}` };
+    return { key: "reviewConsent", href: `/cases/${caseItem.case_id}` };
   }
   if (caseItem.latest_session_status === "Needs Review") {
-    return { label: "Review session", href: `/cases/${caseItem.case_id}` };
+    return { key: "reviewSession", href: `/cases/${caseItem.case_id}` };
   }
   if (caseItem.latest_report_status === "Ready") {
-    return { label: "Finalize report", href: `/cases/${caseItem.case_id}` };
+    return { key: "finalizeReport", href: `/cases/${caseItem.case_id}` };
   }
   if (caseItem.latest_session_date) {
-    return { label: "Continue workflow", href: `/cases/${caseItem.case_id}` };
+    return { key: "continueWorkflow", href: `/cases/${caseItem.case_id}` };
   }
-  return { label: "Start session", href: `/cases?intent=start-session&case_id=${encodeURIComponent(caseItem.case_id)}` };
+  return { key: "startSession", href: `/cases?intent=start-session&case_id=${encodeURIComponent(caseItem.case_id)}` };
 }
-
-// Only the header action is translated so far; the rest of Cases is English.
-const caseListMessages = defineMessages({
-  en: { startAssessment: "Start developmental assessment" },
-  th: { startAssessment: "เริ่มการประเมินพัฒนาการ" },
-});
 
 export function CaseList({
   model,
@@ -115,7 +103,8 @@ export function CaseList({
   initialQuery?: string;
 }) {
   const { cases } = model;
-  const t = useMessages(caseListMessages);
+  const { shared, list: t } = useMessages(casesMessages);
+  const statusLabels = useMessages(statusMessages) as Record<string, string>;
   const [query, setQuery] = useState(initialQuery);
   const [statusFilter, setStatusFilter] = useState("all");
   const [consentFilter, setConsentFilter] = useState("all");
@@ -145,8 +134,8 @@ export function CaseList({
       const matchesSearch = !query || [
         caseLabel(caseItem),
         codeLabel(caseItem),
-        languageLabel(caseItem),
-        clinicianList(caseItem)
+        languageLabel(caseItem, shared),
+        clinicianList(caseItem, shared)
       ].join(" ").toLowerCase().includes(query.toLowerCase());
       const matchesStatus = statusFilter === "all" || (caseItem.latest_session_status ?? "Draft") === statusFilter;
       const matchesConsent = consentFilter === "all" || (caseItem.consent_status ?? "unknown").toLowerCase() === consentFilter;
@@ -155,12 +144,12 @@ export function CaseList({
     });
     return filtered.sort((left, right) => {
       if (sortBy === "next-action") {
-        return workflowStage(left).localeCompare(workflowStage(right)) || caseLabel(left).localeCompare(caseLabel(right));
+        return shared.stages[workflowStage(left)].localeCompare(shared.stages[workflowStage(right)]) || caseLabel(left).localeCompare(caseLabel(right));
       }
       return (right.latest_session_date ?? "").localeCompare(left.latest_session_date ?? "")
         || caseLabel(left).localeCompare(caseLabel(right));
     });
-  }, [cases, clinicianFilter, consentFilter, query, sortBy, statusFilter]);
+  }, [cases, clinicianFilter, consentFilter, query, shared, sortBy, statusFilter]);
 
   const selectedCase = filteredCases.find((caseItem) => caseItem.case_id === selectedCaseId) ?? filteredCases[0];
 
@@ -169,8 +158,8 @@ export function CaseList({
       <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_20rem]">
         <div className="space-y-6">
           <PageHeader
-            title="Cases"
-            description="Track case workflow progress, consent state, and the next therapist-reviewed action without leaving the current workspace."
+            title={t.title}
+            description={t.description}
             actions={
               <>
                 <ActionButton href="/assessments" tone="secondary">
@@ -182,7 +171,7 @@ export function CaseList({
                     icon={<Plus size={18} aria-hidden="true" />}
                     onClick={() => setShowCreateForm((visible) => !visible)}
                   >
-                    {showCreateForm ? "Close form" : "Create case"}
+                    {showCreateForm ? t.closeForm : t.createCase}
                   </ActionButton>
                 ) : null}
               </>
@@ -195,7 +184,7 @@ export function CaseList({
             <div className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
               <div className="flex-1">
                 <label htmlFor="case-search" className="mb-2 block text-xs font-bold uppercase tracking-wider text-ink">
-                  Search cases
+                  {t.searchLabel}
                 </label>
                 <div className="relative">
                   <Search className="pointer-events-none absolute left-3.5 top-1/2 -translate-y-1/2 text-ink-subtle" size={17} aria-hidden="true" />
@@ -205,7 +194,7 @@ export function CaseList({
                     role="searchbox"
                     value={query}
                     onChange={(event) => setQuery(event.target.value)}
-                    placeholder="Search by child label, case code, language, or clinician"
+                    placeholder={t.searchPlaceholder}
                     className="min-h-11 w-full rounded-xl border border-line bg-white pl-10 pr-4 text-sm text-ink outline-none transition focus:border-brand focus:ring-2 focus:ring-[color:var(--color-brand)]/20"
                   />
                 </div>
@@ -214,16 +203,16 @@ export function CaseList({
               {canFilterByClinician && clinicianOptions.length ? (
                 <div className="w-full lg:max-w-[16rem]">
                   <label htmlFor="clinician-filter" className="mb-2 block text-xs font-bold uppercase tracking-wider text-ink">
-                    Clinician filter
+                    {t.clinicianFilter}
                   </label>
                   <select
                     id="clinician-filter"
-                    aria-label="Clinician filter"
+                    aria-label={t.clinicianFilter}
                     value={clinicianFilter}
                     onChange={(event) => setClinicianFilter(event.target.value)}
                     className="min-h-11 w-full rounded-xl border border-line bg-white px-3.5 text-sm text-ink outline-none transition focus:border-brand focus:ring-2 focus:ring-[color:var(--color-brand)]/20"
                   >
-                    <option value="all">All clinicians</option>
+                    <option value="all">{t.allClinicians}</option>
                     {clinicianOptions.map((userId) => (
                       <option key={userId} value={userId}>
                         {clinicianLabel(userId)}
@@ -234,7 +223,7 @@ export function CaseList({
               ) : null}
             </div>
 
-            <div className="mt-4 flex flex-wrap gap-2" aria-label="Status filters">
+            <div className="mt-4 flex flex-wrap gap-2" role="group" aria-label={t.statusFilters}>
               {stageOptions.map((option) => {
                 const active = statusFilter === option;
                 return (
@@ -250,7 +239,7 @@ export function CaseList({
                     aria-pressed={active}
                   >
                     <Filter size={14} aria-hidden="true" />
-                    {option === "all" ? "All statuses" : option}
+                    {option === "all" ? t.allStatuses : statusLabels[option] ?? option}
                   </button>
                 );
               })}
@@ -258,29 +247,29 @@ export function CaseList({
 
             <div className="mt-4 grid grid-cols-2 gap-3 pt-3 border-t border-[color:var(--color-border)]/60">
               <label className="grid gap-1.5 text-xs font-bold uppercase tracking-wider text-ink">
-                Consent filter
+                {t.consentFilter}
                 <select
-                  aria-label="Consent filter"
+                  aria-label={t.consentFilter}
                   value={consentFilter}
                   onChange={(event) => setConsentFilter(event.target.value)}
                   className="min-h-10 min-w-0 rounded-xl border border-line bg-white px-3 text-xs font-medium text-ink outline-none transition focus:border-brand sm:px-3.5"
                 >
-                  <option value="all">All consent states</option>
-                  <option value="granted">Consent active</option>
-                  <option value="pending">Consent pending</option>
-                  <option value="withdrawn">Consent withdrawn</option>
+                  <option value="all">{t.allConsent}</option>
+                  <option value="granted">{t.consentActive}</option>
+                  <option value="pending">{t.consentPending}</option>
+                  <option value="withdrawn">{t.consentWithdrawn}</option>
                 </select>
               </label>
               <label className="grid gap-1.5 text-xs font-bold uppercase tracking-wider text-ink">
-                Sort cases
+                {t.sort}
                 <select
-                  aria-label="Sort cases"
+                  aria-label={t.sort}
                   value={sortBy}
                   onChange={(event) => setSortBy(event.target.value as "latest-activity" | "next-action")}
                   className="min-h-10 min-w-0 rounded-xl border border-line bg-white px-3 text-xs font-medium text-ink outline-none transition focus:border-brand sm:px-3.5"
                 >
-                  <option value="latest-activity">Latest activity</option>
-                  <option value="next-action">Next action</option>
+                  <option value="latest-activity">{t.sortLatest}</option>
+                  <option value="next-action">{t.sortNext}</option>
                 </select>
               </label>
             </div>
@@ -290,12 +279,12 @@ export function CaseList({
             <>
               <div className="hidden xl:block">
                 <DataTable
-                  caption="Cases workspace"
+                  caption={t.tableCaption}
                   columns={[
-                    { key: "case", header: "Case" },
-                    { key: "latestActivity", header: "Latest activity" },
-                    { key: "workflowStatus", header: "Workflow status" },
-                    { key: "nextAction", header: "Next action" }
+                    { key: "case", header: t.columns.case },
+                    { key: "latestActivity", header: t.columns.latestActivity },
+                    { key: "workflowStatus", header: t.columns.workflowStatus },
+                    { key: "nextAction", header: t.columns.nextAction }
                   ]}
                   selectedId={selectedCase?.case_id}
                   onSelect={setSelectedCaseId}
@@ -315,12 +304,12 @@ export function CaseList({
                       ),
                       latestActivity: (
                         <p className="text-sm text-ink-muted">
-                          {caseItem.latest_session_date ?? "No session activity yet"}
+                          {caseItem.latest_session_date ?? t.noActivity}
                         </p>
                       ),
                       workflowStatus: (
                         <div className="space-y-1">
-                          <p className="font-medium text-ink">{workflowStage(caseItem)}</p>
+                          <p className="font-medium text-ink">{shared.stages[workflowStage(caseItem)]}</p>
                           <StatusBadge status={caseItem.latest_session_status ?? "Draft"} />
                         </div>
                       ),
@@ -329,7 +318,7 @@ export function CaseList({
                           href={action.href}
                           className="inline-flex min-h-11 items-center gap-2 rounded-card border border-line px-4 py-2 font-medium text-ink transition hover:border-brand-strong hover:bg-brand-soft"
                         >
-                          {action.label}
+                          {t.actions[action.key]}
                           <ArrowRight size={16} aria-hidden="true" />
                         </Link>
                       )
@@ -338,7 +327,7 @@ export function CaseList({
                 />
               </div>
 
-              <ul className="xl:hidden space-y-3" aria-label="Cases">
+              <ul className="xl:hidden space-y-3" aria-label={t.listLabel}>
                 {filteredCases.map((caseItem) => {
                   const action = nextAction(caseItem);
                   const selected = selectedCase?.case_id === caseItem.case_id;
@@ -367,7 +356,7 @@ export function CaseList({
                               <StatusBadge status={caseItem.latest_session_status ?? "Draft"} />
                             </div>
                             <p className="text-xs text-ink-muted">
-                              {workflowStage(caseItem)} · {caseItem.latest_session_date ?? "No session activity yet"}
+                              {shared.stages[workflowStage(caseItem)]} · {caseItem.latest_session_date ?? t.noActivity}
                             </p>
                           </div>
                         </div>
@@ -376,7 +365,7 @@ export function CaseList({
                             href={action.href}
                             className="inline-flex min-h-10 w-full items-center justify-center gap-1.5 rounded-xl border border-line bg-white px-4 text-xs font-bold text-brand transition hover:border-brand-border hover:bg-brand-soft shadow-2xs"
                           >
-                            <span>{action.label}</span>
+                            <span>{t.actions[action.key]}</span>
                             <ArrowRight size={14} aria-hidden="true" />
                           </Link>
                         </div>
@@ -390,12 +379,12 @@ export function CaseList({
             cases.length === 0 ? (
               <EmptyState
                 icon={FolderPlus}
-                title="No cases yet"
+                title={t.emptyTitle}
                 description={canCreateCase
-                  ? "Create a de-identified case before recording consent or starting a session."
-                  : "Ask an assigned therapist to create a de-identified case before starting a session."}
+                  ? t.emptyCanCreate
+                  : t.emptyCannotCreate}
                 action={canCreateCase && !showCreateForm ? (
-                  <ActionButton icon={Plus} onClick={() => setShowCreateForm(true)}>Create the first case</ActionButton>
+                  <ActionButton icon={Plus} onClick={() => setShowCreateForm(true)}>{t.createFirst}</ActionButton>
                 ) : undefined}
               />
             ) : (
@@ -403,80 +392,68 @@ export function CaseList({
               // and offer the way back rather than "no cases".
               <EmptyState
                 icon={SearchX}
-                title="No cases match these filters"
-                description="Change the search text or filters, or clear them to see every case."
-                action={<ActionButton tone="secondary" onClick={clearFilters}>Clear filters</ActionButton>}
+                title={t.noMatchTitle}
+                description={t.noMatchBody}
+                action={<ActionButton tone="secondary" onClick={clearFilters}>{t.clearFilters}</ActionButton>}
               />
             )
           )}
 
           <footer className="control-strip rounded-xl border border-line bg-white px-4 py-3 text-xs font-medium text-ink-muted shadow-2xs">
-            Showing {filteredCases.length ? `1-${filteredCases.length}` : "0-0"} of {cases.length} cases
+            {t.showing(filteredCases.length, cases.length)}
           </footer>
 
         </div>
 
-        <aside className="space-y-4" aria-label="Selected case context">
+        <aside className="space-y-4" aria-label={t.selectedContext}>
           <section className="rounded-2xl border border-line bg-surface p-6 shadow-2xs hidden lg:block">
-            <p className="text-xs font-bold uppercase tracking-wider text-ink-subtle pb-3 border-b border-[color:var(--color-border)]/60">Selected case context</p>
+            <p className="text-xs font-bold uppercase tracking-wider text-ink-subtle pb-3 border-b border-[color:var(--color-border)]/60">{t.selectedContext}</p>
             {selectedCase ? (
               <div className="mt-4 space-y-4">
                 <div>
                   <h2 className="text-lg font-bold text-ink">{caseLabel(selectedCase)}</h2>
                   <p className="mt-1 text-xs text-ink-muted">
-                    {codeLabel(selectedCase)} · {ageLabel(selectedCase)} · {languageLabel(selectedCase)}
+                    {codeLabel(selectedCase)} · {ageLabel(selectedCase, shared)} · {languageLabel(selectedCase, shared)}
                   </p>
                 </div>
                 <div className="rounded-xl border border-brand-border bg-brand-soft p-4">
-                  <p className="text-xs font-bold uppercase tracking-wider text-brand">Next action</p>
-                  <p className="mt-1 font-bold text-ink text-sm">{nextAction(selectedCase).label}</p>
+                  <p className="text-xs font-bold uppercase tracking-wider text-brand">{t.columns.nextAction}</p>
+                  <p className="mt-1 font-bold text-ink text-sm">{t.actions[nextAction(selectedCase).key]}</p>
                   <ActionButton href={nextAction(selectedCase).href} className="mt-3 w-full" tone="primary">
-                    {nextAction(selectedCase).label}
+                    {t.actions[nextAction(selectedCase).key]}
                   </ActionButton>
                 </div>
                 <dl className="grid gap-2 text-xs">
                   <div className="flex items-center justify-between gap-3 border-b border-[color:var(--color-border)]/60 py-2">
-                    <dt className="text-ink-muted">Workflow status</dt>
-                    <dd className="font-semibold text-ink">{workflowStage(selectedCase)}</dd>
+                    <dt className="text-ink-muted">{t.columns.workflowStatus}</dt>
+                    <dd className="font-semibold text-ink">{shared.stages[workflowStage(selectedCase)]}</dd>
                   </div>
                   <div className="flex items-center justify-between gap-3 border-b border-[color:var(--color-border)]/60 py-2">
-                    <dt className="text-ink-muted">Latest activity</dt>
-                    <dd className="font-semibold text-ink">{selectedCase.latest_session_date ?? "None yet"}</dd>
+                    <dt className="text-ink-muted">{t.columns.latestActivity}</dt>
+                    <dd className="font-semibold text-ink">{selectedCase.latest_session_date ?? t.noneYet}</dd>
                   </div>
                 </dl>
                 <details className="responsive-details rounded-xl border border-line bg-[color:var(--color-surface-muted)]/40">
                   <summary className="flex min-h-10 cursor-pointer items-center justify-between px-3 text-xs font-bold text-ink">
-                    <span>More case context</span>
+                    <span>{t.moreContext}</span>
                     <span aria-hidden="true">›</span>
                   </summary>
                   <dl className="space-y-2 border-t border-line p-3 text-xs text-ink-muted">
-                    <div><dt className="font-bold text-ink">Consent and priority</dt><dd>{consentLabel(selectedCase.consent_status)} consent · {priorityLabel(selectedCase.review_priority)}</dd></div>
-                    <div><dt className="font-bold text-ink">Latest report</dt><dd>{reportLabel(selectedCase.latest_report_status)}</dd></div>
-                    <div><dt className="font-bold text-ink">Primary clinician</dt><dd>{primaryClinician(selectedCase)}</dd></div>
+                    <div><dt className="font-bold text-ink">{t.consentAndPriority}</dt><dd>{t.consentWithPriority(consentLabel(selectedCase.consent_status, shared), selectedCase.review_priority ? t.priority(selectedCase.review_priority) : t.priorityNotSet)}</dd></div>
+                    <div><dt className="font-bold text-ink">{t.latestReport}</dt><dd>{t.reportStatus(selectedCase.latest_report_status ? statusLabels[selectedCase.latest_report_status] ?? selectedCase.latest_report_status : shared.notStarted.toLowerCase())}</dd></div>
+                    <div><dt className="font-bold text-ink">{t.primaryClinician}</dt><dd>{primaryClinician(selectedCase, shared)}</dd></div>
                   </dl>
                 </details>
                 <ActionButton href={`/cases/${encodeURIComponent(selectedCase.case_id)}`} tone="secondary" className="w-full">
-                  Open case detail
+                  {t.openDetail}
                 </ActionButton>
               </div>
             ) : (
-              <p className="mt-3 text-xs leading-6 text-ink-muted">No case matches the current filters.</p>
+              <p className="mt-3 text-xs leading-6 text-ink-muted">{t.noSelection}</p>
             )}
           </section>
         </aside>
       </div>
     </>
-  );
-}
-
-function CaseListSkeleton() {
-  return (
-    <section className="workspace-panel p-4">
-      <div className="space-y-3 animate-pulse motion-reduce:animate-none">
-        <div className="h-12 rounded-card bg-surface-muted" />
-        <div className="h-12 rounded-card bg-surface-muted" />
-        <div className="h-12 rounded-card bg-surface-muted" />
-      </div>
-    </section>
   );
 }

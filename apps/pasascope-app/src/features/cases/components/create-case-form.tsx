@@ -9,13 +9,16 @@ import {
   createCaseSchema,
   type CreateCaseFormValues,
 } from "@/features/cases/schemas/create-case-schema";
+import { casesMessages } from "@/features/cases/cases.messages";
 import { casesAdapter } from "@/features/cases/services/cases-adapter";
+import { useMessages } from "@/i18n/locale-provider";
 
 const fieldClassName =
   "min-h-11 w-full rounded-card border border-line bg-surface px-4 text-sm text-ink outline-none focus-visible:ring-4 focus-visible:ring-[color:var(--color-focus-ring)]";
 
 export function CreateCaseForm({ onCancel }: { onCancel: () => void }) {
   const router = useRouter();
+  const t = useMessages(casesMessages).create;
   const {
     register,
     handleSubmit,
@@ -33,7 +36,7 @@ export function CreateCaseForm({ onCancel }: { onCancel: () => void }) {
       router.refresh();
     } catch {
       setError("root", {
-        message: "The case could not be created. Check the details and try again.",
+        message: t.failed,
       });
     }
   }
@@ -44,22 +47,22 @@ export function CreateCaseForm({ onCancel }: { onCancel: () => void }) {
         id="create-case-heading"
         className="text-lg font-semibold text-ink"
       >
-        Create a de-identified case
+        {t.title}
       </h2>
       <p className="mt-1 text-sm leading-6 text-ink-muted">
-        Use a study or clinic code, not a child&apos;s name or direct identifier. Consent starts as pending.
+        {t.body}
       </p>
       <form className="mt-5 grid gap-4" onSubmit={handleSubmit(submit)} noValidate>
         <div className="grid gap-4 sm:grid-cols-2">
-          <Field label="Case code" error={errors.child_code?.message}>
-            <input aria-label="Case code" autoComplete="off" className={fieldClassName} {...register("child_code")} />
+          <Field label={t.caseCode} error={errors.child_code?.message}>
+            <input aria-label={t.caseCode} autoComplete="off" className={fieldClassName} {...register("child_code")} />
           </Field>
-          <Field label="Nickname" error={errors.nickname?.message} hint="Optional and de-identified">
-            <input aria-label="Nickname" autoComplete="off" className={fieldClassName} {...register("nickname")} />
+          <Field label={t.nickname} error={errors.nickname?.message} hint={t.nicknameHint}>
+            <input aria-label={t.nickname} autoComplete="off" className={fieldClassName} {...register("nickname")} />
           </Field>
-          <Field label="Age in months" error={errors.age_months?.message}>
+          <Field label={t.ageMonths} error={errors.age_months?.message}>
             <input
-              aria-label="Age in months"
+              aria-label={t.ageMonths}
               type="number"
               min="0"
               max="240"
@@ -67,12 +70,12 @@ export function CreateCaseForm({ onCancel }: { onCancel: () => void }) {
               {...register("age_months", { valueAsNumber: true })}
             />
           </Field>
-          <Field label="Language" error={errors.language?.message}>
-            <input aria-label="Language" autoComplete="off" className={fieldClassName} {...register("language")} />
+          <Field label={t.language} error={errors.language?.message}>
+            <input aria-label={t.language} autoComplete="off" className={fieldClassName} {...register("language")} />
           </Field>
         </div>
-        <Field label="Case notes" error={errors.notes?.message} hint="Optional; do not enter direct identifiers">
-          <textarea aria-label="Case notes" rows={3} className={`${fieldClassName} py-3`} {...register("notes")} />
+        <Field label={t.notes} error={errors.notes?.message} hint={t.notesHint}>
+          <textarea aria-label={t.notes} rows={3} className={`${fieldClassName} py-3`} {...register("notes")} />
         </Field>
         {errors.root?.message ? (
           <p role="alert" className="text-sm text-[color:var(--color-danger-text)]">
@@ -81,10 +84,10 @@ export function CreateCaseForm({ onCancel }: { onCancel: () => void }) {
         ) : null}
         <div className="flex flex-col gap-3 sm:flex-row">
           <ActionButton type="submit" disabled={isSubmitting}>
-            {isSubmitting ? "Saving case…" : "Save case"}
+            {isSubmitting ? t.saving : t.save}
           </ActionButton>
           <ActionButton type="button" tone="ghost" onClick={onCancel} disabled={isSubmitting}>
-            Cancel
+            {t.cancel}
           </ActionButton>
         </div>
       </form>
