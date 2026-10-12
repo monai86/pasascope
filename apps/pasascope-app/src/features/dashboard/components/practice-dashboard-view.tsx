@@ -10,26 +10,24 @@ import { LanguageProgressChart } from "@/features/dashboard/components/language-
 import { dashboardMessages } from "@/features/dashboard/dashboard.messages";
 import { formatDate } from "@/i18n/format";
 import { useLocale, useMessages } from "@/i18n/locale-provider";
-import { EVIDENCE_REVIEW_NOUN } from "@/lib/workflow-glossary";
+import { pipelineMessages } from "@/components/pipeline.messages";
 import type { DashboardSummary } from "@/lib/workflow";
 
-function consentLabel(value: string) {
-  return value.charAt(0).toUpperCase() + value.slice(1);
-}
-
-function sessionStage(session: DashboardSummary["recent_sessions"][number]) {
-  if (session.has_report) return "Report drafted";
-  if (session.has_ml_review) return EVIDENCE_REVIEW_NOUN;
-  if (session.has_features) return "Findings extracted";
-  if (session.has_transcript) return "Transcript ready";
-  return "Intake only";
-}
 
 export function PracticeDashboardView({ summary }: { summary: DashboardSummary }) {
   const t = useMessages(dashboardMessages);
   const { locale } = useLocale();
   const consentCounts = Object.entries(summary.cases.consent_counts).sort((a, b) => b[1] - a[1]);
   const reviewedSessions = summary.cases.with_latest_reviewed_session;
+  const evidenceReview = useMessages(pipelineMessages).stages.ml_pending;
+  const consentLabel = (value: string) => t.consent.states[value.toLowerCase()] ?? value;
+  const sessionStage = (session: DashboardSummary["recent_sessions"][number]) => {
+    if (session.has_report) return t.recent.stages.report;
+    if (session.has_ml_review) return evidenceReview;
+    if (session.has_features) return t.recent.stages.features;
+    if (session.has_transcript) return t.recent.stages.transcript;
+    return t.recent.stages.intake;
+  };
 
   return (
     <div className="min-w-0 space-y-6">
@@ -45,35 +43,35 @@ export function PracticeDashboardView({ summary }: { summary: DashboardSummary }
 
       <section aria-labelledby="dashboard-stats" className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
         <h2 id="dashboard-stats" className="sr-only">
-          Caseload summary
+          {t.stats.heading}
         </h2>
         <StatCard
-          label="Active cases"
+          label={t.stats.activeCases}
           value={String(summary.cases.total)}
-          helper={`${reviewedSessions} with a reviewed latest session`}
+          helper={t.stats.reviewedLatest(reviewedSessions)}
           icon={FolderOpen}
           tone="accent"
         />
         <StatCard
-          label="Sessions"
+          label={t.stats.sessions}
           value={String(summary.sessions.total)}
-          helper={`${summary.sessions.with_transcript} transcript · ${summary.sessions.with_features} features extracted`}
+          helper={t.stats.sessionsHelper(summary.sessions.with_transcript, summary.sessions.with_features)}
           icon={MessagesSquare}
           tone="neutral"
         />
         <StatCard
-          label={EVIDENCE_REVIEW_NOUN}
+          label={evidenceReview}
           value={String(summary.sessions.with_ml_review)}
-          helper="Sessions with an ML decision-support review"
+          helper={t.stats.evidenceHelper}
           icon={ListChecks}
           tone="neutral"
         />
         <StatCard
-          label="Reports"
+          label={t.stats.reports}
           value={String(summary.reports.total)}
           helper={summary.reports.signoff_counts["Signed Off"]
-            ? `${summary.reports.signoff_counts["Signed Off"]} signed off`
-            : "None signed off yet"}
+            ? t.stats.signedOff(summary.reports.signoff_counts["Signed Off"])
+            : t.stats.noneSignedOff}
           icon={FileCheck2}
           tone={summary.reports.signoff_counts["Signed Off"] ? "success" : "neutral"}
         />
@@ -83,15 +81,15 @@ export function PracticeDashboardView({ summary }: { summary: DashboardSummary }
         <div className="flex flex-wrap items-center justify-between gap-3 pb-3 border-b border-[color:var(--color-border)]/60">
           <div>
             <h2 id="progress-heading" className="text-base font-bold text-ink">
-              Language progress
+              {t.progress.title}
             </h2>
             <p className="mt-0.5 text-xs text-ink-muted">
-              Track a language-sample feature across each case&apos;s sessions over time.
+              {t.progress.body}
             </p>
           </div>
           <span className="inline-flex items-center gap-1.5 rounded-full bg-brand-soft border border-brand-border px-2.5 py-1 text-xs font-semibold text-brand">
-            <Activity className="h-3.5 w-3.5" />
-            Linguistic Trajectory
+            <Activity className="h-3.5 w-3.5" aria-hidden="true" />
+            {t.progress.chip}
           </span>
         </div>
         <div className="pt-4">
@@ -102,7 +100,7 @@ export function PracticeDashboardView({ summary }: { summary: DashboardSummary }
       <div className="grid grid-cols-1 gap-6 xl:grid-cols-3">
         <section aria-labelledby="consent-heading" className="rounded-2xl border border-line bg-surface p-6 shadow-2xs">
           <h2 id="consent-heading" className="text-base font-bold text-ink pb-3 border-b border-[color:var(--color-border)]/60">
-            Consent status
+            {t.consent.title}
           </h2>
           {consentCounts.length ? (
             <ul className="mt-4 space-y-3">
@@ -117,32 +115,32 @@ export function PracticeDashboardView({ summary }: { summary: DashboardSummary }
               ))}
             </ul>
           ) : (
-            <p className="mt-4 text-sm leading-6 text-ink-muted">No cases yet.</p>
+            <p className="mt-4 text-sm leading-6 text-ink-muted">{t.consent.empty}</p>
           )}
         </section>
 
         <section aria-labelledby="pipeline-heading" className="rounded-2xl border border-line bg-surface p-6 shadow-2xs">
           <h2 id="pipeline-heading" className="text-base font-bold text-ink pb-1">
-            Pipeline progress
+            {t.pipeline.title}
           </h2>
           <p className="text-xs text-ink-muted pb-3 border-b border-[color:var(--color-border)]/60">
-            Sessions that reached each stage of the analysis pipeline.
+            {t.pipeline.body}
           </p>
           <ul className="mt-4 space-y-2.5 text-sm">
             <li className="flex items-center justify-between gap-3 rounded-xl bg-[color:var(--color-surface-muted)]/50 px-3 py-2 border border-[color:var(--color-border)]/40">
-              <span className="text-ink-muted font-medium">Transcript recorded</span>
+              <span className="text-ink-muted font-medium">{t.pipeline.transcript}</span>
               <span className="font-bold text-ink">{summary.sessions.with_transcript}</span>
             </li>
             <li className="flex items-center justify-between gap-3 rounded-xl bg-[color:var(--color-surface-muted)]/50 px-3 py-2 border border-[color:var(--color-border)]/40">
-              <span className="text-ink-muted font-medium">Features extracted</span>
+              <span className="text-ink-muted font-medium">{t.pipeline.features}</span>
               <span className="font-bold text-ink">{summary.sessions.with_features}</span>
             </li>
             <li className="flex items-center justify-between gap-3 rounded-xl bg-[color:var(--color-surface-muted)]/50 px-3 py-2 border border-[color:var(--color-border)]/40">
-              <span className="text-ink-muted font-medium">ML decision support</span>
+              <span className="text-ink-muted font-medium">{t.pipeline.ml}</span>
               <span className="font-bold text-ink">{summary.sessions.with_ml_review}</span>
             </li>
             <li className="flex items-center justify-between gap-3 rounded-xl bg-[color:var(--color-surface-muted)]/50 px-3 py-2 border border-[color:var(--color-border)]/40">
-              <span className="text-ink-muted font-medium">Report drafted</span>
+              <span className="text-ink-muted font-medium">{t.pipeline.report}</span>
               <span className="font-bold text-ink">{summary.sessions.with_report}</span>
             </li>
           </ul>
@@ -150,7 +148,7 @@ export function PracticeDashboardView({ summary }: { summary: DashboardSummary }
 
         <section aria-labelledby="report-heading" className="rounded-2xl border border-line bg-surface p-6 shadow-2xs">
           <h2 id="report-heading" className="text-base font-bold text-ink pb-3 border-b border-[color:var(--color-border)]/60">
-            Report sign-off
+            {t.signOff.title}
           </h2>
           {summary.reports.total ? (
             <ul className="mt-4 space-y-2.5 text-sm">
@@ -164,7 +162,7 @@ export function PracticeDashboardView({ summary }: { summary: DashboardSummary }
                 ))}
             </ul>
           ) : (
-            <p className="mt-4 text-sm leading-6 text-ink-muted">No reports yet.</p>
+            <p className="mt-4 text-sm leading-6 text-ink-muted">{t.signOff.empty}</p>
           )}
         </section>
       </div>
@@ -173,15 +171,15 @@ export function PracticeDashboardView({ summary }: { summary: DashboardSummary }
         <div className="mb-4 flex items-center justify-between gap-3">
           <div>
             <h2 id="recent-heading" className="text-base font-bold text-ink">
-              Recent sessions
+              {t.recent.title}
             </h2>
-            <p className="text-xs text-ink-muted">Active pediatric assessment sessions and pipeline status</p>
+            <p className="text-xs text-ink-muted">{t.recent.body}</p>
           </div>
           <Link
             href="/cases"
             className="inline-flex min-h-10 items-center rounded-xl border border-line bg-white px-3.5 text-xs font-bold text-brand shadow-2xs transition hover:bg-brand-soft hover:border-brand-border"
           >
-            View all cases
+            {t.recent.viewAll}
           </Link>
         </div>
         {summary.recent_sessions.length ? (
@@ -191,19 +189,19 @@ export function PracticeDashboardView({ summary }: { summary: DashboardSummary }
                 <thead>
                   <tr className="border-b border-line bg-[color:var(--color-surface-muted)]/60 text-left">
                     <th scope="col" className="px-5 py-3.5 font-bold text-ink text-xs uppercase tracking-wider">
-                      Case
+                      {t.recent.columns.case}
                     </th>
                     <th scope="col" className="px-5 py-3.5 font-bold text-ink text-xs uppercase tracking-wider">
-                      Date
+                      {t.recent.columns.date}
                     </th>
                     <th scope="col" className="px-5 py-3.5 font-bold text-ink text-xs uppercase tracking-wider">
-                      Stage
+                      {t.recent.columns.stage}
                     </th>
                     <th scope="col" className="px-5 py-3.5 font-bold text-ink text-xs uppercase tracking-wider">
-                      Status
+                      {t.recent.columns.status}
                     </th>
                     <th scope="col" className="px-5 py-3.5 font-bold text-ink text-xs uppercase tracking-wider text-right">
-                      <span className="sr-only">Open</span>
+                      <span className="sr-only">{t.recent.columns.open}</span>
                     </th>
                   </tr>
                 </thead>
@@ -228,7 +226,7 @@ export function PracticeDashboardView({ summary }: { summary: DashboardSummary }
                           href={`/sessions/${encodeURIComponent(session.session_id)}?case_id=${encodeURIComponent(session.case_id)}`}
                           className="inline-flex min-h-10 items-center rounded-xl border border-line bg-white px-3.5 text-xs font-bold text-brand shadow-2xs hover:bg-brand-soft hover:border-brand-border transition"
                         >
-                          Open
+                          {t.recent.open}
                         </Link>
                       </td>
                     </tr>
@@ -255,7 +253,7 @@ export function PracticeDashboardView({ summary }: { summary: DashboardSummary }
                     href={`/sessions/${encodeURIComponent(session.session_id)}?case_id=${encodeURIComponent(session.case_id)}`}
                     className="mt-3 inline-flex min-h-10 w-full items-center justify-center rounded-xl bg-brand-soft text-xs font-bold text-brand border border-brand-border transition hover:bg-brand hover:text-white"
                   >
-                    Open session
+                    {t.recent.openSession}
                   </Link>
                 </li>
               ))}
@@ -263,7 +261,7 @@ export function PracticeDashboardView({ summary }: { summary: DashboardSummary }
           </>
         ) : (
           <div className="rounded-2xl border border-line bg-surface p-8 text-center text-sm text-ink-muted shadow-2xs">
-            No sessions yet. Start a session from the Cases list to populate the pipeline.
+            {t.recent.empty}
           </div>
         )}
       </section>

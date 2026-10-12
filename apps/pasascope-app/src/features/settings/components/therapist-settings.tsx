@@ -1,3 +1,5 @@
+"use client";
+
 import type { ReactNode } from "react";
 import type { LucideIcon } from "lucide-react";
 import {
@@ -12,90 +14,67 @@ import {
 } from "lucide-react";
 
 import type { SharedSettingsSection } from "@/features/settings/services/settings-access";
-import { DECISION_SUPPORT_ONLY_LABEL } from "@/lib/clinical-safety-copy";
+import { settingsMessages } from "@/features/settings/settings.messages";
+import { useMessages } from "@/i18n/locale-provider";
+import { useSafetyCopy } from "@/lib/safety-copy";
+
+const SECTION_ICONS: Record<SharedSettingsSection, LucideIcon> = {
+  account: UserRound,
+  organization: Building2,
+  accessibility: Eye,
+  notifications: Bell,
+  privacy: LockKeyhole,
+  export: Download,
+  help: HelpCircle,
+};
+
+type LineTone = "default" | "muted" | "warning";
+
+// Tone of each line, by position, where it is not the default.
+const LINE_TONES: Partial<Record<SharedSettingsSection, Record<number, LineTone>>> = {
+  organization: { 3: "muted" },
+  accessibility: { 1: "muted" },
+  notifications: { 1: "muted", 2: "muted", 3: "warning" },
+  privacy: { 2: "muted" },
+  export: { 2: "muted" },
+};
 
 export function TherapistSettings({ section }: { section: SharedSettingsSection }) {
-  switch (section) {
-    case "organization":
-      return (
-        <SettingsCard icon={Building2} title="Organization" description="Your workspace and current data mode.">
-          <SettingLine label="Organization" value="Pilot organization workspace" />
-          <SettingLine label="Data mode" value="Demo mode" />
-          <SettingLine label="Care team" value="Read-only summaries appear only for authorized cases" />
-          <SettingLine label="Administration" value="Available only to organization admins" tone="muted" />
-        </SettingsCard>
-      );
-    case "accessibility":
-      return (
-        <SettingsCard icon={Eye} title="Accessibility & Display" description="Readable defaults for Thai–Latin clinical work and touch interaction.">
-          <SettingLine label="Product font" value="Noto Sans Thai / Noto Sans" />
-          <SettingLine label="Accessibility mode" value="Not enabled" tone="muted" />
-          <SettingLine label="Motion" value="Reduced motion follows your device preference" />
-          <SettingLine label="Touch targets" value="44 px minimum on touch devices" />
-        </SettingsCard>
-      );
-    case "notifications":
-      return (
-        <SettingsCard icon={Bell} title="Notifications" description="Notifications available in the pilot workspace.">
-          <SettingLine label="In-app reminders" value="Available" />
-          <SettingLine label="Email delivery" value="Not configured" tone="muted" />
-          <SettingLine label="Caregiver messages" value="Not configured" tone="muted" />
-          <SettingLine label="Clinical content in alerts" value="Not allowed" tone="warning" />
-        </SettingsCard>
-      );
-    case "privacy":
-      return (
-        <div className="grid gap-4">
-          <SettingsCard icon={LockKeyhole} title="Privacy & Security" description="How access and session data are handled in the pilot workspace.">
-            <SettingLine label="Authentication" value="Demo workspace" />
-            <SettingLine label="Credentials" value="Managed by the current sign-in method" />
-            <SettingLine label="Production MFA" value="Not configured" tone="muted" />
-            <SettingLine label="Session storage" value="Browser UI cache only" />
-          </SettingsCard>
-          <section className="rounded-card border border-[color:var(--color-attention-border)] bg-[color:var(--color-warning-bg)] p-5 text-[color:var(--color-warning-text)]" aria-labelledby="owned-privacy-requests-title">
-            <div className="flex items-start gap-3">
-              <ShieldCheck size={22} aria-hidden="true" className="mt-0.5 shrink-0" />
-              <div>
-                <h2 id="owned-privacy-requests-title" className="text-lg font-semibold">Owned privacy requests</h2>
-                <p className="mt-2 text-sm font-semibold">Unavailable in demo mode</p>
-                <p className="mt-1 text-sm leading-6">
-                  Production request history must come from a backend-confirmed authenticated identity; this screen does not infer an empty history.
-                </p>
-                <p className="mt-2 text-sm leading-6">No HIPAA compliance claim is made by this prototype workspace.</p>
-              </div>
-            </div>
-          </section>
+  const t = useMessages(settingsMessages);
+  const safety = useSafetyCopy();
+  const card = t.cards[section];
+  const settingsCard = (
+    <SettingsCard icon={SECTION_ICONS[section]} title={t.sections[section]} description={card.description}>
+      {card.lines.map(([label, value], index) => (
+        <SettingLine
+          key={label}
+          label={label}
+          // The clinical boundary line shows the registered safety label.
+          value={value || safety.DECISION_SUPPORT_ONLY_LABEL}
+          tone={LINE_TONES[section]?.[index]}
+        />
+      ))}
+    </SettingsCard>
+  );
+
+  if (section !== "privacy") return settingsCard;
+
+  return (
+    <div className="grid gap-4">
+      {settingsCard}
+      <section className="rounded-card border border-[color:var(--color-attention-border)] bg-[color:var(--color-warning-bg)] p-5 text-[color:var(--color-warning-text)]" aria-labelledby="owned-privacy-requests-title">
+        <div className="flex items-start gap-3">
+          <ShieldCheck size={22} aria-hidden="true" className="mt-0.5 shrink-0" />
+          <div>
+            <h2 id="owned-privacy-requests-title" className="text-lg font-semibold">{t.privacyRequests.title}</h2>
+            <p className="mt-2 text-sm font-semibold">{t.privacyRequests.unavailable}</p>
+            <p className="mt-1 text-sm leading-6">{t.privacyRequests.body}</p>
+            <p className="mt-2 text-sm leading-6">{t.privacyRequests.noClaim}</p>
+          </div>
         </div>
-      );
-    case "export":
-      return (
-        <SettingsCard icon={Download} title="Export" description="Exports unlock after transcript review and sign-off.">
-          <SettingLine label="Markdown export" value="Configured after sign-off" />
-          <SettingLine label="HTML export" value="Configured after sign-off" />
-          <SettingLine label="PDF export" value="Not configured" tone="muted" />
-          <SettingLine label="Caregiver share status" value="Local/demo only" />
-        </SettingsCard>
-      );
-    case "help":
-      return (
-        <SettingsCard icon={HelpCircle} title="Help" description="How the clinical workflow is meant to be used.">
-          <SettingLine label="Transcript gate" value="Quality attestation required" />
-          <SettingLine label="Report export" value="Sign-off required" />
-          <SettingLine label="Clinical boundary" value={DECISION_SUPPORT_ONLY_LABEL} />
-          <SettingLine label="Pilot workspace" value="Anonymized demo data; no production accounts" />
-        </SettingsCard>
-      );
-    case "account":
-    default:
-      return (
-        <SettingsCard icon={UserRound} title="Account" description="Your therapist workspace identity.">
-          <SettingLine label="Name" value="Demo Therapist" />
-          <SettingLine label="Role" value="Speech therapist / clinician" />
-          <SettingLine label="Workspace start page" value="Today" />
-          <SettingLine label="Data mode" value="Demo mode" />
-        </SettingsCard>
-      );
-  }
+      </section>
+    </div>
+  );
 }
 
 function SettingsCard({
@@ -127,7 +106,7 @@ function SettingsCard({
   );
 }
 
-function SettingLine({ label, tone = "default", value }: { label: string; tone?: "default" | "muted" | "warning"; value: string }) {
+function SettingLine({ label, tone = "default", value }: { label: string; tone?: LineTone; value: string }) {
   const valueClassName = tone === "warning" ? "text-[color:var(--color-warning-text)]" : tone === "muted" ? "text-ink-muted" : "text-ink";
   return (
     <div className="grid gap-1 px-4 py-3 text-sm sm:grid-cols-[180px_1fr]">

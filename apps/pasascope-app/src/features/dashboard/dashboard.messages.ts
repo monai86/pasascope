@@ -1,6 +1,6 @@
 import { defineMessages } from "@/i18n/messages";
 
-/** Dashboard header and its unavailable states. The panels are still English-only. */
+/** Dashboard header, panels, progress chart and unavailable states. */
 export const dashboardMessages = defineMessages({
   en: {
     eyebrow: "Clinical Overview",
@@ -9,6 +9,64 @@ export const dashboardMessages = defineMessages({
     organization: (id: string) => `Organization: ${id}`,
     updated: (date: string) => `Updated ${date}`,
     loading: "Loading practice summary…",
+    stats: {
+      heading: "Caseload summary",
+      activeCases: "Active cases",
+      reviewedLatest: (count: number) => `${count} with a reviewed latest session`,
+      sessions: "Sessions",
+      sessionsHelper: (transcripts: number, features: number) => `${transcripts} transcript · ${features} features extracted`,
+      evidenceHelper: "Sessions with an ML decision-support review",
+      reports: "Reports",
+      signedOff: (count: number) => `${count} signed off`,
+      noneSignedOff: "None signed off yet",
+    },
+    progress: {
+      title: "Language progress",
+      body: "Track a language-sample feature across each case's sessions over time.",
+      chip: "Linguistic Trajectory",
+    },
+    consent: { title: "Consent status", empty: "No cases yet.", states: { granted: "Granted", pending: "Pending", withdrawn: "Withdrawn" } as Record<string, string> },
+    pipeline: {
+      title: "Pipeline progress",
+      body: "Sessions that reached each stage of the analysis pipeline.",
+      transcript: "Transcript recorded",
+      features: "Features extracted",
+      ml: "ML decision support",
+      report: "Report drafted",
+    },
+    signOff: { title: "Report sign-off", empty: "No reports yet." },
+    recent: {
+      title: "Recent sessions",
+      body: "Active pediatric assessment sessions and pipeline status",
+      viewAll: "View all cases",
+      columns: { case: "Case", date: "Date", stage: "Stage", status: "Status", open: "Open" },
+      open: "Open",
+      openSession: "Open session",
+      empty: "No sessions yet. Start a session from the Cases list to populate the pipeline.",
+      stages: {
+        report: "Report drafted",
+        features: "Findings extracted",
+        transcript: "Transcript ready",
+        intake: "Intake only",
+      },
+    },
+    chart: {
+      lineChart: (count: number) => `Line chart of ${count} value${count === 1 ? "" : "s"} across sessions`,
+      openSession: (date: string) => `Open session ${date}`,
+      empty: "No language-progress data yet. Extract features from a session to start tracking MLU, NDW, and TTR across sessions.",
+      feature: "Feature",
+      case: "Case",
+      caseValue: "Case:",
+      noData: (feature: string, caseLabel: string) =>
+        `No ${feature.toLowerCase()} data for ${caseLabel} yet. Extract features from a language-sample session to see it here.`,
+      oneSession: (feature: string) =>
+        `One session with ${feature.toLowerCase()} data so far — add more sessions to see the trend line.`,
+      unit: (unit: string, count: number) => `Unit: ${unit} · across ${count} session${count === 1 ? "" : "s"}`,
+      reference: (ageBand: string, task: string, median: string, q1: string, q3: string) =>
+        `Reference band (typical development, ${ageBand} months, ${task}): median ${median} · IQR ${q1}–${q3}`,
+      tableCaption: (feature: string, caseLabel: string) => `${feature} values by session for ${caseLabel}`,
+      sessionDate: "Session date",
+    },
     unavailable: {
       label: "Dashboard unavailable",
       title: "Practice summary could not be loaded",
@@ -27,6 +85,63 @@ export const dashboardMessages = defineMessages({
     organization: (id: string) => `องค์กร: ${id}`,
     updated: (date: string) => `ปรับปรุงเมื่อ ${date}`,
     loading: "กำลังโหลดข้อมูลสรุป…",
+    stats: {
+      heading: "สรุปเคสที่ดูแล",
+      activeCases: "เคสที่ดูแลอยู่",
+      reviewedLatest: (count: number) => `${count} เคสที่เซสชันล่าสุดทบทวนแล้ว`,
+      sessions: "เซสชัน",
+      sessionsHelper: (transcripts: number, features: number) => `มีบทถอดเสียง ${transcripts} · สกัดค่าทางภาษาแล้ว ${features}`,
+      evidenceHelper: "เซสชันที่มีการทบทวนหลักฐานโดยมี ML ช่วย",
+      reports: "รายงาน",
+      signedOff: (count: number) => `ลงนามแล้ว ${count}`,
+      noneSignedOff: "ยังไม่มีฉบับที่ลงนาม",
+    },
+    progress: {
+      title: "ความก้าวหน้าทางภาษา",
+      body: "ติดตามค่าจากตัวอย่างภาษาของแต่ละเคสในแต่ละเซสชันตามช่วงเวลา",
+      chip: "แนวโน้มทางภาษา",
+    },
+    consent: { title: "สถานะความยินยอม", empty: "ยังไม่มีเคส", states: { granted: "ให้ความยินยอมแล้ว", pending: "รอความยินยอม", withdrawn: "ถอนความยินยอมแล้ว" } as Record<string, string> },
+    pipeline: {
+      title: "ความคืบหน้าของงาน",
+      body: "จำนวนเซสชันที่ไปถึงแต่ละขั้นของการวิเคราะห์",
+      transcript: "มีบทถอดเสียงแล้ว",
+      features: "สกัดค่าทางภาษาแล้ว",
+      ml: "มีการทบทวนโดยมี ML ช่วย",
+      report: "ร่างรายงานแล้ว",
+    },
+    signOff: { title: "การลงนามรายงาน", empty: "ยังไม่มีรายงาน" },
+    recent: {
+      title: "เซสชันล่าสุด",
+      body: "เซสชันที่กำลังดำเนินการและสถานะของงาน",
+      viewAll: "ดูเคสทั้งหมด",
+      columns: { case: "เคส", date: "วันที่", stage: "ขั้น", status: "สถานะ", open: "เปิด" },
+      open: "เปิด",
+      openSession: "เปิดเซสชัน",
+      empty: "ยังไม่มีเซสชัน เริ่มเซสชันจากหน้าเคสเพื่อให้มีข้อมูลที่นี่",
+      stages: {
+        report: "ร่างรายงานแล้ว",
+        features: "สกัดค่าทางภาษาแล้ว",
+        transcript: "บทถอดเสียงพร้อม",
+        intake: "รับข้อมูลเท่านั้น",
+      },
+    },
+    chart: {
+      lineChart: (count: number) => `กราฟเส้นแสดง ${count} ค่าในแต่ละเซสชัน`,
+      openSession: (date: string) => `เปิดเซสชันวันที่ ${date}`,
+      empty: "ยังไม่มีข้อมูลความก้าวหน้าทางภาษา สกัดค่าทางภาษาจากเซสชันเพื่อเริ่มติดตาม MLU, NDW และ TTR ในแต่ละเซสชัน",
+      feature: "ค่าที่ดู",
+      case: "เคส",
+      caseValue: "เคส:",
+      noData: (feature: string, caseLabel: string) =>
+        `ยังไม่มีข้อมูล ${feature} ของ ${caseLabel} สกัดค่าทางภาษาจากเซสชันตัวอย่างภาษาเพื่อดูที่นี่`,
+      oneSession: (feature: string) => `ตอนนี้มีข้อมูล ${feature} เพียงหนึ่งเซสชัน เพิ่มเซสชันเพื่อดูเส้นแนวโน้ม`,
+      unit: (unit: string, count: number) => `หน่วย: ${unit} · จาก ${count} เซสชัน`,
+      reference: (ageBand: string, task: string, median: string, q1: string, q3: string) =>
+        `ช่วงอ้างอิง (พัฒนาการทั่วไป, อายุ ${ageBand} เดือน, ${task}): มัธยฐาน ${median} · IQR ${q1}–${q3}`,
+      tableCaption: (feature: string, caseLabel: string) => `ค่า ${feature} รายเซสชันของ ${caseLabel}`,
+      sessionDate: "วันที่ของเซสชัน",
+    },
     unavailable: {
       label: "ไม่สามารถแสดงหน้าภาพรวมได้",
       title: "โหลดข้อมูลสรุปไม่สำเร็จ",

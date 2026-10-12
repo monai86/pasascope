@@ -5,6 +5,8 @@ import {
   parseSettingsSection,
   type SettingsSection,
 } from "@/features/settings/services/settings-access";
+import { settingsMessages } from "@/features/settings/settings.messages";
+import { getMessages } from "@/i18n/server";
 
 type SettingsPageProps = {
   searchParams?: Promise<SettingsSearchParams>;
@@ -25,12 +27,13 @@ export default async function SettingsPage({ searchParams }: SettingsPageProps) 
     || (resolvedSearchParams?.section === undefined && resolvedSearchParams?.scope === "admin");
   const notice = resolvedSearchParams?.notice === "not-authorized" ? "not-authorized" : undefined;
   const caseId = typeof resolvedSearchParams?.case_id === "string" ? resolvedSearchParams.case_id : undefined;
+  const t = (await getMessages(settingsMessages)).page;
 
   return (
     <AppShell active="Settings">
       <PageHeader
-        title="Settings"
-        description="Choose one workspace category. Organization administration appears only for authorized admins."
+        title={t.title}
+        description={t.description}
       />
       <SettingsWorkspaceClient
         initialSection={initialSection}

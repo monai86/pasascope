@@ -2,22 +2,9 @@
 
 import { ChevronLeft, ChevronRight } from "lucide-react";
 
+import { settingsMessages } from "@/features/settings/settings.messages";
 import type { SettingsSection } from "@/features/settings/services/settings-access";
-
-const SECTION_LABELS: Readonly<Record<SettingsSection, string>> = {
-  account: "Account",
-  organization: "Organization",
-  accessibility: "Accessibility & Display",
-  notifications: "Notifications",
-  privacy: "Privacy & Security",
-  export: "Export",
-  help: "Help",
-  team: "Team",
-  invitations: "Invitations",
-  audit: "Audit",
-  privacy_operations: "Privacy Operations",
-  integration_status: "Integration Status",
-};
+import { useMessages } from "@/i18n/locale-provider";
 
 const ADMIN_SECTIONS = new Set<SettingsSection>([
   "team",
@@ -42,11 +29,12 @@ export function SettingsNavigation({
   mobileIndexOpen = true,
   onOpenMobileIndex,
 }: SettingsNavigationProps) {
+  const t = useMessages(settingsMessages).nav;
   const sharedSections = sections.filter((section) => !ADMIN_SECTIONS.has(section));
   const adminSections = sections.filter((section) => ADMIN_SECTIONS.has(section));
 
   return (
-    <nav aria-label="Settings categories mobile">
+    <nav aria-label={t.label}>
       {!mobileIndexOpen ? (
         <button
           type="button"
@@ -54,17 +42,17 @@ export function SettingsNavigation({
           onClick={onOpenMobileIndex}
         >
           <ChevronLeft size={17} aria-hidden="true" />
-          All settings categories
+          {t.allCategories}
         </button>
       ) : null}
       <div className={`${mobileIndexOpen ? "block" : "hidden md:block"} sticky top-24 rounded-card border border-line bg-surface p-2`}>
         <div className="md:hidden">
-          <p className="px-3 pb-3 pt-1 text-sm leading-6 text-ink-muted">Choose one category to open its settings page.</p>
+          <p className="px-3 pb-3 pt-1 text-sm leading-6 text-ink-muted">{t.choose}</p>
         </div>
-          <SettingsNavGroup label="Workspace settings" sections={sharedSections} selected={selected} onSelect={onSelect} />
+          <SettingsNavGroup label={t.workspace} sections={sharedSections} selected={selected} onSelect={onSelect} />
           {adminSections.length > 0 ? (
             <div className="mt-3 border-t border-line pt-3">
-              <SettingsNavGroup label="Organization administration" sections={adminSections} selected={selected} onSelect={onSelect} />
+              <SettingsNavGroup label={t.administration} sections={adminSections} selected={selected} onSelect={onSelect} />
             </div>
           ) : null}
       </div>
@@ -78,6 +66,7 @@ function SettingsNavGroup({
   sections,
   selected,
 }: Pick<SettingsNavigationProps, "sections" | "selected" | "onSelect"> & { label: string }) {
+  const sectionLabels = useMessages(settingsMessages).sections;
   return (
     <div>
       <p className="px-3 pb-2 text-xs font-semibold uppercase tracking-[0.12em] text-ink-muted">{label}</p>
@@ -99,7 +88,7 @@ function SettingsNavGroup({
                   onSelect(section);
                 }}
               >
-                <span className="flex-1">{SECTION_LABELS[section]}</span>
+                <span className="flex-1">{sectionLabels[section]}</span>
                 <ChevronRight size={16} aria-hidden="true" className="text-ink-subtle md:hidden" />
               </a>
             </li>
@@ -108,8 +97,4 @@ function SettingsNavGroup({
       </ul>
     </div>
   );
-}
-
-export function settingsSectionLabel(section: SettingsSection): string {
-  return SECTION_LABELS[section];
 }

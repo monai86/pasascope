@@ -3,6 +3,9 @@
 import Link from "next/link";
 import { useMemo, useState } from "react";
 
+import { dashboardMessages } from "@/features/dashboard/dashboard.messages";
+import type { Locale } from "@/i18n/config";
+import { useLocale, useMessages } from "@/i18n/locale-provider";
 import type {
   DashboardTrendCase,
   DashboardTrendFeature,
@@ -23,10 +26,10 @@ type Trends = {
 
 type TrendPointWithValue = DashboardTrendPoint & { value: number };
 
-function formatDate(value: string): string {
+function formatDate(value: string, locale: Locale): string {
   const date = new Date(`${value}T00:00:00`);
   if (Number.isNaN(date.getTime())) return value;
-  return date.toLocaleDateString(undefined, { month: "short", day: "numeric" });
+  return date.toLocaleDateString(locale === "th" ? "th-TH" : undefined, { month: "short", day: "numeric" });
 }
 
 function formatValue(value: number): string {
@@ -56,6 +59,8 @@ function ChartGeometry({
   reference?: { q1: number; median: number; q3: number } | null;
   caseId: string;
 }) {
+  const t = useMessages(dashboardMessages).chart;
+  const { locale } = useLocale();
   const values = points.map((point) => point.value);
   const rawMin = Math.min(...values, ...(reference ? [reference.q1, reference.q3] : []));
   const rawMax = Math.max(...values, ...(reference ? [reference.q1, reference.q3] : []));
@@ -81,7 +86,7 @@ function ChartGeometry({
       <svg
         viewBox={`0 0 ${CHART_WIDTH} ${CHART_HEIGHT}`}
         role="img"
-        aria-label={`Line chart of ${points.length} value${points.length === 1 ? "" : "s"} across sessions`}
+        aria-label={t.lineChart(points.length)}
         className="h-auto w-full text-brand-strong"
         preserveAspectRatio="xMidYMid meet"
       >
@@ -140,7 +145,7 @@ function ChartGeometry({
         <a
           key={point.session_id}
           href={`/sessions/${encodeURIComponent(point.session_id)}?case_id=${encodeURIComponent(caseId)}`}
-          aria-label={`Open session ${formatDate(point.session_date)}`}
+          aria-label={t.openSession(formatDate(point.session_date, locale))}
           className="absolute z-10 grid min-h-11 min-w-11 -translate-x-1/2 -translate-y-1/2 place-items-center rounded-full opacity-0 transition focus-visible:opacity-100 focus-visible:ring-4 focus-visible:ring-[color:var(--color-focus-ring)]"
           style={{
             left: `${(x(index) / CHART_WIDTH) * 100}%`,
@@ -153,6 +158,8 @@ function ChartGeometry({
 }
 
 export function LanguageProgressChart({ trends }: { trends?: Trends }) {
+  const t = useMessages(dashboardMessages).chart;
+  const { locale } = useLocale();
   const safeTrends: Trends = {
     features: trends?.features ?? [],
     cases: trends?.cases ?? [],
@@ -183,8 +190,7 @@ export function LanguageProgressChart({ trends }: { trends?: Trends }) {
   if (!feature || uniqueCases.length === 0) {
     return (
       <p className="mt-4 rounded-card border border-dashed border-line p-5 text-sm leading-6 text-ink-muted">
-        No language-progress data yet. Extract features from a session to start
-        tracking MLU, NDW, and TTR across sessions.
+        {t.empty}
       </p>
     );
   }
@@ -197,7 +203,7 @@ export function LanguageProgressChart({ trends }: { trends?: Trends }) {
     <div className="mt-4">
       <div className="flex flex-col gap-3 sm:flex-row sm:items-end">
         <label className="grid min-w-0 gap-1 text-sm font-medium text-ink-muted">
-          Feature
+          {t.feature}
           <select
             className="min-h-11 w-full min-w-0 max-w-full rounded-card border border-line bg-surface px-3 text-sm text-ink outline-none transition focus-visible:ring-4 focus-visible:ring-[color:var(--color-focus-ring)] sm:w-56"
             value={feature.key}
@@ -212,7 +218,7 @@ export function LanguageProgressChart({ trends }: { trends?: Trends }) {
         </label>
         {uniqueCases.length > 1 ? (
           <label className="grid min-w-0 gap-1 text-sm font-medium text-ink-muted">
-            Case
+            {t.case}
             <select
               className="min-h-11 w-full min-w-0 max-w-full rounded-card border border-line bg-surface px-3 text-sm text-ink outline-none transition focus-visible:ring-4 focus-visible:ring-[color:var(--color-focus-ring)] sm:w-56"
               value={selectedCase.case_id}
@@ -227,44 +233,41 @@ export function LanguageProgressChart({ trends }: { trends?: Trends }) {
           </label>
         ) : (
           <p className="text-sm font-medium text-ink-muted">
-            Case: <span className="text-ink">{singleCase?.case_label}</span>
+            {t.caseValue} <span className="text-ink">{singleCase?.case_label}</span>
           </p>
         )}
       </div>
 
       {points.length === 0 ? (
         <p className="mt-5 rounded-card border border-dashed border-line p-5 text-sm leading-6 text-ink-muted">
-          No {feature.label.toLowerCase()} data for {selectedCase.case_label} yet.
-          Extract features from a language-sample session to see it here.
+          {t.noData(feature.label, selectedCase.case_label)}
         </p>
       ) : (
         <>
           {points.length === 1 ? (
             <p className="mt-4 text-sm leading-6 text-ink-muted">
-              One session with {feature.label.toLowerCase()} data so far — add
-              more sessions to see the trend line.
+              {t.oneSession(feature.label)}
             </p>
           ) : null}
           <div className="mt-4">
             <ChartGeometry points={points} reference={reference} caseId={selectedCase.case_id} />
             <p className="mt-1 text-xs text-ink-subtle">
-              Unit: {feature.unit} · across {points.length} session{points.length === 1 ? "" : "s"}
+              {t.unit(feature.unit, points.length)}
             </p>
             {reference && referenceMeta ? (
               <p className="mt-1 text-xs text-ink-subtle">
-                Reference band (typical development, {referenceMeta.age_band} months, {referenceMeta.task_type}):{" "}
-                median {formatValue(reference.median)} · IQR {formatValue(reference.q1)}–{formatValue(reference.q3)}
+                {t.reference(String(referenceMeta.age_band), String(referenceMeta.task_type), formatValue(reference.median), formatValue(reference.q1), formatValue(reference.q3))}
               </p>
             ) : null}
           </div>
           <table className="mt-4 w-full max-w-sm border-collapse text-sm">
             <caption className="sr-only">
-              {feature.label} values by session for {selectedCase.case_label}
+              {t.tableCaption(feature.label, selectedCase.case_label)}
             </caption>
             <thead>
               <tr className="border-b border-line text-left">
                 <th scope="col" className="py-2 pr-4 font-medium text-ink-muted">
-                  Session date
+                  {t.sessionDate}
                 </th>
                 <th scope="col" className="py-2 font-medium text-ink-muted">
                   {feature.label}
@@ -279,7 +282,7 @@ export function LanguageProgressChart({ trends }: { trends?: Trends }) {
                       href={sessionHref(point.session_id)}
                       className="inline-flex min-h-11 items-center rounded-lg px-1 font-medium text-brand-strong transition hover:bg-brand-soft"
                     >
-                      {formatDate(point.session_date)}
+                      {formatDate(point.session_date, locale)}
                     </Link>
                   </td>
                   <td className="py-2 font-semibold text-ink">{formatValue(point.value)}</td>
