@@ -1,6 +1,6 @@
 # PasaScope (ภาษา-สโคป) Clinical Pilot Deployment & Operational Guide
 
-This document outlines the deployment and local execution workflows for the **PasaScope (ภาษา-สโคป) v1.7.1** speech-language assessment decision-support system during clinical evaluator trials.
+This document outlines the deployment and local execution workflows for the **PasaScope (ภาษา-สโคป) v1.7.2** speech-language assessment decision-support system during clinical evaluator trials.
 
 ---
 

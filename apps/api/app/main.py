@@ -93,7 +93,7 @@ async def lifespan(app: FastAPI):
 
 app = FastAPI(
     title=settings_obj.app_name,
-    version="1.7.1",
+    version="1.7.2",
     description="Human-in-the-loop clinical decision-support API for PasaScope (ภาษา-สโคป).",
     lifespan=lifespan,
 )

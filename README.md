@@ -3,8 +3,8 @@
 Research prototype for extracting speech-language features from Thai language samples, CHAT (`.cha`) transcripts, and audio recordings to support pediatric therapist assessment workflows. Developed as an educational/research decision-support system — **not a diagnostic tool**.
 
 ## Project Version Mapping
-- **Project version:** `v1.7.1`
-- **Therapist product version:** `v1.7.1`
+- **Project version:** `v1.7.2`
+- **Therapist product version:** `v1.7.2`
 
 > Start with [`docs/PROJECT_SOURCE_OF_TRUTH.md`](./docs/PROJECT_SOURCE_OF_TRUTH.md).
 > It defines which paths are active, legacy, generated, or research-only.
@@ -17,6 +17,12 @@ Research prototype for extracting speech-language features from Thai language sa
 > [`docs/THREAT_MODEL.md`](./docs/THREAT_MODEL.md),
 > [`docs/DATA_FLOW_DIAGRAM.md`](./docs/DATA_FLOW_DIAGRAM.md), and
 > [`docs/DATA_CLASSIFICATION_INVENTORY.md`](./docs/DATA_CLASSIFICATION_INVENTORY.md).
+
+## Therapist App Interface (v1.7.2)
+
+- **Workflow:** Today → Cases → Session (Intake → Transcript → Findings → Report) → Reports. Each session view names one next step, and a step is ticked only when its work is done.
+- **Language:** a TH/EN toggle in the top bar; Thai is the default. Text supplied by the API, organization-administration Settings, Assessment v2 and the demo pages are English only.
+- **Visual system:** a light blue palette split 60 / 30 / 10 with no green. Tokens, components and rules are in [`apps/pasascope-app/DESIGN.md`](./apps/pasascope-app/DESIGN.md); a contract test keeps the palette from drifting.
 
 ## ⚠️ Clinical Safety Boundary & Prototype Status
 

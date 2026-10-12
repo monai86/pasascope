@@ -6,8 +6,8 @@
 ## สถานะปัจจุบัน
 
 - ชื่อโครงการ: **PasaScope (ภาษา-สโคป)** (เดิม LinguaLens)
-- รุ่นโครงการ: `v1.7.1`
-- active user-facing surfaces และ API ใช้ version `v1.7.1`
+- รุ่นโครงการ: `v1.7.2`
+- active user-facing surfaces และ API ใช้ version `v1.7.2`
 - branch หลัก: `main`
 - Therapist frontend หลัก: `apps/pasascope-app/`
 - Therapist frontend runtime: Next.js `^16.3.8` / React 19 / Node.js `22.x`

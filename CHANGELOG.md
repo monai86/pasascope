@@ -1,13 +1,13 @@
 # Changelog
 
-## [Unreleased]
+## [v1.7.2] - 2026-10-12
 
-Therapist app redesign in progress on `feat/redesign-sky`. The version is bumped when the redesign is complete.
+Therapist app redesign: a new visual system, a linear session workflow and a Thai/English interface.
 
 ### Changed
 - **New visual system for the therapist app** (`apps/pasascope-app/`): a light blue palette split 60 / 30 / 10 (ice-white canvas, sky and navy, azure for the primary action with a small coral highlight) replaces the pine and teal palette. There is no green anywhere; success states are blue with a check icon. Headings use Prompt, body text stays Noto Sans Thai. See `DESIGN.md`.
 - **Redrawn logo**: the speech-bubble-and-magnifier mark is now an SVG in the new palette, with a matching favicon, apple icon and Open Graph image.
-- **Thai and English interface**: a TH/EN toggle in the top bar and mobile header switches the language; Thai is the default for a first visit. Translated so far: the shell, sign-in, Today, Reports, status badges, safety notices, the dashboard header, Cases (list, case detail, create-case form, start-session picker), the caregiver consent form, the audio recorder, upload confirmation and transcription status, the pipeline status bar, the reasons shown when an action is blocked, the Dashboard panels and language-progress chart, the therapist Settings sections and navigation, the Findings feature table, evidence review and progress summary, session status and error messages, and in the Session workspace the context header, step rail, Next step guide, progress card, Intake view, Transcript view, Findings view and Report view. Other screens are still in their previous language.
+- **Thai and English interface**: a TH/EN toggle in the top bar and mobile header switches the language; Thai is the default for a first visit. The therapist path is translated: the shell, sign-in, Today, Dashboard, Cases, the four Session views (Intake, Transcript, Findings, Report), Reports, the therapist Settings sections, the consent, recording and transcription panels, status badges, safety notices, blocked-action reasons and session status messages. Still English only: organization-administration Settings, Assessment v2, the demo pages, Supabase sign-in, and any text the API supplies (feature names and descriptions, review cues, QA issues).
 - **One home and one navigation list**: the logo and mock sign-in open Today; the sidebar lists Today first.
 - **Today** is titled Today (was "Work Queue") and leads with the next item as a single prominent action.
 - **Session workflow is linear**: feature extraction moved from Intake to the Transcript view, directly after attestation. The Transcript view's Next step guide offers attest, extract, then continue to Findings as its one primary action. The step rail ticks a step only when it is actually complete.
