@@ -37,6 +37,21 @@ from packages.tui.client import (
 )
 
 
+def _read_app_version() -> str:
+    """Project version from pyproject.toml, so the window never shows a stale number."""
+    try:
+        text = (Path(__file__).resolve().parents[2] / "pyproject.toml").read_text(encoding="utf-8")
+        for line in text.splitlines():
+            if line.strip().startswith("version"):
+                return "v" + line.split("=", 1)[1].strip().strip('"')
+    except OSError:
+        pass
+    return ""
+
+
+APP_VERSION = _read_app_version()
+
+
 class PasaScopeGUIApp:
     """Main Desktop GUI Application window."""
 
@@ -121,6 +136,7 @@ class PasaScopeGUIApp:
         self.root.bind("<Destroy>", lambda e: self._cleanup_timers() if e.widget == self.root else None, add="+")
 
         self._configure_styles()
+        self._build_menubar()
         self._build_header()
         self._build_stepper_bar()
         self._build_next_action_ribbon()
@@ -131,230 +147,153 @@ class PasaScopeGUIApp:
         self._load_initial_data()
 
     def _configure_styles(self) -> None:
+        """Classic desktop look: the platform's own theme, fonts and colours.
+
+        The attribute names below are kept because the layout code refers to
+        them; they now hold system colours instead of a custom palette.
+        """
         style = ttk.Style(self.root)
-        try:
-            style.theme_use("clam")
-        except Exception:
-            pass
+        system = sys.platform
+        preferred = ("aqua",) if system == "darwin" else ("vista", "xpnative", "winnative") if system.startswith("win") else ("clam", "default")
+        for theme in preferred:
+            if theme in style.theme_names():
+                try:
+                    style.theme_use(theme)
+                    break
+                except Exception:
+                    continue
 
-        # Detect optimal modern 2026 typography hierarchy with native Thai support
-        try:
-            from tkinter import font as tkfont
-            avail_families = set(tkfont.families(self.root))
-        except Exception:
-            avail_families = set()
+        def color(*candidates: str) -> str:
+            # First name this Tk accepts; system colour names differ by platform.
+            for candidate in candidates:
+                if not candidate:
+                    continue
+                try:
+                    self.root.winfo_rgb(candidate)
+                    return candidate
+                except Exception:
+                    continue
+            return "white"
 
-        font_candidates = [
-            "Sukhumvit Set",
-            "SF Pro Text",
-            "SF Pro Display",
-            "-apple-system",
-            "Inter",
-            "Sarabun",
-            "Thonburi",
-            "Prompt",
-            "Poppins",
-            "Helvetica Neue",
-            "Helvetica",
-            "Segoe UI",
-            "Arial",
-        ]
-        sys_font = next((f for f in font_candidates if f in avail_families), "TkDefaultFont")
+        window = color(
+            "systemWindowBackgroundColor",
+            "SystemButtonFace",
+            str(style.lookup("TFrame", "background") or ""),
+            str(self.root.cget("background")),
+            "#ececec",
+        )
+        field = color("systemTextBackgroundColor", "SystemWindow", "white")
+        text = color("systemTextColor", "SystemWindowText", str(style.lookup("TLabel", "foreground") or ""), "black")
+        muted = color("systemSecondaryLabelColor", "SystemGrayText", "#555555")
+        border = color("systemSeparatorColor", "SystemButtonShadow", "#a0a0a0")
+        accent = color("systemLinkColor", "SystemHighlight", "#0a4a9f")
 
-        mono_candidates = [
-            "SF Mono",
-            "JetBrains Mono",
-            "Menlo",
-            "Monaco",
-            "Consolas",
-            "Courier New",
-        ]
-        mono_font = next((f for f in mono_candidates if f in avail_families), "Courier")
+        self.font_sys = "TkDefaultFont"
+        self.font_family = "TkDefaultFont"
+        self.font_mono = "TkFixedFont"
+        self.font_code = "TkFixedFont"
+        self.font_title = ("TkDefaultFont", 13, "bold")
+        self.font_heading = ("TkDefaultFont", 11, "bold")
+        self.font_subheading = ("TkDefaultFont", 10, "bold")
+        self.font_body = ("TkDefaultFont", 10)
+        self.font_body_bold = ("TkDefaultFont", 10, "bold")
+        self.font_caption = ("TkDefaultFont", 9)
+        self.font_caption_bold = ("TkDefaultFont", 9, "bold")
+        self.font_badge = ("TkDefaultFont", 8, "bold")
 
-        self.font_sys = sys_font
-        self.font_family = sys_font
-        self.font_mono = mono_font
-        self.font_code = mono_font
-        self.font_title = (sys_font, 13, "bold")
-        self.font_heading = (sys_font, 11, "bold")
-        self.font_subheading = (sys_font, 10, "bold")
-        self.font_body = (sys_font, 10)
-        self.font_body_bold = (sys_font, 10, "bold")
-        self.font_caption = (sys_font, 9)
-        self.font_caption_bold = (sys_font, 9, "bold")
-        self.font_badge = (sys_font, 8, "bold")
-
-        # Modern 2026 Clinical Workstation Design Tokens
-        self.bg_color = "#f8fafc"         # Crisp Slate 50 canvas
-        self.surface_color = "#ffffff"    # Pure crisp white for cards/panels
-        self.surface_alt = "#f1f5f9"      # Soft Slate 100 for toolbars & headers
-        self.brand_indigo = "#0f172a"     # Slate 900 for bold headings & readable ink
-        self.primary_color = "#2563eb"    # Modern Royal Blue / Indigo
-        self.primary_strong = "#1d4ed8"   # Blue hover
-        self.primary_light = "#60a5fa"    # Soft Iris / Sky accent
-        self.accent_coral = "#0d9488"     # Crisp Clinical Teal CTA
-        self.accent_coral_hover = "#0f766e"
-        self.accent_soft = "#eff6ff"      # Soft Lavender / Blue tint for active states
-        self.accent_cyan = "#0284c7"      # Sky blue for acoustic/audio indicators
-        self.border_color = "#cbd5e1"     # Slate 300
-        self.border_light = "#e2e8f0"     # Slate 200
-        self.border_soft = "#e2e8f0"      # Slate 200 border matching modern cards
-        self.text_color = "#0f172a"       # Slate 900 readable ink
-        self.text_secondary = "#475569"   # Muted Slate 600
-        self.text_muted = "#64748b"       # Soft Slate 500
-        self.success_color = "#059669"    # Emerald 600
-        self.warning_color = "#d97706"    # Amber 600
-        self.error_color = "#dc2626"      # Red 600
+        self.bg_color = window
+        self.surface_color = window
+        self.surface_alt = window
+        self.field_color = field
+        self.brand_indigo = text
+        self.primary_color = accent
+        self.primary_strong = accent
+        self.primary_light = border
+        self.accent_coral = accent
+        self.accent_coral_hover = accent
+        self.accent_soft = window
+        self.accent_cyan = accent
+        self.border_color = border
+        self.border_light = border
+        self.border_soft = border
+        self.text_color = text
+        self.text_secondary = muted
+        self.text_muted = muted
+        # State colours stay, as text colours only: dark enough to read on the window background.
+        self.success_color = "#1e6b2e"
+        self.warning_color = "#8a5a00"
+        self.error_color = "#b00020"
 
         self.root.configure(bg=self.bg_color)
 
-        # TTK Global Widget Styling
-        style.configure("TNotebook", background=self.bg_color, borderwidth=0)
-        style.configure(
-            "TNotebook.Tab",
-            padding=[18, 7],
-            font=(sys_font, 10, "bold"),
-            background=self.bg_color,
-            foreground="#475569",
-            lightcolor=self.bg_color,
-            borderwidth=0,
-        )
-        style.map(
-            "TNotebook.Tab",
-            background=[("selected", "#ffffff"), ("active", "#f1f5f9")],
-            foreground=[("selected", self.primary_color), ("!selected", "#475569")],
-        )
-
-        style.configure(
-            "Treeview",
-            rowheight=28,
-            font=(sys_font, 10),
-            background="#ffffff",
-            fieldbackground="#ffffff",
-            foreground=self.text_color,
-            borderwidth=1,
-            relief="solid",
-        )
-        style.configure(
-            "Treeview.Heading",
-            font=(sys_font, 9, "bold"),
-            background="#f1f5f9",
-            foreground=self.brand_indigo,
-            relief="flat",
-            padding=[6, 4],
-        )
-        style.map(
-            "Treeview.Heading",
-            background=[("active", "#e0e7ff")],
-            foreground=[("active", self.primary_color)],
-        )
-
-        style.configure(
-            "Coral.TButton",
-            font=(sys_font, 10, "bold"),
-            padding=[14, 7],
-            background=self.accent_coral,
-            foreground="#ffffff",
-            borderwidth=0,
-        )
-        style.map(
-            "Coral.TButton",
-            background=[("active", self.accent_coral_hover), ("disabled", "#fca5a5")],
-            foreground=[("active", "#ffffff"), ("disabled", "#ffffff")],
-        )
-
-        style.configure(
-            "Primary.TButton",
-            font=(sys_font, 10, "bold"),
-            padding=[12, 6],
-            background=self.primary_color,
-            foreground="#ffffff",
-            borderwidth=0,
-        )
-        style.map(
-            "Primary.TButton",
-            background=[("active", self.primary_strong), ("disabled", "#94a3b8")],
-            foreground=[("active", "#ffffff"), ("disabled", "#e2e8f0")],
-        )
-
-        style.configure(
-            "Success.TButton",
-            font=(sys_font, 10, "bold"),
-            padding=[12, 6],
-            background=self.success_color,
-            foreground="#ffffff",
-            borderwidth=0,
-        )
-        style.map(
-            "Success.TButton",
-            background=[("active", "#047857"), ("disabled", "#94a3b8")],
-            foreground=[("active", "#ffffff"), ("disabled", "#e2e8f0")],
-        )
-
-        style.configure(
-            "TButton",
-            font=(sys_font, 9),
-            padding=[10, 5],
-            background="#ffffff",
-            foreground=self.text_color,
-        )
-        style.map(
-            "TButton",
-            background=[("active", "#f1f5f9"), ("disabled", "#f8fafc")],
-            foreground=[("active", self.primary_color), ("disabled", "#94a3b8")],
-        )
-
-        style.configure(
-            "TLabelframe",
-            background="#ffffff",
-            bordercolor=self.border_soft,
-            lightcolor=self.border_soft,
-            darkcolor=self.border_soft,
-        )
-        style.configure(
-            "TLabelframe.Label",
-            font=(sys_font, 10, "bold"),
-            foreground=self.brand_indigo,
-            background="#ffffff",
-        )
-        style.configure(
-            "TEntry",
-            font=(sys_font, 10),
-            padding=[6, 4],
-        )
-        style.configure(
-            "TCombobox",
-            font=(sys_font, 10),
-            padding=[4, 2],
-        )
-        style.configure("TFrame", background=self.bg_color)
-        style.configure("Surface.TFrame", background=self.surface_color)
-        style.configure("Alt.TFrame", background=self.surface_alt)
-        style.configure("TPanedwindow", background=self.bg_color)
-        style.configure("Vertical.TPanedwindow", background=self.bg_color)
-        style.configure("Horizontal.TPanedwindow", background=self.bg_color)
+        # The theme draws the widgets. Only spacing and row height are set here.
+        style.configure("TNotebook.Tab", padding=[12, 4])
+        style.configure("Treeview", rowheight=24)
+        style.configure("TButton", padding=[8, 3])
+        # Kept as names so existing widgets resolve; they are standard buttons now.
+        for name in ("Coral.TButton", "Primary.TButton", "Success.TButton"):
+            style.configure(name, padding=[8, 3])
+        for name in ("Surface.TFrame", "Alt.TFrame"):
+            style.configure(name)
 
     # --- UI Layout Builders ---
+    def _build_menubar(self) -> None:
+        """Standard menu bar. Every entry calls a command the window already has."""
+        accel = "Cmd" if sys.platform == "darwin" else "Ctrl"
+        menubar = tk.Menu(self.root)
+
+        def select_tab(index: int):
+            return lambda: self.notebook.select(index) if hasattr(self, "notebook") else None
+
+        file_menu = tk.Menu(menubar, tearoff=False)
+        file_menu.add_command(label="New Case…", command=self._show_create_case_dialog)
+        file_menu.add_command(label="New Session…", command=self._show_create_session_dialog)
+        file_menu.add_separator()
+        file_menu.add_command(label="Open Audio File…", command=self._browse_audio_file)
+        file_menu.add_command(label="Open Transcript (.cha, .txt)…", command=self._browse_text_file)
+        file_menu.add_separator()
+        file_menu.add_command(label="Save", accelerator=f"{accel}+S", command=self._handle_ctrl_s)
+        file_menu.add_command(label="Export Report…", accelerator=f"{accel}+E", command=self._export_report)
+        file_menu.add_separator()
+        file_menu.add_command(label="Exit", command=self.root.destroy)
+        menubar.add_cascade(label="File", menu=file_menu)
+
+        view_menu = tk.Menu(menubar, tearoff=False)
+        for index, label in enumerate(
+            ("Cases && Sessions", "Ingest Material", "Transcript Review", "Clinical Findings", "Report && Sign-off")
+        ):
+            view_menu.add_command(label=label.replace("&&", "&"), command=select_tab(index))
+        view_menu.add_separator()
+        view_menu.add_command(label="Refresh", accelerator=f"{accel}+R", command=self._refresh_all_data)
+        menubar.add_cascade(label="View", menu=view_menu)
+
+        tools_menu = tk.Menu(menubar, tearoff=False)
+        tools_menu.add_command(label="Switch Mock / Live Backend", command=self._toggle_backend_mode)
+        tools_menu.add_command(label="Generate Report Draft", command=self._generate_report_draft)
+        menubar.add_cascade(label="Tools", menu=tools_menu)
+
+        help_menu = tk.Menu(menubar, tearoff=False)
+        help_menu.add_command(label="About PasaScope", command=self._show_about)
+        menubar.add_cascade(label="Help", menu=help_menu)
+
+        self.menubar = menubar
+        self.root.config(menu=menubar)
+
+    def _show_about(self) -> None:
+        messagebox.showinfo(
+            "About PasaScope",
+            f"PasaScope (ภาษา-สโคป) {APP_VERSION}\n\n"
+            "Research and education prototype for reviewing child language samples.\n"
+            "It describes a sample; it does not diagnose, and it has no Thai clinical validation.",
+        )
+
     def _build_header(self) -> None:
         # App Shell Navigation Bar
-        header_frame = tk.Frame(self.root, bg="#ffffff", padx=16, pady=8, highlightthickness=1, highlightbackground=self.border_soft)
+        header_frame = tk.Frame(self.root, bg=self.surface_color, padx=16, pady=8, highlightthickness=1, highlightbackground=self.border_soft)
         header_frame.pack(fill=tk.X)
 
-        title_frame = tk.Frame(header_frame, bg="#ffffff")
+        title_frame = tk.Frame(header_frame, bg=self.surface_color)
         title_frame.pack(side=tk.LEFT)
-
-        # Brand Logo Squircle (Coral accent from flat design reference)
-        logo_icon = tk.Label(
-            title_frame,
-            text="✦",
-            font=(self.font_sys, 11, "bold"),
-            fg="#ffffff",
-            bg=self.accent_coral,
-            padx=6,
-            pady=1,
-            relief=tk.FLAT,
-        )
-        logo_icon.pack(side=tk.LEFT, padx=(0, 8))
 
         # Brand Mark & Version Badge
         tk.Label(
@@ -362,15 +301,15 @@ class PasaScopeGUIApp:
             text="PasaScope (ภาษา-สโคป)",
             font=(self.font_sys, 13, "bold"),
             fg=self.brand_indigo,
-            bg="#ffffff",
+            bg=self.surface_color,
         ).pack(side=tk.LEFT)
 
         tk.Label(
             title_frame,
-            text="v1.7.2",
+            text=APP_VERSION,
             font=(self.font_sys, 8, "bold"),
             fg=self.primary_color,
-            bg="#eff6ff",
+            bg=self.surface_color,
             padx=6,
             pady=1,
             relief=tk.FLAT,
@@ -381,14 +320,14 @@ class PasaScopeGUIApp:
             text="Pediatric Speech-Language Decision Support",
             font=(self.font_sys, 10),
             fg=self.text_muted,
-            bg="#ffffff",
+            bg=self.surface_color,
         ).pack(side=tk.LEFT)
 
         # Connection Status Badge
         is_online = self.client.check_health()
         status_text = "● API Connected" if is_online else "○ Offline Mode"
-        status_bg = "#ecfdf5" if is_online else "#fef9c3"
-        status_fg = "#047857" if is_online else "#854d0e"
+        status_bg = self.surface_color
+        status_fg = self.success_color if is_online else self.warning_color
 
         self.status_lbl = tk.Label(
             header_frame,
@@ -404,7 +343,7 @@ class PasaScopeGUIApp:
 
         # Mode indicator badge (MOCK vs LIVE)
         mode_text = "[RESEARCH MOCK]" if self.client.mock_mode else "[CLINICAL LIVE - FASTAPI]"
-        mode_bg = "#eef2ff" if self.client.mock_mode else "#e0f2fe"
+        mode_bg = self.surface_color
         mode_fg = self.primary_color if self.client.mock_mode else self.accent_cyan
         self.lbl_mode = tk.Label(
             header_frame,
@@ -428,51 +367,51 @@ class PasaScopeGUIApp:
         self.btn_mode_toggle.pack(side=tk.RIGHT, padx=(0, 8))
 
         # Calm Clinical Safety Notice Ribbon
-        safety_banner = tk.Frame(self.root, bg="#fffbeb", padx=16, pady=4, highlightthickness=1, highlightbackground="#fef3c7")
+        safety_banner = tk.Frame(self.root, bg=self.surface_color, padx=16, pady=4, highlightthickness=1, highlightbackground=self.border_color)
         safety_banner.pack(fill=tk.X)
         safety_lbl = tk.Label(
             safety_banner,
             text="Clinical Decision-Support Prototype  •  Non-Diagnostic  •  Requires Clinician Verification & Sign-off",
             font=(self.font_sys, 9),
-            fg="#92400e",
-            bg="#fffbeb",
+            fg=self.warning_color,
+            bg=self.surface_color,
         )
         safety_lbl.pack(anchor=tk.W)
 
         # Persistent Global Context Bar (2-Tier Responsive Layout)
-        ctx_bar = tk.Frame(self.root, bg="#ffffff", padx=14, pady=8, highlightthickness=1, highlightbackground=self.border_soft)
+        ctx_bar = tk.Frame(self.root, bg=self.surface_color, padx=14, pady=8, highlightthickness=1, highlightbackground=self.border_soft)
         ctx_bar.pack(fill=tk.X, padx=12, pady=(4, 2))
 
         # --- Tier 1: Patient, Session & Clinical Identity Context ---
-        row1 = tk.Frame(ctx_bar, bg="#ffffff")
+        row1 = tk.Frame(ctx_bar, bg=self.surface_color)
         row1.pack(fill=tk.X, pady=(0, 6))
 
-        r1_left = tk.Frame(row1, bg="#ffffff")
+        r1_left = tk.Frame(row1, bg=self.surface_color)
         r1_left.pack(side=tk.LEFT, fill=tk.X, expand=True)
 
-        tk.Label(r1_left, text="Case:", font=(self.font_sys, 9, "bold"), bg="#ffffff", fg=self.brand_indigo).pack(side=tk.LEFT, padx=(0, 4))
+        tk.Label(r1_left, text="Case:", font=(self.font_sys, 9, "bold"), bg=self.surface_color, fg=self.brand_indigo).pack(side=tk.LEFT, padx=(0, 4))
         self.combo_global_case = ttk.Combobox(r1_left, state="readonly", width=22, font=(self.font_sys, 9))
         self.combo_global_case.pack(side=tk.LEFT, padx=(0, 10))
         self.combo_global_case.bind("<<ComboboxSelected>>", self._on_global_case_changed)
 
-        tk.Label(r1_left, text="Session:", font=(self.font_sys, 9, "bold"), bg="#ffffff", fg=self.brand_indigo).pack(side=tk.LEFT, padx=(0, 4))
+        tk.Label(r1_left, text="Session:", font=(self.font_sys, 9, "bold"), bg=self.surface_color, fg=self.brand_indigo).pack(side=tk.LEFT, padx=(0, 4))
         self.combo_global_session = ttk.Combobox(r1_left, state="readonly", width=18, font=(self.font_sys, 9))
         self.combo_global_session.pack(side=tk.LEFT, padx=(0, 10))
         self.combo_global_session.bind("<<ComboboxSelected>>", self._on_global_session_changed)
 
-        tk.Label(r1_left, text="Child (V2):", font=(self.font_sys, 9, "bold"), bg="#ffffff", fg=self.brand_indigo).pack(side=tk.LEFT, padx=(0, 4))
+        tk.Label(r1_left, text="Child (V2):", font=(self.font_sys, 9, "bold"), bg=self.surface_color, fg=self.brand_indigo).pack(side=tk.LEFT, padx=(0, 4))
         self.combo_global_child = ttk.Combobox(r1_left, state="readonly", width=18, font=(self.font_sys, 9))
         self.combo_global_child.pack(side=tk.LEFT, padx=(0, 10))
         self.combo_global_child.bind("<<ComboboxSelected>>", self._on_global_child_changed)
 
-        r1_right = tk.Frame(row1, bg="#ffffff")
+        r1_right = tk.Frame(row1, bg=self.surface_color)
         r1_right.pack(side=tk.RIGHT)
 
         self.lbl_consent_status = tk.Label(
             r1_right,
             text="[Consent Not Loaded]",
             font=(self.font_sys, 8, "bold"),
-            bg="#f1f5f9",
+            bg=self.surface_color,
             fg=self.text_muted,
             padx=8,
             pady=3,
@@ -484,8 +423,8 @@ class PasaScopeGUIApp:
             r1_right,
             text="",
             font=(self.font_sys, 8),
-            bg="#ffffff",
-            fg="#94a3b8",
+            bg=self.surface_color,
+            fg=self.text_muted,
         )
         self.lbl_consent_loaded_at.pack(side=tk.LEFT, padx=(0, 4))
 
@@ -493,8 +432,8 @@ class PasaScopeGUIApp:
             r1_right,
             text="",
             font=(self.font_sys, 8, "bold"),
-            bg="#f5f3ff",
-            fg="#6d28d9",
+            bg=self.surface_color,
+            fg=self.primary_color,
             padx=8,
             pady=3,
             relief=tk.FLAT,
@@ -502,13 +441,13 @@ class PasaScopeGUIApp:
         self.lbl_assessment_ctx.pack(side=tk.LEFT, padx=(0, 2))
 
         # --- Tier 2: Search Filter, Workflow Actions & Quick Create ---
-        row2 = tk.Frame(ctx_bar, bg="#ffffff")
+        row2 = tk.Frame(ctx_bar, bg=self.surface_color)
         row2.pack(fill=tk.X)
 
-        r2_left = tk.Frame(row2, bg="#ffffff")
+        r2_left = tk.Frame(row2, bg=self.surface_color)
         r2_left.pack(side=tk.LEFT, fill=tk.X, expand=True)
 
-        tk.Label(r2_left, text="Search Filter:", font=(self.font_sys, 9, "bold"), bg="#ffffff", fg=self.text_secondary).pack(side=tk.LEFT, padx=(0, 4))
+        tk.Label(r2_left, text="Search Filter:", font=(self.font_sys, 9, "bold"), bg=self.surface_color, fg=self.text_secondary).pack(side=tk.LEFT, padx=(0, 4))
         self.entry_case_search = ttk.Entry(r2_left, width=16, font=(self.font_sys, 9))
         self.entry_case_search.pack(side=tk.LEFT, padx=(0, 8))
         self.entry_case_search.bind("<KeyRelease>", self._on_case_search_typing)
@@ -537,7 +476,7 @@ class PasaScopeGUIApp:
 
         ttk.Button(r2_left, text="⟳ Refresh All", command=self._refresh_all_data).pack(side=tk.LEFT, padx=(0, 6))
 
-        r2_right = tk.Frame(row2, bg="#ffffff")
+        r2_right = tk.Frame(row2, bg=self.surface_color)
         r2_right.pack(side=tk.RIGHT)
 
         ttk.Button(r2_right, text="+ New Child", command=self._show_create_child_dialog).pack(side=tk.LEFT, padx=3)
@@ -549,7 +488,7 @@ class PasaScopeGUIApp:
         """Interactive 5-Step Guided Therapist Workflow Stepper Bar (THERAPIST_SIMPLE_WORKFLOW.md)."""
         self.frame_stepper = tk.Frame(
             self.root,
-            bg="#ffffff",
+            bg=self.surface_color,
             padx=12,
             pady=6,
             highlightthickness=1,
@@ -573,7 +512,7 @@ class PasaScopeGUIApp:
         for i, (num, title, subtitle, tab_idx) in enumerate(steps):
             f_step = tk.Frame(
                 self.frame_stepper,
-                bg="#f8fafc",
+                bg=self.surface_color,
                 padx=8,
                 pady=5,
                 cursor="hand2",
@@ -586,22 +525,22 @@ class PasaScopeGUIApp:
                 f_step,
                 text=num,
                 font=(self.font_sys, 9, "bold"),
-                bg="#e2e8f0",
-                fg="#475569",
+                bg=self.surface_color,
+                fg=self.text_muted,
                 width=2,
                 padx=2,
                 pady=1,
             )
             badge.pack(side=tk.LEFT, padx=(0, 6))
 
-            t_box = tk.Frame(f_step, bg="#f8fafc")
+            t_box = tk.Frame(f_step, bg=self.surface_color)
             t_box.pack(side=tk.LEFT, fill=tk.X, expand=True)
 
             lbl_title = tk.Label(
                 t_box,
                 text=title,
                 font=(self.font_sys, 9, "bold"),
-                bg="#f8fafc",
+                bg=self.surface_color,
                 fg=self.brand_indigo,
                 anchor=tk.W,
             )
@@ -611,7 +550,7 @@ class PasaScopeGUIApp:
                 t_box,
                 text=subtitle,
                 font=(self.font_sys, 7),
-                bg="#f8fafc",
+                bg=self.surface_color,
                 fg=self.text_muted,
                 anchor=tk.W,
             )
@@ -636,7 +575,7 @@ class PasaScopeGUIApp:
         """Contextual Next Action Ribbon per THERAPIST_SIMPLE_WORKFLOW.md."""
         self.frame_next_action = tk.Frame(
             self.root,
-            bg="#f5f6ff",
+            bg=self.surface_color,
             padx=14,
             pady=5,
             highlightthickness=1,
@@ -644,15 +583,15 @@ class PasaScopeGUIApp:
         )
         self.frame_next_action.pack(fill=tk.X, padx=12, pady=(0, 4))
 
-        left_side = tk.Frame(self.frame_next_action, bg="#f5f6ff")
+        left_side = tk.Frame(self.frame_next_action, bg=self.surface_color)
         left_side.pack(side=tk.LEFT, fill=tk.X, expand=True)
 
         self.lbl_next_action_tag = tk.Label(
             left_side,
             text="NEXT ACTION",
             font=(self.font_sys, 8, "bold"),
-            bg=self.accent_coral,
-            fg="#ffffff",
+            bg=self.surface_color,
+            fg=self.text_color,
             padx=7,
             pady=2,
             relief=tk.FLAT,
@@ -663,7 +602,7 @@ class PasaScopeGUIApp:
             left_side,
             text="Select or create a Child / Case profile from the list to begin.",
             font=(self.font_sys, 9, "bold"),
-            bg="#f5f6ff",
+            bg=self.surface_color,
             fg=self.brand_indigo,
         )
         self.lbl_next_action_text.pack(side=tk.LEFT)
@@ -729,36 +668,31 @@ class PasaScopeGUIApp:
             lbl = self.step_labels[idx]
             sub = self.step_subtitles[idx] if idx < len(self.step_subtitles) else None
 
+            surface = self.surface_color
             if step_idx < active_step:
-                # Completed step
-                f_step.config(bg="#ecfdf5", highlightbackground="#a7f3d0")
-                badge.config(text="✓", bg="#10b981", fg="#ffffff")
-                lbl.config(bg="#ecfdf5", fg="#065f46")
-                if sub:
-                    sub.config(bg="#ecfdf5", fg="#047857")
-                for w in f_step.winfo_children():
-                    if isinstance(w, tk.Frame):
-                        w.config(bg="#ecfdf5")
+                # Completed step: a tick.
+                badge.config(text="✓", bg=surface, fg=self.success_color)
+                lbl.config(bg=surface, fg=self.text_color, font=(self.font_sys, 10))
+                sub_color = self.text_muted
+                relief = tk.FLAT
             elif step_idx == active_step:
-                # Current active step (Royal Iris / Indigo from flat design)
-                f_step.config(bg="#eef2ff", highlightbackground=self.primary_light)
-                badge.config(text=str(step_idx), bg=self.primary_color, fg="#ffffff")
-                lbl.config(bg="#eef2ff", fg=self.brand_indigo)
-                if sub:
-                    sub.config(bg="#eef2ff", fg=self.primary_color)
-                for w in f_step.winfo_children():
-                    if isinstance(w, tk.Frame):
-                        w.config(bg="#eef2ff")
+                # Current step: bold label in a sunken frame.
+                badge.config(text=str(step_idx), bg=surface, fg=self.text_color)
+                lbl.config(bg=surface, fg=self.text_color, font=(self.font_sys, 10, "bold"))
+                sub_color = self.text_color
+                relief = tk.SUNKEN
             else:
-                # Upcoming step
-                f_step.config(bg="#ffffff", highlightbackground=self.border_soft)
-                badge.config(text=str(step_idx), bg="#f1f5f9", fg="#64748b")
-                lbl.config(bg="#ffffff", fg="#64748b")
-                if sub:
-                    sub.config(bg="#ffffff", fg="#94a3b8")
-                for w in f_step.winfo_children():
-                    if isinstance(w, tk.Frame):
-                        w.config(bg="#ffffff")
+                # Upcoming step: greyed.
+                badge.config(text=str(step_idx), bg=surface, fg=self.text_muted)
+                lbl.config(bg=surface, fg=self.text_muted, font=(self.font_sys, 10))
+                sub_color = self.text_muted
+                relief = tk.FLAT
+            f_step.config(bg=surface, highlightbackground=self.border_color, relief=relief, bd=1)
+            if sub:
+                sub.config(bg=surface, fg=sub_color)
+            for w in f_step.winfo_children():
+                if isinstance(w, tk.Frame):
+                    w.config(bg=surface)
 
         if hasattr(self, "lbl_next_action_text"):
             self.lbl_next_action_text.config(text=next_text)
@@ -797,8 +731,16 @@ class PasaScopeGUIApp:
 
     def _build_statusbar(self) -> None:
         """Bottom status bar with operational status and indeterminate progress indicator."""
-        self.statusbar_frame = tk.Frame(self.root, bg=self.surface_alt, padx=16, pady=5, highlightthickness=1, highlightbackground=self.border_soft)
+        self.statusbar_frame = tk.Frame(self.root, bg=self.surface_alt, padx=8, pady=2, bd=1, relief=tk.SUNKEN)
         self.statusbar_frame.pack(side=tk.BOTTOM, fill=tk.X)
+
+        tk.Label(
+            self.statusbar_frame,
+            text=f"PasaScope {APP_VERSION}",
+            font=(self.font_sys, 9),
+            fg=self.text_secondary,
+            bg=self.surface_alt,
+        ).pack(side=tk.RIGHT)
 
         self.lbl_status = tk.Label(
             self.statusbar_frame,
@@ -1152,14 +1094,14 @@ class PasaScopeGUIApp:
         paned_cases.pack(fill=tk.BOTH, expand=True)
 
         # --- Left Column: Cases & Therapy Sessions ---
-        col_left = tk.Frame(paned_cases, bg="#ffffff", padx=12, pady=10, highlightthickness=1, highlightbackground=self.border_soft)
+        col_left = tk.Frame(paned_cases, bg=self.surface_color, padx=12, pady=10, highlightthickness=1, highlightbackground=self.border_soft)
         paned_cases.add(col_left, weight=1)
 
         # Section 1: Cases Directory
         lbl_c = ttk.Label(col_left, text="Active Child Cases Directory", font=self.font_heading)
         lbl_c.pack(anchor=tk.W, pady=(0, 4))
 
-        f_tree_c = tk.Frame(col_left, bg="#ffffff")
+        f_tree_c = tk.Frame(col_left, bg=self.surface_color)
         f_tree_c.pack(fill=tk.BOTH, expand=True, pady=(0, 4))
 
         sb_c = ttk.Scrollbar(f_tree_c, orient=tk.VERTICAL)
@@ -1187,7 +1129,7 @@ class PasaScopeGUIApp:
         self.tree_cases.bind("<<TreeviewSelect>>", self._on_case_selected)
 
         # Button Bar for Cases
-        btn_bar_c = tk.Frame(col_left, bg="#ffffff")
+        btn_bar_c = tk.Frame(col_left, bg=self.surface_color)
         btn_bar_c.pack(fill=tk.X, pady=(0, 8))
         ttk.Button(btn_bar_c, text="+ Create New Case", command=self._show_create_case_dialog).pack(side=tk.LEFT, padx=(0, 6))
         ttk.Button(btn_bar_c, text="⟳ Refresh Cases", command=self._refresh_cases).pack(side=tk.LEFT)
@@ -1197,7 +1139,7 @@ class PasaScopeGUIApp:
         lbl_s = ttk.Label(col_left, text="Sessions for Selected Case", font=self.font_heading)
         lbl_s.pack(anchor=tk.W, pady=(4, 4))
 
-        f_tree_s = tk.Frame(col_left, bg="#ffffff")
+        f_tree_s = tk.Frame(col_left, bg=self.surface_color)
         f_tree_s.pack(fill=tk.BOTH, expand=True, pady=(0, 4))
 
         sb_s = ttk.Scrollbar(f_tree_s, orient=tk.VERTICAL)
@@ -1225,20 +1167,20 @@ class PasaScopeGUIApp:
         self.tree_sessions.bind("<<TreeviewSelect>>", self._on_session_selected)
 
         # Button Bar for Sessions
-        btn_bar_s = tk.Frame(col_left, bg="#ffffff")
+        btn_bar_s = tk.Frame(col_left, bg=self.surface_color)
         btn_bar_s.pack(fill=tk.X)
         ttk.Button(btn_bar_s, text="+ Start New Session", command=self._show_create_session_dialog).pack(side=tk.LEFT, padx=(0, 6))
         ttk.Button(btn_bar_s, text="Open in Ingestion Workspace →", command=lambda: self.notebook.select(1)).pack(side=tk.LEFT)
 
         # --- Right Column: Assessment V2 Children & Assessments ---
-        col_right = tk.Frame(paned_cases, bg="#ffffff", padx=12, pady=10, highlightthickness=1, highlightbackground=self.border_soft)
+        col_right = tk.Frame(paned_cases, bg=self.surface_color, padx=12, pady=10, highlightthickness=1, highlightbackground=self.border_soft)
         paned_cases.add(col_right, weight=1)
 
         # Section 3: Active Children Directory (Assessment V2)
         lbl_ch = ttk.Label(col_right, text="Active Children Directory (Assessment V2)", font=self.font_heading)
         lbl_ch.pack(anchor=tk.W, pady=(0, 4))
 
-        f_tree_ch = tk.Frame(col_right, bg="#ffffff")
+        f_tree_ch = tk.Frame(col_right, bg=self.surface_color)
         f_tree_ch.pack(fill=tk.BOTH, expand=True, pady=(0, 4))
 
         sb_ch = ttk.Scrollbar(f_tree_ch, orient=tk.VERTICAL)
@@ -1261,7 +1203,7 @@ class PasaScopeGUIApp:
         self.tree_children.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
         self.tree_children.bind("<<TreeviewSelect>>", self._on_child_selected)
 
-        btn_bar_ch = tk.Frame(col_right, bg="#ffffff")
+        btn_bar_ch = tk.Frame(col_right, bg=self.surface_color)
         btn_bar_ch.pack(fill=tk.X, pady=(0, 8))
         ttk.Button(btn_bar_ch, text="+ Create Child Profile (V2)", command=self._show_create_child_dialog).pack(side=tk.LEFT, padx=(0, 6))
         ttk.Button(btn_bar_ch, text="+ Create Assessment (V2)", command=self._show_create_assessment_dialog).pack(side=tk.LEFT, padx=(0, 6))
@@ -1271,7 +1213,7 @@ class PasaScopeGUIApp:
         lbl_asmt = ttk.Label(col_right, text="Assessments Directory (Assessment V2)", font=self.font_heading)
         lbl_asmt.pack(anchor=tk.W, pady=(4, 4))
 
-        f_tree_asmt = tk.Frame(col_right, bg="#ffffff")
+        f_tree_asmt = tk.Frame(col_right, bg=self.surface_color)
         f_tree_asmt.pack(fill=tk.BOTH, expand=True, pady=(0, 4))
 
         sb_asmt = ttk.Scrollbar(f_tree_asmt, orient=tk.VERTICAL)
@@ -1345,8 +1287,8 @@ class PasaScopeGUIApp:
             rec_ctrl_row,
             text="00:00",
             font=(self.font_family, 11, "bold"),
-            fg="#dc2626",
-            bg="#fee2e2",
+            fg=self.error_color,
+            bg=self.surface_color,
             padx=8,
             pady=2,
             relief=tk.FLAT,
@@ -1357,15 +1299,15 @@ class PasaScopeGUIApp:
             rec_ctrl_row,
             text="Microphone ready",
             font=self.font_caption,
-            foreground="#64748b",
+            foreground=self.text_muted,
         )
         self.lbl_rec_status.pack(side=tk.LEFT)
 
         # VU Meter Canvas
         vu_frame = ttk.Frame(card_live)
         vu_frame.pack(fill=tk.X, pady=(2, 0))
-        ttk.Label(vu_frame, text="Mic Level:", font=self.font_caption, foreground="#64748b").pack(side=tk.LEFT, padx=(0, 6))
-        self.canvas_vu_meter = tk.Canvas(vu_frame, height=14, bg="#0f172a", highlightthickness=1, highlightbackground="#334155")
+        ttk.Label(vu_frame, text="Mic Level:", font=self.font_caption, foreground=self.text_muted).pack(side=tk.LEFT, padx=(0, 6))
+        self.canvas_vu_meter = tk.Canvas(vu_frame, height=14, bg="#0f172a", highlightthickness=1, highlightbackground=self.border_color)
         self.canvas_vu_meter.pack(side=tk.LEFT, fill=tk.X, expand=True)
 
         # Audio/Video File Picker Card
@@ -1394,18 +1336,18 @@ class PasaScopeGUIApp:
         # Dedicated Audio Ingestion Progress Panel (Hidden by default, shown during processing)
         self.frame_ingest_progress = tk.Frame(
             card_audio,
-            bg="#f0fdfa",
+            bg=self.surface_color,
             padx=12,
             pady=10,
             highlightthickness=1,
-            highlightbackground="#99f6e4",
+            highlightbackground=self.border_color,
         )
         self.lbl_ingest_stage = tk.Label(
             self.frame_ingest_progress,
             text="Initializing Audio Pipeline...",
             font=self.font_subheading,
             fg=self.primary_color,
-            bg="#f0fdfa",
+            bg=self.surface_color,
         )
         self.lbl_ingest_stage.pack(anchor=tk.W, pady=(0, 4))
 
@@ -1422,7 +1364,7 @@ class PasaScopeGUIApp:
             text="0% Completed",
             font=self.font_caption,
             fg=self.primary_color,
-            bg="#f0fdfa",
+            bg=self.surface_color,
         )
         self.lbl_ingest_percent.pack(anchor=tk.W)
 
@@ -1440,7 +1382,7 @@ class PasaScopeGUIApp:
         lbl_raw = ttk.Label(card_text, text="Or enter dialogue text manually below (format: 'INV: ...' and 'CHI: ...'):", font=self.font_caption)
         lbl_raw.pack(anchor=tk.W, pady=(0, 4))
 
-        self.txt_manual = tk.Text(card_text, height=8, font=self.font_code, bg="#ffffff", fg=self.text_color, relief=tk.SOLID, borderwidth=1, highlightthickness=1, highlightbackground=self.border_light)
+        self.txt_manual = tk.Text(card_text, height=8, font=self.font_code, bg=self.surface_color, fg=self.text_color, relief=tk.SOLID, borderwidth=1, highlightthickness=1, highlightbackground=self.border_light)
         self.txt_manual.pack(fill=tk.BOTH, expand=True, pady=(0, 8))
 
         self.btn_ingest_text = ttk.Button(card_text, text="Ingest Typed Dialogue Text", style="Primary.TButton", command=self._ingest_typed_text)
@@ -1470,28 +1412,28 @@ class PasaScopeGUIApp:
 
         chat_bar = ttk.Frame(self.subtab_chat)
         chat_bar.pack(fill=tk.X, pady=(0, 4))
-        ttk.Label(chat_bar, text="Canonical CHAT Syntax (@Begin ... *CHI / *INV ... @End):", font=(self.font_family, 9, "italic"), foreground="#475569").pack(side=tk.LEFT)
+        ttk.Label(chat_bar, text="Canonical CHAT Syntax (@Begin ... *CHI / *INV ... @End):", font=(self.font_family, 9, "italic"), foreground=self.text_muted).pack(side=tk.LEFT)
         ttk.Button(chat_bar, text="Copy CHAT", command=self._copy_chat_text).pack(side=tk.RIGHT)
 
         self.txt_chat_view = tk.Text(
             self.subtab_chat,
             font=(self.font_code, 10),
-            bg="#ffffff",
-            fg="#0f172a",
-            insertbackground="#0f766e",
+            bg=self.surface_color,
+            fg=self.text_color,
+            insertbackground=self.primary_color,
             padx=14,
             pady=12,
             highlightthickness=1,
-            highlightbackground="#cbd5e1",
+            highlightbackground=self.border_color,
             relief=tk.FLAT,
         )
         self.txt_chat_view.pack(fill=tk.BOTH, expand=True)
         # Configure clean light syntax tags for TalkBank style
-        self.txt_chat_view.tag_configure("header", foreground="#475569", font=(self.font_code, 10, "bold"))
-        self.txt_chat_view.tag_configure("chi", foreground="#0f766e", font=(self.font_code, 10, "bold"))
-        self.txt_chat_view.tag_configure("inv", foreground="#0284c7", font=(self.font_code, 10, "bold"))
-        self.txt_chat_view.tag_configure("time", foreground="#b45309", font=(self.font_code, 10))
-        self.txt_chat_view.tag_configure("tier", foreground="#6366f1", font=(self.font_code, 10, "italic"))
+        self.txt_chat_view.tag_configure("header", foreground=self.text_muted, font=(self.font_code, 10, "bold"))
+        self.txt_chat_view.tag_configure("chi", foreground=self.primary_color, font=(self.font_code, 10, "bold"))
+        self.txt_chat_view.tag_configure("inv", foreground=self.primary_color, font=(self.font_code, 10, "bold"))
+        self.txt_chat_view.tag_configure("time", foreground=self.warning_color, font=(self.font_code, 10))
+        self.txt_chat_view.tag_configure("tier", foreground=self.primary_color, font=(self.font_code, 10, "italic"))
 
         # Sub-tab B: Utterance Table & Interactive Editor
         self.subtab_table = ttk.Frame(self.review_notebook, padding=8)
@@ -1503,7 +1445,7 @@ class PasaScopeGUIApp:
             bg="#090d16",
             height=68,
             highlightthickness=1,
-            highlightbackground="#1e293b",
+            highlightbackground=self.border_color,
         )
         self.frame_waveform.pack(fill=tk.X, pady=(0, 6))
         self.frame_waveform.pack_propagate(False)
@@ -1524,11 +1466,11 @@ class PasaScopeGUIApp:
         # Interactive Audio Scrubber & Timeline Bar
         self.frame_scrubber = tk.Frame(
             self.subtab_table,
-            bg="#f8fafc",
+            bg=self.surface_color,
             padx=8,
             pady=4,
             highlightthickness=1,
-            highlightbackground="#e2e8f0",
+            highlightbackground=self.border_color,
         )
         self.frame_scrubber.pack(fill=tk.X, pady=(0, 4))
 
@@ -1536,8 +1478,8 @@ class PasaScopeGUIApp:
             self.frame_scrubber,
             text="00:00.0",
             font=(self.font_code, 9, "bold"),
-            fg="#0f766e",
-            bg="#f8fafc",
+            fg=self.primary_color,
+            bg=self.surface_color,
             width=7,
         )
         self.lbl_time_current.pack(side=tk.LEFT, padx=(0, 6))
@@ -1557,8 +1499,8 @@ class PasaScopeGUIApp:
             self.frame_scrubber,
             text="00:00.0",
             font=(self.font_code, 9),
-            fg="#64748b",
-            bg="#f8fafc",
+            fg=self.text_muted,
+            bg=self.surface_color,
             width=7,
         )
         self.lbl_time_total.pack(side=tk.RIGHT, padx=(6, 0))
@@ -1566,11 +1508,11 @@ class PasaScopeGUIApp:
         # Audio Player & Synchronized Playback Toolbar
         self.frame_audio_player = tk.Frame(
             self.subtab_table,
-            bg="#f8fafc",
+            bg=self.surface_color,
             padx=8,
             pady=6,
             highlightthickness=1,
-            highlightbackground="#e2e8f0",
+            highlightbackground=self.border_color,
         )
         self.frame_audio_player.pack(fill=tk.X, pady=(0, 6))
 
@@ -1634,8 +1576,8 @@ class PasaScopeGUIApp:
             self.frame_audio_player,
             text="Audio: Ready (Click Play or press [C]=CHI, [I]=INV, [M]=MOT to tag)",
             font=(self.font_family, 9),
-            fg="#64748b",
-            bg="#f8fafc",
+            fg=self.text_muted,
+            bg=self.surface_color,
         )
         self.lbl_playback_status.pack(side=tk.LEFT, fill=tk.X, expand=True)
 
@@ -1657,7 +1599,7 @@ class PasaScopeGUIApp:
         self.tree_utterances.tag_configure(
             "playing",
             background="#e0f2fe",
-            foreground="#0369a1",
+            foreground=self.primary_color,
         )
 
         self.tree_utterances.pack(fill=tk.BOTH, expand=True, pady=(0, 6))
@@ -1703,18 +1645,18 @@ class PasaScopeGUIApp:
         # Stale state notification banner
         self.frame_stale_findings = tk.Frame(
             self.frame_tab_findings,
-            bg="#fffbeb",
+            bg=self.surface_color,
             padx=10,
             pady=6,
             highlightthickness=1,
-            highlightbackground="#fcd34d",
+            highlightbackground=self.border_color,
         )
         tk.Label(
             self.frame_stale_findings,
             text="⚠️ Transcript modified: Findings & Report are currently STALE. Click Recalculate to refresh.",
             font=(self.font_family, 9, "bold"),
-            fg="#92400e",
-            bg="#fffbeb",
+            fg=self.warning_color,
+            bg=self.surface_color,
         ).pack(side=tk.LEFT)
         ttk.Button(
             self.frame_stale_findings,
@@ -1735,9 +1677,9 @@ class PasaScopeGUIApp:
         radar_split.pack(fill=tk.BOTH, expand=True)
 
         # Left Canvas for Radar Plot
-        canvas_frame = tk.Frame(radar_split, bg="#ffffff", highlightthickness=1, highlightbackground=self.border_soft)
+        canvas_frame = tk.Frame(radar_split, bg=self.surface_color, highlightthickness=1, highlightbackground=self.border_soft)
         canvas_frame.pack(side=tk.LEFT, fill=tk.BOTH, expand=True, padx=(0, 8))
-        self.canvas_radar = tk.Canvas(canvas_frame, width=380, height=330, bg="#ffffff", highlightthickness=0)
+        self.canvas_radar = tk.Canvas(canvas_frame, width=380, height=330, bg=self.surface_color, highlightthickness=0)
         self.canvas_radar.pack(fill=tk.BOTH, expand=True, padx=8, pady=8)
         self.canvas_radar.bind("<Configure>", self._on_canvas_radar_resize)
 
@@ -1748,17 +1690,17 @@ class PasaScopeGUIApp:
         self.txt_radar_summary = tk.Text(
             sum_frame,
             font=(self.font_family, 10),
-            bg="#f8fafc",
-            fg="#0f172a",
+            bg=self.surface_color,
+            fg=self.text_color,
             padx=10,
             pady=10,
             wrap=tk.WORD,
             relief=tk.FLAT,
         )
         self.txt_radar_summary.pack(fill=tk.BOTH, expand=True)
-        self.txt_radar_summary.tag_configure("title", font=(self.font_family, 10, "bold"), foreground="#0f172a")
-        self.txt_radar_summary.tag_configure("green", font=(self.font_family, 9, "bold"), foreground="#0f766e")
-        self.txt_radar_summary.tag_configure("blue", font=(self.font_family, 9, "bold"), foreground="#0284c7")
+        self.txt_radar_summary.tag_configure("title", font=(self.font_family, 10, "bold"), foreground=self.text_color)
+        self.txt_radar_summary.tag_configure("green", font=(self.font_family, 9, "bold"), foreground=self.primary_color)
+        self.txt_radar_summary.tag_configure("blue", font=(self.font_family, 9, "bold"), foreground=self.primary_color)
 
         # Sub-tab 2: Detailed Table View
         self.subtab_table_features = ttk.Frame(self.findings_notebook, padding=8)
@@ -1807,11 +1749,11 @@ class PasaScopeGUIApp:
 
         self.frame_tech_details_content = tk.Frame(
             self.frame_tech_details_container,
-            bg="#f8fafc",
+            bg=self.surface_color,
             padx=10,
             pady=8,
             highlightthickness=1,
-            highlightbackground="#cbd5e1",
+            highlightbackground=self.border_color,
         )
         lbl_tech_info = tk.Label(
             self.frame_tech_details_content,
@@ -1821,8 +1763,8 @@ class PasaScopeGUIApp:
                  "• Acoustic Feature Tracking: Autocorrelation / PyIN F0 extraction with pitch range IQR.\n"
                  "• Thai LSA Engine: PyThaiNLP dictionary tokenization with question/negation/pronoun clinical regex.",
             font=(self.font_sys, 8),
-            bg="#f8fafc",
-            fg="#475569",
+            bg=self.surface_color,
+            fg=self.text_muted,
             justify=tk.LEFT,
         )
         lbl_tech_info.pack(anchor=tk.W)
@@ -1838,8 +1780,8 @@ class PasaScopeGUIApp:
             self.subtab_longitudinal,
             text="Tracking progress across sessions for active case...",
             font=(self.font_family, 9),
-            bg="#f0fdfa",
-            fg="#0f766e",
+            bg=self.surface_color,
+            fg=self.primary_color,
             padx=10,
             pady=6,
             anchor=tk.W,
@@ -1949,11 +1891,11 @@ class PasaScopeGUIApp:
         frame.pack(fill=tk.BOTH, expand=True)
 
         # Header Action Toolbar Card
-        top_r = tk.Frame(frame, bg="#ffffff", padx=12, pady=8, highlightthickness=1, highlightbackground=self.border_soft)
+        top_r = tk.Frame(frame, bg=self.surface_color, padx=12, pady=8, highlightthickness=1, highlightbackground=self.border_soft)
         top_r.pack(fill=tk.X, pady=(0, 6))
 
         # Left: Status & Primary Clinical Sign-off Actions
-        left_actions = tk.Frame(top_r, bg="#ffffff")
+        left_actions = tk.Frame(top_r, bg=self.surface_color)
         left_actions.pack(side=tk.LEFT)
 
         self.lbl_report_status = ttk.Label(left_actions, text="Report Status: Draft", font=(self.font_family, 10, "bold"))
@@ -1963,7 +1905,7 @@ class PasaScopeGUIApp:
         ttk.Button(left_actions, text="Sign-Off Report", style="Success.TButton", command=self._sign_off_report).pack(side=tk.LEFT, padx=(0, 6))
 
         # Right: Export Suite Toolbar
-        right_exports = tk.Frame(top_r, bg="#ffffff")
+        right_exports = tk.Frame(top_r, bg=self.surface_color)
         right_exports.pack(side=tk.RIGHT)
 
         ttk.Button(right_exports, text="Export PDF Report", style="Coral.TButton", command=self._export_pdf_report).pack(side=tk.LEFT, padx=3)
@@ -1973,14 +1915,14 @@ class PasaScopeGUIApp:
         ttk.Button(right_exports, text="Export Markdown", command=self._export_report).pack(side=tk.LEFT, padx=3)
 
         # Ground Truth & Provenance Info Card
-        prov_card = tk.Frame(frame, bg="#f5f6ff", padx=12, pady=6, highlightthickness=1, highlightbackground=self.border_soft)
+        prov_card = tk.Frame(frame, bg=self.surface_color, padx=12, pady=6, highlightthickness=1, highlightbackground=self.border_soft)
         prov_card.pack(fill=tk.X, pady=(0, 8))
         tk.Label(
             prov_card,
             text="🔒 Ground Truth & Provenance: Sourced directly from verified session utterances & deterministic LSA metrics. Clinician sign-off seals report with SHA-256 integrity hash.",
             font=(self.font_family, 8, "italic"),
             fg=self.brand_indigo,
-            bg="#f5f6ff",
+            bg=self.surface_color,
         ).pack(anchor=tk.W)
 
         # Proportional Vertical PanedWindow for Narrative & Recommendations (Fills 100% Height Responsively)
@@ -1988,15 +1930,15 @@ class PasaScopeGUIApp:
         paned_editor.pack(fill=tk.BOTH, expand=True)
 
         # --- Pane 1: Clinical Narrative Card ---
-        pane_narrative = tk.Frame(paned_editor, bg="#ffffff", padx=12, pady=8, highlightthickness=1, highlightbackground=self.border_soft)
+        pane_narrative = tk.Frame(paned_editor, bg=self.surface_color, padx=12, pady=8, highlightthickness=1, highlightbackground=self.border_soft)
         paned_editor.add(pane_narrative, weight=1)
 
-        header_n = tk.Frame(pane_narrative, bg="#ffffff")
+        header_n = tk.Frame(pane_narrative, bg=self.surface_color)
         header_n.pack(fill=tk.X, pady=(0, 4))
         ttk.Label(header_n, text="Clinical Narrative (Language Sample Analysis):", font=(self.font_family, 10, "bold")).pack(side=tk.LEFT)
-        tk.Label(header_n, text="Domain 1 & 2 Findings • LSA Morphosyntactic & Pragmatic Profile", font=(self.font_family, 8), fg=self.text_muted, bg="#ffffff").pack(side=tk.RIGHT)
+        tk.Label(header_n, text="Domain 1 & 2 Findings • LSA Morphosyntactic & Pragmatic Profile", font=(self.font_family, 8), fg=self.text_muted, bg=self.surface_color).pack(side=tk.RIGHT)
 
-        frame_txt_n = tk.Frame(pane_narrative, bg="#ffffff")
+        frame_txt_n = tk.Frame(pane_narrative, bg=self.surface_color)
         frame_txt_n.pack(fill=tk.BOTH, expand=True)
 
         sb_narrative = ttk.Scrollbar(frame_txt_n, orient=tk.VERTICAL)
@@ -2005,8 +1947,8 @@ class PasaScopeGUIApp:
         self.txt_narrative = tk.Text(
             frame_txt_n,
             font=(self.font_family, 10),
-            bg="#ffffff",
-            fg="#0f172a",
+            bg=self.surface_color,
+            fg=self.text_color,
             padx=10,
             pady=8,
             wrap=tk.WORD,
@@ -2019,15 +1961,15 @@ class PasaScopeGUIApp:
         sb_narrative.config(command=self.txt_narrative.yview)
 
         # --- Pane 2: Recommendations & Therapy Goals Card ---
-        pane_rec = tk.Frame(paned_editor, bg="#ffffff", padx=12, pady=8, highlightthickness=1, highlightbackground=self.border_soft)
+        pane_rec = tk.Frame(paned_editor, bg=self.surface_color, padx=12, pady=8, highlightthickness=1, highlightbackground=self.border_soft)
         paned_editor.add(pane_rec, weight=1)
 
-        header_rec = tk.Frame(pane_rec, bg="#ffffff")
+        header_rec = tk.Frame(pane_rec, bg=self.surface_color)
         header_rec.pack(fill=tk.X, pady=(0, 4))
         ttk.Label(header_rec, text="Recommendations & Therapy Goals:", font=(self.font_family, 10, "bold")).pack(side=tk.LEFT)
-        tk.Label(header_rec, text="SMART Objectives • Home Interaction Strategies • Clinician Targets", font=(self.font_family, 8), fg=self.text_muted, bg="#ffffff").pack(side=tk.RIGHT)
+        tk.Label(header_rec, text="SMART Objectives • Home Interaction Strategies • Clinician Targets", font=(self.font_family, 8), fg=self.text_muted, bg=self.surface_color).pack(side=tk.RIGHT)
 
-        frame_txt_rec = tk.Frame(pane_rec, bg="#ffffff")
+        frame_txt_rec = tk.Frame(pane_rec, bg=self.surface_color)
         frame_txt_rec.pack(fill=tk.BOTH, expand=True)
 
         sb_rec = ttk.Scrollbar(frame_txt_rec, orient=tk.VERTICAL)
@@ -2036,8 +1978,8 @@ class PasaScopeGUIApp:
         self.txt_recommendations = tk.Text(
             frame_txt_rec,
             font=(self.font_family, 10),
-            bg="#ffffff",
-            fg="#0f172a",
+            bg=self.surface_color,
+            fg=self.text_color,
             padx=10,
             pady=8,
             wrap=tk.WORD,
@@ -2252,13 +2194,13 @@ class PasaScopeGUIApp:
         is_online = not is_mock and self.client.check_health()
 
         mode_text = "[RESEARCH MOCK]" if is_mock else "[CLINICAL LIVE - FASTAPI]"
-        mode_bg = "#eef2ff" if is_mock else "#e0f2fe"
+        mode_bg = self.surface_color
         mode_fg = self.primary_color if is_mock else self.accent_cyan
         self.lbl_mode.config(text=mode_text, bg=mode_bg, fg=mode_fg)
 
         status_text = "○ Mock Mode" if is_mock else ("● API Connected" if is_online else "○ Offline Mode")
-        status_bg = "#fef9c3" if (is_mock or not is_online) else "#ecfdf5"
-        status_fg = "#854d0e" if (is_mock or not is_online) else "#047857"
+        status_bg = self.surface_color
+        status_fg = self.warning_color if (is_mock or not is_online) else self.success_color
         if hasattr(self, "status_lbl") and self.status_lbl.winfo_exists():
             self.status_lbl.config(text=status_text, bg=status_bg, fg=status_fg)
 
@@ -2535,7 +2477,7 @@ class PasaScopeGUIApp:
 
         attested = self.active_transcript.get("attested", False)
         status_txt = f"Transcript Status: {'✓ Attested / Signed-Off' if attested else '⚠️ Needs Clinician Review'}"
-        self.lbl_review_status.config(text=status_txt, foreground="green" if attested else "#b45309")
+        self.lbl_review_status.config(text=status_txt, foreground=self.success_color if attested else self.warning_color)
 
         raw_cha = self.active_transcript.get("raw_cha")
         if raw_cha:
@@ -3053,7 +2995,7 @@ class PasaScopeGUIApp:
         except Exception:
             pass
 
-        frame = tk.Frame(win, bg="#f8fafc", padx=18, pady=16)
+        frame = tk.Frame(win, bg=self.surface_color, padx=18, pady=16)
         frame.pack(fill=tk.BOTH, expand=True)
 
         # Header Title
@@ -3061,8 +3003,8 @@ class PasaScopeGUIApp:
             frame,
             text="Ingesting Audio & Transcribing Speech",
             font=(self.font_family, 12, "bold"),
-            fg="#0f766e",
-            bg="#f8fafc",
+            fg=self.primary_color,
+            bg=self.surface_color,
         ).pack(anchor=tk.W)
 
         # File Subtitle
@@ -3070,8 +3012,8 @@ class PasaScopeGUIApp:
             frame,
             text=f"File: {audio_filename}",
             font=(self.font_family, 9),
-            fg="#64748b",
-            bg="#f8fafc",
+            fg=self.text_muted,
+            bg=self.surface_color,
         ).pack(anchor=tk.W, pady=(2, 10))
 
         # Stage Description
@@ -3079,8 +3021,8 @@ class PasaScopeGUIApp:
             frame,
             text="Initializing ASR and acoustic pipeline...",
             font=(self.font_family, 10, "bold"),
-            fg="#1e293b",
-            bg="#f8fafc",
+            fg=self.text_color,
+            bg=self.surface_color,
         )
         self._dlg_lbl_stage.pack(anchor=tk.W, pady=(0, 6))
 
@@ -3099,8 +3041,8 @@ class PasaScopeGUIApp:
             frame,
             text="5% Completed",
             font=(self.font_family, 9),
-            fg="#0f766e",
-            bg="#f8fafc",
+            fg=self.primary_color,
+            bg=self.surface_color,
         )
         self._dlg_lbl_pct.pack(anchor=tk.W)
 
@@ -3205,7 +3147,7 @@ class PasaScopeGUIApp:
         if hasattr(self, "btn_stop_record"):
             self.btn_stop_record.config(state=tk.NORMAL)
         if hasattr(self, "lbl_rec_status"):
-            self.lbl_rec_status.config(text="● Recording speech...", foreground="#dc2626")
+            self.lbl_rec_status.config(text="● Recording speech...", foreground=self.error_color)
         if hasattr(self, "lbl_status"):
             self.lbl_status.config(text="Live microphone recording in progress...")
         self._update_live_recording_ui()
@@ -3257,11 +3199,11 @@ class PasaScopeGUIApp:
             # Update clinical recording status label with VAD and clipping state
             if hasattr(self, "lbl_rec_status"):
                 if is_clip:
-                    self.lbl_rec_status.config(text="⚠️ CLIPPING (สัญญาณเสียงดังเกิน)", foreground="#dc2626")
+                    self.lbl_rec_status.config(text="⚠️ CLIPPING (สัญญาณเสียงดังเกิน)", foreground=self.error_color)
                 elif is_voice:
-                    self.lbl_rec_status.config(text="● VOICE ACTIVE (ตรวจพบเสียงพูด)", foreground="#10b981")
+                    self.lbl_rec_status.config(text="● VOICE ACTIVE (ตรวจพบเสียงพูด)", foreground=self.success_color)
                 else:
-                    self.lbl_rec_status.config(text="○ Ambient / Silence (รอเสียงพูด)", foreground="#64748b")
+                    self.lbl_rec_status.config(text="○ Ambient / Silence (รอเสียงพูด)", foreground=self.text_muted)
 
         self._recording_timer_job = self.root.after(50, self._update_live_recording_ui)
 
@@ -3277,7 +3219,7 @@ class PasaScopeGUIApp:
         if hasattr(self, "canvas_vu_meter"):
             self.canvas_vu_meter.delete("all")
         if hasattr(self, "lbl_rec_status"):
-            self.lbl_rec_status.config(text="Microphone ready", foreground="#64748b")
+            self.lbl_rec_status.config(text="Microphone ready", foreground=self.text_muted)
 
         output_wav = self.audio_recorder.stop_recording()
 
@@ -3286,7 +3228,7 @@ class PasaScopeGUIApp:
         if hasattr(self, "btn_stop_record"):
             self.btn_stop_record.config(state=tk.DISABLED)
         if hasattr(self, "lbl_rec_status"):
-            self.lbl_rec_status.config(text="Recording finished. Audio saved.", foreground="#047857")
+            self.lbl_rec_status.config(text="Recording finished. Audio saved.", foreground=self.success_color)
 
         if hasattr(self, "entry_audio_path"):
             self.entry_audio_path.delete(0, tk.END)
@@ -3374,17 +3316,17 @@ class PasaScopeGUIApp:
         batch_win.transient(self.root)
         batch_win.grab_set()
 
-        frame = tk.Frame(batch_win, bg="#f8fafc", padx=16, pady=14)
+        frame = tk.Frame(batch_win, bg=self.surface_color, padx=16, pady=14)
         frame.pack(fill=tk.BOTH, expand=True)
 
-        tk.Label(frame, text=f"Ingesting {len(f_paths)} Audio Files into Case {self.active_case_id}", font=(self.font_family, 11, "bold"), fg="#0f766e", bg="#f8fafc").pack(anchor=tk.W)
+        tk.Label(frame, text=f"Ingesting {len(f_paths)} Audio Files into Case {self.active_case_id}", font=(self.font_family, 11, "bold"), fg=self.primary_color, bg=self.surface_color).pack(anchor=tk.W)
 
         bar_batch = ttk.Progressbar(frame, orient="horizontal", mode="determinate", length=480)
         bar_batch.pack(fill=tk.X, pady=(10, 6))
         bar_batch["maximum"] = len(f_paths)
         bar_batch["value"] = 0
 
-        lbl_batch_status = tk.Label(frame, text=f"Queue ready: {len(f_paths)} files pending...", font=(self.font_family, 9), fg="#475569", bg="#f8fafc")
+        lbl_batch_status = tk.Label(frame, text=f"Queue ready: {len(f_paths)} files pending...", font=(self.font_family, 9), fg=self.text_muted, bg=self.surface_color)
         lbl_batch_status.pack(anchor=tk.W, pady=(0, 8))
 
         tree_queue = ttk.Treeview(frame, columns=("file", "status"), show="headings", height=7)
@@ -3811,7 +3753,7 @@ class PasaScopeGUIApp:
                 self.container_word_buttons,
                 text="No sub-word alignments available for this utterance.",
                 font=("Helvetica", 9, "italic"),
-                foreground="#64748b",
+                foreground=self.text_muted,
             ).pack(side=tk.LEFT)
 
     def _save_utterance_edit(self) -> None:
@@ -3970,7 +3912,7 @@ class PasaScopeGUIApp:
         self.txt_narrative.insert("1.0", rep.get("narrative", ""))
         self.txt_recommendations.delete("1.0", tk.END)
         self.txt_recommendations.insert("1.0", rep.get("recommendations", ""))
-        self.lbl_report_status.config(text=f"Report Status: {rep.get('status')}", foreground="#0284c7")
+        self.lbl_report_status.config(text=f"Report Status: {rep.get('status')}", foreground=self.primary_color)
 
     def _sign_off_report(self) -> None:
         if self._guard_v2_mode("Signing off report"):
@@ -4757,21 +4699,21 @@ class PasaScopeGUIApp:
             return
 
         if status == "not-loaded":
-            self.lbl_consent_status.config(text="[Consent Not Loaded]", bg="#f1f5f9", fg="#64748b")
+            self.lbl_consent_status.config(text="[Consent Not Loaded]", bg=self.surface_color, fg=self.text_muted)
         elif status == "loading":
-            self.lbl_consent_status.config(text="⏳ Loading consent...", bg="#fef3c7", fg="#b45309")
+            self.lbl_consent_status.config(text="⏳ Loading consent...", bg=self.surface_color, fg=self.warning_color)
         elif status == "active":
             v = consent_rec.get("version", 1) if consent_rec else 1
-            self.lbl_consent_status.config(text=f"✓ Active Consent (v{v})", bg="#dcfce7", fg="#15803d")
+            self.lbl_consent_status.config(text=f"✓ Active Consent (v{v})", bg=self.surface_color, fg=self.success_color)
         elif status == "withdrawn":
             v = consent_rec.get("version", "") if consent_rec else ""
             v_txt = f" (v{v})" if v else ""
-            self.lbl_consent_status.config(text=f"⛔ Consent Withdrawn{v_txt}", bg="#fee2e2", fg="#b91c1c")
+            self.lbl_consent_status.config(text=f"⛔ Consent Withdrawn{v_txt}", bg=self.surface_color, fg=self.error_color)
         elif status == "no-record":
-            self.lbl_consent_status.config(text="⚪ No Record", bg="#f1f5f9", fg="#475569")
+            self.lbl_consent_status.config(text="⚪ No Record", bg=self.surface_color, fg=self.text_muted)
         elif status == "error":
             msg = error_msg or "Error loading consent"
-            self.lbl_consent_status.config(text=f"⚠️ {msg}", bg="#fee2e2", fg="#dc2626")
+            self.lbl_consent_status.config(text=f"⚠️ {msg}", bg=self.surface_color, fg=self.error_color)
 
         if hasattr(self, "lbl_consent_loaded_at") and self.lbl_consent_loaded_at.winfo_exists():
             if loaded_at:
@@ -4911,7 +4853,7 @@ class PasaScopeGUIApp:
                  "the child's parent/guardian. Clicking confirm documents authorized status\n"
                  "and does not constitute direct parental consent.",
             font=(self.font_family, 9),
-            foreground="#475569",
+            foreground=self.text_muted,
         )
         notice_lbl.pack(anchor=tk.W, pady=(0, 10))
 
@@ -5751,17 +5693,17 @@ class PasaScopeGUIApp:
             if self.active_assessment_id:
                 self.lbl_assessment_ctx.config(
                     text=f"Assessment V2: {self.active_assessment_id}",
-                    bg="#f3e8ff",
-                    fg="#6b21a8",
+                    bg=self.surface_color,
+                    fg=self.primary_color,
                 )
             elif is_v2 and getattr(self, "active_child_id", None):
                 self.lbl_assessment_ctx.config(
                     text=f"Child V2: {self.active_child_id}",
-                    bg="#f3e8ff",
-                    fg="#6b21a8",
+                    bg=self.surface_color,
+                    fg=self.primary_color,
                 )
             else:
-                self.lbl_assessment_ctx.config(text="", bg="#f1f5f9", fg="#7e22ce")
+                self.lbl_assessment_ctx.config(text="", bg=self.surface_color, fg=self.primary_color)
 
         # Tab 2 Ingestion buttons
         v2_btn_state = "disabled" if is_v2 else "normal"
@@ -5784,17 +5726,17 @@ class PasaScopeGUIApp:
                 asmt_txt = f" [{self.active_assessment_id}]" if self.active_assessment_id else f" [Child: {self.active_child_id or '-'}]"
                 self.lbl_ingest_ctx.config(
                     text=f"Active Context: Assessment V2{asmt_txt} (Legacy audio/text ingestion disabled in V2 mode)",
-                    foreground="#6b21a8",
+                    foreground=self.primary_color,
                 )
             elif getattr(self, "active_case_id", None) and getattr(self, "active_session_id", None):
                 self.lbl_ingest_ctx.config(
                     text=f"Active Context: Case {self.active_case_id} > Session {self.active_session_id}",
-                    foreground="#0369a1",
+                    foreground=self.primary_color,
                 )
             else:
                 self.lbl_ingest_ctx.config(
                     text="Please select a Session from Tab 1 to begin ingestion.",
-                    foreground="#0369a1",
+                    foreground=self.primary_color,
                 )
 
         # Tab 3 Review Attest Button & Label
@@ -5803,7 +5745,7 @@ class PasaScopeGUIApp:
         if hasattr(self, "lbl_review_status") and self.lbl_review_status.winfo_exists() and is_v2:
             self.lbl_review_status.config(
                 text=f"Assessment V2 Context Active ({self.active_assessment_id or self.active_child_id or 'V2'}) - Review actions reserved for Stage 2",
-                foreground="#6b21a8",
+                foreground=self.primary_color,
             )
 
     def _on_assessment_selected(self, event: Any = None) -> None:
@@ -6058,7 +6000,7 @@ class PasaScopeGUIApp:
             frm,
             text=f"Create Assessment: {child_code}",
             font=("Helvetica", 11, "bold"),
-            foreground="#1e293b",
+            foreground=self.text_color,
         ).pack(anchor=tk.W, pady=(0, 10))
 
         # Purpose Selection (Canonical: initial, developmental_follow_up, post_intervention_follow_up, additional_evidence)

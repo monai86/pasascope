@@ -11,6 +11,7 @@ Public app mode on `feat/public-app`: opt-in settings that turn PasaScope into a
 - **Hugging Face Space deployment** for the API and Whisper: `deploy/hf-space/`, `scripts/build_hf_space_bundle.sh` (a 4 MB bundle without the research corpora) and step-by-step setup in `docs/PUBLIC_DEPLOYMENT.md`.
 
 ### Changed
+- **Desktop GUI has a classic look** (`packages/gui`): the platform's own theme, fonts and colours replace the custom palette; a menu bar (File, View, Tools, Help) reaches the existing commands; workflow steps show their state with a tick, bold text or greyed text instead of coloured blocks; the status bar shows the version, read from `pyproject.toml`. Widget names, labels and shortcuts are unchanged. The waveform, level meter and radar chart keep their own colours.
 - In public sign-up mode the sign-in form drops the role tabs and the invitation-only notice, lands on Today, and states what the account stores; the organization switcher is hidden; the caregiver consent form is the confirmation tick alone.
 
 ## [v1.7.2] - 2026-10-12

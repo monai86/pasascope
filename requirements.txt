@@ -20,6 +20,7 @@ supabase>=2.0.0
 faster-whisper>=1.0.0        # Fast ASR (4x faster than openai-whisper)
 librosa>=0.10.0              # Audio loading + analysis (pitch, silence)
 soundfile>=0.12.0            # Audio I/O
+sounddevice>=0.4.6           # Microphone capture in the desktop GUI
 jiwer>=3.0.0                 # WER evaluation against TalkBank ground truth
 speechbrain>=1.0.0           # ECAPA-TDNN speaker embeddings (no HF token needed)
 torchaudio>=2.0              # Audio tensor backend for speechbrain
