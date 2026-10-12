@@ -10,6 +10,7 @@ import { SessionGuide, type SessionGuideAction } from "@/features/sessions/compo
 import { resolveSessionHref } from "@/features/sessions/state/session-view";
 import { EvidenceReviewSection } from "@/features/sessions/findings/evidence-review-section";
 import { FeatureDecisionGrid } from "@/features/sessions/findings/feature-decision-grid";
+import { findingsMessages } from "@/features/sessions/findings/findings.messages";
 import { ProgressSummaryCard } from "@/features/sessions/findings/progress-summary-card";
 import {
   ProvenanceItem,
@@ -28,11 +29,9 @@ import {
   workflowSessionHref,
 } from "@/features/sessions/findings/session-findings-support";
 import { approveReviewedCuesBlockedReason, generateEvidenceReviewBlockedReason, regenerateFindingsBlockedReason } from "@/lib/workflow-gates";
-import {
-  THERAPIST_INTERPRETATION_IS_REQUIRED_CLAUSE,
-  THERAPIST_REVIEW_REMAINS_REQUIRED,
-} from "@/lib/clinical-safety-copy";
-import { EXTRACT_FEATURES_ACTION, FEATURE_EXTRACTION_NOUN, GENERATE_EVIDENCE_REVIEW_ACTION, GENERATE_REPORT_ACTION } from "@/lib/workflow-glossary";
+import { useSafetyCopy } from "@/lib/safety-copy";
+import { formatDate } from "@/i18n/format";
+import { useLocale, useMessages } from "@/i18n/locale-provider";
 import type { WorkflowState } from "@/lib/workflow";
 
 export function SessionFindingsView({
@@ -75,6 +74,9 @@ export function SessionFindingsView({
     mlDecisionSupport: undefined,
     insights: [],
   } : state, [findingsCurrent, state]);
+  const t = useMessages(findingsMessages);
+  const { locale } = useLocale();
+  const safety = useSafetyCopy();
   const [interpretationDraft, setInterpretationDraft] = useState(() =>
     createInterpretationDraft(currentFindingsState.featureSignals, currentFindingsState.featureSummary, currentFindingsState.mlDecisionSupport)
   );
@@ -105,26 +107,21 @@ export function SessionFindingsView({
     return (
       <div className="mx-auto max-w-7xl space-y-6">
         <SessionContextHeader
-          title="Findings"
-          description="Review descriptive transcript cues and therapist-owned next steps."
+          title={t.title}
+          description={t.emptyDescription}
           context={sessionContext}
         />
         <WorkspacePanel className="p-8 text-center">
           <FileSearch className="mx-auto text-brand" size={38} aria-hidden="true" />
-          <h2 className="mt-3 text-xl font-bold text-ink">No analysis results yet</h2>
+          <h2 className="mt-3 text-xl font-bold text-ink">{t.empty.title}</h2>
           <p className="mx-auto mt-2 max-w-lg text-sm leading-6 text-ink-muted">
-            Add a transcript, complete therapist review and attestation, then extract language-sample features.
+            {t.empty.body}
           </p>
-          <div className="mt-3 flex flex-wrap justify-center gap-2 text-sm text-ink-muted">
-            <span>Transcript Ready</span>
-            <span>Feature Summary</span>
-            <span>Review Needed</span>
-          </div>
           <div className="mt-5 flex flex-wrap justify-center gap-3">
-            <PrimaryActionButton href={workflowSessionHref("intake", state)} icon={FileText}>Record or add a transcript</PrimaryActionButton>
-            <PrimaryActionButton href={workflowSessionHref("transcript", state)} icon={FileText}>Review Transcript</PrimaryActionButton>
+            <PrimaryActionButton href={workflowSessionHref("intake", state)} icon={FileText}>{t.empty.addTranscript}</PrimaryActionButton>
+            <PrimaryActionButton href={workflowSessionHref("transcript", state)} icon={FileText}>{t.empty.reviewTranscript}</PrimaryActionButton>
           </div>
-          <PrimaryActionButton icon={ShieldCheck} className="mt-3" disabled>{GENERATE_REPORT_ACTION}</PrimaryActionButton>
+          <PrimaryActionButton icon={ShieldCheck} className="mt-3" disabled>{t.actions.generateReport}</PrimaryActionButton>
         </WorkspacePanel>
       </div>
     );
@@ -132,8 +129,8 @@ export function SessionFindingsView({
   return (
     <div className="space-y-6">
       <SessionContextHeader
-        title="Findings"
-        description="Review descriptive transcript cues and therapist-owned draft language."
+        title={t.title}
+        description={t.description}
         context={sessionContext}
         density="compact"
       />
@@ -142,10 +139,10 @@ export function SessionFindingsView({
         reasonId={findingsStale ? "regenerate-findings-reason" : undefined}
         prompt={
           findingsStale
-            ? "The transcript changed, so these findings are out of date. Regenerate them before continuing."
+            ? t.guide.stale
             : reportReady
-              ? "The session is ready for a draft. Review the signals below, then generate the report."
-              : "Here are the language-sample signals for this session. Review them, then we'll prepare the report."
+              ? t.guide.ready
+              : t.guide.review
         }
         primaryAction={findingsGuidePrimary({
           findingsStale,
@@ -153,17 +150,18 @@ export function SessionFindingsView({
           regenerateFindingsReason,
           onRegenerateFindings,
           state,
+          label: t.guide.regenerate,
         })}
         quickReplies={
           findingsStale
             ? [
-                { label: "Revise transcript", href: resolveSessionHref("transcript", sessionContext.sessionId) },
-                { label: "Go to report", href: resolveSessionHref("report", sessionContext.sessionId) },
+                { label: t.guide.reviseTranscript, href: resolveSessionHref("transcript", sessionContext.sessionId) },
+                { label: t.guide.goToReport, href: resolveSessionHref("report", sessionContext.sessionId) },
               ]
             : [
-                { label: "Revise transcript", href: resolveSessionHref("transcript", sessionContext.sessionId) },
-                { label: "Regenerate findings", onClick: onRegenerateFindings },
-                { label: "Go to report", href: resolveSessionHref("report", sessionContext.sessionId) },
+                { label: t.guide.reviseTranscript, href: resolveSessionHref("transcript", sessionContext.sessionId) },
+                { label: t.guide.regenerate, onClick: onRegenerateFindings },
+                { label: t.guide.goToReport, href: resolveSessionHref("report", sessionContext.sessionId) },
               ]
         }
       />
@@ -171,18 +169,18 @@ export function SessionFindingsView({
       <div className="space-y-6">
         {findingsStale ? (
           <p role="alert" className="text-sm leading-6 text-[color:var(--color-warning-text)]">
-            These findings are stale because the transcript changed. Prior derived values are hidden and cannot be used for a report until findings are regenerated from the current attested transcript.
+            {t.staleAlert}
           </p>
         ) : null}
 
         <section className="space-y-4">
           <div className="flex flex-wrap items-center justify-between gap-3">
             <div>
-              <h2 className="text-base font-semibold text-ink">Linguistic Signals</h2>
+              <h2 className="text-base font-semibold text-ink">{t.signals.title}</h2>
               <p className="mt-2 text-sm leading-6 text-ink-muted">
                 {findingsStale
-                  ? "Prior derived values are hidden until findings are regenerated from the current transcript."
-                  : `Backend feature values are shown as descriptive cues only. ${THERAPIST_INTERPRETATION_IS_REQUIRED_CLAUSE} for any clinical use.`}
+                  ? t.signals.staleNote
+                  : t.signals.note}
               </p>
             </div>
             {currentFindingsState.featuresExtracted && !currentFindingsState.mlDecisionSupport ? (
@@ -194,7 +192,7 @@ export function SessionFindingsView({
                   data-testid="generate-evidence-review-button"
                   aria-describedby={evidenceReviewReason ? "generate-evidence-review-reason" : undefined}
                 >
-                  {busy ? "Generating..." : GENERATE_EVIDENCE_REVIEW_ACTION}
+                  {busy ? t.signals.generating : t.signals.generateEvidenceReview}
                 </PrimaryActionButton>
                 {evidenceReviewReason ? (
                   <p id="generate-evidence-review-reason" role="status" className="rounded-card border border-[color:var(--color-attention-border)] bg-[color:var(--color-warning-bg)] px-3 py-2 text-sm font-semibold text-[color:var(--color-warning-text)]">
@@ -211,28 +209,28 @@ export function SessionFindingsView({
 
         <section aria-labelledby="findings-workflow-summary-title" className="overflow-hidden rounded-panel border border-line bg-line">
           <div className="bg-surface px-4 py-3">
-            <h2 id="findings-workflow-summary-title" className="text-sm font-semibold text-ink">Workflow summary</h2>
+            <h2 id="findings-workflow-summary-title" className="text-sm font-semibold text-ink">{t.summary.title}</h2>
           </div>
           <dl className="grid gap-px sm:grid-cols-2 xl:grid-cols-4">
             <div className="bg-surface px-4 py-3">
-              <dt className="text-xs font-medium uppercase tracking-[0.08em] text-ink-subtle">Transcript quality</dt>
+              <dt className="text-xs font-medium uppercase tracking-[0.08em] text-ink-subtle">{t.summary.transcriptQuality}</dt>
               <dd className="mt-1 font-semibold text-ink">{transcriptQualityLabel(state)}</dd>
-              <p className="mt-1 text-xs leading-5 text-ink-muted">{state.qaSummary ?? THERAPIST_REVIEW_REMAINS_REQUIRED}</p>
+              <p className="mt-1 text-xs leading-5 text-ink-muted">{state.qaSummary ?? safety.THERAPIST_REVIEW_REMAINS_REQUIRED}</p>
             </div>
             <div className="bg-surface px-4 py-3">
-              <dt className="text-xs font-medium uppercase tracking-[0.08em] text-ink-subtle">Features extracted</dt>
-              <dd className="mt-1 font-semibold text-ink">{currentFindingsState.featuresExtracted ? `${signalCards.length} signals` : "Pending"}</dd>
-              <p className="mt-1 text-xs leading-5 text-ink-muted">{currentFindingsState.featuresExtracted ? "Backend values available for review." : `Run ${EXTRACT_FEATURES_ACTION} on the reviewed transcript.`}</p>
+              <dt className="text-xs font-medium uppercase tracking-[0.08em] text-ink-subtle">{t.summary.featuresExtracted}</dt>
+              <dd className="mt-1 font-semibold text-ink">{currentFindingsState.featuresExtracted ? t.summary.signalCount(signalCards.length) : t.summary.pending}</dd>
+              <p className="mt-1 text-xs leading-5 text-ink-muted">{currentFindingsState.featuresExtracted ? t.summary.featuresAvailable : t.summary.featuresMissing}</p>
             </div>
             <div className="bg-surface px-4 py-3">
-              <dt className="text-xs font-medium uppercase tracking-[0.08em] text-ink-subtle">Review flags</dt>
+              <dt className="text-xs font-medium uppercase tracking-[0.08em] text-ink-subtle">{t.summary.reviewFlags}</dt>
               <dd className="mt-1 font-semibold text-ink">{totalReviewFlags(currentFindingsState)}</dd>
-              <p className="mt-1 text-xs leading-5 text-ink-muted">{totalReviewFlags(currentFindingsState) > 0 ? "Review flagged items before drafting." : "No additional flags are open."}</p>
+              <p className="mt-1 text-xs leading-5 text-ink-muted">{totalReviewFlags(currentFindingsState) > 0 ? t.summary.flagsOpen : t.summary.flagsNone}</p>
             </div>
             <div className="bg-surface px-4 py-3">
-              <dt className="text-xs font-medium uppercase tracking-[0.08em] text-ink-subtle">Report readiness</dt>
-              <dd className="mt-1 font-semibold text-ink">{reportReady ? "Ready" : "Blocked"}</dd>
-              <p className="mt-1 text-xs leading-5 text-ink-muted">{reportReady ? "Workflow gates passed for a draft." : "Reviewed transcript and current findings required."}</p>
+              <dt className="text-xs font-medium uppercase tracking-[0.08em] text-ink-subtle">{t.summary.reportReadiness}</dt>
+              <dd className="mt-1 font-semibold text-ink">{reportReady ? t.summary.ready : t.summary.blocked}</dd>
+              <p className="mt-1 text-xs leading-5 text-ink-muted">{reportReady ? t.summary.gatesPassed : t.summary.gatesMissing}</p>
             </div>
           </dl>
         </section>
@@ -242,27 +240,27 @@ export function SessionFindingsView({
         <details className="responsive-details rounded-shell border border-line bg-surface">
           <summary className="flex min-h-14 cursor-pointer items-center justify-between gap-3 px-5 py-3">
             <span>
-              <span className="block font-semibold text-ink">Technical provenance</span>
-              <span className="mt-0.5 block text-sm text-ink-muted">Versions and backend source identifiers</span>
+              <span className="block font-semibold text-ink">{t.provenance.title}</span>
+              <span className="mt-0.5 block text-sm text-ink-muted">{t.provenance.subtitle}</span>
             </span>
             <span className={`rounded-full px-3 py-1 text-xs font-semibold ${findingsCurrent ? "bg-[color:var(--color-success-bg)] text-[color:var(--color-success-text)]" : "bg-[color:var(--color-warning-bg)] text-[color:var(--color-warning-text)]"}`}>
               {analysisDispositionLabel(state.analysisStatus)}
             </span>
           </summary>
-          <section aria-label="Findings provenance" className="border-t border-line p-5">
+          <section aria-label={t.provenance.regionLabel} className="border-t border-line p-5">
             <p className="text-sm leading-6 text-ink-muted">
-              Versions identify the reviewed inputs behind these descriptive cues. Missing metadata is never inferred.
+              {t.provenance.note}
             </p>
             <dl className="mt-4 grid gap-3 sm:grid-cols-2 xl:grid-cols-5">
-              <ProvenanceItem label="Reviewed transcript" value={versionLabel(state.backendTranscriptVersion)} />
-              <ProvenanceItem label="Findings transcript" value={versionLabel(state.featureTranscriptVersion)} />
-              <ProvenanceItem label="Feature result ID" value={state.featureSetId ?? "Unavailable"} />
+              <ProvenanceItem label={t.provenance.reviewedTranscript} value={versionLabel(state.backendTranscriptVersion)} />
+              <ProvenanceItem label={t.provenance.findingsTranscript} value={versionLabel(state.featureTranscriptVersion)} />
+              <ProvenanceItem label={t.provenance.featureResultId} value={state.featureSetId ?? t.provenance.unavailable} />
               <ProvenanceItem
-                label="Feature schema version"
-                value={state.featureSchemaVersion ?? currentFindingsState.mlDecisionSupport?.featureSchemaVersion ?? "Unavailable"}
+                label={t.provenance.schemaVersion}
+                value={state.featureSchemaVersion ?? currentFindingsState.mlDecisionSupport?.featureSchemaVersion ?? t.provenance.unavailable}
               />
               <ProvenanceItem
-                label="AI disposition"
+                label={t.provenance.aiDisposition}
                 value={findingsCurrent ? evidenceDisposition(currentFindingsState.mlDecisionSupport) : analysisDispositionLabel(state.analysisStatus)}
               />
             </dl>
@@ -282,7 +280,7 @@ export function SessionFindingsView({
 
           <div className="space-y-6">
             <section className="rounded-shell border border-line bg-surface p-6">
-              <h2 className="text-xl font-semibold text-ink">Action panel</h2>
+              <h2 className="text-xl font-semibold text-ink">{t.actions.title}</h2>
               <div className="mt-4 space-y-3">
                 <button
                   type="button"
@@ -291,7 +289,7 @@ export function SessionFindingsView({
                   disabled={busy || findingsStale || (!currentFindingsState.mlDecisionSupport && signalCards.length === 0)}
                   aria-describedby={approveCuesReason ? "approve-reviewed-cues-reason" : undefined}
                 >
-                  Approve reviewed cues
+                  {t.actions.approveCues}
                 </button>
                 {approveCuesReason ? (
                   <p id="approve-reviewed-cues-reason" role="status" className="rounded-card border border-[color:var(--color-attention-border)] bg-[color:var(--color-warning-bg)] px-3 py-2 text-sm font-semibold text-[color:var(--color-warning-text)]">
@@ -299,7 +297,7 @@ export function SessionFindingsView({
                   </p>
                 ) : null}
                 <PrimaryActionButton href={workflowSessionHref("transcript", state)} icon={FileText} className="w-full justify-center">
-                  Revise transcript
+                  {t.actions.reviseTranscript}
                 </PrimaryActionButton>
                 <button
                   type="button"
@@ -308,28 +306,28 @@ export function SessionFindingsView({
                   disabled={busy || !reportReady}
                   data-testid="generate-report-button"
                 >
-                  {busy ? "Generating..." : GENERATE_REPORT_ACTION}
+                  {busy ? t.actions.generating : t.actions.generateReport}
                 </button>
               </div>
               {!reportReady ? (
                 <p className="mt-4 text-sm text-[color:var(--color-warning-text)]">
-                  Therapist-reviewed transcript and feature extraction are required before generating a draft report. Evidence review remains optional.
+                  {t.actions.notReady}
                 </p>
               ) : null}
               {state.cuesAcknowledgedAt ? (
                 <p className="mt-3 text-sm text-[color:var(--color-success-text)]">
-                  Reviewed cues acknowledged and recorded{state.cuesAcknowledgedBy ? ` by ${state.cuesAcknowledgedBy}` : ""} on {new Date(state.cuesAcknowledgedAt).toLocaleDateString()}. Therapist sign-off is still required.
+                  {t.actions.acknowledged(state.cuesAcknowledgedBy, formatDate(state.cuesAcknowledgedAt, locale))}
                 </p>
               ) : null}
             </section>
 
             <section className="rounded-shell border border-line bg-surface p-6">
-              <h2 className="text-xl font-semibold text-ink">Therapist-editable interpretation draft</h2>
+              <h2 className="text-xl font-semibold text-ink">{t.draft.title}</h2>
               <p className="mt-2 text-sm leading-6 text-ink-muted">
-                Draft wording only. Edit this text before using it in any report or clinical documentation.
+                {t.draft.note}
               </p>
               <textarea
-                aria-label="Therapist-editable interpretation draft"
+                aria-label={t.draft.title}
                 className="mt-4 min-h-48 w-full rounded-panel border border-line bg-surface p-4 text-sm leading-6 text-ink"
                 value={interpretationDraft}
                 readOnly={findingsStale}
@@ -343,35 +341,32 @@ export function SessionFindingsView({
       </div>
 
       <RightRail
-        title="Safety & limitations"
-        description="Interpret descriptive cues in context; limitations remain attached to each feature."
+        title={t.rail.title}
+        description={t.rail.description}
       >
         <div className="rounded-panel border border-line bg-surface p-4">
-          <h3 className="text-sm font-semibold text-ink">Review readiness</h3>
+          <h3 className="text-sm font-semibold text-ink">{t.rail.readiness}</h3>
           <ul className="mt-3 space-y-2 text-sm text-ink-muted">
-            <li>{state.transcriptAttested ? "Transcript attested" : "Transcript attestation required"}</li>
-            <li>{currentFindingsState.featuresExtracted ? `${FEATURE_EXTRACTION_NOUN} complete` : `${FEATURE_EXTRACTION_NOUN} pending`}</li>
-            <li>{currentFindingsState.mlReadiness?.ready === false ? "Evidence readiness check still blocked" : "Evidence readiness check can proceed"}</li>
+            <li>{state.transcriptAttested ? t.rail.attested : t.rail.attestationRequired}</li>
+            <li>{currentFindingsState.featuresExtracted ? t.rail.extractionComplete : t.rail.extractionPending}</li>
+            <li>{currentFindingsState.mlReadiness?.ready === false ? t.rail.evidenceBlocked : t.rail.evidenceCanProceed}</li>
           </ul>
         </div>
         <div className="rounded-panel border border-line bg-surface p-4">
-          <h3 className="text-sm font-semibold text-ink">Reference status</h3>
+          <h3 className="text-sm font-semibold text-ink">{t.rail.referenceStatus}</h3>
           <p className="mt-2 text-sm leading-6 text-ink-muted">
-            {missingReferenceData ? "Reference comparison unavailable" : "Reference comparisons are shown only when the backend provides supporting data."}
+            {missingReferenceData ? t.rail.referenceUnavailable : t.rail.referenceNote}
           </p>
         </div>
         <details className="responsive-details rounded-panel border border-line bg-surface">
           <summary className="flex min-h-11 cursor-pointer items-center justify-between gap-3 px-4 text-sm font-semibold text-ink">
-            <span>Limitations</span>
+            <span>{t.rail.limitations}</span>
             <span aria-hidden="true">›</span>
           </summary>
           <ul className="border-t border-line px-4 py-3 pl-9 text-sm text-ink-muted">
             {(currentFindingsState.mlDecisionSupport?.limitations.length
               ? currentFindingsState.mlDecisionSupport.limitations
-              : [
-                  "Feature definitions describe how backend values are computed; they do not provide diagnostic conclusions.",
-                  "If reference data is unavailable, compare within therapist context rather than inferred norms."
-                ]).map((limitation) => <li className="list-disc" key={limitation}>{limitation}</li>)}
+              : t.rail.defaultLimitations).map((limitation) => <li className="list-disc" key={limitation}>{limitation}</li>)}
           </ul>
         </details>
       </RightRail>
@@ -386,7 +381,9 @@ function findingsGuidePrimary({
   regenerateFindingsReason,
   onRegenerateFindings,
   state,
+  label,
 }: {
+  label: string;
   findingsStale: boolean;
   busy: boolean;
   regenerateFindingsReason?: string;
@@ -398,7 +395,7 @@ function findingsGuidePrimary({
   // already carries the primary action, so the guide only prompts and navigates.
   if (findingsStale) {
     return {
-      label: "Regenerate findings",
+      label,
       onClick: onRegenerateFindings,
       disabled: busy || !isTranscriptUnlocked(state),
       reason: regenerateFindingsReason,
