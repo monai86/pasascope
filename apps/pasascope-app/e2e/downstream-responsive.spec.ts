@@ -128,6 +128,8 @@ for (const viewport of viewports) {
     );
     await expect(page.getByRole("heading", { name: "Report Summary", exact: true })).toBeVisible();
     await expect(page.getByText("Signed snapshot · immutable")).toBeVisible();
+    // Provenance sits behind a disclosure so the report text leads the page.
+    await page.getByText("Provenance and safety metadata", { exact: true }).click();
     await expect(page.getByRole("region", { name: "Report provenance" })).toBeVisible();
     await expect(page.getByTestId("report-preview")).toHaveAttribute("readonly", "");
     await expect(page.getByRole("button", { name: "Export Markdown" })).toBeEnabled();
