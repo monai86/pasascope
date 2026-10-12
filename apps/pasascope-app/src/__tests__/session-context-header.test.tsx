@@ -140,3 +140,33 @@ describe("SessionContextHeader step completion", () => {
     }
   });
 });
+
+describe("SessionContextHeader in Thai", () => {
+  it("names the steps, fields and consent state in Thai", async () => {
+    const { renderWithLocale } = await import("./support/render-with-locale");
+    renderWithLocale(
+      <SessionContextHeader
+        title="ทบทวนบทถอดเสียง"
+        description="ตรวจรหัสผู้พูด"
+        context={{
+          sessionId: "session-1",
+          caseId: "case-1024",
+          caseLabel: "C-1024",
+          consentStatus: "granted",
+          dataMode: "backend",
+          activeView: "transcript",
+          completion: { intake: true },
+        }}
+      />,
+      "th",
+    );
+
+    expect(screen.getByRole("region", { name: "ข้อมูลของเซสชัน" })).toBeInTheDocument();
+    expect(screen.getByRole("navigation", { name: "ขั้นตอนของเซสชัน" })).toBeInTheDocument();
+    expect(screen.getByRole("link", { name: "บทถอดเสียง" })).toHaveAttribute("aria-current", "page");
+    expect(screen.getByRole("link", { name: "รับข้อมูล" })).toHaveAccessibleDescription("ขั้นตอนนี้เสร็จแล้ว");
+    expect(screen.getByText("ให้ความยินยอมแล้ว")).toBeInTheDocument();
+    expect(screen.getByText("เชื่อมต่อแล้ว")).toBeInTheDocument();
+    expect(screen.queryByText("Connected")).not.toBeInTheDocument();
+  });
+});

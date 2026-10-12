@@ -1,6 +1,10 @@
+"use client";
+
 import { ArrowRight, MessageCircle } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
+import { sessionMessages } from "@/features/sessions/session.messages";
+import { useMessages } from "@/i18n/locale-provider";
 
 /**
  * Conversational "what's next" prompt for the session workspace.
@@ -40,6 +44,7 @@ export function SessionGuide({
   testId?: string;
   reasonId?: string;
 }) {
+  const t = useMessages(sessionMessages).guide;
   const primaryId = testId ? `${testId}-primary` : undefined;
   const reasonId = explicitReasonId ?? (testId ? `${testId}-reason` : undefined);
   const primaryTestId = primaryAction?.testId ?? `${testId}-primary`;
@@ -47,7 +52,7 @@ export function SessionGuide({
 
   return (
     <section
-      aria-label="What to do next"
+      aria-label={t.label}
       data-testid={testId}
       className="overflow-hidden rounded-panel border border-brand-border bg-brand-soft"
     >
@@ -56,7 +61,7 @@ export function SessionGuide({
           <MessageCircle size={18} />
         </span>
         <div className="min-w-0 flex-1">
-          <p className="text-xs font-semibold uppercase tracking-[0.08em] text-brand-strong">Next step</p>
+          <p className="text-xs font-semibold uppercase tracking-[0.08em] text-brand-strong">{t.eyebrow}</p>
           <p className="mt-1 text-sm font-medium leading-5 text-ink sm:mt-1.5 sm:text-base sm:leading-6">{prompt}</p>
           <div className={hasActions ? "mt-3 flex flex-wrap items-center gap-2" : "hidden"}>
             {primaryAction && primaryAction.href ? (

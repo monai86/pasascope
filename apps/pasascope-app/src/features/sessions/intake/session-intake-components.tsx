@@ -1,10 +1,14 @@
+"use client";
+
 import type { ReactNode } from "react";
 import type { LucideIcon } from "lucide-react";
 import { Check, CheckCircle2, ClipboardPaste, FileText, Sparkles } from "lucide-react";
 
 import { PrimaryActionButton, WorkspacePanel } from "@/components/workbench-ui";
 import { sessionCompletion } from "@/features/sessions/state/session-completion";
-import { resolveSessionHref } from "@/features/sessions/state/session-view";
+import { sessionMessages } from "@/features/sessions/session.messages";
+import { resolveSessionHref, sessionViews, type SessionView } from "@/features/sessions/state/session-view";
+import { useMessages } from "@/i18n/locale-provider";
 import type { SessionIntakeSource } from "@/features/sessions/intake/session-intake-view";
 import type { WorkflowSource, WorkflowState } from "@/lib/workflow";
 
@@ -249,35 +253,30 @@ export function SourceInputPanel({
  * not. It shows no scores; those belong to Findings.
  */
 export function SessionProgressCard({ state }: { state: WorkflowState }) {
+  const t = useMessages(sessionMessages).progress;
   const completion = sessionCompletion(state);
-  const steps = [
-    { view: "intake", label: "Transcript added", done: completion.intake },
-    { view: "transcript", label: "Transcript attested", done: completion.transcript },
-    { view: "findings", label: "Features extracted", done: completion.findings },
-    { view: "report", label: "Report signed", done: completion.report },
-  ] as const;
-  const next = steps.find((step) => !step.done && step.view !== "intake");
+  const next = sessionViews.find((view) => view !== "intake" && !completion[view]) as Exclude<SessionView, "intake"> | undefined;
 
   return (
     <WorkspacePanel className="hidden p-5 lg:block">
-      <h2 className="text-lg font-semibold text-ink">Session progress</h2>
+      <h2 className="text-lg font-semibold text-ink">{t.title}</h2>
       <ol className="mt-4 space-y-2" role="list">
-        {steps.map((step) => (
-          <li key={step.view} className="flex items-center gap-3 rounded-control border border-line bg-surface-soft px-3 py-2.5 text-sm font-medium text-ink">
+        {sessionViews.map((view) => (
+          <li key={view} className="flex items-center gap-3 rounded-control border border-line bg-surface-soft px-3 py-2.5 text-sm font-medium text-ink">
             <span
               aria-hidden="true"
-              className={`grid h-6 w-6 shrink-0 place-items-center rounded-full ${step.done ? "bg-brand text-white" : "border border-line-strong bg-surface text-ink-subtle"}`}
+              className={`grid h-6 w-6 shrink-0 place-items-center rounded-full ${completion[view] ? "bg-brand text-white" : "border border-line-strong bg-surface text-ink-subtle"}`}
             >
-              {step.done ? <Check size={13} strokeWidth={3} /> : null}
+              {completion[view] ? <Check size={13} strokeWidth={3} /> : null}
             </span>
-            <span className="min-w-0 flex-1">{step.label}</span>
-            <span className="text-xs font-normal text-ink-subtle">{step.done ? "Done" : "Not yet"}</span>
+            <span className="min-w-0 flex-1">{t.steps[view]}</span>
+            <span className="text-xs font-normal text-ink-subtle">{completion[view] ? t.done : t.notYet}</span>
           </li>
         ))}
       </ol>
       {completion.intake && next ? (
-        <PrimaryActionButton href={workflowSessionHref(next.view, state)} icon={FileText} className="mt-4 w-full">
-          {next.view === "transcript" ? "Review Transcript" : next.view === "findings" ? "Open Findings" : "Open Report"}
+        <PrimaryActionButton href={workflowSessionHref(next, state)} icon={FileText} className="mt-4 w-full">
+          {t.next[next]}
         </PrimaryActionButton>
       ) : null}
     </WorkspacePanel>

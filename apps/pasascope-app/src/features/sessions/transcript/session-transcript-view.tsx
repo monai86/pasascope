@@ -10,8 +10,9 @@ import { Button } from "@/components/ui/button";
 import { SegmentedControl } from "@/components/ui/segmented-control";
 import { SessionContextHeader, type SessionContext } from "@/features/sessions/components/session-context-header";
 import { SessionGuide, type SessionGuideAction } from "@/features/sessions/components/session-guide";
+import { sessionMessages } from "@/features/sessions/session.messages";
 import { resolveSessionHref } from "@/features/sessions/state/session-view";
-import { EXTRACT_FEATURES_ACTION, GENERATE_REPORT_ACTION } from "@/lib/workflow-glossary";
+import { useMessages } from "@/i18n/locale-provider";
 import type { TranscriptLine, WorkflowState } from "@/lib/workflow";
 
 export type SessionTranscriptViewProps = {
@@ -45,15 +46,16 @@ export function SessionTranscriptView({
   backendUnavailable,
   audioUrl,
 }: SessionTranscriptViewProps) {
+  const t = useMessages(sessionMessages).transcript;
   const reviewChecklist = [
-    { label: "Draft saved", complete: state.transcriptSaveStatus === "saved" },
-    { label: "QA completed", complete: state.qaStatus !== "not_run" && state.qaStatus !== "fail" },
-    { label: "Therapist attested", complete: state.transcriptAttested },
-    { label: "Features extracted", complete: state.featuresExtracted },
+    { label: t.readiness.checklist.saved, complete: state.transcriptSaveStatus === "saved" },
+    { label: t.readiness.checklist.qa, complete: state.qaStatus !== "not_run" && state.qaStatus !== "fail" },
+    { label: t.readiness.checklist.attested, complete: state.transcriptAttested },
+    { label: t.readiness.checklist.extracted, complete: state.featuresExtracted },
   ];
-  const reportBlockedReason = getReviewReportBlockedReason(state);
+  const reportBlockedReason = getReviewReportBlockedReason(state, t.readiness.blocked);
   const [reviewMode, setReviewMode] = useState<"audio" | "classic">(audioUrl ? "audio" : "classic");
-  const guide = getTranscriptGuide(state, {
+  const guide = getTranscriptGuide(state, t.guide, {
     busy,
     findingsHref: resolveSessionHref("findings", sessionContext.sessionId),
     onAttest,
@@ -64,26 +66,26 @@ export function SessionTranscriptView({
     <div className="mx-auto w-full max-w-7xl space-y-3 sm:space-y-5">
       <SessionContextHeader
         density="compact"
-        title="Review Transcript"
-        description="Confirm speaker labels and transcript quality before report generation."
+        title={t.title}
+        description={t.description}
         context={sessionContext}
       />
       <SessionGuide
         testId="transcript-guide"
         prompt={guide.prompt}
         primaryAction={guide.primaryAction}
-        quickReplies={state.featuresExtracted ? [{ label: "Go to report", href: resolveSessionHref("report", sessionContext.sessionId) }] : []}
+        quickReplies={state.featuresExtracted ? [{ label: t.goToReport, href: resolveSessionHref("report", sessionContext.sessionId) }] : []}
       />
       <WorkflowStatus state={state} backendUnavailable={backendUnavailable} />
       {state.transcriptDraftLabel ? (
         <div className="rounded-card border border-[color:var(--color-warning-border)] bg-[color:var(--color-warning-bg)] p-4 text-[color:var(--color-warning-text)]">
           <p className="font-bold">{state.transcriptDraftLabel}</p>
-          <p className="mt-1 text-sm">Experimental ASR can be inaccurate. Verify wording, timestamps, and speaker labels before attestation.</p>
+          <p className="mt-1 text-sm">{t.asrCaution}</p>
         </div>
       ) : null}
       {state.chatWarnings && state.chatWarnings.length > 0 ? (
         <div className="rounded-card border border-[color:var(--color-warning-border)] bg-[color:var(--color-warning-bg)] p-4 text-[color:var(--color-warning-text)]" role="status">
-          <p className="font-bold">Import Warnings</p>
+          <p className="font-bold">{t.importWarnings}</p>
           <ul className="mt-1 list-disc space-y-1 pl-5 text-sm">
             {state.chatWarnings.map((warning) => <li key={warning}>{warning}</li>)}
           </ul>
@@ -93,12 +95,12 @@ export function SessionTranscriptView({
         <section className="min-w-0 space-y-4">
           {audioUrl && (
             <SegmentedControl
-              label="Transcript review mode"
+              label={t.mode.label}
               value={reviewMode}
               onChange={setReviewMode}
               options={[
-                { value: "audio", label: "Audio & Diarization Workbench", icon: AudioLines },
-                { value: "classic", label: "Classic Text Editor", icon: FileText },
+                { value: "audio", label: t.mode.audio, icon: AudioLines },
+                { value: "classic", label: t.mode.classic, icon: FileText },
               ]}
             />
           )}
@@ -120,11 +122,11 @@ export function SessionTranscriptView({
               <div className="flex flex-col gap-3 rounded-panel border border-line bg-surface p-4 sm:flex-row sm:items-center sm:justify-between">
                 <p className="text-sm text-ink-muted">
                   {state.transcriptAttested
-                    ? "This transcript is attested."
-                    : "When the speakers and wording are correct, save the transcript, run QA and attest it."}
+                    ? t.attestedNote
+                    : t.notAttestedNote}
                 </p>
                 <Button variant="secondary" data-testid="continue-to-attestation-button" onClick={() => setReviewMode("classic")} className="shrink-0">
-                  Continue to save, QA and attestation
+                  {t.continueToAttestation}
                 </Button>
               </div>
             </>
@@ -148,18 +150,18 @@ export function SessionTranscriptView({
         </section>
         <details className="responsive-details rounded-panel border border-line bg-surface" data-testid="mobile-transcript-report-readiness">
           <summary className="flex min-h-11 cursor-pointer items-center justify-between gap-3 px-4 py-3 text-sm font-semibold text-ink">
-            <span>Report readiness</span>
-            <span className={reportBlockedReason ? "text-[color:var(--color-warning-text)]" : "text-brand-strong"}>{reportBlockedReason ? "Locked" : "Ready"}</span>
+            <span>{t.readiness.summary}</span>
+            <span className={reportBlockedReason ? "text-[color:var(--color-warning-text)]" : "text-brand-strong"}>{reportBlockedReason ? t.readiness.locked : t.readiness.ready}</span>
           </summary>
-          <section className="border-t border-line p-4 md:border-t-0" aria-label="Report generation readiness">
+          <section className="border-t border-line p-4 md:border-t-0" aria-label={t.readiness.regionLabel}>
             <div className="flex items-start gap-2">
               {reportBlockedReason
                 ? <AlertTriangle size={18} aria-hidden="true" className="mt-0.5 shrink-0 text-[color:var(--color-warning-text)]" />
                 : <CheckCircle2 size={18} aria-hidden="true" className="mt-0.5 shrink-0 text-brand" />}
               <div className="min-w-0">
-                <h3 className="font-semibold text-ink">{reportBlockedReason ? "Report generation is locked" : "Ready to generate report"}</h3>
+                <h3 className="font-semibold text-ink">{reportBlockedReason ? t.readiness.lockedTitle : t.readiness.readyTitle}</h3>
                 <p id="generate-report-blocked-reason" className="mt-1 text-sm font-medium text-ink-muted" role={reportBlockedReason ? "status" : undefined}>
-                  {reportBlockedReason ?? "Transcript review is complete. Generate the therapist-editable draft report."}
+                  {reportBlockedReason ?? t.readiness.readyBody}
                 </p>
               </div>
             </div>
@@ -173,7 +175,7 @@ export function SessionTranscriptView({
                     {item.complete ? <Check size={12} strokeWidth={3} /> : null}
                   </span>
                   <span>{item.label}</span>
-                  <span className="sr-only">{item.complete ? "(done)" : "(not done)"}</span>
+                  <span className="sr-only">{item.complete ? t.readiness.done : t.readiness.notDone}</span>
                 </li>
               ))}
             </ul>
@@ -185,19 +187,17 @@ export function SessionTranscriptView({
               aria-describedby={reportBlockedReason ? "generate-report-blocked-reason" : undefined}
               title={reportBlockedReason}
             >
-              {GENERATE_REPORT_ACTION}
+              {t.readiness.generate}
             </Button>
           </section>
         </details>
         <details className="responsive-details rounded-panel border border-line bg-surface" data-testid="mobile-transcript-review-requirements">
           <summary className="flex min-h-11 cursor-pointer items-center justify-between px-4 py-3 text-sm font-semibold text-ink">
-            <span>Review requirements</span>
+            <span>{t.requirements.summary}</span>
             <span aria-hidden="true">›</span>
           </summary>
           <div className="border-t border-line md:border-t-0">
-            <SafetyNotice>
-              Report generation requires a saved draft, completed QA, therapist attestation, and extracted language-sample features. Editing after attestation resets these gates.
-            </SafetyNotice>
+            <SafetyNotice>{t.requirements.body}</SafetyNotice>
           </div>
         </details>
       </div>
@@ -211,8 +211,11 @@ export function SessionTranscriptView({
  * extracting features and moving on are offered here as the single primary
  * action, in that order.
  */
+type TranscriptCopy = (typeof sessionMessages)["en"]["transcript"];
+
 function getTranscriptGuide(
   state: WorkflowState,
+  copy: TranscriptCopy["guide"],
   actions: { busy: boolean; findingsHref: string; onAttest: () => void; onExtractFeatures: () => void },
 ): { prompt: string; primaryAction?: SessionGuideAction } {
   // Attestation is the server's record that the saved transcript was reviewed,
@@ -221,17 +224,14 @@ function getTranscriptGuide(
   const attested = state.transcriptAttested && state.transcriptReviewStatus === "reviewed";
 
   if (attested && state.featuresExtracted) {
-    return {
-      prompt: "Features are extracted from the attested transcript. Review them in Findings.",
-      primaryAction: { label: "Continue to Findings", href: actions.findingsHref },
-    };
+    return { prompt: copy.extracted, primaryAction: { label: copy.continueToFindings, href: actions.findingsHref } };
   }
   if (attested) {
     return {
-      prompt: "The transcript is reviewed and attested. Next, we'll extract the language-sample features.",
+      prompt: copy.attested,
       primaryAction: state.backendTranscriptId
         ? {
-            label: actions.busy ? "Extracting..." : EXTRACT_FEATURES_ACTION,
+            label: actions.busy ? copy.extracting : copy.extract,
             onClick: actions.onExtractFeatures,
             disabled: actions.busy,
             testId: "extract-features-button",
@@ -239,34 +239,24 @@ function getTranscriptGuide(
         : undefined,
     };
   }
-  if (state.transcriptSaveStatus !== "saved") {
-    return { prompt: "Check the speaker labels and wording below, then save the draft." };
-  }
-  if (state.qaStatus === "not_run") {
-    return { prompt: "The draft is saved. Run QA on the transcript before attesting it." };
-  }
-  if (state.qaStatus === "fail") {
-    return { prompt: "QA found issues that block attestation. Fix them, save, and run QA again." };
-  }
+  if (state.transcriptSaveStatus !== "saved") return { prompt: copy.unsaved };
+  if (state.qaStatus === "not_run") return { prompt: copy.qaNotRun };
+  if (state.qaStatus === "fail") return { prompt: copy.qaFailed };
   return {
-    prompt: "The draft is saved and QA is complete. Attest the transcript to confirm your review.",
+    prompt: copy.readyToAttest,
     primaryAction: state.backendTranscriptId
-      ? { label: actions.busy ? "Recording attestation..." : "Attest this transcript", onClick: actions.onAttest, disabled: actions.busy }
+      ? { label: actions.busy ? copy.attesting : copy.attest, onClick: actions.onAttest, disabled: actions.busy }
       : undefined,
   };
 }
 
-function getReviewReportBlockedReason(state: WorkflowState) {
-  if (state.transcriptSaveStatus !== "saved") return "Save the transcript draft before generating a report.";
-  if (state.qaStatus === "not_run") return "Run transcript QA before generating a report.";
-  if (state.qaStatus === "fail") return "Resolve transcript QA issues before generating a report.";
-  if (state.error && state.statusMessage === "Attestation failed.") {
-    return "Attestation did not finish. Try Attest transcript again before generating a report.";
-  }
-  if (!state.transcriptAttested || state.transcriptReviewStatus !== "reviewed") {
-    return "Click Attest transcript before generating a report.";
-  }
-  if (!state.featuresExtracted) return "Extract language-sample features before generating a report.";
+function getReviewReportBlockedReason(state: WorkflowState, copy: TranscriptCopy["readiness"]["blocked"]) {
+  if (state.transcriptSaveStatus !== "saved") return copy.unsaved;
+  if (state.qaStatus === "not_run") return copy.qaNotRun;
+  if (state.qaStatus === "fail") return copy.qaFailed;
+  if (state.error && state.statusMessage === "Attestation failed.") return copy.attestFailed;
+  if (!state.transcriptAttested || state.transcriptReviewStatus !== "reviewed") return copy.notAttested;
+  if (!state.featuresExtracted) return copy.noFeatures;
   return undefined;
 }
 

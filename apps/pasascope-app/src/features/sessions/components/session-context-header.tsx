@@ -1,8 +1,12 @@
+"use client";
+
 import Link from "next/link";
 import { Check } from "lucide-react";
 
 import { Breadcrumbs } from "@/components/breadcrumbs";
 import { PageHeader } from "@/components/page-header";
+import { useMessages } from "@/i18n/locale-provider";
+import { sessionMessages } from "@/features/sessions/session.messages";
 import {
   resolveSessionHref,
   sessionViews,
@@ -36,27 +40,6 @@ export type SessionContextHeaderProps = {
   density?: "default" | "compact";
 };
 
-const viewLabels: Record<SessionView, string> = {
-  intake: "Intake",
-  transcript: "Transcript",
-  findings: "Findings",
-  report: "Report",
-};
-
-const modeLabels: Record<SessionDataMode, string> = {
-  backend: "Connected",
-  local_draft: "Offline draft",
-  unavailable: "Offline",
-};
-
-function displayValue(value?: string): string {
-  return value?.trim() || "Unavailable";
-}
-
-function consentLabel(value?: string): string {
-  return value?.trim() ? `Consent ${value.trim().toLowerCase()}` : "Unavailable";
-}
-
 export function SessionContextHeader({
   title,
   description,
@@ -64,26 +47,29 @@ export function SessionContextHeader({
   context,
   density = "default",
 }: SessionContextHeaderProps) {
+  const t = useMessages(sessionMessages);
+  const h = t.header;
+  const displayValue = (value?: string) => value?.trim() || h.unavailable;
   const details = [
-    { label: "Case", value: displayValue(context.caseLabel) },
-    { label: "Session", value: displayValue(context.sessionId) },
-    { label: "Source", value: displayValue(context.sourceLabel) },
-    { label: "Consent", value: consentLabel(context.consentStatus) },
-    { label: "Status", value: displayValue(context.workflowStatus) },
-    { label: "Connection", value: modeLabels[context.dataMode] },
+    { label: h.fields.case, value: displayValue(context.caseLabel) },
+    { label: h.fields.session, value: displayValue(context.sessionId) },
+    { label: h.fields.source, value: displayValue(context.sourceLabel) },
+    { label: h.fields.consent, value: context.consentStatus?.trim() ? h.consent(context.consentStatus.trim()) : h.unavailable },
+    { label: h.fields.status, value: displayValue(context.workflowStatus) },
+    { label: h.fields.connection, value: h.connection[context.dataMode] },
   ];
 
   const breadcrumbs = [
-    { label: "Cases", href: "/cases" },
+    { label: h.casesCrumb, href: "/cases" },
     ...(context.caseLabel
       ? [{ label: context.caseLabel, href: context.caseId ? `/cases/${encodeURIComponent(context.caseId)}` : undefined }]
       : []),
-    { label: viewLabels[context.activeView] },
+    { label: t.views[context.activeView] },
   ];
 
   if (density === "compact") {
     return (
-      <section aria-label="Session context" data-density="compact">
+      <section aria-label={h.contextLabel} data-density="compact">
         <Breadcrumbs items={breadcrumbs} />
         <div className="grid gap-2 rounded-panel border border-line bg-surface px-3 py-2 sm:gap-3 sm:px-4 sm:py-3 xl:grid-cols-[minmax(14rem,0.7fr)_minmax(0,1.3fr)] xl:items-center">
           <div className="min-w-0">
@@ -104,10 +90,10 @@ export function SessionContextHeader({
           <details className="responsive-details min-w-0 rounded-card border border-line md:hidden">
             <summary className="flex min-h-11 cursor-pointer items-center justify-between gap-3 px-3 py-2 marker:content-none">
               <span className="flex min-w-0 items-baseline gap-1 overflow-hidden text-sm font-medium text-ink">
-                <span className="shrink-0 text-xs font-semibold uppercase tracking-[0.08em] text-ink-subtle">Case</span>
+                <span className="shrink-0 text-xs font-semibold uppercase tracking-[0.08em] text-ink-subtle">{h.fields.case}</span>
                 <span className="min-w-0 truncate">{displayValue(context.caseLabel)}</span>
               </span>
-              <span className="shrink-0 text-xs font-semibold text-brand-strong">Details</span>
+              <span className="shrink-0 text-xs font-semibold text-brand-strong">{h.details}</span>
             </summary>
             <dl className="grid grid-cols-2 gap-3 border-t border-line p-3">
               {details.map((detail) => (
@@ -125,7 +111,7 @@ export function SessionContextHeader({
   }
 
   return (
-    <section aria-label="Session context" className="space-y-4" data-density="default">
+    <section aria-label={h.contextLabel} className="space-y-4" data-density="default">
       <Breadcrumbs items={breadcrumbs} />
       <PageHeader title={title} description={description} meta={meta} />
       <div className="rounded-shell border border-line bg-surface p-4 sm:p-5">
@@ -148,9 +134,10 @@ export function SessionContextHeader({
 }
 
 function SessionViewNavigation({ context, compact = false }: { context: SessionContext; compact?: boolean }) {
+  const t = useMessages(sessionMessages);
   return (
     <nav
-      aria-label="Session views"
+      aria-label={t.header.viewsLabel}
       className={`${compact ? "border-t px-1 py-2 sm:px-2" : "mt-4 border-t pt-4"} border-line`}
     >
       <ol className="grid grid-cols-4 gap-1 sm:gap-2" role="list">
@@ -184,11 +171,11 @@ function SessionViewNavigation({ context, compact = false }: { context: SessionC
                     active ? "text-brand-strong" : completed ? "text-ink" : "text-ink-muted"
                   }`}
                 >
-                  {viewLabels[view]}
+                  {t.views[view]}
                 </span>
               </Link>
               {/* Describes the tick without changing the link's name. */}
-              {completed ? <span id={stateId} className="sr-only">Step complete</span> : null}
+              {completed ? <span id={stateId} className="sr-only">{t.header.stepComplete}</span> : null}
               {index < sessionViews.length - 1 ? (
                 <span
                   aria-hidden="true"
