@@ -12,6 +12,8 @@ import {
   sessionViews,
   type SessionView,
 } from "@/features/sessions/state/session-view";
+import { useWorkflowStatusLabel } from "@/components/status-badge";
+import { useReportLabel } from "@/features/sessions/findings/use-findings-label";
 
 export type SessionDataMode = "backend" | "local_draft" | "unavailable";
 
@@ -50,12 +52,14 @@ export function SessionContextHeader({
   const t = useMessages(sessionMessages);
   const h = t.header;
   const displayValue = (value?: string) => value?.trim() || h.unavailable;
+  const statusLabel = useWorkflowStatusLabel();
+  const reportStatusLabel = useReportLabel();
   const details = [
     { label: h.fields.case, value: displayValue(context.caseLabel) },
     { label: h.fields.session, value: displayValue(context.sessionId) },
     { label: h.fields.source, value: displayValue(context.sourceLabel) },
     { label: h.fields.consent, value: context.consentStatus?.trim() ? h.consent(context.consentStatus.trim()) : h.unavailable },
-    { label: h.fields.status, value: displayValue(context.workflowStatus) },
+    { label: h.fields.status, value: context.workflowStatus?.trim() ? reportStatusLabel(statusLabel(context.workflowStatus.trim())) : h.unavailable },
     { label: h.fields.connection, value: h.connection[context.dataMode] },
   ];
 

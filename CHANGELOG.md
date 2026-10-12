@@ -18,6 +18,8 @@ Therapist app redesign: a new visual system, a linear session workflow and a Tha
 - **Findings has one solid button**: "Generate report draft" is the primary action; "Revise transcript" and "Generate AI-assisted review" are outlined.
 - **Settings shows who is signed in**: with real sign-in, Account shows the signed-in name and role instead of the fixed demo values.
 - **Cases shows the next action once** in the selected-case panel (it was a line of text and a button with the same words).
+- **Report view shows the case's consent status** in its header; it showed "Unavailable" even when consent was granted.
+- **Session status reads as a label**: the session header shows status with its display name (for example "ML Pending" instead of "ml pending"), in the interface language.
 - **Report view leads with the report**: the draft sits first, with sign-off beside it. Provenance and safety metadata, and the drafting provider setting, are behind disclosures; the report's state badge stays visible on the closed disclosure. Of Generate, Save and Finalize, only the next step is a solid button.
 - **Sign-in page** states the workflow and the non-diagnostic boundary instead of marketing copy.
 

@@ -50,6 +50,8 @@ export function useSessionReport({ caseId, sessionId, transcriptId, reportId }: 
   const [backendReport, setBackendReport] = useState<BackendReport | null>(null);
   const [primaryTherapistLabel, setPrimaryTherapistLabel] = useState<string>(hasLocator ? "" : "Authenticated primary therapist");
   const [primaryTherapistAssigned, setPrimaryTherapistAssigned] = useState<boolean>(!hasLocator);
+  // Consent as recorded on the loaded case; unknown until the case has loaded.
+  const [caseConsent, setCaseConsent] = useState<string | undefined>(undefined);
   const [confirmationChecked, setConfirmationChecked] = useState<boolean>(!hasLocator);
   const [snapshotIntegrity, setSnapshotIntegrity] = useState<SnapshotIntegrityState>({ status: "not_applicable" });
   const revisionInFlightRef = useRef(false);
@@ -93,6 +95,7 @@ export function useSessionReport({ caseId, sessionId, transcriptId, reportId }: 
     setProviderId("template");
     setPrimaryTherapistLabel("");
     setPrimaryTherapistAssigned(false);
+    setCaseConsent(undefined);
     setConfirmationChecked(false);
     void (async () => {
       try {
@@ -108,6 +111,7 @@ export function useSessionReport({ caseId, sessionId, transcriptId, reportId }: 
         setBackendReport(report);
         setProviderId(report.requested_provider ?? "template");
         setPrimaryTherapistAssigned(Boolean(childCase?.primary_therapist_user_id));
+        setCaseConsent(childCase?.consent_status);
         setPrimaryTherapistLabel(
           childCase?.primary_therapist_user_id
             ? clinicianLabel(childCase.primary_therapist_user_id)
@@ -167,6 +171,7 @@ export function useSessionReport({ caseId, sessionId, transcriptId, reportId }: 
         setBackendReport(null);
         setPrimaryTherapistLabel("");
         setPrimaryTherapistAssigned(false);
+        setCaseConsent(undefined);
         setConfirmationChecked(false);
       }
     })();
@@ -448,6 +453,7 @@ export function useSessionReport({ caseId, sessionId, transcriptId, reportId }: 
     backendReport,
     primaryTherapistLabel,
     primaryTherapistAssigned,
+    caseConsent,
     confirmationChecked,
     setConfirmationChecked,
     snapshotIntegrity,

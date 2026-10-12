@@ -27,6 +27,7 @@ import { Button } from "@/components/ui/button";
 import { formatDate } from "@/i18n/format";
 import { useLocale, useMessages } from "@/i18n/locale-provider";
 import { useSafetyCopy } from "@/lib/safety-copy";
+import { useReportLabel } from "@/features/sessions/findings/use-findings-label";
 export function SessionReportView(props: SessionReportViewProps) {
   const identityKey = JSON.stringify([
     props.sessionId ?? "",
@@ -56,6 +57,7 @@ function ReportSummaryIdentityScope({ caseId, sessionId, transcriptId, reportId 
     backendReport,
     primaryTherapistLabel,
     primaryTherapistAssigned,
+    caseConsent,
     confirmationChecked,
     setConfirmationChecked,
     snapshotIntegrity,
@@ -87,6 +89,7 @@ function ReportSummaryIdentityScope({ caseId, sessionId, transcriptId, reportId 
   const t = useMessages(reportMessages);
   const { locale } = useLocale();
   const safety = useSafetyCopy();
+  const label = useReportLabel();
   const draftState = isSnapshotIntegrityChecking
     ? "verifying"
     : hasSnapshotIntegrityError
@@ -126,7 +129,7 @@ function ReportSummaryIdentityScope({ caseId, sessionId, transcriptId, reportId 
           sessionId: state.backendSessionId ?? state.sessionId ?? sessionId,
           caseId: state.caseId || caseId,
           caseLabel: state.childName || state.caseInfo.clientLabel || state.caseId || caseId,
-          consentStatus: undefined,
+          consentStatus: caseConsent,
           sourceLabel: isFinalized
             ? signedSnapshotVerified
               ? reportSourceLabel(backendReport)
@@ -372,9 +375,9 @@ function ReportSummaryIdentityScope({ caseId, sessionId, transcriptId, reportId 
             <dl className="mt-4 grid gap-3 sm:grid-cols-2">
               <ReportProvenanceItem
                 label={t.provenance.reviewedTranscript}
-                value={versionLabel(reportGeneratedVersion(backendReport, state, "transcript_version") ?? (isFinalized ? undefined : state.backendTranscriptVersion))}
+                value={label(versionLabel(reportGeneratedVersion(backendReport, state, "transcript_version") ?? (isFinalized ? undefined : state.backendTranscriptVersion)))}
               />
-              <ReportProvenanceItem label={t.provenance.reportVersion} value={versionLabel(isFinalized ? signedSnapshotNumber(backendReport, "report_version") : backendReport?.version ?? state.backendReportVersion)} />
+              <ReportProvenanceItem label={t.provenance.reportVersion} value={label(versionLabel(isFinalized ? signedSnapshotNumber(backendReport, "report_version") : backendReport?.version ?? state.backendReportVersion))} />
               <ReportProvenanceItem label={t.provenance.featureResultId} value={(isFinalized ? signedSnapshotString(backendReport, "feature_result_id") : backendReport?.feature_result_id ?? state.featureSetId) ?? t.provenance.unavailable} />
               <ReportProvenanceItem
                 label={t.provenance.schemaVersion}
@@ -386,7 +389,7 @@ function ReportSummaryIdentityScope({ caseId, sessionId, transcriptId, reportId 
               />
               {isFinalized ? (
                 <>
-                  <ReportProvenanceItem label={t.provenance.snapshotVersion} value={versionLabel(signedSnapshotNumber(backendReport, "report_version"))} />
+                  <ReportProvenanceItem label={t.provenance.snapshotVersion} value={label(versionLabel(signedSnapshotNumber(backendReport, "report_version")))} />
                   <ReportProvenanceItem label={t.provenance.snapshotHash} value={signedSnapshotString(backendReport, "report_hash") ?? t.provenance.unavailable} />
                   <ReportProvenanceItem label={t.provenance.signedBy} value={signedSnapshotString(backendReport, "signed_by") ?? t.provenance.unavailable} />
                   <ReportProvenanceItem label={t.provenance.signedAt} value={signedSnapshotString(backendReport, "signed_at") ?? t.provenance.unavailable} />
@@ -404,7 +407,7 @@ function ReportSummaryIdentityScope({ caseId, sessionId, transcriptId, reportId 
               <ReportProvenanceItem label={t.source.fallbackReason} value={(isFinalized ? signedSnapshotProviderString(backendReport, "fallback_reason") : backendReport?.fallback_reason) ?? t.provenance.unavailable} />
               <ReportProvenanceItem label={t.source.validatorVersion} value={(isFinalized ? finalizedSafetyMetadataString(backendReport, "validator_version") : backendReport?.validator_version) ?? t.provenance.unavailable} />
               <ReportProvenanceItem label={t.source.ruleSetVersion} value={(isFinalized ? finalizedSafetyMetadataString(backendReport, "rule_set_version") : backendReport?.rule_set_version) ?? t.provenance.unavailable} />
-              <ReportProvenanceItem label={t.source.finalizedSafety} value={finalizedSafetyLabel(backendReport)} />
+              <ReportProvenanceItem label={t.source.finalizedSafety} value={label(finalizedSafetyLabel(backendReport))} />
               <ReportProvenanceItem label={t.source.inputHash} value={(isFinalized ? signedSnapshotString(backendReport, "input_hash") : backendReport?.input_hash) ?? t.provenance.unavailable} />
             </dl>
           </section>
@@ -416,7 +419,7 @@ function ReportSummaryIdentityScope({ caseId, sessionId, transcriptId, reportId 
           <section aria-label={t.states.regionLabel} className="rounded-shell border border-line bg-surface p-5">
             <h2 className="text-lg font-bold text-ink">{t.states.title}</h2>
             <dl className="mt-4 grid gap-3 sm:grid-cols-3">
-              <ReportProvenanceItem label={t.states.save} value={isSnapshotIntegrityChecking ? t.states.verifyingSnapshot : hasSnapshotIntegrityError ? t.states.integrityError : isNotStarted ? t.states.neverGenerated : reportSaveStateLabel(state.reportSaveStatus, isFinalized, isStale)} />
+              <ReportProvenanceItem label={t.states.save} value={isSnapshotIntegrityChecking ? t.states.verifyingSnapshot : hasSnapshotIntegrityError ? t.states.integrityError : isNotStarted ? t.states.neverGenerated : label(reportSaveStateLabel(state.reportSaveStatus, isFinalized, isStale))} />
               <ReportProvenanceItem label={t.states.signOff} value={isSnapshotIntegrityChecking ? t.states.signedVerifying : hasSnapshotIntegrityError ? t.states.signedInvalid : isFinalized ? t.states.signed : isStale ? t.states.blockedRegenerate : isNotStarted ? t.states.blockedGenerate : t.states.confirmationRequired} />
               <ReportProvenanceItem label={t.states.reportExport} value={isSnapshotIntegrityChecking ? t.states.blockedVerifying : hasSnapshotIntegrityError ? t.states.blockedIntegrity : isFinalized ? t.states.eligible : isStale ? t.states.blockedRegenerate : isNotStarted ? t.states.blockedGenerate : t.states.afterSignOff} />
               <ReportProvenanceItem label={t.states.cuesAcknowledgement} value={state.cuesAcknowledgedAt ? `${state.cuesAcknowledgedBy ?? t.states.therapist} — ${formatDate(state.cuesAcknowledgedAt, locale)}` : t.states.notRecorded} />

@@ -3,6 +3,7 @@
 import type { Locale } from "@/i18n/config";
 import { useLocale } from "@/i18n/locale-provider";
 import { FINDINGS_LABELS_TH } from "@/features/sessions/findings/findings-labels.th";
+import { REPORT_LABELS_TH } from "@/features/sessions/report/report-labels.th";
 
 const VERSION = /^Version (.+)$/;
 const WITH_MEASURE = /^(Pass|Warning)( · \d+%)$/;
@@ -17,6 +18,18 @@ export function findingsLabel(label: string, locale: Locale): string {
   const measured = WITH_MEASURE.exec(label);
   if (measured) return `${FINDINGS_LABELS_TH[measured[1]]}${measured[2]}`;
   return label;
+}
+
+/** A derived report label in one interface language, falling back to the Findings table. */
+export function reportLabel(label: string, locale: Locale): string {
+  if (locale === "en") return label;
+  return REPORT_LABELS_TH[label] ?? findingsLabel(label, locale);
+}
+
+/** Translates derived report labels into the current interface language. */
+export function useReportLabel(): (label: string) => string {
+  const { locale } = useLocale();
+  return (label) => reportLabel(label, locale);
 }
 
 /** Translates derived Findings labels into the current interface language. */

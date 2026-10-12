@@ -77,6 +77,15 @@ function matchStatus(status: string): WorkflowStatus | null {
   return keys.find((key) => canonicalize(key) === canonicalInput) ?? null;
 }
 
+/** Display name of a workflow status in the interface language; unknown values pass through. */
+export function useWorkflowStatusLabel(): (status: string) => string {
+  const labels = useMessages(statusMessages);
+  return (status) => {
+    const matched = matchStatus(status);
+    return matched ? labels[matched] : status;
+  };
+}
+
 export function StatusBadge({ status }: { status: string }) {
   const labels = useMessages(statusMessages);
   const matched = matchStatus(status);

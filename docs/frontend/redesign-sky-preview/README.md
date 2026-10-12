@@ -3,9 +3,8 @@
 Captured on 2026-10-12 from `feat/redesign-sky` at v1.7.2, running against the
 mock API (in-memory repository), with the interface set to Thai.
 
-The cases shown as `PREVIEW-02` and `PREVIEW-03` are de-identified samples
-created through the API for these captures, and the transcript is a handful of
-invented utterances. Nothing here is clinical data.
+The case shown as `PREVIEW-03` is a de-identified sample created through the
+API for these captures, and its transcript is a handful of invented utterances. Nothing here is clinical data.
 
 Text that the API supplies (feature names and descriptions, the report draft,
 some status values) appears in English; the app translates only its own text.
