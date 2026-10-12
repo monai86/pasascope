@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { FileSearch, FileText, ShieldCheck, Wand2 } from "lucide-react";
 
+import { Button } from "@/components/ui/button";
 import { PrimaryActionButton, WorkspacePanel } from "@/components/workbench-ui";
 import { RightRail } from "@/components/right-rail";
 import { SessionContextHeader, type SessionContext } from "@/features/sessions/components/session-context-header";
@@ -300,12 +301,13 @@ export function SessionFindingsView({
                     {approveCuesReason}
                   </p>
                 ) : null}
-                <PrimaryActionButton href={workflowSessionHref("transcript", state)} icon={FileText} className="w-full justify-center">
+                {/* Generating the report is the next step here; going back to the transcript is secondary. */}
+                <Button href={workflowSessionHref("transcript", state)} icon={FileText} variant="secondary" className="w-full">
                   {t.actions.reviseTranscript}
-                </PrimaryActionButton>
+                </Button>
                 <button
                   type="button"
-                  className="flex min-h-11 w-full items-center justify-center rounded-card bg-brand-strong px-4 py-3 text-sm font-semibold text-white disabled:cursor-not-allowed disabled:opacity-50"
+                  className="flex min-h-11 w-full items-center justify-center rounded-full bg-brand px-4 py-3 text-sm font-semibold text-white disabled:cursor-not-allowed disabled:opacity-50"
                   onClick={onGenerateReport}
                   disabled={busy || !reportReady}
                   data-testid="generate-report-button"

@@ -67,7 +67,7 @@ export function ProgressSummaryCard({
         <div className="mt-4">
           <button
             type="button"
-            className="flex min-h-11 items-center justify-center rounded-card bg-brand-strong px-4 py-3 text-sm font-semibold text-white disabled:cursor-not-allowed disabled:opacity-50"
+            className="flex min-h-11 items-center justify-center rounded-full border border-brand-border bg-surface px-4 py-3 text-sm font-semibold text-brand disabled:cursor-not-allowed disabled:opacity-50"
             onClick={() => onGenerateAiReview()}
             disabled={busy || Boolean(aiReviewReason)}
             aria-describedby={aiReviewReason ? "generate-ai-review-reason" : undefined}

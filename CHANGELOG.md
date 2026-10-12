@@ -15,6 +15,7 @@ Therapist app redesign: a new visual system, a linear session workflow and a Tha
 - **Consent statement leads with the interface language**: the caregiver consent confirmation still shows in both Thai and English; the language in use is now first.
 - **Case detail no longer suggests adding goals**: the "Add communication goals" task was removed because goals cannot be added in the app. Session history dates follow the interface language.
 - **Intake shows which of its four steps you are on**: a "Step 1 of 4" bar sits above the form; a segment is filled when that step's inputs are in. The review summary shows setting, language and sample type by their labels instead of stored codes.
+- **Findings has one solid button**: "Generate report draft" is the primary action; "Revise transcript" and "Generate AI-assisted review" are outlined.
 - **Report view leads with the report**: the draft sits first, with sign-off beside it. Provenance and safety metadata, and the drafting provider setting, are behind disclosures; the report's state badge stays visible on the closed disclosure. Of Generate, Save and Finalize, only the next step is a solid button.
 - **Sign-in page** states the workflow and the non-diagnostic boundary instead of marketing copy.
 
