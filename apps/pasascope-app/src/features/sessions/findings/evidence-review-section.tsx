@@ -10,8 +10,11 @@ import {
   positionTitle,
   profileStatusTitle,
 } from "@/features/sessions/findings/session-findings-support";
-import { EVIDENCE_REVIEW_NOUN } from "@/lib/workflow-glossary";
-import { NOT_DIAGNOSTIC_BADGE } from "@/lib/clinical-safety-copy";
+import { pipelineMessages } from "@/components/pipeline.messages";
+import { findingsPartsMessages } from "@/features/sessions/findings/findings-parts.messages";
+import { useFindingsLabel } from "@/features/sessions/findings/use-findings-label";
+import { useMessages } from "@/i18n/locale-provider";
+import { useSafetyCopy } from "@/lib/safety-copy";
 
 export function EvidenceReviewSection({
   mlDecisionSupport,
@@ -35,6 +38,10 @@ export function EvidenceReviewSection({
   ) => void;
 }) {
   const [showEvidenceDetails, setShowEvidenceDetails] = useState(false);
+  const t = useMessages(findingsPartsMessages).evidence;
+  const evidenceReviewNoun = useMessages(pipelineMessages).stages.ml_pending;
+  const safety = useSafetyCopy();
+  const label = useFindingsLabel();
   const [disagreementProfile, setDisagreementProfile] = useState<string>();
   const [disagreementNote, setDisagreementNote] = useState("");
 
@@ -53,26 +60,26 @@ export function EvidenceReviewSection({
   return (
     <details ref={detailsRef} className="responsive-details self-start rounded-shell border border-line bg-surface">
       <summary className="flex min-h-14 cursor-pointer items-center justify-between gap-3 px-5 py-3">
-        <span className="font-semibold text-ink">Review guidance and evidence</span>
-        <span className="text-xs font-medium text-ink-muted">{recommendedReviewPoints.length} review point{recommendedReviewPoints.length === 1 ? "" : "s"}</span>
+        <span className="font-semibold text-ink">{t.summary}</span>
+        <span className="text-xs font-medium text-ink-muted">{t.reviewPoints(recommendedReviewPoints.length)}</span>
       </summary>
       <div className="border-t border-line p-5">
-      <h2 className="text-lg font-semibold text-ink">Recommended review points</h2>
+      <h2 className="text-lg font-semibold text-ink">{t.recommended}</h2>
       <ul className="mt-4 space-y-3 text-sm leading-6 text-ink-muted">
         {recommendedReviewPoints.map((point) => (
           <li key={point} className="rounded-panel border border-line bg-surface px-4 py-3">
-            {point}
+            {label(point)}
           </li>
         ))}
       </ul>
       {mlDecisionSupport ? (
         <div className="mt-5 space-y-3" data-testid="evidence-review-panel">
           <div className="flex flex-wrap items-center gap-2">
-            <h3 className="text-sm font-semibold uppercase tracking-[0.18em] text-ink-muted">{EVIDENCE_REVIEW_NOUN}</h3>
-            <span className="rounded-full bg-[color:var(--color-warning-bg)] px-3 py-1 text-xs font-bold text-[color:var(--color-warning-text)]">{NOT_DIAGNOSTIC_BADGE}</span>
+            <h3 className="text-sm font-semibold uppercase tracking-[0.18em] text-ink-muted">{evidenceReviewNoun}</h3>
+            <span className="rounded-full bg-[color:var(--color-warning-bg)] px-3 py-1 text-xs font-bold text-[color:var(--color-warning-text)]">{safety.NOT_DIAGNOSTIC_BADGE}</span>
           </div>
           <p className="text-sm text-ink-muted">
-            {mlDecisionSupport.providerName} v{mlDecisionSupport.providerVersion} · schema {mlDecisionSupport.featureSchemaVersion}
+            {t.providerLine(mlDecisionSupport.providerName, String(mlDecisionSupport.providerVersion), String(mlDecisionSupport.featureSchemaVersion))}
           </p>
           {(mlDecisionSupport.cues ?? []).length > 0 ? (
             <ul className="space-y-3" data-testid="review-cue-list">
@@ -81,7 +88,7 @@ export function EvidenceReviewSection({
                   <p className="font-semibold text-ink">{cue.title}</p>
                   <p className="mt-1 text-sm text-ink-muted">{cue.explanation}</p>
                   <p className="mt-2 text-sm text-ink-muted">
-                    {Object.entries(cue.supportingFeatures).map(([name, value]) => `${name.replace(/_/g, " ")}: ${value ?? "not computed"}`).join(" · ")}
+                    {Object.entries(cue.supportingFeatures).map(([name, value]) => `${name.replace(/_/g, " ")}: ${value ?? t.notComputed}`).join(" · ")}
                   </p>
                   {(cue.evidence ?? []).length > 0 ? (
                     <ol className="mt-3 space-y-2" data-testid={`cue-evidence-${cue.cueCode}`}>
@@ -89,22 +96,22 @@ export function EvidenceReviewSection({
                         <li key={`${item.adultUtteranceId ?? ""}-${item.childUtteranceId}`} className="rounded-card border border-line bg-surface px-3 py-2 text-sm">
                           {item.adultUtteranceId ? (
                             <p className="text-ink-muted">
-                              <span className="font-semibold">Adult:</span> {lineText(item.adultUtteranceId) ?? "(line no longer in transcript)"}
+                              <span className="font-semibold">{t.adult}</span> {lineText(item.adultUtteranceId) ?? t.lineGone}
                             </p>
                           ) : null}
                           <p className="text-ink">
-                            <span className="font-semibold">Child:</span> {lineText(item.childUtteranceId) ?? "(line no longer in transcript)"}
+                            <span className="font-semibold">{t.child}</span> {lineText(item.childUtteranceId) ?? t.lineGone}
                           </p>
                           {item.category ? (
                             <p className="mt-1 text-xs text-ink-muted">
-                              {item.category === "immediate_verbatim" ? "Repeats the adult turn" : "Repeats part of the adult turn"}
+                              {item.category === "immediate_verbatim" ? t.repeatsWhole : t.repeatsPart}
                             </p>
                           ) : null}
                         </li>
                       ))}
                     </ol>
                   ) : null}
-                  <p className="mt-2 text-sm font-medium text-ink">Next: {cue.recommendedNextReviewStep}</p>
+                  <p className="mt-2 text-sm font-medium text-ink">{t.next(cue.recommendedNextReviewStep)}</p>
                   {cue.limitations.length > 0 ? (
                     <p className="mt-1 text-xs text-ink-muted">{cue.limitations.join(" ")}</p>
                   ) : null}
@@ -117,7 +124,7 @@ export function EvidenceReviewSection({
                           onClick={() => onCueReview(cue.cueCode, "acknowledged")}
                           className="inline-flex min-h-11 items-center rounded-card bg-brand px-3 py-2 text-sm font-semibold text-white disabled:opacity-60"
                         >
-                          Confirm after checking
+                          {t.confirm}
                         </button>
                         <button
                           type="button"
@@ -125,16 +132,16 @@ export function EvidenceReviewSection({
                           onClick={() => onCueReview(cue.cueCode, "dismissed")}
                           className="inline-flex min-h-11 items-center rounded-card border border-line px-3 py-2 text-sm font-semibold text-ink disabled:opacity-60"
                         >
-                          Dismiss — not an echo or pronoun issue
+                          {t.dismiss}
                         </button>
                       </>
                     ) : (
                       <span className="rounded-full bg-surface-muted px-3 py-1 text-xs font-semibold text-ink" data-testid={`cue-status-${cue.cueCode}`}>
-                        {cue.reviewStatus === "acknowledged" ? "Confirmed by therapist" : cue.reviewStatus === "dismissed" ? "Dismissed by therapist" : "Not yet reviewed"}
+                        {cue.reviewStatus === "acknowledged" ? t.confirmed : cue.reviewStatus === "dismissed" ? t.dismissed : t.notReviewed}
                       </span>
                     )}
                     {transcriptHref && (cue.evidence ?? []).length > 0 ? (
-                      <a href={transcriptHref} className="text-sm font-semibold text-brand underline">Open transcript</a>
+                      <a href={transcriptHref} className="text-sm font-semibold text-brand underline">{t.openTranscript}</a>
                     ) : null}
                   </div>
                 </li>
@@ -143,7 +150,7 @@ export function EvidenceReviewSection({
           ) : null}
           {mlDecisionSupport.patternEvidence ? (
             <div className="rounded-panel border border-line bg-surface p-4">
-              <p className="font-semibold text-ink">{patternEvidenceTitle(mlDecisionSupport.patternEvidence.status)}</p>
+              <p className="font-semibold text-ink">{label(patternEvidenceTitle(mlDecisionSupport.patternEvidence.status))}</p>
               <EvidenceAvailabilityView availability={mlDecisionSupport.patternEvidence.availability} />
             </div>
           ) : null}
@@ -156,31 +163,31 @@ export function EvidenceReviewSection({
               <article key={profile.profileCode} className="rounded-panel border border-line bg-surface p-4">
                 <div className="flex flex-wrap items-start justify-between gap-2">
                   <div>
-                    <p className="font-semibold text-ink">{profile.profileCode} profile</p>
-                    <p className="text-xs text-ink-muted">Presentation group: {profile.presentationGroup}</p>
+                    <p className="font-semibold text-ink">{t.profile(profile.profileCode)}</p>
+                    <p className="text-xs text-ink-muted">{t.presentationGroup(profile.presentationGroup)}</p>
                   </div>
                   <span className="rounded-full bg-surface-muted px-3 py-1 text-xs font-semibold text-ink">
-                    {profileStatusTitle(profile.status)}
+                    {label(profileStatusTitle(profile.status))}
                   </span>
                 </div>
                 <p className="mt-2 text-xs text-ink-muted">
-                  Reference support: {profile.participantCount} participants · {profile.corpusCount} corpora
+                  {t.referenceSupport(profile.participantCount, profile.corpusCount)}
                 </p>
                 <EvidenceAvailabilityView availability={profile.availability} />
                 {profile.availability.state === "insufficient_reference_data" ? (
                   <p className="mt-3 rounded-card bg-[color:var(--color-warning-bg)] px-3 py-2 text-sm font-medium text-[color:var(--color-warning-text)]">
-                    Reference comparison unavailable
+                    {label("Reference comparison unavailable")}
                   </p>
                 ) : null}
                 {visibleFeatures.map((feature) => (
                   <div key={feature.featureName} className="mt-3 rounded-panel border border-line bg-surface-muted p-3" data-testid={showEvidenceDetails ? "evidence-detail" : "evidence-cue"}>
                     <p className="text-sm font-semibold text-ink">{featureLabel(feature.featureName)}</p>
                     <p className="mt-1 text-sm text-ink-muted">
-                      Observed {String(feature.observedValue)} · {positionTitle(feature.position)}
+                      {t.observed(String(feature.observedValue), label(positionTitle(feature.position)))}
                     </p>
                     {showEvidenceDetails ? (
                       <p className="mt-1 text-xs text-ink-muted">
-                        Reference distribution Q1 {String(feature.q1)} · median {String(feature.median)} · Q3 {String(feature.q3)}
+                        {t.distribution(String(feature.q1), String(feature.median), String(feature.q3))}
                       </p>
                     ) : null}
                     <p className="mt-1 text-xs text-ink-muted">{feature.caveat}</p>
@@ -193,7 +200,7 @@ export function EvidenceReviewSection({
                     onClick={() => onProfileEvidenceReview(profile.profileCode, "reviewed")}
                     disabled={busy}
                   >
-                    Reviewed
+                    {t.reviewed}
                   </button>
                   <button
                     type="button"
@@ -204,16 +211,16 @@ export function EvidenceReviewSection({
                     }}
                     disabled={busy}
                   >
-                    Record disagreement
+                    {t.recordDisagreement}
                   </button>
                 </div>
                 {disagreementProfile === profile.profileCode ? (
                   <div className="mt-3 rounded-panel border border-[color:var(--color-attention-border)] bg-[color:var(--color-warning-bg)] p-3">
                     <p className="text-xs text-[color:var(--color-warning-text)]">
-                      This records clinical disagreement and preserves the original provider output.
+                      {t.disagreementNote}
                     </p>
                     <textarea
-                      aria-label={`Disagreement note for ${profile.profileCode}`}
+                      aria-label={t.disagreementLabel(profile.profileCode)}
                       className="mt-2 min-h-24 w-full rounded-panel border border-line bg-surface p-3 text-sm"
                       value={disagreementNote}
                       onChange={(event) => setDisagreementNote(event.target.value)}
@@ -229,7 +236,7 @@ export function EvidenceReviewSection({
                           setDisagreementNote("");
                         }}
                       >
-                        Save disagreement
+                        {t.saveDisagreement}
                       </button>
                       <button
                         type="button"
@@ -239,7 +246,7 @@ export function EvidenceReviewSection({
                           setDisagreementNote("");
                         }}
                       >
-                        Cancel
+                        {t.cancel}
                       </button>
                     </div>
                   </div>
@@ -253,7 +260,7 @@ export function EvidenceReviewSection({
               className="text-sm font-semibold text-brand-strong underline"
               onClick={() => setShowEvidenceDetails((value) => !value)}
             >
-              {showEvidenceDetails ? "Hide supporting evidence" : "View supporting evidence"}
+              {showEvidenceDetails ? t.hideEvidence : t.viewEvidence}
             </button>
           ) : null}
         </div>

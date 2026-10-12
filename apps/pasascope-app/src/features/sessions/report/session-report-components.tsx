@@ -1,6 +1,7 @@
 import { ArrowRight, Heart, Star } from "lucide-react";
 
 import type { WorkflowState } from "@/lib/workflow";
+import { useStatusText } from "@/features/sessions/state/use-status-text";
 
 export const reportSectionDefinitions = [
   {
@@ -24,6 +25,7 @@ export const reportSectionDefinitions = [
 ];
 
 export function WorkflowStatus({ state, backendUnavailable }: { state: WorkflowState; backendUnavailable?: boolean }) {
+  const text = useStatusText();
   if (!state.statusMessage && !state.error) return null;
   const isError = Boolean(state.error);
   const isSuccess = Boolean(state.statusMessage && !isError);
@@ -35,8 +37,8 @@ export function WorkflowStatus({ state, backendUnavailable }: { state: WorkflowS
       : "demo-note rounded-panel p-4 text-sm";
   return (
     <div className={className} role={isError ? "alert" : "status"} aria-live="polite">
-      {state.statusMessage ? <p className="font-semibold">{state.statusMessage}</p> : null}
-      {state.error ? <p className="mt-1 font-semibold">{state.error}</p> : null}
+      {state.statusMessage ? <p className="font-semibold">{text(state.statusMessage)}</p> : null}
+      {state.error ? <p className="mt-1 font-semibold">{text(state.error)}</p> : null}
     </div>
   );
 }

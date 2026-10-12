@@ -3,6 +3,8 @@
 import type { AiAssistanceArea, AiReview, WorkflowState } from "@/lib/workflow";
 import { generateAiReviewBlockedReason } from "@/lib/workflow-gates";
 import { useGateReason } from "@/lib/gate-reason";
+import { findingsPartsMessages } from "@/features/sessions/findings/findings-parts.messages";
+import { useMessages } from "@/i18n/locale-provider";
 
 /**
  * AI-assisted Progress Summary card for the Findings view. Surfaces the same
@@ -26,6 +28,7 @@ export function ProgressSummaryCard({
   const progressSummaryArea: AiAssistanceArea | undefined = aiReview?.assistanceAreas.find(
     (area) => area.area === "Progress Summary"
   );
+  const t = useMessages(findingsPartsMessages).progress;
   const gate = useGateReason();
   const aiReviewReason = gate(generateAiReviewBlockedReason(state));
 
@@ -33,14 +36,14 @@ export function ProgressSummaryCard({
     <section aria-labelledby="findings-progress-summary-title" className="rounded-shell border border-line bg-surface p-6">
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div>
-          <h2 id="findings-progress-summary-title" className="text-lg font-semibold text-ink">Progress Summary</h2>
+          <h2 id="findings-progress-summary-title" className="text-lg font-semibold text-ink">{t.title}</h2>
           <p className="mt-1 text-sm leading-6 text-ink-muted">
-            AI-assisted longitudinal context for this case, including the typical-development reference band when available.
+            {t.body}
           </p>
         </div>
         {progressSummaryArea ? (
           <span className="rounded-full bg-surface-muted px-3 py-1 text-xs font-semibold text-ink">
-            AI-assisted review
+            {t.chip}
           </span>
         ) : null}
       </div>
@@ -70,7 +73,7 @@ export function ProgressSummaryCard({
             aria-describedby={aiReviewReason ? "generate-ai-review-reason" : undefined}
             data-testid="generate-ai-review-button"
           >
-            {busy ? "Generating..." : "Generate AI-assisted review"}
+            {busy ? t.generating : t.generate}
           </button>
           {aiReviewReason ? (
             <p id="generate-ai-review-reason" role="status" className="mt-2 rounded-card border border-[color:var(--color-attention-border)] bg-[color:var(--color-warning-bg)] px-3 py-2 text-sm font-semibold text-[color:var(--color-warning-text)]">

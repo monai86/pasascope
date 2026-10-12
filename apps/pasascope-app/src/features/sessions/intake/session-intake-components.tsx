@@ -11,6 +11,7 @@ import { resolveSessionHref, sessionViews, type SessionView } from "@/features/s
 import { intakeMessages } from "@/features/sessions/intake/intake.messages";
 import { useMessages } from "@/i18n/locale-provider";
 import type { WorkflowSource, WorkflowState } from "@/lib/workflow";
+import { useStatusText } from "@/features/sessions/state/use-status-text";
 
 export function workflowSessionHref(view: "intake" | "transcript" | "findings" | "report", state: WorkflowState, reportId?: string) {
   return resolveSessionHref(view, state.backendSessionId ?? state.backendTranscriptSessionId ?? state.sessionId, {
@@ -274,6 +275,7 @@ export function SessionProgressCard({ state }: { state: WorkflowState }) {
 }
 
 export function WorkflowStatus({ state, backendUnavailable }: { state: WorkflowState; backendUnavailable?: boolean }) {
+  const text = useStatusText();
   if (!state.statusMessage && !state.error) {
     return null;
   }
@@ -289,8 +291,8 @@ export function WorkflowStatus({ state, backendUnavailable }: { state: WorkflowS
       : "demo-note rounded-card p-4 text-sm";
   return (
     <div className={className} role={isError ? "alert" : "status"} aria-live="polite">
-      {state.statusMessage ? <p className="font-semibold">{state.statusMessage}</p> : null}
-      {state.error ? <p className="mt-1 font-semibold">{state.error}</p> : null}
+      {state.statusMessage ? <p className="font-semibold">{text(state.statusMessage)}</p> : null}
+      {state.error ? <p className="mt-1 font-semibold">{text(state.error)}</p> : null}
     </div>
   );
 }

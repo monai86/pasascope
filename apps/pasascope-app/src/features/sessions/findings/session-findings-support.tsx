@@ -1,10 +1,16 @@
+"use client";
+
+import { findingsPartsMessages } from "@/features/sessions/findings/findings-parts.messages";
+import { useFindingsLabel } from "@/features/sessions/findings/use-findings-label";
 import { resolveSessionHref } from "@/features/sessions/state/session-view";
+import { useMessages } from "@/i18n/locale-provider";
 import {
   DECISION_SUPPORT_ONLY,
   INTERPRETATION_HINT,
   THERAPIST_INTERPRETATION_REQUIRED,
 } from "@/lib/clinical-safety-copy";
 import type { WorkflowState } from "@/lib/workflow";
+import { useStatusText } from "@/features/sessions/state/use-status-text";
 
 export function buildLinguisticSignalCards(state: WorkflowState) {
   if (state.featureSignals.length) return state.featureSignals;
@@ -133,14 +139,16 @@ const evidenceStateTitle = {
 } as const;
 
 export function EvidenceAvailabilityView({ availability }: { availability: NonNullable<WorkflowState["mlDecisionSupport"]>["profileEvidence"][number]["availability"] }) {
+  const t = useMessages(findingsPartsMessages).availability;
+  const label = useFindingsLabel();
   return (
     <div className="mt-2 text-sm text-ink">
-      <p className="font-semibold">{evidenceStateTitle[availability.state]}</p>
+      <p className="font-semibold">{label(evidenceStateTitle[availability.state])}</p>
       <p>{availability.message}</p>
       <p className="mt-1 text-xs font-semibold">
-        {availability.workflowCanContinue ? "Feature and report workflow can continue." : "Workflow action is required before continuing."}
+        {availability.workflowCanContinue ? t.canContinue : t.actionRequired}
       </p>
-      {availability.nextStep ? <p className="mt-1 text-xs text-ink-muted">Next: {availability.nextStep}</p> : null}
+      {availability.nextStep ? <p className="mt-1 text-xs text-ink-muted">{t.next(availability.nextStep)}</p> : null}
     </div>
   );
 }
@@ -170,6 +178,7 @@ export function featureLabel(value: string) {
 
 
 export function WorkflowStatus({ state, backendUnavailable }: { state: WorkflowState; backendUnavailable?: boolean }) {
+  const text = useStatusText();
   if (!state.statusMessage && !state.error) {
     return null;
   }
@@ -185,8 +194,8 @@ export function WorkflowStatus({ state, backendUnavailable }: { state: WorkflowS
       : "demo-note rounded-panel p-4 text-sm";
   return (
     <div className={className} role={isError ? "alert" : "status"} aria-live="polite">
-      {state.statusMessage ? <p className="font-semibold">{state.statusMessage}</p> : null}
-      {state.error ? <p className="mt-1 font-semibold">{state.error}</p> : null}
+      {state.statusMessage ? <p className="font-semibold">{text(state.statusMessage)}</p> : null}
+      {state.error ? <p className="mt-1 font-semibold">{text(state.error)}</p> : null}
     </div>
   );
 }

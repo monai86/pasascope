@@ -34,6 +34,7 @@ import { formatDate } from "@/i18n/format";
 import { useLocale, useMessages } from "@/i18n/locale-provider";
 import type { WorkflowState } from "@/lib/workflow";
 import { useGateReason } from "@/lib/gate-reason";
+import { useFindingsLabel } from "@/features/sessions/findings/use-findings-label";
 
 export function SessionFindingsView({
   sessionContext,
@@ -90,6 +91,7 @@ export function SessionFindingsView({
   const reportReady = isResultsReportReady(state);
   const missingReferenceData = hasMissingReferenceData(currentFindingsState);
   const gate = useGateReason();
+  const label = useFindingsLabel();
   const regenerateFindingsReason = gate(regenerateFindingsBlockedReason(state));
   const evidenceReviewReason = gate(generateEvidenceReviewBlockedReason({
     backendUnavailable,
@@ -216,7 +218,7 @@ export function SessionFindingsView({
           <dl className="grid gap-px sm:grid-cols-2 xl:grid-cols-4">
             <div className="bg-surface px-4 py-3">
               <dt className="text-xs font-medium uppercase tracking-[0.08em] text-ink-subtle">{t.summary.transcriptQuality}</dt>
-              <dd className="mt-1 font-semibold text-ink">{transcriptQualityLabel(state)}</dd>
+              <dd className="mt-1 font-semibold text-ink">{label(transcriptQualityLabel(state))}</dd>
               <p className="mt-1 text-xs leading-5 text-ink-muted">{state.qaSummary ?? safety.THERAPIST_REVIEW_REMAINS_REQUIRED}</p>
             </div>
             <div className="bg-surface px-4 py-3">
@@ -246,7 +248,7 @@ export function SessionFindingsView({
               <span className="mt-0.5 block text-sm text-ink-muted">{t.provenance.subtitle}</span>
             </span>
             <span className={`rounded-full px-3 py-1 text-xs font-semibold ${findingsCurrent ? "bg-[color:var(--color-success-bg)] text-[color:var(--color-success-text)]" : "bg-[color:var(--color-warning-bg)] text-[color:var(--color-warning-text)]"}`}>
-              {analysisDispositionLabel(state.analysisStatus)}
+              {label(analysisDispositionLabel(state.analysisStatus))}
             </span>
           </summary>
           <section aria-label={t.provenance.regionLabel} className="border-t border-line p-5">
@@ -254,8 +256,8 @@ export function SessionFindingsView({
               {t.provenance.note}
             </p>
             <dl className="mt-4 grid gap-3 sm:grid-cols-2 xl:grid-cols-5">
-              <ProvenanceItem label={t.provenance.reviewedTranscript} value={versionLabel(state.backendTranscriptVersion)} />
-              <ProvenanceItem label={t.provenance.findingsTranscript} value={versionLabel(state.featureTranscriptVersion)} />
+              <ProvenanceItem label={t.provenance.reviewedTranscript} value={label(versionLabel(state.backendTranscriptVersion))} />
+              <ProvenanceItem label={t.provenance.findingsTranscript} value={label(versionLabel(state.featureTranscriptVersion))} />
               <ProvenanceItem label={t.provenance.featureResultId} value={state.featureSetId ?? t.provenance.unavailable} />
               <ProvenanceItem
                 label={t.provenance.schemaVersion}
@@ -263,7 +265,7 @@ export function SessionFindingsView({
               />
               <ProvenanceItem
                 label={t.provenance.aiDisposition}
-                value={findingsCurrent ? evidenceDisposition(currentFindingsState.mlDecisionSupport) : analysisDispositionLabel(state.analysisStatus)}
+                value={label(findingsCurrent ? evidenceDisposition(currentFindingsState.mlDecisionSupport) : analysisDispositionLabel(state.analysisStatus))}
               />
             </dl>
           </section>

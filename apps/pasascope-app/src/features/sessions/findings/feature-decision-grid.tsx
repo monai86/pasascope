@@ -2,6 +2,9 @@
 
 import { useState } from "react";
 
+import { findingsPartsMessages } from "@/features/sessions/findings/findings-parts.messages";
+import { useFindingsLabel } from "@/features/sessions/findings/use-findings-label";
+import { useMessages } from "@/i18n/locale-provider";
 import type { FeatureSignal } from "@/lib/workflow";
 
 /**
@@ -15,10 +18,13 @@ import type { FeatureSignal } from "@/lib/workflow";
  */
 export function FeatureDecisionGrid({ signals }: { signals: FeatureSignal[] }) {
   const [expandedFeature, setExpandedFeature] = useState<string | null>(null);
+  const t = useMessages(findingsPartsMessages).grid;
+  const label = useFindingsLabel();
 
-  const groups = decisionGroups.map((group) => ({
-    ...group,
-    signals: signals.filter((signal) => groupId(signal.featureName) === group.id),
+  const groups = decisionGroupIds.map((id) => ({
+    id,
+    ...t.groups[id],
+    signals: signals.filter((signal) => groupId(signal.featureName) === id),
   }));
 
   return (
@@ -30,14 +36,14 @@ export function FeatureDecisionGrid({ signals }: { signals: FeatureSignal[] }) {
       <div className="flex flex-wrap items-baseline justify-between gap-2 px-4 py-3 sm:px-5">
         <div>
           <h2 id="feature-decision-grid-title" className="text-lg font-semibold text-ink">
-            Language sample at a glance
+            {t.title}
           </h2>
           <p className="mt-0.5 text-sm text-ink-muted">
-            Every extracted value from this reviewed sample, grouped for quick comparison.
+            {t.body}
           </p>
         </div>
         <span className="rounded-full bg-brand-soft px-2.5 py-1 text-xs font-semibold text-brand-strong">
-          {signals.length} signals
+          {t.signals(signals.length)}
         </span>
       </div>
 
@@ -64,7 +70,7 @@ export function FeatureDecisionGrid({ signals }: { signals: FeatureSignal[] }) {
                           <dd className="mt-0.5 text-sm leading-5 text-ink-muted">{signal.interpretationHint || signal.description}</dd>
                           {signal.referenceText ? (
                             <dd className={`mt-1 text-xs leading-5 ${signal.referenceText === "Reference comparison unavailable" ? "font-medium text-[color:var(--color-warning-text)]" : "text-ink-muted"}`}>
-                              {signal.referenceText}
+                              {label(signal.referenceText)}
                             </dd>
                           ) : null}
                         </div>
@@ -79,24 +85,24 @@ export function FeatureDecisionGrid({ signals }: { signals: FeatureSignal[] }) {
                         aria-expanded={expanded}
                         onClick={() => setExpandedFeature(expanded ? null : signal.featureName)}
                       >
-                        {expanded ? "Hide evidence and limitations" : "Evidence and limitations"}
+                        {expanded ? t.hide : t.show}
                       </button>
                       {expanded ? (
                         <div className="mt-2 space-y-3 rounded-panel border border-line bg-surface p-3 text-sm text-ink-muted">
                           <div>
-                            <h4 className="font-semibold text-ink">Method</h4>
+                            <h4 className="font-semibold text-ink">{t.method}</h4>
                             <p className="mt-1">{signal.calculationMethod}</p>
                           </div>
                           {signal.limitations.length ? (
                             <div>
-                              <h4 className="font-semibold text-ink">Limitations</h4>
+                              <h4 className="font-semibold text-ink">{t.limitations}</h4>
                               <ul className="mt-1 list-disc space-y-1 pl-5">
                                 {signal.limitations.map((limitation) => <li key={limitation}>{limitation}</li>)}
                               </ul>
                             </div>
                           ) : null}
                           <div>
-                            <h4 className="font-semibold text-ink">Clinical interpretation caution</h4>
+                            <h4 className="font-semibold text-ink">{t.caution}</h4>
                             <p className="mt-1">{signal.clinicalInterpretationCaution}</p>
                           </div>
                         </div>
@@ -107,7 +113,7 @@ export function FeatureDecisionGrid({ signals }: { signals: FeatureSignal[] }) {
               </dl>
             ) : (
               <p className="border-t border-line px-4 py-2.5 text-sm text-ink-muted sm:px-5">
-                No features from this group in this session.
+                {t.emptyGroup}
               </p>
             )}
           </section>
@@ -115,21 +121,15 @@ export function FeatureDecisionGrid({ signals }: { signals: FeatureSignal[] }) {
       </div>
 
       <p className="border-t border-line bg-surface px-4 py-2.5 text-xs leading-5 text-ink-muted sm:px-5">
-        Values are descriptive cues from the reviewed transcript, not diagnostic results. Compare them with therapist context.
+        {t.footer}
       </p>
     </section>
   );
 }
 
-const decisionGroups = [
-  { id: "language-sample", label: "Language sample", caution: "Interpret alongside sample length and elicitation context." },
-  { id: "lexical-use", label: "Lexical use", caution: "Vocabulary cues depend on the reviewed transcript sample." },
-  { id: "interaction", label: "Interaction", caution: "Review with speaker roles and interaction context." },
-  { id: "speech-intelligibility", label: "Speech / intelligibility", caution: "Transcript cues are not a substitute for direct speech assessment." },
-  { id: "data-quality", label: "Data quality", caution: "Resolve material data-quality concerns before report use." },
-] as const;
+const decisionGroupIds = ["language-sample", "lexical-use", "interaction", "speech-intelligibility", "data-quality"] as const;
 
-function groupId(featureName: string): (typeof decisionGroups)[number]["id"] {
+function groupId(featureName: string): (typeof decisionGroupIds)[number] {
   const name = featureName.toLowerCase();
   if (/(unclear|confidence|missing|timing|timestamp|quality|completeness|coverage)/.test(name)) return "data-quality";
   if (/(echolalia|repetition|pronoun|intellig|speech|phon|articul)/.test(name)) return "speech-intelligibility";
