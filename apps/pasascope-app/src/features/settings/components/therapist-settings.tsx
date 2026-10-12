@@ -16,6 +16,8 @@ import {
 import type { SharedSettingsSection } from "@/features/settings/services/settings-access";
 import { settingsMessages } from "@/features/settings/settings.messages";
 import { useMessages } from "@/i18n/locale-provider";
+import { useConfirmedRuntimeSettings } from "@/lib/confirmed-runtime-settings";
+import { useSupabaseAccessSession } from "@/lib/use-supabase-access-session";
 import { useSafetyCopy } from "@/lib/safety-copy";
 
 const SECTION_ICONS: Record<SharedSettingsSection, LucideIcon> = {
@@ -43,6 +45,21 @@ export function TherapistSettings({ section }: { section: SharedSettingsSection 
   const t = useMessages(settingsMessages);
   const safety = useSafetyCopy();
   const card = t.cards[section];
+  const runtimeSettings = useConfirmedRuntimeSettings();
+  const supabaseSession = useSupabaseAccessSession();
+  // With real sign-in, show who is signed in rather than the demo values.
+  const signedIn = runtimeSettings?.auth_mode === "supabase";
+  const signedInValues: Partial<Record<SharedSettingsSection, Record<number, string>>> = signedIn
+    ? {
+        account: {
+          0: supabaseSession?.displayName ?? supabaseSession?.email ?? t.signedIn.fallbackName,
+          1: supabaseSession?.role ?? card.lines[1][1],
+          3: t.signedIn.dataMode,
+        },
+        organization: { 1: t.signedIn.dataMode },
+        privacy: { 0: t.signedIn.authentication },
+      }
+    : {};
   const settingsCard = (
     <SettingsCard icon={SECTION_ICONS[section]} title={t.sections[section]} description={card.description}>
       {card.lines.map(([label, value], index) => (
@@ -50,7 +67,7 @@ export function TherapistSettings({ section }: { section: SharedSettingsSection 
           key={label}
           label={label}
           // The clinical boundary line shows the registered safety label.
-          value={value || safety.DECISION_SUPPORT_ONLY_LABEL}
+          value={signedInValues[section]?.[index] ?? (value || safety.DECISION_SUPPORT_ONLY_LABEL)}
           tone={LINE_TONES[section]?.[index]}
         />
       ))}

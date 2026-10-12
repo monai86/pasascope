@@ -418,8 +418,7 @@ export function CaseList({
                 </div>
                 <div className="rounded-xl border border-brand-border bg-brand-soft p-4">
                   <p className="text-xs font-bold uppercase tracking-wider text-brand">{t.columns.nextAction}</p>
-                  <p className="mt-1 font-bold text-ink text-sm">{t.actions[nextAction(selectedCase).key]}</p>
-                  <ActionButton href={nextAction(selectedCase).href} className="mt-3 w-full" tone="primary">
+                  <ActionButton href={nextAction(selectedCase).href} className="mt-2 w-full" tone="primary">
                     {t.actions[nextAction(selectedCase).key]}
                   </ActionButton>
                 </div>

@@ -10,6 +10,8 @@ type SettingsCopy = {
   /** One card per shared section; `lines` keep the order the screen renders them in. */
   cards: Record<SharedSettingsSection, { description: string; lines: readonly Line[] }>;
   privacyRequests: { title: string; unavailable: string; body: string; noClaim: string };
+  /** Values shown instead of the demo ones when the workspace uses real sign-in. */
+  signedIn: { fallbackName: string; dataMode: string; authentication: string };
 };
 
 export const settingsMessages = defineMessages<SettingsCopy>({
@@ -110,6 +112,7 @@ export const settingsMessages = defineMessages<SettingsCopy>({
       body: "Production request history must come from a backend-confirmed authenticated identity; this screen does not infer an empty history.",
       noClaim: "No HIPAA compliance claim is made by this prototype workspace.",
     },
+    signedIn: { fallbackName: "Workspace user", dataMode: "Signed-in workspace", authentication: "Supabase sign-in" },
   },
   th: {
     page: {
@@ -208,5 +211,6 @@ export const settingsMessages = defineMessages<SettingsCopy>({
       body: "ประวัติคำขอในการใช้งานจริงต้องมาจากตัวตนที่ระบบยืนยันแล้ว หน้านี้จะไม่สรุปเองว่าประวัติว่างเปล่า",
       noClaim: "พื้นที่ทำงานต้นแบบนี้ไม่ได้อ้างว่าเป็นไปตามข้อกำหนด HIPAA",
     },
+    signedIn: { fallbackName: "ผู้ใช้พื้นที่ทำงาน", dataMode: "พื้นที่ทำงานที่ลงชื่อเข้าใช้", authentication: "ลงชื่อเข้าใช้ด้วย Supabase" },
   },
 });

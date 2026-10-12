@@ -124,9 +124,9 @@ export function SessionFindingsView({
           </p>
           <div className="mt-5 flex flex-wrap justify-center gap-3">
             <PrimaryActionButton href={workflowSessionHref("intake", state)} icon={FileText}>{t.empty.addTranscript}</PrimaryActionButton>
-            <PrimaryActionButton href={workflowSessionHref("transcript", state)} icon={FileText}>{t.empty.reviewTranscript}</PrimaryActionButton>
+            <Button href={workflowSessionHref("transcript", state)} icon={FileText} variant="secondary">{t.empty.reviewTranscript}</Button>
           </div>
-          <PrimaryActionButton icon={ShieldCheck} className="mt-3" disabled>{t.actions.generateReport}</PrimaryActionButton>
+          <Button icon={ShieldCheck} variant="secondary" className="mt-3" disabled>{t.actions.generateReport}</Button>
         </WorkspacePanel>
       </div>
     );
