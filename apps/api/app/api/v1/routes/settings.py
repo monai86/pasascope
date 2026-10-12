@@ -17,9 +17,12 @@ def settings():
     config = get_settings()
     audio_upload = _audio_upload_capability(config)
     local_whisper = asr_provider_registry.get("local_whisper").check_availability().available
+    hosted_whisper = asr_provider_registry.get("hosted_whisper").check_availability().available
+    # On-device transcription is preferred when both are switched on.
+    transcription_provider = "local_whisper" if local_whisper else "hosted_whisper" if hosted_whisper else None
     transcription = (
         "experimental"
-        if audio_upload == "experimental" and (local_whisper or config.mock_mode)
+        if audio_upload == "experimental" and (transcription_provider or config.mock_mode)
         else "unavailable"
     )
     return {
@@ -53,7 +56,9 @@ def settings():
         },
         "pipeline_settings": {
             "audio_processing": "experimental_async",
-            "transcription_provider": "local_whisper" if local_whisper else None,
+            "transcription_provider": transcription_provider,
+            # True when recordings are sent outside this deployment to be transcribed.
+            "transcription_external": transcription_provider == "hosted_whisper",
             "job_queue_mode": config.job_queue_mode,
             "repository_mode": config.repository_mode,
             "storage_mode": config.storage_mode,

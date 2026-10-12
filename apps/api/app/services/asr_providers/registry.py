@@ -69,11 +69,13 @@ class AsrProviderRegistry:
 # ---------------------------------------------------------------------------
 from app.services.asr_providers.mock_provider import MockTranscriptionProvider  # noqa: E402
 from app.services.asr_providers.local_whisper_provider import LocalWhisperProvider  # noqa: E402
+from app.services.asr_providers.hosted_whisper_provider import HostedWhisperProvider  # noqa: E402
 from app.services.asr_providers.manual_provider import ManualTranscriptionProvider  # noqa: E402
 
 asr_provider_registry = AsrProviderRegistry()
 asr_provider_registry.register(MockTranscriptionProvider())
 asr_provider_registry.register(LocalWhisperProvider())
+asr_provider_registry.register(HostedWhisperProvider())
 asr_provider_registry.register(ManualTranscriptionProvider())
 
 

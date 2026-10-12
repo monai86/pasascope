@@ -201,6 +201,12 @@ class Settings(BaseModel):
     asr_local_whisper_enabled: bool = False
     asr_whisper_model_size: str = "medium"
     asr_language_strategy: str = "thai"
+    # Hosted Whisper sends the recording to an external service. Off unless the
+    # operator turns it on and discloses it to users.
+    asr_hosted_enabled: bool = False
+    asr_hosted_base_url: str = "https://api.groq.com/openai/v1"
+    asr_hosted_api_key: str = ""
+    asr_hosted_model: str = "whisper-large-v3"
     redis_url: str = DEFAULT_REDIS_URL
     storage_mode: str = "local_private"
     local_storage_root: str = ".local/storage"
@@ -287,6 +293,10 @@ class Settings(BaseModel):
             raise ValueError("Audio backup mode must be 'none' or 'supabase'.")
         if self.audio_backup_mode == "supabase" and not self.has_valid_audio_backup_target:
             raise ValueError("Audio backup to Supabase needs a valid storage URL, bucket and service role key.")
+        if self.asr_hosted_enabled and not (
+            self.asr_hosted_api_key.strip() and self.asr_hosted_base_url.startswith("https://")
+        ):
+            raise ValueError("Hosted transcription needs an API key and an https base URL.")
         if self.public_signup and (self.supabase_require_mfa or self.supabase_require_invitation):
             raise ValueError("Public sign-up cannot be combined with required MFA or invitation.")
         if self.repository_mode in {"sql", "sqlalchemy"} and self.web_concurrency > 1:
@@ -457,6 +467,12 @@ class Settings(BaseModel):
             == "true",
             asr_whisper_model_size=getenv_compat("PASASCOPE_ASR_WHISPER_MODEL_SIZE", default="medium"),
             asr_language_strategy=getenv_compat("PASASCOPE_ASR_LANGUAGE_STRATEGY", default="thai"),
+            asr_hosted_enabled=getenv_compat("PASASCOPE_ASR_HOSTED_ENABLED", default="false").lower() == "true",
+            asr_hosted_base_url=getenv_compat(
+                "PASASCOPE_ASR_HOSTED_BASE_URL", default="https://api.groq.com/openai/v1"
+            ).rstrip("/"),
+            asr_hosted_api_key=getenv_compat("PASASCOPE_ASR_HOSTED_API_KEY", default=""),
+            asr_hosted_model=getenv_compat("PASASCOPE_ASR_HOSTED_MODEL", default="whisper-large-v3"),
             redis_url=os.getenv("REDIS_URL", DEFAULT_REDIS_URL),
             storage_mode=getenv_compat("PASASCOPE_STORAGE_MODE", "THERAPIST_APP_V2_STORAGE_MODE", "local_private"),
             local_storage_root=getenv_compat(

@@ -19,6 +19,26 @@ WAVEFORM_POINTS_PER_SECOND = 50
 WAVEFORM_DECODE_RATE = 8000
 
 
+def _decode_mono(path: Path, sampling_rate: int):
+    """Decode a recording to mono float32 samples with PyAV.
+
+    PyAV is imported on its own, so a host without the Whisper stack can still
+    draw waveforms.
+    """
+    import av
+    import numpy as np
+
+    resampler = av.AudioResampler(format="s16", layout="mono", rate=sampling_rate)
+    chunks = []
+    with av.open(str(path), mode="r") as container:
+        for frame in container.decode(audio=0):
+            chunks.extend(resampled.to_ndarray().reshape(-1) for resampled in resampler.resample(frame))
+        chunks.extend(resampled.to_ndarray().reshape(-1) for resampled in resampler.resample(None))
+    if not chunks:
+        return np.zeros(0, dtype=np.float32)
+    return np.concatenate(chunks).astype(np.float32) / 32768.0
+
+
 def recording_peaks(path: Path, points_per_second: int = WAVEFORM_POINTS_PER_SECOND) -> tuple[bytes, float] | None:
     """Peak envelope of a stored recording as signed int8 (0-127), and its duration.
 
@@ -28,9 +48,8 @@ def recording_peaks(path: Path, points_per_second: int = WAVEFORM_POINTS_PER_SEC
     """
     try:
         import numpy as np
-        from faster_whisper.audio import decode_audio
 
-        samples = decode_audio(str(path), sampling_rate=WAVEFORM_DECODE_RATE)
+        samples = _decode_mono(path, WAVEFORM_DECODE_RATE)
     except Exception:
         return None
     window = WAVEFORM_DECODE_RATE // points_per_second

@@ -1,0 +1,7 @@
+# Packages the API needs when transcription runs on a hosted service.
+# The on-device Whisper stack (torch, faster-whisper, speechbrain) is left out
+# so the image fits a 512 MB host; use the root requirements.txt for that.
+numpy>=1.24
+pythainlp>=4.0.0
+python-multipart>=0.0.9
+av>=11.0.0

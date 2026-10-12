@@ -12,11 +12,12 @@ EXPECTED_PROVIDER_IDS = frozenset(
     {
         "mock",
         "local_whisper",
+        "hosted_whisper",
         "manual",
     }
 )
 
-# Local Whisper is opt-in, so only the demo and manual-entry providers are
+# Local and hosted Whisper are opt-in, so only the demo and manual-entry providers are
 # available by default.
 EXPECTED_AVAILABLE_PROVIDER_IDS = frozenset({"mock", "manual"})
 
