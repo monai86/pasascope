@@ -4,14 +4,6 @@ type RecorderStatus = "recording" | "paused" | "stopped" | "interrupted" | "idle
 type JobStatus = "queued" | "processing" | "completed" | "failed" | "cancelled" | "unavailable";
 
 type AudioCaptureCopy = {
-  consent: {
-    signer: string;
-    signerPlaceholder: string;
-    date: string;
-    notes: string;
-    notesPlaceholder: string;
-    verifying: string;
-  };
   recorder: {
     status: Record<RecorderStatus, string>;
     amplitude: string;
@@ -58,14 +50,6 @@ type AudioCaptureCopy = {
 
 export const audioCaptureMessages = defineMessages<AudioCaptureCopy>({
   en: {
-    consent: {
-      signer: "Signer relationship",
-      signerPlaceholder: "e.g. Parent, Guardian",
-      date: "Consent date",
-      notes: "Verification notes",
-      notesPlaceholder: "Add any verification comments, reference document numbers, or meeting details here.",
-      verifying: "Verifying...",
-    },
     recorder: {
       status: {
         recording: "Recording",
@@ -135,14 +119,6 @@ export const audioCaptureMessages = defineMessages<AudioCaptureCopy>({
     },
   },
   th: {
-    consent: {
-      signer: "ความสัมพันธ์ของผู้ลงนาม",
-      signerPlaceholder: "เช่น พ่อแม่ ผู้ปกครอง",
-      date: "วันที่ให้ความยินยอม",
-      notes: "บันทึกการยืนยัน",
-      notesPlaceholder: "ใส่หมายเหตุการยืนยัน เลขที่เอกสารอ้างอิง หรือรายละเอียดการนัดพบได้ที่นี่",
-      verifying: "กำลังยืนยัน...",
-    },
     recorder: {
       status: {
         recording: "กำลังบันทึกเสียง",

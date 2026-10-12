@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { useMemo, useState } from "react";
 
-import { dashboardMessages } from "@/features/dashboard/dashboard.messages";
+import { progressChartMessages } from "@/features/dashboard/progress-chart.messages";
 import type { Locale } from "@/i18n/config";
 import { useLocale, useMessages } from "@/i18n/locale-provider";
 import type {
@@ -59,7 +59,7 @@ function ChartGeometry({
   reference?: { q1: number; median: number; q3: number } | null;
   caseId: string;
 }) {
-  const t = useMessages(dashboardMessages).chart;
+  const t = useMessages(progressChartMessages);
   const { locale } = useLocale();
   const values = points.map((point) => point.value);
   const rawMin = Math.min(...values, ...(reference ? [reference.q1, reference.q3] : []));
@@ -158,7 +158,7 @@ function ChartGeometry({
 }
 
 export function LanguageProgressChart({ trends }: { trends?: Trends }) {
-  const t = useMessages(dashboardMessages).chart;
+  const t = useMessages(progressChartMessages);
   const { locale } = useLocale();
   const safeTrends: Trends = {
     features: trends?.features ?? [],

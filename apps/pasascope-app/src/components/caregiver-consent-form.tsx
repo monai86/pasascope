@@ -3,7 +3,7 @@
 import type { FormEvent } from "react";
 
 import { ActionButton } from "@/components/action-button";
-import { audioCaptureMessages } from "@/components/audio-capture.messages";
+import { consentMessages } from "@/components/consent.messages";
 import { useLocale, useMessages } from "@/i18n/locale-provider";
 
 /**
@@ -59,7 +59,7 @@ export function CaregiverConsentForm({
   const signerId = `${idPrefix}-consent-signer`;
   const dateId = `${idPrefix}-consent-date`;
   const notesId = `${idPrefix}-consent-notes`;
-  const t = useMessages(audioCaptureMessages).consent;
+  const t = useMessages(consentMessages);
   const thaiFirst = useLocale().locale === "th";
   return (
     <form onSubmit={onSubmit} className="space-y-4">
