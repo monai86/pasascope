@@ -1,5 +1,18 @@
 # Changelog
 
+## [Unreleased]
+
+Public app mode on `feat/public-app`: opt-in settings that turn PasaScope into a sign-up-and-use web app. The defaults keep the invitation-only, gated behaviour.
+
+### Added
+- **Public sign-up** (`PASASCOPE_PUBLIC_SIGNUP=true`): any verified Supabase user (email and password, or Google) gets a personal workspace, `personal_<user id>`, with no organization, invitation or MFA. The workspace is derived from the token's subject, so organization claims in a token are ignored and one user cannot open another's records.
+- **Open review gates** (`PASASCOPE_REVIEW_GATES=open`): the Transcript step goes from a saved transcript straight to "Analyse this transcript", and a saved draft report can be exported and printed. Transcript attestation is recorded automatically when analysis starts and is marked as automatic; report sign-off is no longer shown.
+- **Recordings survive a restart** (`PASASCOPE_AUDIO_BACKUP_MODE=supabase`): each verified upload is also written to a private Supabase Storage bucket, fetched back when the local file is missing, and removed from the bucket when the case's consent is withdrawn.
+- **Hugging Face Space deployment** for the API and Whisper: `deploy/hf-space/`, `scripts/build_hf_space_bundle.sh` (a 4 MB bundle without the research corpora) and step-by-step setup in `docs/PUBLIC_DEPLOYMENT.md`.
+
+### Changed
+- In public sign-up mode the sign-in form drops the role tabs and the invitation-only notice, lands on Today, and states what the account stores; the organization switcher is hidden; the caregiver consent form is the confirmation tick alone.
+
 ## [v1.7.2] - 2026-10-12
 
 Therapist app redesign: a new visual system, a linear session workflow and a Thai/English interface.
