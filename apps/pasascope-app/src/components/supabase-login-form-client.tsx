@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { useRouter } from "next/navigation";
 import {
   ArrowRight,
@@ -587,6 +588,7 @@ export function SupabaseLoginFormClient({
         <div className="mt-4 space-y-2 border-t border-line pt-3 text-xs leading-relaxed text-ink-muted">
           <p>{t.publicNote.stored}</p>
           <p>{t.publicNote.boundary}</p>
+          <p><Link href="/privacy" className="font-semibold text-brand underline">{t.publicNote.privacy}</Link></p>
         </div>
       ) : (
       <div className="mt-4 pt-3 border-t border-line">

@@ -29,7 +29,7 @@ PasaScope เป็นต้นแบบเพื่อการวิจัย�
 1. **Authentication → Sign In / Providers**
    - เปิด *Allow new users to sign up*
    - Email: เปิดใช้ ถ้าอยากให้สมัครแล้วเข้าได้ทันทีให้ปิด *Confirm email*
-   - Google: เปิดใช้ แล้วใส่ Client ID / Secret จาก Google Cloud Console → Google Auth Platform → Clients (Authorized redirect URI คือ `https://<ref>.supabase.co/auth/v1/callback`) ระหว่างที่แอปใน Google ยังเป็นสถานะ Testing จะล็อกอินด้วย Google ได้เฉพาะอีเมลที่เพิ่มเป็น Test users การเผยแพร่ต้องมีลิงก์หน้าแรกและหน้านโยบายความเป็นส่วนตัวในหน้า Branding ก่อน
+   - Google: เปิดใช้ แล้วใส่ Client ID / Secret จาก Google Cloud Console → Google Auth Platform → Clients (Authorized redirect URI คือ `https://<ref>.supabase.co/auth/v1/callback`) ระหว่างที่แอปใน Google ยังเป็นสถานะ Testing จะล็อกอินด้วย Google ได้เฉพาะอีเมลที่เพิ่มเป็น Test users การเผยแพร่ต้องมีลิงก์หน้าแรกและหน้านโยบายความเป็นส่วนตัว (`https://<project>.vercel.app/privacy`) ในหน้า Branding ก่อน
 2. **Authentication → URL Configuration**
    - *Site URL* = โดเมนของเว็บ เช่น `https://<project>.vercel.app`
    - *Redirect URLs* เพิ่ม `https://<project>.vercel.app/today` และ `https://<project>.vercel.app/login`
@@ -81,6 +81,7 @@ PasaScope เป็นต้นแบบเพื่อการวิจัย�
    | `NEXT_PUBLIC_SUPABASE_ANON_KEY` | anon / publishable key |
    | `NEXT_PUBLIC_SITE_URL` | `https://<project>.vercel.app` |
    | `NEXT_PUBLIC_DEMO_MODE` | `false` |
+   | `NEXT_PUBLIC_CONTACT_EMAIL` | (ไม่บังคับ) อีเมลสำหรับคำถามและคำขอลบข้อมูล แสดงในหน้า `/privacy` |
 3. เลือก branch ที่จะ deploy เป็น production แล้วกด Redeploy
 
 ## ตรวจหลังขึ้นจริง

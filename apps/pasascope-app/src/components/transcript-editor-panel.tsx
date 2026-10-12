@@ -1,5 +1,7 @@
 "use client";
 
+import { speakerBulkMessages } from "@/components/transcript-speaker-bulk.messages";
+import { useMessages } from "@/i18n/locale-provider";
 import { useCallback, useMemo, useRef, useState } from "react";
 import { FileCode, ListFilter, Plus, Table } from "lucide-react";
 
@@ -37,6 +39,10 @@ type TranscriptEditorPanelProps = {
   audioUrl?: string;
 };
 
+function hasNoSpeaker(line: TranscriptLine): boolean {
+  return !line.speaker.trim() || line.speaker === "UNK";
+}
+
 export function TranscriptEditorPanel({
   lines,
   qaStatus,
@@ -53,6 +59,7 @@ export function TranscriptEditorPanel({
   audioUrl
 }: TranscriptEditorPanelProps) {
   const audioRef = useRef<HTMLAudioElement>(null);
+  const bulk = useMessages(speakerBulkMessages);
   const [activeLineId, setActiveLineId] = useState<string | null>(null);
   const [selectedLineId, setSelectedLineId] = useState<string | null>(lines[0]?.lineId ?? null);
   const [selectedFilter, setSelectedFilter] = useState<TranscriptFilter>("all");
@@ -91,6 +98,12 @@ export function TranscriptEditorPanel({
   const updateLine = useCallback((index: number, patch: Partial<TranscriptLine>) => {
     onChangeRef.current(linesRef.current.map((line, lineIndex) => lineIndex === index ? { ...line, ...patch } : line));
   }, []);
+  const unassignedSpeakerCount = lines.filter(hasNoSpeaker).length;
+  // A draft without speaker separation labels every line unknown; this sets
+  // them all to the therapist's choice so only the exceptions need editing.
+  function assignUnknownSpeakers(speaker: "CHI" | "THER") {
+    onChangeRef.current(linesRef.current.map((line) => (hasNoSpeaker(line) ? { ...line, speaker } : line)));
+  }
 
   function addLine() {
     onChange([
@@ -376,6 +389,20 @@ export function TranscriptEditorPanel({
           </select>
           <span className="text-xs text-ink-subtle" aria-live="polite">{visibleLines.length} shown</span>
         </div>
+
+        {unassignedSpeakerCount > 0 ? (
+          <div className="mt-3 flex flex-wrap items-center gap-2 rounded-card border border-[color:var(--color-attention-border)] bg-[color:var(--color-warning-bg)] p-3 text-sm text-[color:var(--color-warning-text)]">
+            <span className="font-semibold">{bulk.unassigned(unassignedSpeakerCount)}</span>
+            <span>{bulk.setAllTo}</span>
+            <button type="button" disabled={busy} onClick={() => assignUnknownSpeakers("CHI")} className="min-h-11 rounded-control border border-line bg-surface px-3 text-sm font-semibold text-ink disabled:opacity-60">
+              {bulk.child}
+            </button>
+            <button type="button" disabled={busy} onClick={() => assignUnknownSpeakers("THER")} className="min-h-11 rounded-control border border-line bg-surface px-3 text-sm font-semibold text-ink disabled:opacity-60">
+              {bulk.therapist}
+            </button>
+            <span className="basis-full text-xs">{bulk.hint}</span>
+          </div>
+        ) : null}
 
         <TranscriptLineList
           lines={lines}
