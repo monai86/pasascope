@@ -25,6 +25,8 @@ import { getSupabaseBrowserClient } from "@/lib/supabase-browser-client";
 import { getSupabaseBrowserClientConfigStatus } from "@/lib/supabase-browser-client-config";
 import { publishSupabaseSessionPayload } from "@/lib/supabase-session-source";
 import { useSupabaseAccessSession } from "@/lib/use-supabase-access-session";
+import { supabaseLoginMessages } from "@/components/supabase-login.messages";
+import { useMessages } from "@/i18n/locale-provider";
 
 function resolvePostLoginRoute(role: unknown): string {
   if (role === "org_admin" || role === "platform_operator") {
@@ -54,12 +56,12 @@ export function SupabaseLoginFormClient({
   const invitationOnly = runtimeSettings.access_model?.invitation_only !== false;
   const browserClientStatus = getSupabaseBrowserClientConfigStatus();
   const [mode, setMode] = useState<"signin" | "signup">("signin");
+  const t = useMessages(supabaseLoginMessages);
   const [roleTab, setRoleTab] = useState<"slp" | "admin" | "parent">("slp");
   const [fullName, setFullName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
-  const [trustDevice, setTrustDevice] = useState(true);
   const [showPolicy, setShowPolicy] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isGoogleSubmitting, setIsGoogleSubmitting] = useState(false);
@@ -128,7 +130,7 @@ export function SupabaseLoginFormClient({
     }
 
     if (typeof browserClient?.auth?.signInWithOAuth !== "function") {
-      setErrorMessage("Google OAuth is not supported in this client configuration.");
+      setErrorMessage(t.errors.googleUnsupported);
       return;
     }
 
@@ -144,13 +146,13 @@ export function SupabaseLoginFormClient({
 
       if (error) {
         if (error.message.toLowerCase().includes("not enabled") || error.message.toLowerCase().includes("not be found")) {
-          setErrorMessage("Google Provider ยังไม่ได้เปิดใช้งานใน Supabase Dashboard (ไปที่ Authentication > Providers > Google แล้วเปิดใช้งานพร้อมกรอก Client ID/Secret)");
+          setErrorMessage(t.errors.googleNotEnabled);
         } else {
           setErrorMessage(error.message);
         }
       }
     } catch (error) {
-      setErrorMessage(error instanceof Error ? error.message : "Google sign-in failed.");
+      setErrorMessage(error instanceof Error ? error.message : t.errors.googleFailed);
     } finally {
       setIsGoogleSubmitting(false);
     }
@@ -162,12 +164,12 @@ export function SupabaseLoginFormClient({
     setStatusMessage("");
 
     if (!browserClient) {
-      setErrorMessage("Supabase browser configuration is missing for this runtime.");
+      setErrorMessage(t.errors.configMissing);
       return;
     }
 
     if (typeof browserClient?.auth?.signUp !== "function") {
-      setErrorMessage("Sign-up is not supported in this client configuration.");
+      setErrorMessage(t.errors.signUpUnsupported);
       return;
     }
 
@@ -194,14 +196,14 @@ export function SupabaseLoginFormClient({
 
       if (data.session) {
         publishSupabaseSessionPayload(data.session);
-        setStatusMessage("สมัครสมาชิกสำเร็จ กำลังเข้าสู่ระบบ...");
+        setStatusMessage(t.status.signUpSignedIn);
         router.push(resolvePostLoginRoute(data.session.user?.app_metadata?.role));
         router.refresh();
       } else {
-        setStatusMessage("สมัครสมาชิกสำเร็จ! หากระบบต้องการยืนยันอีเมล โปรดตรวจสอบกล่องข้อความใน Gmail/อีเมลของคุณเพื่อกดยืนยันบัญชี หรือลองเข้าสู่ระบบ");
+        setStatusMessage(t.status.signUpConfirmEmail);
       }
     } catch (error) {
-      setErrorMessage(error instanceof Error ? error.message : "Sign-up failed.");
+      setErrorMessage(error instanceof Error ? error.message : t.errors.signUpFailed);
     } finally {
       setIsSubmitting(false);
     }
@@ -213,7 +215,7 @@ export function SupabaseLoginFormClient({
     setStatusMessage("");
 
     if (!browserClient) {
-      setErrorMessage("Supabase browser configuration is missing for this runtime.");
+      setErrorMessage(t.errors.configMissing);
       return;
     }
 
@@ -239,11 +241,11 @@ export function SupabaseLoginFormClient({
       }
 
       publishSupabaseSessionPayload(data.session ?? null);
-      setStatusMessage("Sign-in accepted. Routing through organization and MFA access gates.");
+      setStatusMessage(t.status.signInAccepted);
       router.push(resolvePostLoginRoute(data.session?.user?.app_metadata?.role));
       router.refresh();
     } catch (error) {
-      setErrorMessage(error instanceof Error ? error.message : "Sign-in failed.");
+      setErrorMessage(error instanceof Error ? error.message : t.errors.signInFailed);
     } finally {
       setIsSubmitting(false);
     }
@@ -254,12 +256,12 @@ export function SupabaseLoginFormClient({
     setStatusMessage("");
 
     if (!browserClient) {
-      setErrorMessage("Supabase browser configuration is missing for this runtime.");
+      setErrorMessage(t.errors.configMissing);
       return;
     }
 
     if (!email.trim()) {
-      setErrorMessage("Enter the invitation email address first.");
+      setErrorMessage(t.errors.enterEmailFirst);
       return;
     }
 
@@ -275,21 +277,21 @@ export function SupabaseLoginFormClient({
         return;
       }
 
-      setStatusMessage("Recovery email sent. App access still requires accepted membership and AAL2 after reset.");
+      setStatusMessage(t.status.recoverySent);
     } catch (error) {
-      setErrorMessage(error instanceof Error ? error.message : "Recovery request failed.");
+      setErrorMessage(error instanceof Error ? error.message : t.errors.recoveryFailed);
     } finally {
       setIsSendingRecovery(false);
     }
   }
 
   const buttonAriaLabel = isSubmitting
-    ? "Signing in..."
+    ? t.signingIn
     : browserClientStatus.configured
-      ? "Sign in with Supabase"
+      ? t.signInLabel
       : browserClientStatus.missingUrl || browserClientStatus.missingAnonKey
-        ? "Supabase browser config missing"
-        : "Supabase browser config invalid";
+        ? t.configMissing
+        : t.configInvalid;
 
   return (
     <div className="rounded-3xl border border-line bg-white p-6 sm:p-8 lg:p-9 shadow-xl transition-all">
@@ -301,25 +303,21 @@ export function SupabaseLoginFormClient({
             <span className="relative inline-flex rounded-full h-2 w-2 bg-brand"></span>
           </span>
           <h2 className="text-xs font-bold uppercase tracking-wider text-[color:var(--color-success-text)]">
-            Secure sign in
+            {t.eyebrow}
           </h2>
           <span className="text-xs text-ink-subtle font-medium hidden sm:inline">
-            • Clinical Workstation Auth
+            • {t.eyebrowDetail}
           </span>
         </div>
-        <span className="inline-flex items-center gap-1.5 text-xs font-semibold text-ink-muted bg-surface-muted px-2.5 py-0.5 rounded-full border border-line">
-          <ShieldCheck size={13} className="text-[color:var(--color-success-text)] shrink-0" />
-          <span>TLS 1.3 Strict</span>
-        </span>
       </div>
 
       {/* Main Title & Subtitle */}
       <div className="mb-5">
         <h1 className="text-2xl sm:text-[1.7rem] font-extrabold tracking-tight text-ink leading-snug">
-          Welcome Clinician <span aria-hidden="true" className="font-normal text-highlight">●</span> เข้าสู่ระบบคลินิกบำบัด
+          {t.title}
         </h1>
         <p className="mt-1.5 text-xs sm:text-sm text-ink-muted leading-relaxed">
-          Sign in to access pediatric case records, acoustic transcripts, and individualized therapy plans.
+          {t.subtitle}
         </p>
       </div>
 
@@ -335,7 +333,7 @@ export function SupabaseLoginFormClient({
           }`}
         >
           <ShieldCheck size={14} className={roleTab === "slp" ? "text-[color:var(--color-success-text)]" : "text-ink-subtle"} />
-          <span>Clinician / SLP</span>
+          <span>{t.roles.slp}</span>
         </button>
         <button
           type="button"
@@ -347,7 +345,7 @@ export function SupabaseLoginFormClient({
           }`}
         >
           <Building2 size={14} className={roleTab === "admin" ? "text-[color:var(--color-success-text)]" : "text-ink-subtle"} />
-          <span>Clinic Admin</span>
+          <span>{t.roles.admin}</span>
         </button>
         <button
           type="button"
@@ -358,7 +356,7 @@ export function SupabaseLoginFormClient({
               : "text-ink-muted hover:text-ink"
           }`}
         >
-          <span>Parent / ผู้ปกครอง</span>
+          <span>{t.roles.parent}</span>
         </button>
       </div>
 
@@ -378,7 +376,7 @@ export function SupabaseLoginFormClient({
                 : "border-transparent text-ink-subtle hover:text-ink-muted"
             }`}
           >
-            เข้าสู่ระบบ (Sign In)
+            {t.modes.signIn}
           </button>
           <span className="text-line-strong">|</span>
           <button
@@ -394,28 +392,28 @@ export function SupabaseLoginFormClient({
                 : "border-transparent text-ink-subtle hover:text-ink-muted"
             }`}
           >
-            สร้างบัญชีใหม่ (Create Account)
+            {t.modes.signUp}
           </button>
         </div>
-        <span className="text-xs text-ink-subtle font-medium">Invitation-only</span>
+        <span className="text-xs text-ink-subtle font-medium">{t.modes.invitationOnly}</span>
       </div>
 
       {/* Form */}
       <form
-        aria-label="Supabase login form"
+        aria-label={t.formLabel}
         onSubmit={mode === "signin" ? handleSignIn : handleSignUp}
         className="space-y-4"
       >
         {mode === "signup" && (
           <label className="block text-xs font-bold uppercase tracking-wider text-ink">
             <span className="block mb-1.5">
-              ชื่อ-นามสกุล (Display Name)
+              {t.displayName}
             </span>
             <input
               className="min-h-11 w-full rounded-xl border border-line bg-surface-soft px-3.5 py-2 text-sm text-ink placeholder:text-ink-subtle focus:bg-white focus:border-brand focus:ring-2 focus:ring-[color:var(--color-focus-ring)] outline-none transition"
               type="text"
               autoComplete="name"
-              placeholder="เช่น พญ. ปาริฉัตร หรือชื่อ-นามสกุลของคุณ"
+              placeholder={t.displayNamePlaceholder}
               value={fullName}
               onChange={(event) => setFullName(event.target.value)}
             />
@@ -426,7 +424,7 @@ export function SupabaseLoginFormClient({
         <div>
           <div className="flex items-center justify-between mb-1.5">
             <label htmlFor="clinical-email-input" className="block text-xs font-bold uppercase tracking-wider text-ink">
-              Email
+              {t.email}
             </label>
             <span className="text-xs font-normal text-ink-subtle normal-case">
               Clinic Email or SLP License ID / อีเมลหรือเลขที่ใบอนุญาต
@@ -440,7 +438,7 @@ export function SupabaseLoginFormClient({
               type="email"
               inputMode="email"
               autoComplete="username"
-              placeholder="alice.chang@bangkokpediatric.org"
+              placeholder="name@example.org"
               value={email}
               onChange={(event) => setEmail(event.target.value)}
             />
@@ -451,7 +449,7 @@ export function SupabaseLoginFormClient({
         <div>
           <div className="flex items-center justify-between mb-1.5">
             <label htmlFor="clinical-password-input" className="block text-xs font-bold uppercase tracking-wider text-ink">
-              Password
+              {t.password}
             </label>
             <button
               type="button"
@@ -459,7 +457,7 @@ export function SupabaseLoginFormClient({
               disabled={!browserClient || isSendingRecovery}
               className="text-xs font-medium text-[color:var(--color-success-text)] hover:text-[color:var(--color-success-text)] hover:underline transition disabled:opacity-50"
             >
-              {isSendingRecovery ? "Sending recovery email..." : "Send recovery email"}
+              {isSendingRecovery ? t.sendingRecovery : t.sendRecovery}
             </button>
           </div>
           <div className="relative">
@@ -477,24 +475,11 @@ export function SupabaseLoginFormClient({
               type="button"
               onClick={() => setShowPassword(!showPassword)}
               className="absolute right-3.5 top-1/2 -translate-y-1/2 text-ink-subtle hover:text-ink transition"
-              aria-label={showPassword ? "Hide password" : "Show password"}
+              aria-label={showPassword ? t.hidePassword : t.showPassword}
             >
               {showPassword ? <EyeOff size={16} /> : <Eye size={16} />}
             </button>
           </div>
-        </div>
-
-        {/* Trust workstation for 30 days checkbox */}
-        <div className="flex items-center justify-between pt-0.5">
-          <label className="inline-flex items-center gap-2.5 text-xs text-ink-muted cursor-pointer select-none">
-            <input
-              type="checkbox"
-              checked={trustDevice}
-              onChange={(e) => setTrustDevice(e.target.checked)}
-              className="h-4 w-4 rounded border-line-strong text-brand focus:ring-[color:var(--color-focus-ring)] transition"
-            />
-            <span>Trust workstation for 30 days (บันทึกเครื่องนี้)</span>
-          </label>
         </div>
 
         {/* Primary action */}
@@ -510,8 +495,8 @@ export function SupabaseLoginFormClient({
               <span className="flex items-center justify-center gap-2">
                 <span>
                   {isSubmitting
-                    ? "Signing in..."
-                    : "Sign in to Clinic Workspace • เข้าสู่ระบบ"}
+                    ? t.signingIn
+                    : t.signIn}
                 </span>
                 <ArrowRight size={17} className="transition-transform group-hover:translate-x-1" />
               </span>
@@ -521,14 +506,14 @@ export function SupabaseLoginFormClient({
               type="submit"
               disabled={!browserClient || isSubmitting || !email.trim() || !password}
               aria-disabled={!browserClient || isSubmitting || !email.trim() || !password}
-              aria-label={isSubmitting ? "Signing in..." : "Create Account"}
+              aria-label={isSubmitting ? t.creatingAccount : t.createAccountLabel}
               className="group relative inline-flex min-h-12 w-full items-center justify-center rounded-xl bg-brand px-5 py-3 text-sm font-bold text-white shadow-lg transition hover:bg-brand-hover active:scale-[0.99] disabled:cursor-not-allowed disabled:bg-surface-muted disabled:text-ink-muted"
             >
               <span className="flex items-center justify-center gap-2">
                 <span>
                   {isSubmitting
-                    ? "กำลังสร้างบัญชี..."
-                    : "Create Clinic Account • สมัครสมาชิก"}
+                    ? t.creatingAccount
+                    : t.createAccount}
                 </span>
                 <UserPlus size={17} />
               </span>
@@ -557,24 +542,13 @@ export function SupabaseLoginFormClient({
         </div>
         <div className="relative flex justify-center">
           <span className="bg-white px-3 text-xs font-semibold uppercase tracking-wider text-ink-subtle">
-            Or Authenticate with Hospital Identity Provider
+            {t.orContinueWith}
           </span>
         </div>
       </div>
 
       {/* SSO Buttons */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
-        <button
-          type="button"
-          onClick={() => {
-            setStatusMessage("Hospital SSO / Active Directory: โปรดใช้อีเมลประจำหน่วยงานแพทย์ของโรงพยาบาลในเครือข่าย หรือติดต่อแผนกเวชระเบียน");
-          }}
-          className="inline-flex min-h-11 items-center justify-center gap-2 rounded-xl border border-line bg-white px-3.5 py-2 text-xs font-semibold text-ink shadow-2xs transition hover:bg-surface-soft hover:border-line-strong"
-        >
-          <Building2 size={16} className="text-[color:var(--color-success-text)] shrink-0" />
-          <span>Hospital SSO / Active Directory</span>
-        </button>
-
+      <div className="grid grid-cols-1 gap-2.5">
         <button
           type="button"
           onClick={handleGoogleSignIn}
@@ -600,20 +574,9 @@ export function SupabaseLoginFormClient({
             />
           </svg>
           <span>
-            {isGoogleSubmitting ? "Connecting Google..." : "Continue with Google • บัญชี Google"}
+            {isGoogleSubmitting ? t.connectingGoogle : t.continueWithGoogle}
           </span>
         </button>
-      </div>
-
-      {/* Helpline & Session encryption footer */}
-      <div className="mt-5 pt-4 border-t border-line flex flex-wrap items-center justify-between text-xs text-ink-muted gap-2">
-        <span className="flex items-center gap-1.5 font-medium">
-          <span className="text-[color:var(--color-success-text)] font-semibold">Clinic IT Line:</span> 02-419-7000 ext. 8412
-        </span>
-        <span className="inline-flex items-center gap-1 text-ink-subtle font-mono">
-          <LockKeyhole size={11} className="text-[color:var(--color-success-text)]" />
-          256-bit Encrypted Session
-        </span>
       </div>
 
       {/* Collapsible Clinical Security & Access Protocol (maintaining all test contracts) */}
@@ -625,7 +588,7 @@ export function SupabaseLoginFormClient({
         >
           <span className="flex items-center gap-1.5">
             <ShieldCheck size={13} className="text-[color:var(--color-success-text)]" />
-            Clinical Security &amp; Access Protocol Details
+            {t.policyToggle}
           </span>
           <ChevronDown
             size={14}
@@ -636,45 +599,45 @@ export function SupabaseLoginFormClient({
         <div className={`mt-3 space-y-2 text-xs leading-relaxed text-ink-muted ${showPolicy ? "block" : "sr-only sm:not-sr-only"}`}>
           <div className="rounded-xl border border-[color:var(--color-attention-border)] bg-[color:var(--color-warning-bg)] p-3 text-[color:var(--color-warning-text)]">
             <p className="font-semibold text-xs uppercase tracking-wider text-[color:var(--color-warning-text)]">
-              Invitation-only access
+              {t.policy.invitationTitle}
             </p>
             <p className="mt-0.5 text-xs">
               {invitationOnly
-                ? "Public signup is off. Only users with an accepted invitation can continue to account access."
-                : "Runtime settings are not currently enforcing invitation-only onboarding."}
+                ? t.policy.invitationOn
+                : t.policy.invitationOff}
             </p>
           </div>
 
           <div className="rounded-xl border border-[color:var(--color-success-border)] bg-[color:var(--color-success-bg)] p-3 text-[color:var(--color-success-text)]">
             <p className="font-semibold text-xs uppercase tracking-wider text-[color:var(--color-success-text)]">
-              MFA and app access
+              {t.policy.mfaTitle}
             </p>
             <p className="mt-0.5 text-xs">
-              After invitation acceptance, TOTP MFA enrollment is mandatory. <strong>aal1</strong> can reach MFA screens only, and <strong>aal2</strong> is required before any clinical or admin workflow access.
+              {t.policy.mfaBefore} <strong>aal1</strong> {t.policy.mfaMiddle} <strong>aal2</strong> {t.policy.mfaAfter}
             </p>
           </div>
 
           <div className="rounded-xl border border-line bg-surface-soft p-3 text-ink">
             <p className="font-semibold text-xs uppercase tracking-wider text-ink">
-              Organization session selection
+              {t.policy.organizationTitle}
             </p>
             <p className="mt-0.5 text-xs">
-              If multiple memberships are active, the user must explicitly choose one organization before workspace access. The last active organization is a hint only when the choice is ambiguous.
+              {t.policy.organizationBody}
             </p>
           </div>
 
           <div className="rounded-xl border border-line bg-white p-3 text-ink-muted">
             <p className="font-semibold text-xs uppercase tracking-wider text-ink">
-              Recovery and current runtime status
+              {t.policy.recoveryTitle}
             </p>
             <p className="mt-0.5 text-xs">
-              Password recovery uses the Supabase-managed reset path and still returns through membership and MFA gates before app access.
+              {t.policy.recoveryBody}
             </p>
             <p className="mt-1 text-xs">
-              Browser sign-in now depends on the configured Supabase project and claim contract. Workspace access still fails closed until invitation, membership, MFA, and active organization requirements are satisfied.
+              {t.policy.runtimeBody}
             </p>
             <p className="mt-1 text-xs font-mono text-ink-subtle">
-              Browser config: {configStatusLabel}
+              {t.policy.browserConfig(configStatusLabel)}
             </p>
           </div>
         </div>
