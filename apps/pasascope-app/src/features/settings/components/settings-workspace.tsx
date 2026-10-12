@@ -45,6 +45,7 @@ import {
   type OrganizationMembership,
   type OrganizationReadiness,
 } from "@/lib/workflow";
+import { T, useAdminText } from "@/features/settings/admin-text";
 
 const adminSettings = [
   ["Auth lifecycle", "Invitation-only onboarding, MFA guard, membership revocation"],
@@ -132,6 +133,7 @@ export function SettingsWorkspace({
 
 function AdminSettings({ section, organizationId, initialCaseId }: { section: AdminSettingsSection; organizationId: string | null; initialCaseId: string | null }) {
   const { backendUnavailable, setBackendUnavailable } = useBackendAvailability();
+  const tr = useAdminText();
   const organizationIdRef = useRef(organizationId);
   organizationIdRef.current = organizationId;
   const mutationRequestIdRef = useRef(0);
@@ -306,7 +308,7 @@ function AdminSettings({ section, organizationId, initialCaseId }: { section: Ad
         <CareTeamAdministration memberships={memberships} initialCaseId={initialCaseId} />
         <section className="rounded-card border border-line bg-surface p-4">
           <div className="mb-4 flex items-center justify-between gap-3">
-            <h3 className="text-base font-semibold text-ink">Organization memberships</h3>
+            <h3 className="text-base font-semibold text-ink"><T>Organization memberships</T></h3>
             <StatusPill label="Active" value={activeCount} />
           </div>
           <LifecycleList title="Memberships" empty="No memberships returned by the backend.">
@@ -324,37 +326,37 @@ function AdminSettings({ section, organizationId, initialCaseId }: { section: Ad
         <section className="rounded-card border border-line bg-surface p-4">
           <div className="flex flex-wrap items-start justify-between gap-3">
             <div>
-              <h3 className="text-lg font-semibold text-ink">Pilot access lifecycle</h3>
+              <h3 className="text-lg font-semibold text-ink"><T>Pilot access lifecycle</T></h3>
               <p className="mt-1 max-w-2xl text-sm leading-6 text-ink">
-                Real delivery, MFA enrollment, and Supabase custom-claim sync remain external production work.
+                <T>Real delivery, MFA enrollment, and Supabase custom-claim sync remain external production work.</T>
               </p>
             </div>
             <StatusPill label="Pending" value={pendingCount} />
           </div>
           <div className="mt-4 rounded-md border border-[color:var(--color-attention-border)] bg-[color:var(--color-warning-bg)] p-3 text-sm leading-6 text-[color:var(--color-warning-text)]">
-            <p className="font-semibold">Pilot-only boundary</p>
-            <p className="mt-1">This panel does not send real invitation emails or provision production MFA enrollment.</p>
+            <p className="font-semibold"><T>Pilot-only boundary</T></p>
+            <p className="mt-1"><T>This panel does not send real invitation emails or provision production MFA enrollment.</T></p>
           </div>
           <form className="mt-5 grid min-w-0 gap-3 rounded-md border border-line bg-field p-3 xl:grid-cols-[minmax(0,1fr)_minmax(0,1fr)_150px_auto]" onSubmit={handleInvite}>
             <label className="grid gap-1 text-sm font-medium text-ink">
-              Invite email
+              <T>Invite email</T>
               <input className="min-h-11 rounded-md border border-line bg-surface px-3 text-sm text-ink outline-none focus:border-brand" type="email" value={inviteEmail} onChange={(event) => setInviteEmail(event.target.value)} placeholder="clinician@example.test" required />
             </label>
             <label className="grid gap-1 text-sm font-medium text-ink">
-              Display name
-              <input className="min-h-11 rounded-md border border-line bg-surface px-3 text-sm text-ink outline-none focus:border-brand" value={inviteName} onChange={(event) => setInviteName(event.target.value)} placeholder="Pilot Clinician" required />
+              <T>Display name</T>
+              <input className="min-h-11 rounded-md border border-line bg-surface px-3 text-sm text-ink outline-none focus:border-brand" value={inviteName} onChange={(event) => setInviteName(event.target.value)} placeholder={tr("Pilot Clinician")} required />
             </label>
             <label className="grid gap-1 text-sm font-medium text-ink">
-              Role
+              <T>Role</T>
               <select className="min-h-11 rounded-md border border-line bg-surface px-3 text-sm text-ink outline-none focus:border-brand" value={inviteRole} onChange={(event) => setInviteRole(event.target.value)}>
-                <option value="therapist">Therapist</option>
-                <option value="clinical_supervisor">Supervisor</option>
-                <option value="org_admin">Org admin</option>
+                <option value="therapist">{tr("Therapist")}</option>
+                <option value="clinical_supervisor">{tr("Supervisor")}</option>
+                <option value="org_admin">{tr("Org admin")}</option>
               </select>
             </label>
             <button type="submit" className="inline-flex min-h-11 items-center justify-center gap-2 rounded-md bg-brand px-4 text-sm font-semibold text-white transition hover:bg-brand-strong disabled:opacity-50" disabled={busy}>
               <MailPlus size={17} aria-hidden="true" />
-              Create invitation
+              <T>Create invitation</T>
             </button>
           </form>
           <div className="mt-5">
@@ -373,7 +375,7 @@ function AdminSettings({ section, organizationId, initialCaseId }: { section: Ad
         <AdminSectionHeader title="Audit" description="Review the scope and guarantees of backend audit records." />
         <section className="rounded-card border border-line bg-surface p-4">
           <div className="flex h-11 w-11 items-center justify-center rounded-md bg-[color:var(--color-warning-bg)] text-[color:var(--color-warning-text)]"><FileCheck2 size={22} aria-hidden="true" /></div>
-          <h3 className="mt-4 text-base font-semibold text-ink">Audit & break-glass</h3>
+          <h3 className="mt-4 text-base font-semibold text-ink"><T>Audit & break-glass</T></h3>
           <div className="mt-4 grid gap-3 md:grid-cols-2">
             <Guardrail icon={ShieldCheck} label="Break-glass access" value="Scoped backend workflow with audit events" />
             <Guardrail icon={CheckCircle2} label="Audit trail available" value="Backend records actor, target, outcome, and timestamp" />
@@ -404,7 +406,7 @@ function AdminSettings({ section, organizationId, initialCaseId }: { section: Ad
         <SettingRows rows={adminSettings} />
         <ReadinessCockpit readiness={readiness} activeCount={activeCount} pendingCount={pendingCount} />
         <section className="rounded-card border border-line bg-surface p-4">
-          <h3 className="text-base font-semibold text-ink">Admin safety boundaries</h3>
+          <h3 className="text-base font-semibold text-ink"><T>Admin safety boundaries</T></h3>
           <div className="mt-4 grid gap-3 md:grid-cols-2">
             <Guardrail icon={CheckCircle2} label="Invitation backend" value="Implemented locally" />
             <Guardrail icon={CheckCircle2} label="Membership revocation" value="Audited backend action" />
@@ -419,11 +421,11 @@ function AdminSettings({ section, organizationId, initialCaseId }: { section: Ad
   return (
     <div className="grid gap-4">
       <BackendAvailabilityBanner unavailable={backendUnavailable} />
-      {message ? <p className="rounded-xl border border-brand-border bg-brand-soft px-3.5 py-2.5 text-sm font-medium text-brand" role="status">{message}</p> : null}
+      {message ? <p className="rounded-xl border border-brand-border bg-brand-soft px-3.5 py-2.5 text-sm font-medium text-brand" role="status">{tr(message)}</p> : null}
       {content}
       {loading ? (
         <div className="rounded-card border border-line bg-surface p-5" role="status" aria-live="polite">
-          <span className="sr-only">Loading organization settings…</span>
+          <span className="sr-only"><T>Loading organization settings…</T></span>
           <Skeleton className="h-6 w-2/5" />
           <div className="mt-5 grid gap-3" aria-hidden="true">
             {[0, 1, 2].map((item) => <SkeletonLine key={item} className="w-full" />)}
@@ -438,9 +440,9 @@ function AdminSettings({ section, organizationId, initialCaseId }: { section: Ad
 function AdminSectionHeader({ title, description }: { title: string; description: string }) {
   return (
     <section className="rounded-card border border-line bg-surface p-5">
-      <p className="text-xs font-bold uppercase tracking-[0.14em] text-brand">Organization administration</p>
-      <h2 className="mt-2 text-xl font-semibold text-ink">{title}</h2>
-      <p className="mt-2 max-w-3xl text-sm leading-6 text-ink">{description}</p>
+      <p className="text-xs font-bold uppercase tracking-[0.14em] text-brand"><T>Organization administration</T></p>
+      <h2 className="mt-2 text-xl font-semibold text-ink"><T>{title}</T></h2>
+      <p className="mt-2 max-w-3xl text-sm leading-6 text-ink"><T>{description}</T></p>
     </section>
   );
 }

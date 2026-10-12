@@ -8,14 +8,15 @@ import type {
   OrganizationReadiness,
   OrganizationReadinessItem,
 } from "@/lib/workflow";
+import { T, useAdminText } from "@/features/settings/admin-text";
 
 export function SettingRows({ rows }: { rows: string[][] }) {
   return (
     <div className="clinical-card rounded-md">
       {rows.map(([label, value]) => (
         <div key={label} className="grid gap-1 border-b border-line px-4 py-3 text-sm last:border-b-0 md:grid-cols-[240px_1fr]">
-          <div className="font-medium text-ink">{label}</div>
-          <div className="text-ink">{value}</div>
+          <div className="font-medium text-ink"><T>{label}</T></div>
+          <div className="text-ink"><T>{value}</T></div>
         </div>
       ))}
     </div>
@@ -31,6 +32,7 @@ export function ReadinessCockpit({
   pendingCount: number;
   readiness: OrganizationReadiness | null;
 }) {
+  const tr = useAdminText();
   const summaryLabel = readiness
     ? readiness.production_ready
       ? "Production SaaS ready"
@@ -51,12 +53,12 @@ export function ReadinessCockpit({
   ];
 
   return (
-    <section className="clinical-card rounded-md p-4" aria-label="SaaS readiness">
+    <section className="clinical-card rounded-md p-4" aria-label={tr("SaaS readiness")}>
       <div className="flex flex-col gap-4 xl:flex-row xl:items-start xl:justify-between">
         <div>
-          <p className="text-xs font-bold uppercase tracking-[0.22em] text-brand">SaaS readiness</p>
+          <p className="text-xs font-bold uppercase tracking-[0.22em] text-brand"><T>SaaS readiness</T></p>
           <div className="mt-2 flex flex-wrap items-center gap-2">
-            <h2 className="text-xl font-bold text-ink">Organization readiness cockpit</h2>
+            <h2 className="text-xl font-bold text-ink"><T>Organization readiness cockpit</T></h2>
             <Badge tone={summaryTone === "green" ? "green" : summaryTone === "amber" ? "amber" : "slate"}>{summaryLabel}</Badge>
           </div>
           <p className="mt-2 max-w-3xl text-sm leading-6 text-ink">
@@ -83,7 +85,7 @@ export function ReadinessCockpit({
 function ReadinessMetric({ label, value }: { label: string; value: string }) {
   return (
     <div className="min-w-0 rounded-md border border-line bg-field px-3 py-2">
-      <p className="text-xs text-ink-muted">{label}</p>
+      <p className="text-xs text-ink-muted"><T>{label}</T></p>
       <p className="mt-1 truncate text-sm font-semibold text-ink" title={value}>{value}</p>
     </div>
   );
@@ -99,13 +101,13 @@ function ReadinessItemCard({ item }: { item: OrganizationReadinessItem }) {
   return (
     <article className={`rounded-md border p-3 ${tone}`}>
       <div className="flex items-start justify-between gap-3">
-        <h3 className="text-sm font-semibold">{item.label}</h3>
+        <h3 className="text-sm font-semibold"><T>{item.label}</T></h3>
         <span className="shrink-0 rounded-md bg-surface px-2 py-1 text-xs font-semibold capitalize">{item.status}</span>
       </div>
-      <p className="mt-2 text-xs leading-5">{item.detail}</p>
+      <p className="mt-2 text-xs leading-5"><T>{item.detail}</T></p>
       {evidence.length > 0 ? (
         <div className="mt-3">
-          <p className="text-[0.68rem] font-bold uppercase tracking-[0.12em] opacity-80">Evidence</p>
+          <p className="text-[0.68rem] font-bold uppercase tracking-[0.12em] opacity-80"><T>Evidence</T></p>
           <ul className="mt-1 space-y-1">
             {evidence.slice(0, 4).map((entry) => (
               <li key={entry} className="break-words text-xs leading-5">{entry}</li>
@@ -115,7 +117,7 @@ function ReadinessItemCard({ item }: { item: OrganizationReadinessItem }) {
       ) : null}
       {item.next_action ? (
         <p className="mt-3 rounded-md bg-surface p-2 text-xs font-medium leading-5">
-          Next action: {item.next_action}
+          <T>Next action:</T> <T>{item.next_action}</T>
         </p>
       ) : null}
     </article>
@@ -125,8 +127,8 @@ function ReadinessItemCard({ item }: { item: OrganizationReadinessItem }) {
 export function StatusTile({ label, value }: { label: string; value: string }) {
   return (
     <div className="rounded-md border border-line bg-field p-3">
-      <p className="text-xs font-medium uppercase text-ink-muted">{label}</p>
-      <p className="mt-1 text-sm font-semibold text-ink">{value}</p>
+      <p className="text-xs font-medium uppercase text-ink-muted"><T>{label}</T></p>
+      <p className="mt-1 text-sm font-semibold text-ink"><T>{value}</T></p>
     </div>
   );
 }
@@ -135,18 +137,19 @@ export function StatusPill({ label, value }: { label: string; value: number }) {
   return (
     <div className="min-w-20 rounded-md border border-line bg-surface px-3 py-2">
       <p className="text-lg font-semibold text-ink">{value}</p>
-      <p className="text-xs text-ink-muted">{label}</p>
+      <p className="text-xs text-ink-muted"><T>{label}</T></p>
     </div>
   );
 }
 
 export function LifecycleList({ title, empty, children }: { title: string; empty: string; children: ReactNode }) {
+  const tr = useAdminText();
   const hasItems = Array.isArray(children) ? children.length > 0 : Boolean(children);
   return (
-    <section aria-label={title}>
-      <h3 className="mb-2 text-sm font-semibold text-ink">{title}</h3>
+    <section aria-label={tr(title)}>
+      <h3 className="mb-2 text-sm font-semibold text-ink"><T>{title}</T></h3>
       <div className="grid gap-2">
-        {hasItems ? children : <p className="rounded-md border border-line bg-field p-3 text-sm text-ink-muted">{empty}</p>}
+        {hasItems ? children : <p className="rounded-md border border-line bg-field p-3 text-sm text-ink-muted"><T>{empty}</T></p>}
       </div>
     </section>
   );
@@ -175,7 +178,7 @@ export function InvitationRow({
         <Badge>{capitalize(invitation.status)}</Badge>
       </div>
       <p className="mt-2 text-xs text-ink-muted">
-        {invitation.role} · expires {formatDate(invitation.expires_at)}
+        {invitation.role} · <T>expires</T> {formatDate(invitation.expires_at)}
       </p>
       {invitation.status === "pending" ? (
         <button
@@ -185,13 +188,13 @@ export function InvitationRow({
           onClick={onAccept}
         >
           <CheckCircle2 size={16} aria-hidden="true" />
-          Accept invite locally
+          <T>Accept invite locally</T>
         </button>
       ) : null}
       {invitation.status === "accepted" ? (
         <div className="mt-3 space-y-2">
           <p className="text-xs leading-5 text-ink-muted">
-            Membership is active. Prepare an AAL1 invited session to validate the post-acceptance MFA gate.
+            <T>Membership is active. Prepare an AAL1 invited session to validate the post-acceptance MFA gate.</T>
           </p>
           <button
             type="button"
@@ -200,7 +203,7 @@ export function InvitationRow({
             onClick={onPrepareSession}
           >
             <LockKeyhole size={16} aria-hidden="true" />
-            {prepared ? "AAL1 session prepared" : "Prepare mock MFA session"}
+            <T>{prepared ? "AAL1 session prepared" : "Prepare mock MFA session"}</T>
           </button>
         </div>
       ) : null}
@@ -225,7 +228,7 @@ export function MembershipRow({ member, busy, onRevoke }: { member: Organization
         onClick={onRevoke}
       >
         <UserX size={16} aria-hidden="true" />
-        Revoke {member.display_name}
+        <T>Revoke</T> {member.display_name}
       </button>
     </article>
   );
@@ -236,14 +239,14 @@ export function Guardrail({ icon: Icon, label, value }: { icon: LucideIcon; labe
     <div className="flex gap-3 rounded-xl border border-line bg-field p-3">
       <Icon size={18} aria-hidden="true" className="mt-0.5 shrink-0 text-brand" />
       <div>
-        <p className="text-sm font-semibold text-ink">{label}</p>
-        <p className="mt-0.5 text-xs leading-5 text-ink-muted">{value}</p>
+        <p className="text-sm font-semibold text-ink"><T>{label}</T></p>
+        <p className="mt-0.5 text-xs leading-5 text-ink-muted"><T>{value}</T></p>
       </div>
     </div>
   );
 }
 
-function Badge({ children, tone = "cyan" }: { children: ReactNode; tone?: "cyan" | "green" | "slate" | "amber" }) {
+function Badge({ children, tone = "cyan" }: { children: string; tone?: "cyan" | "green" | "slate" | "amber" }) {
   const className = tone === "green"
     ? "border-[color:var(--color-success-border)] bg-[color:var(--color-success-bg)] text-[color:var(--color-success-text)]"
     : tone === "amber"
@@ -251,7 +254,7 @@ function Badge({ children, tone = "cyan" }: { children: ReactNode; tone?: "cyan"
       : tone === "slate"
         ? "border-line bg-surface-soft text-ink"
         : "border-brand-border bg-brand-soft text-brand";
-  return <span className={`rounded-md border px-2 py-1 text-xs font-semibold ${className}`}>{children}</span>;
+  return <span className={`rounded-md border px-2 py-1 text-xs font-semibold ${className}`}><T>{children}</T></span>;
 }
 
 function formatDate(value?: string) {
