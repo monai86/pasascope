@@ -2,12 +2,16 @@ from fastapi import APIRouter, Depends
 
 from app.auth.authorization import assert_clinical_mutation_allowed, require_session, require_transcript
 from app.api.v1.dependencies import get_repository
+from app.core.config import get_settings
 from app.core.errors import bad_request, not_found
 from app.core.security import CurrentUser, get_current_user
 from app.repositories.mock_repository import MockRepository
-from app.schemas.clinical import FeatureExtractionRequest, FeatureSet
+from app.schemas.clinical import AttestationRequest, FeatureExtractionRequest, FeatureSet
+from app.services import transcript_service
 from app.services.consent_service import ensure_session_consent_active, ensure_transcript_consent_active
 from app.services.feature_service import extract_features, get_feature_definitions, get_providers
+
+AUTOMATIC_ATTESTATION_REASON = "Recorded automatically when the user started analysis (review gates open)."
 
 router = APIRouter(tags=["features"])
 
@@ -25,6 +29,20 @@ def extract(
     assert_clinical_mutation_allowed(user)
     try:
         ensure_transcript_consent_active(repo, transcript_id)
+        if get_settings().review_gates_open and not repo.transcripts[transcript_id].therapist_attested:
+            # With review gates open, analysing a transcript is the user's
+            # acceptance of it. Record that as an attestation, marked automatic.
+            transcript_service.attest(
+                repo,
+                transcript_id,
+                AttestationRequest(
+                    attested_by=user.display_name,
+                    reason=AUTOMATIC_ATTESTATION_REASON,
+                    override_qa_failure=True,
+                ),
+                actor_id=user.user_id,
+                attested_by=user.display_name,
+            )
         return extract_features(repo, transcript_id, payload or FeatureExtractionRequest(), actor_id=user.user_id)
     except ValueError as exc:
         raise bad_request(str(exc)) from exc

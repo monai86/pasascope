@@ -141,7 +141,9 @@ from hashlib import sha256
 from fastapi import HTTPException, Request, status
 from fastapi.responses import FileResponse
 from app.core.config import get_settings
+from app.services.audio_backup_service import backup_recording, restore_recording
 from app.services.consent_service import ensure_audio_file_consent_active
+from starlette.concurrency import run_in_threadpool
 
 @router.put("/audio/{audio_file_id}/upload-file")
 async def upload_audio_file_bytes(
@@ -197,6 +199,15 @@ async def upload_audio_file_bytes(
         dest_path.unlink(missing_ok=True)
         raise bad_request("Uploaded audio size does not match upload intent metadata.")
 
+    try:
+        await run_in_threadpool(backup_recording, audio_file.object_key, dest_path, audio_file.content_type)
+    except Exception as exc:  # the recording would be lost at the next restart
+        dest_path.unlink(missing_ok=True)
+        raise HTTPException(
+            status_code=status.HTTP_502_BAD_GATEWAY,
+            detail="The recording could not be stored. Try the upload again.",
+        ) from exc
+
     audio_file.checksum_sha256 = digest.hexdigest()
     audio_file.upload_status = "pending_verification"
     if hasattr(repo, "save"):
@@ -223,8 +234,11 @@ def get_audio_file_bytes(
     _ensure_audio_file_verified_for_read(audio_file)
     
     settings = get_settings()
-    file_path = (settings.resolved_local_storage_root / audio_file.object_key).resolve()
-    if not file_path.exists() or file_path.is_dir():
+    storage_root = settings.resolved_local_storage_root.resolve()
+    file_path = (storage_root / audio_file.object_key).resolve()
+    if storage_root not in file_path.parents:
+        raise not_found("Physical audio file not found on disk.")
+    if not file_path.is_file() and not restore_recording(audio_file.object_key, file_path):
         raise not_found("Physical audio file not found on disk.")
         
     return FileResponse(

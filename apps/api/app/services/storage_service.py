@@ -5,6 +5,7 @@ from pathlib import Path
 
 from app.core.config import get_settings
 from app.schemas.clinical import AudioFileMetadata, SignedUploadIntent
+from app.services.audio_backup_service import delete_backup
 
 
 @dataclass(frozen=True)
@@ -56,6 +57,9 @@ class LocalPrivateStorageAdapter(BaseStorageAdapter):
     def delete_object(self, object_key: str | None) -> StorageDeletionResult:
         if not object_key:
             return StorageDeletionResult(storage_mode=self.storage_mode, deleted=False, status="missing_object_key")
+        # The durable copy goes first: a local-only delete would be undone by the next restore.
+        if not delete_backup(object_key):
+            return StorageDeletionResult(storage_mode=self.storage_mode, deleted=False, status="backup_delete_failed")
         candidate = (self.root / object_key).resolve()
         root = self.root.resolve()
         if root not in candidate.parents and candidate != root:

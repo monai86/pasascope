@@ -24,6 +24,7 @@ from app.schemas.clinical import (
 )
 from app.services.cha_service import build_cha_text, manual_text_to_utterances
 from app.services.consent_service import ensure_session_consent_active
+from app.services.audio_backup_service import restore_recording
 from app.services.storage_service import SupabasePrivateStorageAdapter, get_storage_adapter
 from app.services.asr_providers.registry import asr_provider_registry
 from app.services.asr_providers.base import TranscriptionResult
@@ -72,7 +73,9 @@ def _local_audio_path(audio_file: AudioFileMetadata | None) -> Path | None:
         return None
     storage_root = settings.resolved_local_storage_root.resolve()
     candidate = (storage_root / audio_file.object_key).resolve()
-    if storage_root not in candidate.parents or not candidate.is_file():
+    if storage_root not in candidate.parents:
+        return None
+    if not candidate.is_file() and not restore_recording(audio_file.object_key, candidate):
         return None
     return candidate
 

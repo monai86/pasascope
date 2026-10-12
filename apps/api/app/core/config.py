@@ -176,6 +176,16 @@ class Settings(BaseModel):
     supabase_jwt_audience: str = "authenticated"
     supabase_require_mfa: bool = True
     supabase_require_invitation: bool = True
+    # Public sign-up: any verified Supabase user gets a personal workspace
+    # (organization "personal_<user id>") without invitation, membership or MFA claims.
+    public_signup: bool = False
+    # "strict" keeps therapist attestation and report sign-off as hard gates.
+    # "open" records attestation automatically at feature extraction and lets
+    # a saved draft report be exported without sign-off.
+    review_gates: str = "strict"
+    # "supabase" also writes each verified recording to the private Supabase
+    # Storage bucket and restores it when the local file is missing.
+    audio_backup_mode: str = "none"
     debug_feature_override: bool = False
     max_audio_file_size_mb: int = DEFAULT_CAPTURE_MAX_UPLOAD_SIZE_BYTES // MEBIBYTE
     repository_mode: str = "json"
@@ -256,8 +266,29 @@ class Settings(BaseModel):
             and 0 < self.capture_max_upload_size_bytes <= MAX_CAPTURE_UPLOAD_SIZE_BYTES
         )
 
+    @property
+    def has_valid_audio_backup_target(self) -> bool:
+        """Project URL, bucket and service role key for the recording backup."""
+        return (
+            _is_valid_supabase_project_url(self.supabase_storage_url)
+            and _is_valid_supabase_service_role_key(self.supabase_storage_service_role_key)
+            and _is_valid_supabase_bucket_name(self.supabase_storage_bucket)
+        )
+
+    @property
+    def review_gates_open(self) -> bool:
+        return self.review_gates == "open"
+
     def validate_runtime_security(self) -> "Settings":
         origins = self.parsed_cors_allowed_origins
+        if self.review_gates not in {"strict", "open"}:
+            raise ValueError("Review gates must be 'strict' or 'open'.")
+        if self.audio_backup_mode not in {"none", "supabase"}:
+            raise ValueError("Audio backup mode must be 'none' or 'supabase'.")
+        if self.audio_backup_mode == "supabase" and not self.has_valid_audio_backup_target:
+            raise ValueError("Audio backup to Supabase needs a valid storage URL, bucket and service role key.")
+        if self.public_signup and (self.supabase_require_mfa or self.supabase_require_invitation):
+            raise ValueError("Public sign-up cannot be combined with required MFA or invitation.")
         if self.repository_mode in {"sql", "sqlalchemy"} and self.web_concurrency > 1:
             # The SQL repository keeps a per-process cache of clinical records;
             # a second worker would serve and write stale state.
@@ -378,6 +409,9 @@ class Settings(BaseModel):
                 "true",
             ).lower()
             != "false",
+            public_signup=getenv_compat("PASASCOPE_PUBLIC_SIGNUP", default="false").lower() == "true",
+            review_gates=getenv_compat("PASASCOPE_REVIEW_GATES", default="strict").strip().lower(),
+            audio_backup_mode=getenv_compat("PASASCOPE_AUDIO_BACKUP_MODE", default="none").strip().lower(),
             debug_feature_override=getenv_compat(
                 "PASASCOPE_DEBUG_FEATURE_OVERRIDE",
                 "THERAPIST_APP_V2_DEBUG_FEATURE_OVERRIDE",

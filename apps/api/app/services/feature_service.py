@@ -93,7 +93,7 @@ def extract_features(
     # ------------------------------------------------------------------
     # Gate 3 — QA failure blocks extraction (unless debug override)
     # ------------------------------------------------------------------
-    if transcript.qa_status == QaStatus.fail and not debug_override_allowed:
+    if transcript.qa_status == QaStatus.fail and not debug_override_allowed and not settings.review_gates_open:
         raise ValueError(
             "Feature extraction is blocked because transcript QA failed."
         )

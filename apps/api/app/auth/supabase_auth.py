@@ -62,6 +62,8 @@ def authenticate_supabase_bearer(
         raise _unauthorized("Bearer token required.")
     token = authorization.split(" ", 1)[1].strip()
     claims = _decode_supabase_jwt(token, settings)
+    if settings.public_signup:
+        return _public_signup_principal(claims)
     metadata = claims.get("app_metadata")
     if not isinstance(metadata, dict):
         raise _unauthorized("Supabase app metadata is required.")
@@ -104,6 +106,39 @@ def authenticate_supabase_bearer(
         break_glass_reason=break_glass_reason,
         break_glass_case_id=break_glass_case_id,
         break_glass_expires_at=break_glass_expires_at,
+    )
+
+
+PERSONAL_ORGANIZATION_PREFIX = "personal_"
+
+
+def _public_signup_principal(claims: dict[str, Any]) -> SupabasePrincipal:
+    """Give any verified Supabase user a workspace of their own.
+
+    The token's signature, issuer and audience are already verified. Nothing
+    in the token is trusted for access: the workspace id is derived from the
+    subject, so a user can only ever reach records created under their own id.
+    """
+    user_id = _required_str(claims, "sub")
+    user_metadata = claims.get("user_metadata")
+    display_name = user_id
+    candidates = []
+    if isinstance(user_metadata, dict):
+        candidates += [user_metadata.get("display_name"), user_metadata.get("full_name"), user_metadata.get("name")]
+    candidates.append(claims.get("email"))
+    for value in candidates:
+        if isinstance(value, str) and value.strip():
+            display_name = value.strip()
+            break
+    aal = claims.get("aal")
+    return SupabasePrincipal(
+        user_id=user_id,
+        role="therapist",
+        display_name=display_name,
+        organization_id=f"{PERSONAL_ORGANIZATION_PREFIX}{user_id}",
+        aal=aal if isinstance(aal, str) and aal else "aal1",
+        invitation_status="accepted",
+        membership_active=True,
     )
 
 
