@@ -5,25 +5,28 @@ import { CaregiverConsentForm } from "@/components/caregiver-consent-form";
 import { AudioUploadConfirmPanel } from "@/components/audio-upload-confirm-panel";
 import { BrowserAudioRecorder } from "@/components/browser-audio-recorder";
 import { PrimaryActionButton, WorkspacePanel } from "@/components/workbench-ui";
-import { DECISION_SUPPORT_ONLY } from "@/lib/clinical-safety-copy";
 import { SafetyNotice } from "@/components/safety-notice";
 import { TranscriptionJobStatusPanel, type TranscriptionJobDisplayStatus } from "@/components/transcription-job-status-panel";
 import {
-  capitalizeWord,
   Field,
   ReviewSummaryCard,
-  sourceSummaryLabel,
   SourceChoiceButton,
   SourceInputPanel,
   workflowSessionHref,
 } from "@/features/sessions/intake/session-intake-components";
+import { intakeMessages } from "@/features/sessions/intake/intake.messages";
 import type { SessionIntakeViewModel } from "@/features/sessions/intake/session-intake-view";
+import { useMessages } from "@/i18n/locale-provider";
+import { useSafetyCopy } from "@/lib/safety-copy";
 import { prepareTranscriptIntake } from "@/lib/workflow";
 import {
   continueToSourceMaterialBlockedReason,
   grantConsentBlockedReason,
   startTranscriptReviewBlockedReason,
 } from "@/lib/workflow-gates";
+
+const controlClass =
+  "block min-h-11 w-full rounded-control border border-line-strong bg-surface px-3.5 py-2.5 text-sm text-ink outline-none transition focus-visible:border-brand focus-visible:ring-4 focus-visible:ring-[color:var(--color-focus-ring)]";
 
 export function SessionIntakeSteps({ model }: { model: SessionIntakeViewModel }) {
   const {
@@ -41,6 +44,8 @@ export function SessionIntakeSteps({ model }: { model: SessionIntakeViewModel })
     transcriptSetup, setTranscriptSetup, sourceReadyForReview, canStartTranscriptReview,
     saveSessionIntakeDraft, router,
   } = model;
+  const t = useMessages(intakeMessages);
+  const safety = useSafetyCopy();
 
   const startTranscriptReviewBlockedReasonText = canStartTranscriptReview
     ? undefined
@@ -58,9 +63,9 @@ export function SessionIntakeSteps({ model }: { model: SessionIntakeViewModel })
           {intakeStep === "details" && caseConsent !== "granted" ? (
             <WorkspacePanel className="space-y-5 p-5 sm:p-6" role="region" aria-label="Consent Intake Gate">
               <div>
-                <h2 className="text-xl font-semibold text-ink">Consent Verification Required</h2>
+                <h2 className="text-xl font-semibold text-ink">{t.consent.title}</h2>
                 <p className="mt-2 text-sm leading-6 text-ink-muted">
-                  Audio processing, recording, and clinical observation suggested reviews are locked until parental/caregiver consent is verified.
+                  {t.consent.body}
                 </p>
               </div>
               {intakeError && (
@@ -82,7 +87,7 @@ export function SessionIntakeSteps({ model }: { model: SessionIntakeViewModel })
                   event.preventDefault();
                   await handleGrantConsent();
                 }}
-                submitLabel="Verify and Grant Consent"
+                submitLabel={t.consent.submit}
                 submitBlockedReason={grantConsentReason}
                 reasonId="grant-consent-reason"
                 idPrefix="intake"
@@ -91,91 +96,91 @@ export function SessionIntakeSteps({ model }: { model: SessionIntakeViewModel })
           ) : intakeStep === "details" ? (
             <WorkspacePanel className="space-y-5 p-5 sm:p-6">
               <div>
-                <h2 className="text-xl font-semibold text-ink">Session Details</h2>
+                <h2 className="text-xl font-semibold text-ink">{t.steps.details}</h2>
                 <p className="mt-2 text-sm leading-6 text-ink-muted">
-                  Set the session context first so the transcript workflow carries the correct child label, timing, and therapist-entered goals.
+                  {t.details.body}
                 </p>
               </div>
               <div className="grid gap-4 md:grid-cols-2">
                 <Field>
-                  <label htmlFor="session-child-client" className="block text-sm font-semibold text-ink">Child or client</label>
+                  <label htmlFor="session-child-client" className="block text-sm font-semibold text-ink">{t.details.childClient}</label>
                   <input
                     id="session-child-client"
                     type="text"
                     value={sessionDetails.childClient}
                     onChange={(event) => setSessionDetails((current) => ({ ...current, childClient: event.target.value }))}
-                    className="block min-h-11 w-full rounded-control border border-line-strong bg-surface px-3.5 py-2.5 text-sm text-ink outline-none transition focus-visible:border-brand focus-visible:ring-4 focus-visible:ring-[color:var(--color-focus-ring)]"
+                    className={controlClass}
                   />
                 </Field>
                 <Field>
-                  <label htmlFor="session-clinician" className="block text-sm font-semibold text-ink">Clinician</label>
+                  <label htmlFor="session-clinician" className="block text-sm font-semibold text-ink">{t.details.clinician}</label>
                   <input
                     id="session-clinician"
                     type="text"
                     value={sessionDetails.clinician}
                     onChange={(event) => setSessionDetails((current) => ({ ...current, clinician: event.target.value }))}
-                    className="block min-h-11 w-full rounded-control border border-line-strong bg-surface px-3.5 py-2.5 text-sm text-ink outline-none transition focus-visible:border-brand focus-visible:ring-4 focus-visible:ring-[color:var(--color-focus-ring)]"
+                    className={controlClass}
                   />
                 </Field>
                 <Field>
-                  <label htmlFor="session-date" className="block text-sm font-semibold text-ink">Session date</label>
+                  <label htmlFor="session-date" className="block text-sm font-semibold text-ink">{t.details.date}</label>
                   <input
                     id="session-date"
                     type="date"
                     value={sessionDetails.sessionDate}
                     onChange={(event) => setSessionDetails((current) => ({ ...current, sessionDate: event.target.value }))}
-                    className="block min-h-11 w-full rounded-control border border-line-strong bg-surface px-3.5 py-2.5 text-sm text-ink outline-none transition focus-visible:border-brand focus-visible:ring-4 focus-visible:ring-[color:var(--color-focus-ring)]"
+                    className={controlClass}
                   />
                 </Field>
                 <Field>
-                  <label htmlFor="session-time" className="block text-sm font-semibold text-ink">Session time</label>
+                  <label htmlFor="session-time" className="block text-sm font-semibold text-ink">{t.details.time}</label>
                   <input
                     id="session-time"
                     type="time"
                     value={sessionDetails.sessionTime}
                     onChange={(event) => setSessionDetails((current) => ({ ...current, sessionTime: event.target.value }))}
-                    className="block min-h-11 w-full rounded-control border border-line-strong bg-surface px-3.5 py-2.5 text-sm text-ink outline-none transition focus-visible:border-brand focus-visible:ring-4 focus-visible:ring-[color:var(--color-focus-ring)]"
+                    className={controlClass}
                   />
                 </Field>
                 <Field>
-                  <label htmlFor="session-setting" className="block text-sm font-semibold text-ink">Setting</label>
+                  <label htmlFor="session-setting" className="block text-sm font-semibold text-ink">{t.details.setting}</label>
                   <select
                     id="session-setting"
                     value={sessionDetails.setting}
                     onChange={(event) => setSessionDetails((current) => ({ ...current, setting: event.target.value }))}
-                    className="block min-h-11 w-full rounded-control border border-line-strong bg-surface px-3.5 py-2.5 text-sm text-ink outline-none transition focus-visible:border-brand focus-visible:ring-4 focus-visible:ring-[color:var(--color-focus-ring)]"
+                    className={controlClass}
                   >
-                    <option value="clinic">Clinic</option>
-                    <option value="home">Home</option>
-                    <option value="telehealth">Telehealth</option>
+                    <option value="clinic">{t.details.settings.clinic}</option>
+                    <option value="home">{t.details.settings.home}</option>
+                    <option value="telehealth">{t.details.settings.telehealth}</option>
                   </select>
                 </Field>
                 <Field>
-                  <label htmlFor="session-duration" className="block text-sm font-semibold text-ink">Duration</label>
+                  <label htmlFor="session-duration" className="block text-sm font-semibold text-ink">{t.details.duration}</label>
                   <select
                     id="session-duration"
                     value={sessionDetails.durationMinutes}
                     onChange={(event) => setSessionDetails((current) => ({ ...current, durationMinutes: event.target.value }))}
-                    className="block min-h-11 w-full rounded-control border border-line-strong bg-surface px-3.5 py-2.5 text-sm text-ink outline-none transition focus-visible:border-brand focus-visible:ring-4 focus-visible:ring-[color:var(--color-focus-ring)]"
+                    className={controlClass}
                   >
-                    <option value="30">30 minutes</option>
-                    <option value="45">45 minutes</option>
-                    <option value="60">60 minutes</option>
-                    <option value="90">90 minutes</option>
+                    <option value="30">{t.details.minutes("30")}</option>
+                    <option value="45">{t.details.minutes("45")}</option>
+                    <option value="60">{t.details.minutes("60")}</option>
+                    <option value="90">{t.details.minutes("90")}</option>
                   </select>
                 </Field>
               </div>
               <Field>
-                <label htmlFor="session-goals" className="block text-sm font-semibold text-ink">Session goals</label>
+                <label htmlFor="session-goals" className="block text-sm font-semibold text-ink">{t.details.goals}</label>
                 <textarea
                   id="session-goals"
                   value={sessionDetails.sessionGoals}
                   onChange={(event) => setSessionDetails((current) => ({ ...current, sessionGoals: event.target.value }))}
-                  className="block min-h-32 w-full rounded-control border border-line-strong bg-surface px-3.5 py-2.5 text-sm text-ink outline-none transition focus-visible:border-brand focus-visible:ring-4 focus-visible:ring-[color:var(--color-focus-ring)]"
+                  className={`${controlClass} min-h-32`}
                 />
               </Field>
               <SafetyNotice>
-                {DECISION_SUPPORT_ONLY} Do not use this intake to imply diagnosis, automated conclusions, or secure sharing beyond the implemented local workflow.
+                {safety.DECISION_SUPPORT_ONLY} {t.details.safetyNote}
               </SafetyNotice>
               <div className="flex flex-wrap justify-end gap-3">
                 <ActionButton
@@ -184,7 +189,7 @@ export function SessionIntakeSteps({ model }: { model: SessionIntakeViewModel })
                   disabled={!sessionDetailsComplete}
                   aria-describedby={continueToSourceMaterialReason ? "continue-to-source-material-reason" : undefined}
                 >
-                  Continue to Source Material
+                  {t.details.continue}
                 </ActionButton>
               </div>
               {continueToSourceMaterialReason ? (
@@ -202,16 +207,16 @@ export function SessionIntakeSteps({ model }: { model: SessionIntakeViewModel })
           {intakeStep === "source" ? (
             <WorkspacePanel className="space-y-5 p-5 sm:p-6">
               <div>
-                <h2 className="text-xl font-semibold text-ink">Source Material</h2>
+                <h2 className="text-xl font-semibold text-ink">{t.steps.source}</h2>
                 <p className="mt-2 text-sm leading-6 text-ink-muted">
-                  Preserve the existing quick-start workflows while making the source choice explicit. Audio upload and ASR remain clearly labeled experimental.
+                  {t.source.body}
                 </p>
               </div>
               <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
-                <SourceChoiceButton label="Record in browser" active={selectedSource === "recording"} icon={Mic} onClick={() => setSelectedSource("recording")} />
-                <SourceChoiceButton label="Upload audio" active={selectedSource === "audio"} icon={UploadCloud} onClick={() => setSelectedSource("audio")} />
-                <SourceChoiceButton label="Upload .cha" active={selectedSource === "cha"} icon={FileText} onClick={() => setSelectedSource("cha")} />
-                <SourceChoiceButton label="Paste transcript" active={selectedSource === "paste"} icon={ClipboardPaste} onClick={() => setSelectedSource("paste")} />
+                <SourceChoiceButton label={t.sourceChoices.recording} active={selectedSource === "recording"} icon={Mic} onClick={() => setSelectedSource("recording")} />
+                <SourceChoiceButton label={t.sourceChoices.audio} active={selectedSource === "audio"} icon={UploadCloud} onClick={() => setSelectedSource("audio")} />
+                <SourceChoiceButton label={t.sourceChoices.cha} active={selectedSource === "cha"} icon={FileText} onClick={() => setSelectedSource("cha")} />
+                <SourceChoiceButton label={t.sourceChoices.paste} active={selectedSource === "paste"} icon={ClipboardPaste} onClick={() => setSelectedSource("paste")} />
               </div>
 
               {selectedSource === "recording" ? (
@@ -263,9 +268,9 @@ export function SessionIntakeSteps({ model }: { model: SessionIntakeViewModel })
 
                   {uploadStep === "idle" && recordedAudio ? (
                     <WorkspacePanel className="p-5 text-center">
-                      <p className="mb-3 text-sm text-ink-muted">Recording captured. Ready for explicit upload confirmation.</p>
+                      <p className="mb-3 text-sm text-ink-muted">{t.source.recordingCaptured}</p>
                       <PrimaryActionButton icon={UploadCloud} className="w-full" onClick={() => setUploadStep("confirm")}>
-                        Upload for transcription
+                        {t.source.uploadForTranscription}
                       </PrimaryActionButton>
                     </WorkspacePanel>
                   ) : null}
@@ -287,7 +292,7 @@ export function SessionIntakeSteps({ model }: { model: SessionIntakeViewModel })
                   onChaFile={async (file) => {
                     if (!file.name.toLowerCase().endsWith(".cha")) {
                       setSourceFilename(undefined);
-                      setIntakeError("Invalid .cha file: choose a file with the .cha extension.");
+                      setIntakeError(t.source.invalidExtension);
                       return;
                     }
                     const text = await file.text();
@@ -301,7 +306,7 @@ export function SessionIntakeSteps({ model }: { model: SessionIntakeViewModel })
                     } catch (error) {
                       setSourceFilename(undefined);
                       setDraftTranscript(text);
-                      setIntakeError(error instanceof Error ? error.message : "Invalid .cha file.");
+                      setIntakeError(error instanceof Error ? error.message : t.source.invalidFile);
                       setIntakeWarnings([]);
                       setIntakeValidationIssues([]);
                     }
@@ -312,10 +317,10 @@ export function SessionIntakeSteps({ model }: { model: SessionIntakeViewModel })
 
               <WorkspacePanel className="p-5">
                 <div className="mb-3 flex items-center justify-between gap-3">
-                  <h3 className="font-bold text-ink">Transcript preview</h3>
+                  <h3 className="font-bold text-ink">{t.source.previewTitle}</h3>
                   <span className="inline-flex items-center gap-2 rounded-full bg-surface-muted px-3 py-1 text-xs font-semibold text-ink">
                     <span className={`h-2 w-2 rounded-full ${state.transcriptReady ? "bg-brand" : "bg-[color:var(--color-warning-border)]"}`} />
-                    {state.transcriptReady ? "Ready for review" : "Preview only"}
+                    {state.transcriptReady ? t.view.readyForReview : t.source.previewOnly}
                   </span>
                 </div>
                 <div className="space-y-2 text-sm text-ink">
@@ -325,8 +330,8 @@ export function SessionIntakeSteps({ model }: { model: SessionIntakeViewModel })
                       ? draftTranscript.trim().split("\n").slice(0, 6).map((line) => <p key={line}>{line}</p>)
                       : (
                         <div className="rounded-card border border-dashed border-line bg-surface-muted p-4 text-center">
-                          <p className="font-semibold text-ink">No transcript available yet</p>
-                          <p className="mt-1 text-sm text-ink-muted">Add source material, then continue into transcript setup and therapist review.</p>
+                          <p className="font-semibold text-ink">{t.source.noTranscriptTitle}</p>
+                          <p className="mt-1 text-sm text-ink-muted">{t.source.noTranscriptBody}</p>
                         </div>
                       )}
                 </div>
@@ -334,10 +339,10 @@ export function SessionIntakeSteps({ model }: { model: SessionIntakeViewModel })
 
               <div className="flex flex-wrap justify-between gap-3">
                 <ActionButton type="button" tone="ghost" onClick={() => setIntakeStep("details")}>
-                  Back to Session Details
+                  {t.source.back}
                 </ActionButton>
                 <ActionButton type="button" onClick={() => setIntakeStep("setup")}>
-                  Continue to Transcript Setup
+                  {t.source.continue}
                 </ActionButton>
               </div>
             </WorkspacePanel>
@@ -346,86 +351,86 @@ export function SessionIntakeSteps({ model }: { model: SessionIntakeViewModel })
           {intakeStep === "setup" ? (
             <WorkspacePanel className="space-y-5 p-5 sm:p-6">
               <div>
-                <h2 className="text-xl font-semibold text-ink">Transcript Setup</h2>
+                <h2 className="text-xl font-semibold text-ink">{t.steps.setup}</h2>
                 <p className="mt-2 text-sm leading-6 text-ink-muted">
-                  Define how the transcript should be reviewed. These fields do not unlock analysis on their own; QA and therapist attestation are still required later.
+                  {t.setup.body}
                 </p>
               </div>
               <div className="grid gap-4 md:grid-cols-2">
                 <Field className="md:col-span-2">
-                  <label htmlFor="speaker-labels" className="block text-sm font-semibold text-ink">Speaker labels</label>
+                  <label htmlFor="speaker-labels" className="block text-sm font-semibold text-ink">{t.setup.speakerLabels}</label>
                   <textarea
                     id="speaker-labels"
                     value={transcriptSetup.speakerLabels}
                     onChange={(event) => setTranscriptSetup((current) => ({ ...current, speakerLabels: event.target.value }))}
-                    className="block min-h-28 w-full rounded-control border border-line-strong bg-surface px-3.5 py-2.5 text-sm text-ink outline-none transition focus-visible:border-brand focus-visible:ring-4 focus-visible:ring-[color:var(--color-focus-ring)]"
+                    className={`${controlClass} min-h-28`}
                   />
                 </Field>
                 <Field className="md:col-span-2">
-                  <label htmlFor="session-metadata" className="block text-sm font-semibold text-ink">Session metadata</label>
+                  <label htmlFor="session-metadata" className="block text-sm font-semibold text-ink">{t.setup.metadata}</label>
                   <textarea
                     id="session-metadata"
                     value={transcriptSetup.sessionMetadata}
                     onChange={(event) => setTranscriptSetup((current) => ({ ...current, sessionMetadata: event.target.value }))}
-                    className="block min-h-28 w-full rounded-control border border-line-strong bg-surface px-3.5 py-2.5 text-sm text-ink outline-none transition focus-visible:border-brand focus-visible:ring-4 focus-visible:ring-[color:var(--color-focus-ring)]"
+                    className={`${controlClass} min-h-28`}
                   />
                 </Field>
                 <Field>
-                  <label htmlFor="transcript-language" className="block text-sm font-semibold text-ink">Language</label>
+                  <label htmlFor="transcript-language" className="block text-sm font-semibold text-ink">{t.setup.language}</label>
                   <select
                     id="transcript-language"
                     value={transcriptSetup.language}
                     onChange={(event) => setTranscriptSetup((current) => ({ ...current, language: event.target.value }))}
-                    className="block min-h-11 w-full rounded-control border border-line-strong bg-surface px-3.5 py-2.5 text-sm text-ink outline-none transition focus-visible:border-brand focus-visible:ring-4 focus-visible:ring-[color:var(--color-focus-ring)]"
+                    className={controlClass}
                   >
-                    <option value="eng">English</option>
-                    <option value="tha">Thai</option>
-                    <option value="mixed">Mixed language sample</option>
+                    <option value="eng">{t.setup.languages.eng}</option>
+                    <option value="tha">{t.setup.languages.tha}</option>
+                    <option value="mixed">{t.setup.languages.mixed}</option>
                   </select>
                 </Field>
                 <Field>
-                  <label htmlFor="sample-type" className="block text-sm font-semibold text-ink">Sample type</label>
+                  <label htmlFor="sample-type" className="block text-sm font-semibold text-ink">{t.setup.sampleType}</label>
                   <select
                     id="sample-type"
                     value={transcriptSetup.sampleType}
                     onChange={(event) => setTranscriptSetup((current) => ({ ...current, sampleType: event.target.value }))}
-                    className="block min-h-11 w-full rounded-control border border-line-strong bg-surface px-3.5 py-2.5 text-sm text-ink outline-none transition focus-visible:border-brand focus-visible:ring-4 focus-visible:ring-[color:var(--color-focus-ring)]"
+                    className={controlClass}
                   >
-                    <option value="conversation">Conversation</option>
-                    <option value="play">Play-based interaction</option>
-                    <option value="narrative">Narrative sample</option>
+                    <option value="conversation">{t.setup.sampleTypes.conversation}</option>
+                    <option value="play">{t.setup.sampleTypes.play}</option>
+                    <option value="narrative">{t.setup.sampleTypes.narrative}</option>
                   </select>
                 </Field>
               </div>
               <div className="space-y-3 rounded-panel border border-line bg-surface p-4">
-                <p className="text-sm font-semibold text-ink">Review requirements</p>
+                <p className="text-sm font-semibold text-ink">{t.setup.requirements}</p>
                 <label className="flex min-h-11 items-start gap-3 text-sm text-ink">
                   <input
                     type="checkbox"
                     checked={transcriptSetup.reviewSpeakerLabels}
                     onChange={(event) => setTranscriptSetup((current) => ({ ...current, reviewSpeakerLabels: event.target.checked }))}
-                    aria-label="I will review speaker labels and transcript wording before attestation."
+                    aria-label={t.setup.reviewSpeakerLabels}
                     className="mt-1 h-4 w-4 rounded border-line"
                   />
-                  <span>I will review speaker labels and transcript wording before attestation.</span>
+                  <span>{t.setup.reviewSpeakerLabels}</span>
                 </label>
                 <label className="flex min-h-11 items-start gap-3 text-sm text-ink">
                   <input
                     type="checkbox"
                     checked={transcriptSetup.reviewFeatureLock}
                     onChange={(event) => setTranscriptSetup((current) => ({ ...current, reviewFeatureLock: event.target.checked }))}
-                    aria-label="I understand feature extraction stays locked until transcript review, QA, and attestation are complete."
+                    aria-label={t.setup.reviewFeatureLock}
                     className="mt-1 h-4 w-4 rounded border-line"
                   />
-                  <span>I understand feature extraction stays locked until transcript review, QA, and attestation are complete.</span>
+                  <span>{t.setup.reviewFeatureLock}</span>
                 </label>
               </div>
               <div className="flex flex-wrap justify-between gap-3">
                 <ActionButton type="button" tone="ghost" onClick={() => setIntakeStep("source")}>
-                  Back to Source Material
+                  {t.setup.back}
                 </ActionButton>
                 <ActionButton type="button" onClick={() => setIntakeStep("review")}>
-                  Continue to Review & Start
+                  {t.setup.continue}
                 </ActionButton>
               </div>
             </WorkspacePanel>
@@ -434,43 +439,43 @@ export function SessionIntakeSteps({ model }: { model: SessionIntakeViewModel })
           {intakeStep === "review" ? (
             <WorkspacePanel className="space-y-5 p-5 sm:p-6">
               <div>
-                <h2 className="text-xl font-semibold text-ink">Review & Start</h2>
+                <h2 className="text-xl font-semibold text-ink">{t.steps.review}</h2>
                 <p className="mt-2 text-sm leading-6 text-ink-muted">
-                  Confirm the summary, keep the privacy notice visible, and route into the existing transcript review workflow.
+                  {t.review.body}
                 </p>
               </div>
               <div className="grid gap-4 lg:grid-cols-2">
-                <ReviewSummaryCard title="Session summary" rows={[
-                  { label: "Child/client", value: sessionDetails.childClient || "Not set" },
-                  { label: "Date", value: sessionDetails.sessionDate || "Not set" },
-                  { label: "Time", value: sessionDetails.sessionTime || "Not set" },
-                  { label: "Setting", value: capitalizeWord(sessionDetails.setting) },
-                  { label: "Duration", value: `${sessionDetails.durationMinutes} minutes` },
-                  { label: "Clinician", value: sessionDetails.clinician || "Not set" }
+                <ReviewSummaryCard title={t.review.sessionSummary} rows={[
+                  { label: t.review.childClient, value: sessionDetails.childClient || t.review.notSet },
+                  { label: t.review.date, value: sessionDetails.sessionDate || t.review.notSet },
+                  { label: t.review.time, value: sessionDetails.sessionTime || t.review.notSet },
+                  { label: t.review.setting, value: t.details.settings[sessionDetails.setting] ?? sessionDetails.setting },
+                  { label: t.review.duration, value: t.details.minutes(sessionDetails.durationMinutes) },
+                  { label: t.review.clinician, value: sessionDetails.clinician || t.review.notSet }
                 ]} />
-                <ReviewSummaryCard title="Workflow summary" rows={[
-                  { label: "Source type", value: sourceSummaryLabel(selectedSource) },
-                  { label: "Transcript source", value: sourceReadyForReview ? "Ready for therapist review" : "Still needs transcript-ready input" },
-                  { label: "Language", value: transcriptSetup.language },
-                  { label: "Sample type", value: transcriptSetup.sampleType },
-                  { label: "Goals", value: sessionDetails.sessionGoals || "Not set" }
+                <ReviewSummaryCard title={t.review.workflowSummary} rows={[
+                  { label: t.review.sourceType, value: t.sources[selectedSource] },
+                  { label: t.review.transcriptSource, value: sourceReadyForReview ? t.review.sourceReady : t.review.sourceNotReady },
+                  { label: t.review.language, value: t.setup.languages[transcriptSetup.language] ?? transcriptSetup.language },
+                  { label: t.review.sampleType, value: t.setup.sampleTypes[transcriptSetup.sampleType] ?? transcriptSetup.sampleType },
+                  { label: t.review.goals, value: sessionDetails.sessionGoals || t.review.notSet }
                 ]} />
               </div>
               <SafetyNotice>
-                {DECISION_SUPPORT_ONLY} Audio bytes are not stored in browser persistent storage. Experimental ASR output must be reviewed by a therapist before transcript attestation, feature extraction, or report use.
+                {safety.DECISION_SUPPORT_ONLY} {t.review.safetyNote}
               </SafetyNotice>
               {selectedSource === "audio" || selectedSource === "recording" ? (
                 <div className="rounded-panel border border-[color:var(--color-attention-border)] bg-[color:var(--color-warning-bg)] p-4 text-sm text-[color:var(--color-warning-text)]">
-                  Audio upload and ASR remain experimental in this workflow. Start transcript review only after a draft transcript is actually available.
+                  {t.review.asrWarning}
                 </div>
               ) : null}
               <div className="flex flex-wrap justify-between gap-3">
                 <ActionButton type="button" tone="ghost" onClick={() => setIntakeStep("setup")}>
-                  Back to Transcript Setup
+                  {t.review.back}
                 </ActionButton>
                 <div className="flex flex-wrap gap-3">
                   <ActionButton type="button" tone="secondary" onClick={saveSessionIntakeDraft}>
-                    Save session
+                    {t.review.save}
                   </ActionButton>
                   <ActionButton
                     type="button"
@@ -487,7 +492,7 @@ export function SessionIntakeSteps({ model }: { model: SessionIntakeViewModel })
                     disabled={!canStartTranscriptReview}
                     aria-describedby={startTranscriptReviewBlockedReasonText ? "start-transcript-review-reason" : undefined}
                   >
-                    Start Transcript Review
+                    {t.review.start}
                   </ActionButton>
                 </div>
                 {startTranscriptReviewBlockedReasonText ? (

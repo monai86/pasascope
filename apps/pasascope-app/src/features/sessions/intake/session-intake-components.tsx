@@ -8,20 +8,9 @@ import { PrimaryActionButton, WorkspacePanel } from "@/components/workbench-ui";
 import { sessionCompletion } from "@/features/sessions/state/session-completion";
 import { sessionMessages } from "@/features/sessions/session.messages";
 import { resolveSessionHref, sessionViews, type SessionView } from "@/features/sessions/state/session-view";
+import { intakeMessages } from "@/features/sessions/intake/intake.messages";
 import { useMessages } from "@/i18n/locale-provider";
-import type { SessionIntakeSource } from "@/features/sessions/intake/session-intake-view";
 import type { WorkflowSource, WorkflowState } from "@/lib/workflow";
-
-export function sourceSummaryLabel(source: SessionIntakeSource): string {
-  if (source === "recording") return "Browser recording";
-  if (source === "audio") return "Audio upload";
-  if (source === "cha") return "CHAT file upload";
-  return "Pasted transcript";
-}
-
-export function capitalizeWord(value: string) {
-  return value ? value[0].toUpperCase() + value.slice(1) : value;
-}
 
 export function workflowSessionHref(view: "intake" | "transcript" | "findings" | "report", state: WorkflowState, reportId?: string) {
   return resolveSessionHref(view, state.backendSessionId ?? state.backendTranscriptSessionId ?? state.sessionId, {
@@ -144,14 +133,15 @@ export function SourceInputPanel({
   onChaFile: (file: File) => void;
   onTranscriptSubmit: (source: Extract<WorkflowSource, "cha-upload" | "paste-transcript">) => void;
 }) {
+  const t = useMessages(intakeMessages);
   if (mode === "audio") {
     // Uploading an existing audio file is not built. Saying so is better than
     // a button that records an upload which never happened.
     return (
       <WorkspacePanel className="p-5">
-        <h2 className="font-bold text-ink">Upload audio</h2>
+        <h2 className="font-bold text-ink">{t.sourceChoices.audio}</h2>
         <p className="mt-2 text-sm leading-6 text-ink-muted">
-          Uploading an existing audio file is not available yet. Record in the browser to transcribe speech, or upload a .cha file or paste a transcript you already have.
+          {t.source.audioBody}
         </p>
       </WorkspacePanel>
     );
@@ -164,34 +154,34 @@ export function SourceInputPanel({
         <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
           <div className="flex items-center gap-2">
             {mode === "cha" ? <FileText size={22} aria-hidden="true" className="text-highlight" /> : <ClipboardPaste size={22} aria-hidden="true" className="text-brand" />}
-            <h2 className="font-bold text-ink">{mode === "cha" ? "Upload .cha" : "Paste transcript"}</h2>
+            <h2 className="font-bold text-ink">{mode === "cha" ? t.sourceChoices.cha : t.sourceChoices.paste}</h2>
           </div>
           {mode === "paste" && (
             <div className="flex items-center gap-2 text-xs">
-              <span className="text-ink-muted font-medium">Quick Demo:</span>
+              <span className="text-ink-muted font-medium">{t.source.quickDemo}</span>
               <button
                 type="button"
                 onClick={() => onDraftChange(SAMPLE_THAI_TRANSCRIPT)}
-                className="inline-flex items-center gap-1 px-2.5 py-1 rounded-md border border-[color:var(--color-success-border)] bg-[color:var(--color-success-bg)] text-[color:var(--color-success-text)] font-semibold hover:bg-[color:var(--color-success-bg)] transition shadow-sm"
-                title="Load sample Thai conversation for demonstration"
+                className="inline-flex min-h-10 items-center gap-1 rounded-full border border-line-strong bg-surface-soft px-3 py-1 font-semibold text-ink transition hover:bg-surface-muted"
+                title={t.source.thaiSampleTitle}
               >
                 <Sparkles size={13} aria-hidden="true" />
-                ตัวอย่างภาษาไทย
+                {t.source.thaiSample}
               </button>
               <button
                 type="button"
                 onClick={() => onDraftChange(SAMPLE_ENG_TRANSCRIPT)}
-                className="inline-flex items-center gap-1 px-2.5 py-1 rounded-md border border-line-strong bg-surface-soft text-ink font-semibold hover:bg-surface-muted transition"
-                title="Load sample English conversation"
+                className="inline-flex min-h-10 items-center gap-1 rounded-full border border-line-strong bg-surface-soft px-3 py-1 font-semibold text-ink transition hover:bg-surface-muted"
+                title={t.source.englishSampleTitle}
               >
-                English Sample
+                {t.source.englishSample}
               </button>
             </div>
           )}
         </div>
         {mode === "cha" ? (
           <>
-            <label className="sr-only" htmlFor="cha-transcript-file">CHA transcript file</label>
+            <label className="sr-only" htmlFor="cha-transcript-file">{t.source.chaFileLabel}</label>
             <input
               id="cha-transcript-file"
               type="file"
@@ -208,7 +198,7 @@ export function SourceInputPanel({
           className="min-h-44 w-full rounded-panel border border-line bg-surface p-3 text-sm text-ink outline-none focus:ring-2 focus:ring-brand"
           value={draftTranscript}
           onChange={(event) => onDraftChange(event.target.value)}
-          aria-label={mode === "cha" ? "CHA transcript text" : "Pasted transcript text"}
+          aria-label={mode === "cha" ? t.source.chaTextLabel : t.source.pasteTextLabel}
           aria-describedby={error ? "source-transcript-error" : undefined}
           data-testid="transcript-input"
         />
@@ -219,13 +209,13 @@ export function SourceInputPanel({
         ) : null}
         {warnings.length > 0 ? (
           <div className="mt-3 rounded-card border border-[color:var(--color-attention-border)] bg-[color:var(--color-warning-bg)] p-3 text-sm text-[color:var(--color-warning-text)]" role="status">
-            <p className="font-semibold">Import warnings</p>
+            <p className="font-semibold">{t.source.importWarnings}</p>
             <ul className="mt-1 list-disc space-y-1 pl-5">{warnings.map((warning) => <li key={warning}>{warning}</li>)}</ul>
           </div>
         ) : null}
         {validationIssues.length > 0 ? (
           <div className="mt-3 rounded-card border border-[color:var(--color-attention-border)] bg-[color:var(--color-warning-bg)] p-3 text-sm text-[color:var(--color-warning-text)]" role="alert">
-            <p className="font-semibold">CHAT validation</p>
+            <p className="font-semibold">{t.source.chatValidation}</p>
             <ul className="mt-1 list-disc space-y-1 pl-5">{validationIssues.map((issue) => <li key={issue}>{issue}</li>)}</ul>
           </div>
         ) : null}
@@ -237,7 +227,7 @@ export function SourceInputPanel({
           data-testid="save-transcript-button"
           aria-describedby={error ? "source-transcript-error" : undefined}
         >
-          Save transcript
+          {t.source.saveTranscript}
         </PrimaryActionButton>
       </WorkspacePanel>
     );

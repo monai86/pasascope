@@ -7,11 +7,12 @@ import { SessionContextHeader, type SessionContext } from "@/features/sessions/c
 import {
   ReviewSummaryCard,
   SessionProgressCard,
-  sourceSummaryLabel,
   WorkflowStatus,
 } from "@/features/sessions/intake/session-intake-components";
 import { SessionIntakeSteps } from "@/features/sessions/intake/session-intake-steps";
-import { NON_DIAGNOSTIC_CLAIM } from "@/lib/clinical-safety-copy";
+import { intakeMessages } from "@/features/sessions/intake/intake.messages";
+import { useMessages } from "@/i18n/locale-provider";
+import { useSafetyCopy } from "@/lib/safety-copy";
 import type { WorkflowSource, WorkflowState } from "@/lib/workflow";
 
 export type SessionIntakeStepId = "details" | "source" | "setup" | "review";
@@ -96,35 +97,61 @@ export type SessionIntakeViewModel = {
   router: { push: (href: string) => void };
 };
 
-const sessionIntakeStepLabels: Array<{ id: SessionIntakeStepId; title: string; helper: string }> = [
-  { id: "details", title: "Session Details", helper: "Set the session context before adding source material." },
-  { id: "source", title: "Source Material", helper: "Record, upload, or paste the material for therapist review." },
-  { id: "setup", title: "Transcript Setup", helper: "Define labels, metadata, and review requirements." },
-  { id: "review", title: "Review & Start", helper: "Confirm safety notices before opening transcript review." },
-];
+const intakeStepOrder: SessionIntakeStepId[] = ["details", "source", "setup", "review"];
 
 export function SessionIntakeView({ model }: { model: SessionIntakeViewModel }) {
   const { sessionContext, intakeStep, selectedSource, state, backendUnavailable } = model;
+  const t = useMessages(intakeMessages);
+  const safety = useSafetyCopy();
+  // A step is ticked when its own inputs are in, not because a later step is open.
+  const stepDone: Record<SessionIntakeStepId, boolean> = {
+    details: model.caseConsent === "granted" && model.sessionDetailsComplete,
+    source: model.sourceReadyForReview,
+    setup: model.transcriptSetupComplete,
+    review: state.transcriptReady,
+  };
+  const stepNumber = intakeStepOrder.indexOf(intakeStep) + 1;
 
   return (
     <div className="grid gap-6 xl:grid-cols-[minmax(0,1fr)_340px]">
       <div className="min-w-0 space-y-6">
         <SessionContextHeader
-          title="Session Intake"
-          description="Capture session context, prepare source material, and route the workflow into therapist transcript review without weakening the existing review and attestation gates."
-          meta={["Audio upload requires explicit confirmation", "ASR remains experimental"]}
+          title={t.view.title}
+          description={t.view.description}
+          meta={t.view.meta}
           context={sessionContext}
         />
+        {/* A slim bar, not a second numbered rail: the session rail above already has one. */}
+        <div role="group" aria-label={t.view.stepsLabel}>
+          <p className="text-sm font-semibold text-ink">
+            <span className="text-brand-strong">{t.view.stepOf(stepNumber, intakeStepOrder.length)}</span>
+            <span aria-hidden="true" className="text-ink-subtle"> · </span>
+            {t.steps[intakeStep]}
+          </p>
+          <ol className="mt-2 flex gap-1.5" role="list">
+            {intakeStepOrder.map((id) => (
+              <li
+                key={id}
+                aria-current={id === intakeStep ? "step" : undefined}
+                className={`h-1.5 flex-1 rounded-full ${id === intakeStep ? "bg-brand" : stepDone[id] ? "bg-sky-strong" : "bg-line-strong"}`}
+              >
+                <span className="sr-only">
+                  {t.steps[id]} ({id === intakeStep ? t.view.stepStates.current : stepDone[id] ? t.view.stepStates.complete : t.view.stepStates.available})
+                </span>
+              </li>
+            ))}
+          </ol>
+        </div>
         <SessionIntakeSteps model={model} />
 
         <WorkflowStatus state={state} backendUnavailable={backendUnavailable} />
-        <SafetyNote>{NON_DIAGNOSTIC_CLAIM} Transcript must be reviewed before report use.</SafetyNote>
+        <SafetyNote>{safety.NON_DIAGNOSTIC_CLAIM} {t.view.finalNote}</SafetyNote>
       </div>
       <div className="space-y-6">
-        <ReviewSummaryCard title="Current intake" rows={[
-          { label: "Step", value: sessionIntakeStepLabels.find((item) => item.id === intakeStep)?.title ?? "Session Details" },
-          { label: "Source", value: sourceSummaryLabel(selectedSource) },
-          { label: "Transcript status", value: state.transcriptReady ? "Ready for review" : "Pending" },
+        <ReviewSummaryCard title={t.view.currentIntake} rows={[
+          { label: t.view.rowStep, value: t.steps[intakeStep] },
+          { label: t.view.rowSource, value: t.sources[selectedSource] },
+          { label: t.view.rowTranscriptStatus, value: state.transcriptReady ? t.view.readyForReview : t.view.pending },
         ]} />
         <SessionProgressCard state={state} />
       </div>
