@@ -190,7 +190,7 @@ When the API runs the public workflow (public sign-up, open review gates),
   Decision record: `docs/adr/0022-fixed-topic-answers-on-chat-home.md`.
 - **Motion:** small and brief. A message, card or row rises 10px into place
   (`chat-rise`, 280ms); an answer is preceded by three dots for under half a
-  second; the glow behind the mark on Home breathes; the text field lifts
+  second; the mark on Home and the sign-in page sits on a white tile, two rings leave it in turn and the bars in its lens move as a waveform (`ChatMarkStage`); the text field lifts
   while in use; buttons give under a press; a page fades in. Nothing moves to
   hold attention, and `prefers-reduced-motion` cuts all of it to an instant
   change. A control never shrinks below its 44px target while animating.

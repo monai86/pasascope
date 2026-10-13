@@ -4,7 +4,8 @@ import { FileText, ListChecks, Mic, ShieldCheck } from "lucide-react";
 
 import { LanguageToggle } from "@/components/language-toggle";
 import { loginMessages } from "@/components/login.messages";
-import { PasaScopeLogo, PasaScopeLogoMark } from "@/components/pasascope-logo";
+import { ChatMarkStage } from "@/components/chat-shell/chat-mark-stage";
+import { PasaScopeLogo } from "@/components/pasascope-logo";
 import { RuntimeLoginPanelClient } from "@/components/runtime-login-panel-client";
 import { useMessages } from "@/i18n/locale-provider";
 import { APP_VERSION } from "@/lib/app-version";
@@ -45,9 +46,7 @@ export function LoginScreen() {
         {/* On a phone the form follows the heading, so signing in needs no scrolling past the steps. */}
         <div className="mx-auto grid w-full max-w-5xl flex-1 content-center items-center gap-6 lg:grid-cols-[minmax(0,1fr)_minmax(0,440px)] lg:gap-x-12">
           <div className="chat-rise flex flex-col items-center text-center lg:items-start lg:self-end lg:text-left">
-            <div aria-hidden="true" className="chat-mark-glow grid h-[110px] w-[170px] place-items-center lg:-ml-9 lg:h-[130px] lg:w-[200px]">
-              <PasaScopeLogoMark size="xl" />
-            </div>
+            <ChatMarkStage className="lg:-ml-[26px]" />
             <p className="mt-1 text-sm font-medium text-ink-subtle">{t.hero.eyebrow}</p>
             <h1 className="mt-2 font-display text-3xl font-semibold leading-tight text-ink md:text-[2.5rem]">
               {t.hero.title}

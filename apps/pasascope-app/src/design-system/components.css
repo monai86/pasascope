@@ -183,50 +183,95 @@
     }
   }
 
-  /* The glow behind the mark on the chat home screen. It breathes; the mark stays still. */
-  .chat-mark-glow {
+  /* The mark on its tile, the centrepiece of the chat home and sign-in screens. */
+  .chat-mark-stage {
     position: relative;
+    display: grid;
+    width: 184px;
+    height: 172px;
+    place-items: center;
   }
 
-  .chat-mark-glow::before {
-    content: "";
+  .chat-mark-tile {
+    position: relative;
+    display: grid;
+    width: 132px;
+    height: 132px;
+    place-items: center;
+    border-radius: 38px;
+    background: linear-gradient(160deg, #fff 30%, var(--color-chat-frame) 100%);
+    /* The pale band outside the tile is what remains of the rings when motion is off. */
+    box-shadow:
+      var(--shadow-chat-card),
+      0 0 0 10px rgba(255, 255, 255, 0.5);
+  }
+
+  /* Two rings leave the tile in turn, like sound. */
+  .chat-mark-ring {
     position: absolute;
-    inset: 0;
-    background: radial-gradient(
-      closest-side,
-      rgba(124, 200, 248, 0.55),
-      rgba(240, 86, 106, 0.16) 60%,
-      rgba(240, 86, 106, 0) 100%
-    );
-    animation: chat-breathe 7s ease-in-out infinite;
+    top: 50%;
+    left: 50%;
+    width: 132px;
+    height: 132px;
+    margin: -66px 0 0 -66px;
+    border: 1.5px solid var(--color-sky);
+    border-radius: 38px;
+    opacity: 0;
+    animation: chat-ripple 4.4s cubic-bezier(0.2, 0.6, 0.3, 1) infinite;
   }
 
-  .chat-mark-glow > * {
-    position: relative;
+  .chat-mark-ring:nth-child(2) {
+    border-color: var(--color-highlight-border);
+    animation-delay: 2.2s;
+  }
+
+  /* The bars in the lens rise and fall as a waveform. */
+  .chat-mark-stage svg g path {
+    transform-box: fill-box;
+    transform-origin: center;
+    animation: chat-wave 1.8s ease-in-out infinite;
+  }
+
+  .chat-mark-stage svg g path:nth-child(2),
+  .chat-mark-stage svg g path:nth-child(4) {
+    animation-delay: 0.2s;
+  }
+
+  .chat-mark-stage svg g path:nth-child(3) {
+    animation-delay: 0.4s;
   }
 
   @media (forced-colors: active) {
     .chat-canvas,
-    .chat-frame {
+    .chat-frame,
+    .chat-mark-tile {
       background: Canvas;
-    }
-
-    .chat-mark-glow::before {
-      display: none;
     }
   }
 
   /* Small motion in the chat shell. The reduced-motion rule in globals.css
      cuts every one of these to an instant change. */
-  @keyframes chat-breathe {
+  @keyframes chat-ripple {
+    0% {
+      opacity: 0;
+      transform: scale(0.94);
+    }
+    18% {
+      opacity: 0.75;
+    }
+    100% {
+      opacity: 0;
+      transform: scale(1.46);
+    }
+  }
+
+  @keyframes chat-wave {
     0%,
     100% {
-      opacity: 0.8;
-      transform: scale(0.96);
+      transform: scaleY(1);
     }
     50% {
-      opacity: 1;
-      transform: scale(1.05);
+      transform: scaleY(0.55);
     }
   }
 

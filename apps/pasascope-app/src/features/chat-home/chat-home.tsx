@@ -15,7 +15,7 @@ import {
   QuickReply,
 } from "@/components/chat-shell/chat-primitives";
 import { ChatShellPanel } from "@/components/chat-shell/chat-shell-context";
-import { PasaScopeLogoMark } from "@/components/pasascope-logo";
+import { ChatMarkStage } from "@/components/chat-shell/chat-mark-stage";
 import { SkeletonLine } from "@/components/skeleton";
 import type { AskTopic } from "@/features/chat-home/assistant/assistant.messages";
 import type { AssistantIntent } from "@/features/chat-home/assistant/interpret";
@@ -170,9 +170,7 @@ export function ChatHome() {
       ) : (
         <div className="mx-auto flex w-full max-w-[660px] flex-1 flex-col justify-center gap-7 py-4 md:gap-9">
           <div className="chat-rise flex flex-col items-center text-center">
-            <div aria-hidden="true" className="chat-mark-glow grid h-[130px] w-[200px] place-items-center md:h-[150px] md:w-[220px]">
-              <PasaScopeLogoMark size="xl" />
-            </div>
+            <ChatMarkStage />
             <h1 className="mt-2 font-display text-3xl font-semibold leading-tight text-ink md:mt-3 md:text-[2.875rem]">
               {t.greeting}
             </h1>
