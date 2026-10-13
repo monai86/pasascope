@@ -1,17 +1,28 @@
 "use client";
 
+import dynamic from "next/dynamic";
+
 import { AppShell } from "@/components/app-shell";
 import type { ShellActive } from "@/components/sidebar";
 import { TodayContextRail } from "@/features/work-queue/components/today-context-rail";
 import { TodayWorkbenchView } from "@/features/work-queue/components/today-workbench-view";
 import { useTodayWorkbench } from "@/features/work-queue/hooks/use-today-workbench";
+import { useChatShellEnabled } from "@/lib/ui-shell";
+
+// Loaded only in the chat shell, so the workbench route does not carry it.
+const ChatHome = dynamic(() => import("@/features/chat-home/chat-home").then((module) => module.ChatHome));
 
 export function WorkQueueDashboard({ active }: { active: ShellActive }) {
   return (
     <AppShell active={active}>
-      <TodayWorkspaceController />
+      <HomeWorkspace />
     </AppShell>
   );
+}
+
+/** The home screen of whichever shell is running: the chat home or the Today queue. */
+function HomeWorkspace() {
+  return useChatShellEnabled() ? <ChatHome /> : <TodayWorkspaceController />;
 }
 
 function TodayWorkspaceController() {

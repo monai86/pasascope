@@ -9,6 +9,10 @@ type SessionCopy = {
     viewsLabel: string;
     casesCrumb: string;
     stepComplete: string;
+    /** Chat shell: the way back from a full page to the session's conversation. */
+    backToConversation: string;
+    /** Chat shell: what the first step is called, where the conversation replaces Intake. */
+    conversation: string;
     unavailable: string;
     details: string;
     fields: { case: string; session: string; source: string; consent: string; status: string; connection: string };
@@ -80,6 +84,8 @@ export const sessionMessages = defineMessages<SessionCopy>({
       viewsLabel: "Session views",
       casesCrumb: "Cases",
       stepComplete: "Step complete",
+      backToConversation: "Back to the conversation",
+      conversation: "Conversation",
       unavailable: "Unavailable",
       details: "Details",
       fields: { case: "Case", session: "Session", source: "Source", consent: "Consent", status: "Status", connection: "Connection" },
@@ -153,6 +159,8 @@ export const sessionMessages = defineMessages<SessionCopy>({
       viewsLabel: "ขั้นตอนของเซสชัน",
       casesCrumb: "เคส",
       stepComplete: "ขั้นตอนนี้เสร็จแล้ว",
+      backToConversation: "กลับไปที่บทสนทนา",
+      conversation: "บทสนทนา",
       unavailable: "ไม่มีข้อมูล",
       details: "รายละเอียด",
       fields: { case: "เคส", session: "เซสชัน", source: "แหล่งข้อมูล", consent: "ความยินยอม", status: "สถานะ", connection: "การเชื่อมต่อ" },

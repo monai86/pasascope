@@ -8,10 +8,11 @@ import { cn } from "@/lib/cn";
 export type ButtonVariant = "primary" | "secondary" | "ghost" | "danger";
 export type ButtonSize = "md" | "lg";
 
-// One solid azure primary per view; everything else is secondary or ghost.
+// One solid primary per view; everything else is secondary or ghost. The
+// action tokens are azure in the workbench shell and navy in the chat shell.
 const variantClasses: Record<ButtonVariant, string> = {
-  primary: "border border-transparent bg-brand text-white shadow-soft hover:bg-brand-hover",
-  secondary: "border border-brand-border bg-surface text-brand hover:bg-brand-soft",
+  primary: "border border-transparent bg-action text-white shadow-soft hover:bg-action-hover",
+  secondary: "border border-action-quiet-border bg-surface text-action-quiet-text hover:bg-action-quiet-hover",
   ghost: "border border-transparent bg-transparent text-ink hover:bg-surface-soft",
   danger:
     "border border-[color:var(--color-danger-border)] bg-[color:var(--color-danger-bg)] text-[color:var(--color-danger-text)] hover:border-[color:var(--color-danger-text)]",

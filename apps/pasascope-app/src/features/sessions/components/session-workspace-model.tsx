@@ -57,6 +57,8 @@ import { canApplyMlDecisionSupportSettlement, canApplyTranscriptSaveSettlement, 
 import { sessionWorkflowService } from "@/features/sessions/services/session-workflow-service";
 import { resolveSessionHref, resolveWorkspaceFeature, type SessionView } from "@/features/sessions/state/session-view";
 import { sessionCompletion } from "@/features/sessions/state/session-completion";
+import { getSessionTranscriptionJob, updateBackendSessionNotes } from "@/features/sessions/chat/chat-api";
+import { assignUnknownSpeakers } from "@/features/sessions/chat/chat-thread-model";
 import type { SessionIntakeSource, SessionIntakeStepId } from "@/features/sessions/intake/session-intake-view";
 import type { SessionContext } from "@/features/sessions/components/session-context-header";
 import { SessionWorkflowView, type SessionWorkflowViewModel } from "@/features/sessions/components/session-workspace-view";
@@ -73,7 +75,7 @@ export type SessionWorkspaceProps = {
 };
 
 type SessionWorkspaceIdentityProps = Omit<SessionWorkspaceProps, "view"> & {
-  view?: "intake" | "transcript" | "findings";
+  view?: "intake" | "transcript" | "findings" | "chat";
 };
 
 export function SessionWorkflowWorkspace(props: SessionWorkspaceProps) {
@@ -85,6 +87,17 @@ export function SessionWorkflowWorkspace(props: SessionWorkspaceProps) {
   ]);
   const view = resolveWorkspaceFeature(props.view);
   return <SessionWorkspaceIdentityScope key={identityKey} {...props} view={view} />;
+}
+
+/** The same controller, presented as one conversation instead of separate step screens. */
+export function SessionChatWorkspace(props: Omit<SessionWorkspaceProps, "view">) {
+  const identityKey = JSON.stringify([
+    props.sessionId ?? "",
+    props.caseId ?? "",
+    props.transcriptId ?? "",
+    props.reportId ?? "",
+  ]);
+  return <SessionWorkspaceIdentityScope key={identityKey} {...props} view="chat" />;
 }
 
 function SessionWorkspaceIdentityScope({ sessionId, caseId, transcriptId, reportId, view = "intake", mode }: SessionWorkspaceIdentityProps) {
@@ -106,6 +119,8 @@ export function useSessionWorkspace({ sessionId, caseId, transcriptId, reportId,
   const workflowRevisionRef = useRef(0);
   const activeTranscriptSaveRevisionRef = useRef<number | null>(null);
   const workflowStateRef = useRef(state);
+  const viewRef = useRef(view);
+  const resumeTranscriptionRef = useRef<(jobId: string, targetSessionId: string) => void>(() => {});
   const [busy, setBusy] = useState(false);
 
   useEffect(() => () => {
@@ -116,13 +131,34 @@ export function useSessionWorkspace({ sessionId, caseId, transcriptId, reportId,
   useEffect(() => {
     workflowStateRef.current = state;
   }, [state]);
+
+  // Read by the load below without making it run again when they change.
+  useEffect(() => {
+    viewRef.current = view;
+    resumeTranscriptionRef.current = (jobId, targetSessionId) => {
+      setTransJobId(jobId);
+      setTransJobStatus("processing");
+      setTransJobMessage("");
+      setUploadStep("polling");
+      setBusy(true);
+      void pollUntilComplete(jobId, RESUMED_TRANSCRIPTION_WAIT_MS, targetSessionId);
+    };
+  });
   const [draftTranscript, setDraftTranscript] = useState(hasLocator ? "" : defaultTranscript);
   const [editorLines, setEditorLines] = useState<TranscriptLine[]>([]);
   const [sourceFilename, setSourceFilename] = useState<string | undefined>();
   const [intakeError, setIntakeError] = useState("");
   const [intakeWarnings, setIntakeWarnings] = useState<string[]>([]);
   const [intakeValidationIssues, setIntakeValidationIssues] = useState<string[]>([]);
-  const [recordedAudio, setRecordedAudio] = useState<{ blob: Blob; metadata: RecordingMetadata } | null>(null);
+  const [recordedAudio, setRecordedAudio] = useState<{ blob: Blob; metadata: RecordingMetadata; extension?: string } | null>(null);
+  const [audioFileError, setAudioFileError] = useState<"unsupported" | undefined>();
+  const [sessionNotes, setSessionNotes] = useState("");
+  const [sessionSummary, setSessionSummary] = useState<{
+    caseCode?: string;
+    ageMonths?: number;
+    language?: string;
+    sessionDate?: string;
+  }>({});
   const [uploadStep, setUploadStep] = useState<
     "idle" | "confirm" | "uploading" | "polling" | "done" | "error"
   >("idle");
@@ -200,10 +236,24 @@ export function useSessionWorkspace({ sessionId, caseId, transcriptId, reportId,
           : backendSession
             ? await getBackendSessionTranscript(backendSession.session_id).catch(() => undefined)
             : undefined);
+        // The conversation stays on one page, so a job started before a reload
+        // is picked up again instead of asking for the audio a second time.
+        const unfinishedJob = viewRef.current === "chat" && !transcript && backendSession
+          ? await getSessionTranscriptionJob(backendSession.session_id).catch(() => null)
+          : null;
         const resolvedCaseId = caseId ?? backendSession?.case_id ?? transcript?.case_id;
         const childCase = resolvedCaseId ? await getBackendCase(resolvedCaseId) : undefined;
         if (childCase && !cancelled) {
           setCaseConsent(childCase.consent_status ?? "pending");
+        }
+        if (!cancelled) {
+          setSessionNotes(backendSession?.notes ?? "");
+          setSessionSummary({
+            caseCode: childCase?.child_code,
+            ageMonths: childCase?.age_months,
+            language: childCase?.language,
+            sessionDate: backendSession?.session_date,
+          });
         }
         const lines = transcript ? backendTranscriptLines(transcript) : [];
         const parsed = transcript?.raw_text ? prepareTranscriptIntake("cha-upload", transcript.raw_text) : undefined;
@@ -302,6 +352,9 @@ export function useSessionWorkspace({ sessionId, caseId, transcriptId, reportId,
         setIntakeWarnings(hydrated.chatWarnings);
         setIntakeValidationIssues(hydrated.chatValidationIssues);
         setIsHydrated(true);
+        if (unfinishedJob && backendSession && UNFINISHED_JOB_STATUSES.has(unfinishedJob.status)) {
+          resumeTranscriptionRef.current(unfinishedJob.jobId, backendSession.session_id);
+        }
       } catch (error) {
         if (cancelled) return;
         const failure = classifyWorkflowLoadFailure(error, "workflow");
@@ -475,7 +528,8 @@ export function useSessionWorkspace({ sessionId, caseId, transcriptId, reportId,
       const { audioFileId } = await uploadAudioBlobToBackend(
         state.sessionId, recordedAudio.blob,
         { durationSeconds: recordedAudio.metadata.durationSeconds,
-          mimeType: recordedAudio.metadata.mimeType ?? "audio/webm" }
+          mimeType: recordedAudio.metadata.mimeType ?? "audio/webm",
+          extension: recordedAudio.extension }
       );
       const { jobId } = await startBackendTranscriptionJob(state.sessionId, audioFileId, provider);
       setTransJobId(jobId);
@@ -510,7 +564,7 @@ export function useSessionWorkspace({ sessionId, caseId, transcriptId, reportId,
     }
   }
 
-  async function pollUntilComplete(jobId: string, waitBudgetMs: number) {
+  async function pollUntilComplete(jobId: string, waitBudgetMs: number, targetSessionId = state.sessionId) {
     const interval = typeof process !== "undefined" && process.env.NODE_ENV === "test" ? 10 : 2000;
     const maxAttempts = Math.ceil(waitBudgetMs / 2000);
     let attempts = 0;
@@ -526,15 +580,19 @@ export function useSessionWorkspace({ sessionId, caseId, transcriptId, reportId,
           setUploadStep("done");
           if (poll.transcriptId) {
             try {
-              const transcript = await getBackendSessionTranscript(state.sessionId!);
+              const transcript = await getBackendSessionTranscript(targetSessionId!);
               const lines = backendTranscriptLines(transcript);
               setState(prev => {
                 const next: WorkflowState = {
                   ...prev,
                   backendTranscriptId: poll.transcriptId,
+                  backendTranscriptVersion: transcript.version,
+                  backendTranscriptSessionId: prev.backendSessionId ?? prev.sessionId,
                   transcriptText: transcript.raw_text ?? "",
                   transcriptLines: lines,
                   transcriptReady: true,
+                  // The draft was written by the backend, so there is nothing unsaved.
+                  transcriptSaveStatus: "saved",
                   transcriptionJobId: jobId,
                   transcriptionJobStatus: "completed",
                   transcriptionJobMessage: poll.message,
@@ -571,10 +629,17 @@ export function useSessionWorkspace({ sessionId, caseId, transcriptId, reportId,
     setBusy(false);
   }
 
-  async function handleTranscriptSubmit(source: Extract<WorkflowSource, "cha-upload" | "paste-transcript">, reviewed = false) {
+  async function handleTranscriptSubmit(
+    source: Extract<WorkflowSource, "cha-upload" | "paste-transcript">,
+    reviewed = false,
+    /** Text and file name handed over directly, when they are not yet in state. */
+    provided?: { text: string; filename?: string },
+  ) {
+    const sourceText = provided?.text ?? draftTranscript;
+    const submittedFilename = provided ? provided.filename : sourceFilename;
     let intake;
     try {
-      intake = prepareTranscriptIntake(source, draftTranscript);
+      intake = prepareTranscriptIntake(source, sourceText);
       setIntakeError("");
       setIntakeWarnings(intake.warnings);
       setIntakeValidationIssues(intake.validationIssues);
@@ -584,7 +649,7 @@ export function useSessionWorkspace({ sessionId, caseId, transcriptId, reportId,
     }
     setBusy(true);
     const localSession = persist(ensureWorkflowSession(buildIntakeBackedState(state, source), source, {
-      sourceFilename: source === "cha-upload" ? sourceFilename : undefined,
+      sourceFilename: source === "cha-upload" ? submittedFilename : undefined,
       transcriptText: intake.transcriptText,
       transcriptLines: intake.transcriptLines,
       chatMetadata: intake.metadata,
@@ -617,10 +682,37 @@ export function useSessionWorkspace({ sessionId, caseId, transcriptId, reportId,
         sessionId: backendSessionId,
         transcriptId: localSession.backendTranscriptId,
         source,
-        originalText: draftTranscript,
+        originalText: sourceText,
         normalizedText: intake.transcriptText,
-        sourceFilename,
+        sourceFilename: submittedFilename,
       });
+      if (view === "chat") {
+        // The conversation stays open, so take the saved lines and version
+        // from the response instead of from a reload.
+        const savedLines = backendTranscriptLines(updated);
+        const lines = savedLines.length ? savedLines : intake.transcriptLines;
+        setEditorLines(lines);
+        setDraftTranscript(intake.transcriptText);
+        persist({
+          ...localSession,
+          backendSessionId,
+          backendTranscriptId: updated.transcript_id,
+          backendTranscriptVersion: updated.version,
+          backendTranscriptSessionId: backendSessionId,
+          caseId: backendCaseId,
+          caseInfo: { ...localSession.caseInfo, caseId: backendCaseId },
+          transcriptText: intake.transcriptText,
+          transcriptLines: lines,
+          transcriptReady: true,
+          transcriptCompleteness: 0,
+          transcriptAttested: Boolean(updated.therapist_attested),
+          transcriptReviewStatus: updated.therapist_attested ? "reviewed" : "in_review",
+          transcriptSaveStatus: "saved",
+          statusMessage: "Transcript saved and ready for therapist review.",
+          error: undefined,
+        });
+        return;
+      }
       const savedState = persist({
         ...localSession,
         backendSessionId,
@@ -700,13 +792,25 @@ export function useSessionWorkspace({ sessionId, caseId, transcriptId, reportId,
       // Readiness was last checked before features existed; refresh it so the
       // findings page does not show a stale "features not extracted" block.
       const mlReadiness = await getMlReadiness(analyzingState.backendTranscriptId).catch(() => undefined);
+      // The conversation shows the measures without a reload, so it reads the
+      // values the backend just stored instead of waiting for the next visit.
+      // The other views navigate to Findings, which loads them itself.
+      let featureSignals: WorkflowState["featureSignals"] | undefined;
+      if (view === "chat") {
+        featureSignals = buildFeatureSignals(
+          await getBackendSessionFeatures(targetSession).catch(() => undefined),
+          await getBackendFeatureDefinitions().catch(() => []),
+        );
+        if (!canSettleWorkflowRequest(requestIdentity, currentWorkflowRequestIdentity(), "fulfilled")) return;
+      }
       persist({
         ...sessionWorkflowReducer(analyzingState, { type: "findings-succeeded", findings: backendAnalysis }),
         mlReadiness,
+        ...(featureSignals ? { featureSignals } : {}),
         // With open gates the server records the attestation when analysis starts.
         ...(openGates ? { transcriptAttested: true, transcriptReviewStatus: "reviewed" as const } : {}),
       });
-      router.push(workflowSessionHref("findings", analyzingState));
+      if (view !== "chat") router.push(workflowSessionHref("findings", analyzingState));
     } catch {
       if (!canSettleWorkflowRequest(requestIdentity, currentWorkflowRequestIdentity(), "rejected")) return;
       setBackendUnavailable(true);
@@ -959,9 +1063,63 @@ export function useSessionWorkspace({ sessionId, caseId, transcriptId, reportId,
       : backendUnavailable && hasLocator
         ? "unavailable"
         : "local_draft",
-    activeView: view,
+    activeView: view === "chat" ? "intake" : view,
     completion: sessionCompletion(state, openGates),
   };
+
+  if (view === "chat") {
+    const resolvedSessionId = state.backendSessionId ?? state.backendTranscriptSessionId ?? state.sessionId ?? sessionId;
+    const identity = { caseId: state.caseId || caseId, transcriptId: state.backendTranscriptId };
+    return {
+      view: "chat",
+      backendUnavailable,
+      viewProps: {
+        sessionContext,
+        state,
+        hydrated: isHydrated,
+        busy,
+        backendUnavailable,
+        source: selectedSource === "audio" ? "audio" : "recording",
+        lines: editorLines,
+        audioUrl,
+        notes: sessionNotes,
+        summary: sessionSummary,
+        attachError: intakeError,
+        audio: {
+          recorded: recordedAudio
+            ? { blob: recordedAudio.blob, durationSeconds: recordedAudio.metadata.durationSeconds }
+            : null,
+          step: uploadStep,
+          jobStatus: transJobStatus,
+          jobMessage: transJobMessage,
+          fileError: audioFileError,
+        },
+        hrefs: {
+          transcript: resolveSessionHref("transcript", resolvedSessionId, identity),
+          findings: resolveSessionHref("findings", resolvedSessionId, identity),
+          report: resolveSessionHref("report", resolvedSessionId, {
+            ...identity,
+            reportId: state.backendReportId ?? state.reportId,
+          }),
+        },
+        onRecordingMetadata: handleRecordingMetadata,
+        onRecordingReady: handleRecordingReady,
+        onAudioFile: handleAudioFile,
+        onDiscardAudio: () => {
+          setRecordedAudio(null);
+          setAudioFileError(undefined);
+          setUploadStep("idle");
+        },
+        onUploadAudio: handleUploadForTranscription,
+        onAttachTranscript: handleAttachTranscript,
+        onAssignUnknownSpeakers: (speaker) => handleSaveTranscriptDraft(assignUnknownSpeakers(editorLines, speaker)),
+        onRetrySave: () => handleSaveTranscriptDraft(editorLines),
+        onExtractMeasures: handleAnalyze,
+        onGenerateReport: handleGenerateReport,
+        onSaveNote: handleSaveNote,
+      },
+    };
+  }
 
   if (view === "findings") {
     return {
@@ -1076,6 +1234,53 @@ export function useSessionWorkspace({ sessionId, caseId, transcriptId, reportId,
       },
     },
   };
+
+  /** An existing audio file takes the same path as a recording made here. */
+  async function handleAudioFile(file: File) {
+    const described = describeAudioFile(file);
+    if (!described) {
+      setAudioFileError("unsupported");
+      return;
+    }
+    setAudioFileError(undefined);
+    const durationSeconds = await readAudioDurationSeconds(file);
+    setRecordedAudio({
+      blob: file,
+      extension: described.extension,
+      metadata: {
+        recordingStatus: "stopped",
+        durationSeconds,
+        mimeType: described.mimeType,
+        hasUnsavedRecording: false,
+      },
+    });
+    setUploadStep("confirm");
+  }
+
+  async function handleAttachTranscript(file: File) {
+    if (!file.name.toLowerCase().endsWith(".cha")) {
+      setIntakeError("Only .cha transcript files can be attached.");
+      return;
+    }
+    setSourceFilename(file.name);
+    await handleTranscriptSubmit("cha-upload", false, { text: await file.text(), filename: file.name });
+  }
+
+  /** Adds one line to the session's notes. Resolves to whether it was saved. */
+  async function handleSaveNote(text: string): Promise<boolean> {
+    const targetSession = state.backendSessionId ?? state.sessionId;
+    const note = text.trim();
+    if (!targetSession || !note) return false;
+    const next = sessionNotes.trim() ? `${sessionNotes.trim()}\n${note}` : note;
+    try {
+      const updated = await updateBackendSessionNotes(targetSession, next);
+      setSessionNotes(updated.notes ?? next);
+      return true;
+    } catch {
+      setBackendUnavailable(true);
+      return false;
+    }
+  }
 
   async function handleSaveTranscriptDraft(lines: TranscriptLine[]) {
     if (activeTranscriptSaveRevisionRef.current !== null) return;
@@ -1299,6 +1504,52 @@ function workflowSessionHref(view: "intake" | "transcript" | "findings" | "repor
     caseId: state.caseId,
     transcriptId: state.backendTranscriptId,
     reportId: reportId ?? state.backendReportId ?? state.reportId,
+  });
+}
+
+// A job found after a reload has no known length to estimate from, so it gets the longest wait.
+const RESUMED_TRANSCRIPTION_WAIT_MS = 20 * 60_000;
+const UNFINISHED_JOB_STATUSES: ReadonlySet<string> = new Set(["queued", "processing", "transcription_completed"]);
+
+// Extension to the content type the upload endpoint accepts for it.
+const AUDIO_FILE_TYPES: Record<string, string> = {
+  wav: "audio/wav",
+  mp3: "audio/mpeg",
+  m4a: "audio/mp4",
+  mp4: "audio/mp4",
+  webm: "audio/webm",
+  ogg: "audio/ogg",
+  mov: "video/quicktime",
+};
+
+/** The type and extension to upload an audio file under, or null when it is not a supported format. */
+function describeAudioFile(file: File): { mimeType: string; extension: string } | null {
+  const extension = file.name.includes(".") ? file.name.split(".").pop()!.toLowerCase() : "";
+  const mimeType = AUDIO_FILE_TYPES[extension];
+  return mimeType ? { mimeType, extension } : null;
+}
+
+/** Length of an audio file in whole seconds; 0 when the browser cannot read it. */
+function readAudioDurationSeconds(file: Blob): Promise<number> {
+  if (typeof document === "undefined" || typeof URL.createObjectURL !== "function") return Promise.resolve(0);
+  return new Promise((resolve) => {
+    const url = URL.createObjectURL(file);
+    const audio = document.createElement("audio");
+    const settle = (seconds: number) => {
+      URL.revokeObjectURL(url);
+      resolve(Number.isFinite(seconds) && seconds > 0 ? Math.round(seconds) : 0);
+    };
+    const timer = window.setTimeout(() => settle(0), 4000);
+    audio.preload = "metadata";
+    audio.onloadedmetadata = () => {
+      window.clearTimeout(timer);
+      settle(audio.duration);
+    };
+    audio.onerror = () => {
+      window.clearTimeout(timer);
+      settle(0);
+    };
+    audio.src = url;
   });
 }
 

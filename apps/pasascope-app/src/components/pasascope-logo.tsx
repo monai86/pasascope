@@ -50,8 +50,8 @@ export function PasaScopeLogoMark({
     >
       <defs>
         <linearGradient id={gradientId} x1="0" y1="0" x2="1" y2="1">
-          <stop offset="0" stopColor="var(--color-brand)" />
-          <stop offset="1" stopColor="var(--color-sky-strong)" />
+          <stop offset="0" stopColor="var(--color-mark-bubble-from)" />
+          <stop offset="1" stopColor="var(--color-mark-bubble-to)" />
         </linearGradient>
         {/* Clears a ring around the lens so it reads as sitting over the bubble. */}
         <mask id={maskId}>

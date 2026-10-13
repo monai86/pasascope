@@ -27,7 +27,8 @@ export default defineConfig({
     "e2e/**/*.spec.ts",
     ...(benchmarkRun ? ["benchmarks/**/*.spec.ts"] : []),
   ],
-  testIgnore: ["e2e/demo-mode.smoke.spec.ts"],
+  // The demo and chat-shell specs need servers started differently; each has its own config.
+  testIgnore: ["e2e/demo-mode.smoke.spec.ts", "e2e/chat-workflow.smoke.spec.ts"],
   timeout: 120_000,
   expect: {
     timeout: 10_000,

@@ -334,6 +334,7 @@ export type BackendSession = {
   session_id: string;
   case_id: string;
   session_date?: string;
+  notes?: string;
   transcript_id?: string;
   feature_set_id?: string;
   report_id?: string;
@@ -1162,15 +1163,20 @@ export async function createBackendSession(source: WorkflowSource): Promise<Back
   return createBackendSessionForCase(childCase.case_id, source);
 }
 
-export async function createBackendSessionForCase(caseId: string, source?: WorkflowSource): Promise<BackendSession> {
+export async function createBackendSessionForCase(
+  caseId: string,
+  source?: WorkflowSource,
+  /** Replaces the default note; the conversation passes "" so the notes hold only what the therapist writes. */
+  notes?: string,
+): Promise<BackendSession> {
   const session = await apiRequest<BackendSession>(`/cases/${encodeURIComponent(caseId)}/sessions`, {
     method: "POST",
     body: JSON.stringify({
       session_date: new Date().toISOString().slice(0, 10),
       session_type: "therapy_session",
-      notes: source
+      notes: notes ?? (source
         ? `Simplified therapist workflow: ${source}. Audio/ASR remains experimental unless separately processed.`
-        : "Session created after deliberate case selection. Source will be selected in Intake."
+        : "Session created after deliberate case selection. Source will be selected in Intake.")
     })
   });
   return session;
@@ -1757,10 +1763,11 @@ export async function getSessionAudioFiles(sessionId: string): Promise<BackendAu
 export async function uploadAudioBlobToBackend(
   sessionId: string,
   blob: Blob,
-  metadata: { durationSeconds: number; mimeType: string }
+  metadata: { durationSeconds: number; mimeType: string; /** The file's own extension, for an uploaded file. */ extension?: string }
 ): Promise<{ audioFileId: string }> {
   // Recorder MIME types carry codec parameters, e.g. "audio/webm;codecs=opus".
-  const ext = metadata.mimeType.split(";")[0].split("/")[1] ?? "webm";
+  // The stored name is generated: the user's own file name may identify a child.
+  const ext = metadata.extension ?? metadata.mimeType.split(";")[0].split("/")[1] ?? "webm";
   const job = await apiRequest<any>(`/sessions/${sessionId}/audio/upload`, {
     method: "POST",
     body: JSON.stringify({

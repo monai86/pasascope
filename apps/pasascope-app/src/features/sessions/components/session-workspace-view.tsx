@@ -5,10 +5,15 @@ import dynamic from "next/dynamic";
 
 import { BackendAvailabilityBanner } from "@/components/backend-availability-banner";
 import { SkeletonLine } from "@/components/skeleton";
+import type { SessionChatView as SessionChatViewComponent } from "@/features/sessions/chat/session-chat-view";
 import type { SessionFindingsView as SessionFindingsViewComponent } from "@/features/sessions/findings/session-findings-view";
 import type { SessionIntakeView as SessionIntakeViewComponent } from "@/features/sessions/intake/session-intake-view";
 import type { SessionTranscriptView as SessionTranscriptViewComponent } from "@/features/sessions/transcript/session-transcript-view";
 
+const SessionChatView = dynamic(
+  () => import("@/features/sessions/chat/session-chat-view").then((module) => module.SessionChatView),
+  { loading: SessionFeatureLoading },
+);
 const SessionFindingsView = dynamic(
   () => import("@/features/sessions/findings/session-findings-view").then((module) => module.SessionFindingsView),
   { loading: SessionFeatureLoading },
@@ -22,11 +27,13 @@ const SessionTranscriptView = dynamic(
   { loading: SessionFeatureLoading },
 );
 
+type ChatProps = ComponentProps<typeof SessionChatViewComponent>;
 type FindingsProps = ComponentProps<typeof SessionFindingsViewComponent>;
 type IntakeProps = ComponentProps<typeof SessionIntakeViewComponent>;
 type TranscriptProps = ComponentProps<typeof SessionTranscriptViewComponent>;
 
 export type SessionWorkflowViewModel =
+  | { view: "chat"; backendUnavailable: boolean; viewProps: ChatProps }
   | { view: "findings"; backendUnavailable: boolean; viewProps: FindingsProps }
   | { view: "transcript"; backendUnavailable: boolean; viewProps: TranscriptProps }
   | { view: "intake"; backendUnavailable: boolean; viewProps: IntakeProps };
@@ -36,6 +43,7 @@ export function SessionWorkflowView({ model }: { model: SessionWorkflowViewModel
   return (
     <>
       <BackendAvailabilityBanner unavailable={model.backendUnavailable} />
+      {model.view === "chat" ? <SessionChatView {...model.viewProps} /> : null}
       {model.view === "findings" ? <SessionFindingsView {...model.viewProps} /> : null}
       {model.view === "transcript" ? <SessionTranscriptView {...model.viewProps} /> : null}
       {model.view === "intake" ? <SessionIntakeView {...model.viewProps} /> : null}

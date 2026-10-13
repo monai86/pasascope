@@ -2,6 +2,12 @@ export const sessionViews = ["intake", "transcript", "findings", "report"] as co
 
 export type SessionView = (typeof sessionViews)[number];
 
+/**
+ * What `?view=` may name. The four workflow steps, plus the conversation that
+ * carries a session from audio to measures in the chat shell.
+ */
+export type SessionRouteView = SessionView | "chat";
+
 export type SessionViewIdentity = {
   caseId?: string;
   transcriptId?: string;
@@ -16,6 +22,10 @@ export function resolveSessionView(value?: unknown): SessionView {
     : "intake";
 }
 
+export function resolveSessionRouteView(value?: unknown): SessionRouteView {
+  return value === "chat" ? "chat" : resolveSessionView(value);
+}
+
 export function resolveWorkspaceFeature(view?: SessionView): "intake" | "transcript" | "findings" {
   return view === "transcript" ? "transcript" : view === "findings" ? "findings" : "intake";
 }
@@ -28,7 +38,7 @@ export function resolveLegacySessionHref(
 }
 
 export function resolveSessionHref(
-  view: SessionView,
+  view: SessionRouteView,
   sessionId?: unknown,
   identity: SessionViewIdentity = {},
 ): string {

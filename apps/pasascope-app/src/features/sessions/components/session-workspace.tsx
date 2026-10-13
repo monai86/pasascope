@@ -3,8 +3,9 @@
 import dynamic from "next/dynamic";
 
 import { SkeletonLine } from "@/components/skeleton";
-import { resolveWorkspaceFeature, type SessionView } from "@/features/sessions/state/session-view";
-import { SessionWorkflowWorkspace } from "@/features/sessions/components/session-workspace-model";
+import { resolveWorkspaceFeature, type SessionRouteView } from "@/features/sessions/state/session-view";
+import { SessionChatWorkspace, SessionWorkflowWorkspace } from "@/features/sessions/components/session-workspace-model";
+import { useChatShellEnabled } from "@/lib/ui-shell";
 
 const SessionReportView = dynamic(
   () => import("@/features/sessions/report/session-report-view").then((module) => module.SessionReportView),
@@ -16,15 +17,22 @@ export type SessionWorkspaceProps = {
   caseId?: string;
   transcriptId?: string;
   reportId?: string;
-  view?: SessionView;
+  view?: SessionRouteView;
   mode?: string;
 };
 
 export function SessionWorkspace({ view = "intake", ...props }: SessionWorkspaceProps) {
+  const chatShell = useChatShellEnabled();
   if (view === "report") {
     return <SessionReportView {...props} />;
   }
-  return <SessionWorkflowWorkspace {...props} view={view} />;
+  // In the chat shell the conversation is how a session starts, so it also
+  // answers links that still point at Intake. Without the chat shell,
+  // `?view=chat` falls back to Intake like any other unknown view.
+  if (chatShell && (view === "chat" || view === "intake")) {
+    return <SessionChatWorkspace {...props} />;
+  }
+  return <SessionWorkflowWorkspace {...props} view={view === "chat" ? "intake" : view} />;
 }
 
 function SessionWorkspaceLoading() {

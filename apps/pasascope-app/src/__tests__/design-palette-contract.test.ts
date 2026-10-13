@@ -99,6 +99,17 @@ describe("palette contract", () => {
       ["--color-warning-text", "--color-attention-bg", 4.5],
       ["--color-danger-text", "--color-danger-bg", 4.5],
       ["--color-info-text", "--color-info-bg", 4.5],
+      // Chat shell. Subtle text stops at the pale part of the frame; the
+      // warmest peach carries muted or strong text only.
+      ["--color-surface-strong", "--color-action", 4.5],
+      ["--color-surface-strong", "--color-action-hover", 4.5],
+      ["--color-text-strong", "--color-chat-frame", 4.5],
+      ["--color-text-subtle", "--color-chat-frame", 4.5],
+      ["--color-text-subtle", "--color-chat-frame-warm", 4.5],
+      ["--color-text-muted", "--color-chat-frame-warm-strong", 4.5],
+      ["--color-text-strong", "--color-chat-canvas-warm", 4.5],
+      ["--color-text-strong", "--color-chat-user-card", 4.5],
+      ["--color-chat-user-card-text", "--color-chat-user-card", 4.5],
     ];
 
     const failures = pairings

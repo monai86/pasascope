@@ -124,6 +124,83 @@
     padding-bottom: max(0.75rem, env(safe-area-inset-bottom));
   }
 
+  /*
+   * Chat shell. Inside it the primary action is navy and outlined actions are
+   * neutral; azure stays for links, selection and focus.
+   */
+  [data-shell="chat"] {
+    --color-action: var(--color-navy);
+    --color-action-hover: var(--color-navy-raised);
+    --color-action-quiet-text: var(--color-navy);
+    --color-action-quiet-border: var(--color-chat-line-strong);
+    --color-action-quiet-hover: var(--color-chat-frame);
+    --color-mark-bubble-from: var(--color-navy);
+    --color-mark-bubble-to: var(--color-navy);
+  }
+
+  /*
+   * The chat shell has no bottom tab bar, so a page's fixed action bar sits
+   * on the screen's own edge, and the page keeps room for it at the foot.
+   */
+  @media (max-width: 767px) {
+    [data-shell="chat"] .mobile-transcript-primary-actions {
+      bottom: 0;
+      padding-bottom: max(0.75rem, env(safe-area-inset-bottom));
+    }
+
+    [data-shell="chat"] main:has(.mobile-transcript-primary-actions) {
+      scroll-padding-bottom: 6.5rem;
+    }
+
+    [data-shell="chat"] main:has(.mobile-transcript-primary-actions) > div {
+      padding-bottom: 6.5rem;
+    }
+  }
+
+  /* Dims the page behind an open drawer or sheet. */
+  .shell-scrim {
+    background: rgba(15, 27, 51, 0.45);
+  }
+
+  /* Grey-blue canvas warming to peach at the foot, behind the rounded frame. */
+  .chat-canvas {
+    background: linear-gradient(
+      180deg,
+      var(--color-chat-canvas-top) 0%,
+      var(--color-chat-canvas-mid) 50%,
+      var(--color-chat-canvas-warm) 100%
+    );
+  }
+
+  .chat-frame {
+    background: linear-gradient(180deg, var(--color-chat-frame) 55%, var(--color-chat-frame-warm) 100%);
+  }
+
+  /* On a phone the frame is the whole screen, so it carries the warmth itself. */
+  @media (max-width: 767px) {
+    .chat-frame {
+      background: linear-gradient(180deg, var(--color-chat-frame) 50%, var(--color-chat-frame-warm-strong) 100%);
+    }
+  }
+
+  /* The glow behind the mark on the chat home screen. */
+  .chat-mark-glow {
+    background: radial-gradient(
+      closest-side,
+      rgba(124, 200, 248, 0.55),
+      rgba(240, 86, 106, 0.16) 60%,
+      rgba(240, 86, 106, 0) 100%
+    );
+  }
+
+  @media (forced-colors: active) {
+    .chat-canvas,
+    .chat-frame,
+    .chat-mark-glow {
+      background: Canvas;
+    }
+  }
+
   /* Ice canvas with a soft sky wash in the top corner, behind the whole shell. */
   .app-canvas {
     background-color: var(--color-page-bg);

@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { Check } from "lucide-react";
+import { ArrowLeft, Check } from "lucide-react";
 
 import { Breadcrumbs } from "@/components/breadcrumbs";
 import { PageHeader } from "@/components/page-header";
@@ -14,6 +14,7 @@ import {
 } from "@/features/sessions/state/session-view";
 import { useWorkflowStatusLabel } from "@/components/status-badge";
 import { useReportLabel } from "@/features/sessions/findings/use-findings-label";
+import { useChatShellEnabled } from "@/lib/ui-shell";
 
 export type SessionDataMode = "backend" | "local_draft" | "unavailable";
 
@@ -74,6 +75,7 @@ export function SessionContextHeader({
   if (density === "compact") {
     return (
       <section aria-label={h.contextLabel} data-density="compact">
+        <BackToConversation context={context} />
         <Breadcrumbs items={breadcrumbs} />
         <div className="grid gap-2 rounded-panel border border-line bg-surface px-3 py-2 sm:gap-3 sm:px-4 sm:py-3 xl:grid-cols-[minmax(14rem,0.7fr)_minmax(0,1.3fr)] xl:items-center">
           <div className="min-w-0">
@@ -116,6 +118,7 @@ export function SessionContextHeader({
 
   return (
     <section aria-label={h.contextLabel} className="space-y-4" data-density="default">
+      <BackToConversation context={context} />
       <Breadcrumbs items={breadcrumbs} />
       <PageHeader title={title} description={description} meta={meta} />
       <div className="rounded-shell border border-line bg-surface p-4 sm:p-5">
@@ -137,8 +140,29 @@ export function SessionContextHeader({
   );
 }
 
+/**
+ * In the chat shell a full page is a detour from the session's conversation,
+ * so it offers the way back first. The workbench shell has no conversation.
+ */
+function BackToConversation({ context }: { context: SessionContext }) {
+  const t = useMessages(sessionMessages).header;
+  const chatShell = useChatShellEnabled();
+  if (!chatShell || !context.sessionId) return null;
+  return (
+    <Link
+      href={resolveSessionHref("chat", context.sessionId, { caseId: context.caseId })}
+      className="mb-2 inline-flex min-h-11 items-center gap-2 rounded-full pr-3 text-sm font-semibold text-ink transition hover:underline focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-[color:var(--color-focus-ring)] motion-reduce:transition-none"
+    >
+      <ArrowLeft size={18} aria-hidden="true" />
+      {t.backToConversation}
+    </Link>
+  );
+}
+
 function SessionViewNavigation({ context, compact = false }: { context: SessionContext; compact?: boolean }) {
   const t = useMessages(sessionMessages);
+  // The conversation stands where Intake does when the chat shell is running.
+  const chatShell = useChatShellEnabled();
   return (
     <nav
       aria-label={t.header.viewsLabel}
@@ -152,7 +176,7 @@ function SessionViewNavigation({ context, compact = false }: { context: SessionC
           return (
             <li key={view} className="flex min-w-0 items-center">
               <Link
-                href={resolveSessionHref(view, context.sessionId)}
+                href={resolveSessionHref(chatShell && view === "intake" ? "chat" : view, context.sessionId)}
                 aria-current={active ? "page" : undefined}
                 aria-describedby={completed ? stateId : undefined}
                 data-step-state={completed ? "complete" : active ? "current" : "pending"}
@@ -175,7 +199,7 @@ function SessionViewNavigation({ context, compact = false }: { context: SessionC
                     active ? "text-brand-strong" : completed ? "text-ink" : "text-ink-muted"
                   }`}
                 >
-                  {t.views[view]}
+                  {chatShell && view === "intake" ? t.header.conversation : t.views[view]}
                 </span>
               </Link>
               {/* Describes the tick without changing the link's name. */}

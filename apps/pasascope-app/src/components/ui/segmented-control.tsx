@@ -45,7 +45,7 @@ export function SegmentedControl<T extends string>({
             className={cn(
               "inline-flex items-center justify-center gap-1.5 rounded-full font-semibold transition focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-[color:var(--color-focus-ring)] motion-reduce:transition-none",
               size === "sm" ? "min-h-10 min-w-11 px-3 text-xs" : "min-h-11 px-4 text-sm",
-              selected ? "bg-surface text-brand shadow-soft" : "text-ink-muted hover:text-ink",
+              selected ? "bg-surface text-action-quiet-text shadow-soft" : "text-ink-muted hover:text-ink",
             )}
           >
             {Icon ? <Icon size={16} aria-hidden="true" /> : null}

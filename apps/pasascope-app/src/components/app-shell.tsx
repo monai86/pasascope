@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, ReactNode } from "react";
+import { lazy, Suspense, useState, useEffect, ReactNode } from "react";
 import { useRouter } from "next/navigation";
 import { Menu, X } from "lucide-react";
 
@@ -21,11 +21,19 @@ import { WorkspaceAccessGate } from "@/components/workspace-access-gate";
 import { ConfirmedRuntimeSettingsProvider } from "@/lib/confirmed-runtime-settings";
 import { loadMockAccessSession } from "@/lib/mock-access-session";
 import { loadOrRestoreSupabaseAccessSession, useSupabaseAccessSession } from "@/lib/use-supabase-access-session";
+import { isChatShellFlagOn } from "@/lib/ui-shell";
 import { useRuntimeSettings } from "@/lib/use-runtime-settings";
 
 export type { ShellActive };
 
 const SIDEBAR_ID = "primary-sidebar";
+
+// Loaded only where the chat shell runs, so workbench routes do not carry it.
+// React's own lazy is used because `next/dynamic` would add its loader to
+// every route through this file.
+const ChatShellFrame = lazy(() =>
+  import("@/components/chat-shell/chat-shell-frame").then((module) => ({ default: module.ChatShellFrame })),
+);
 
 export function AppShell({
   children,
@@ -115,6 +123,21 @@ export function AppShell({
     );
   }
 
+  // The chat shell follows the public workflow, so it replaces the workbench
+  // frame only when the flag is on and the API runs in that mode.
+  const access = runtimeSettings.data.access_model;
+  if (isChatShellFlagOn() && access?.public_signup === true && access?.review_gates === "open") {
+    return (
+      <ConfirmedRuntimeSettingsProvider value={runtimeSettings.data}>
+        <SupabaseAuthRuntimeBridge />
+        {/* The canvas holds the screen for the moment the frame takes to arrive. */}
+        <Suspense fallback={<div className="chat-canvas h-dvh w-full" role="status" aria-busy="true" />}>
+          <ChatShellFrame active={active}>{children}</ChatShellFrame>
+        </Suspense>
+      </ConfirmedRuntimeSettingsProvider>
+    );
+  }
+
   return (
     <ConfirmedRuntimeSettingsProvider value={runtimeSettings.data}>
       <SupabaseAuthRuntimeBridge />
@@ -128,7 +151,7 @@ export function AppShell({
 
         {sidebarOpen ? (
           <div
-            className="fixed inset-0 z-50 bg-navy/45 lg:hidden"
+            className="fixed inset-0 z-50 shell-scrim lg:hidden"
             aria-hidden="true"
             onClick={() => setSidebarOpen(false)}
           />

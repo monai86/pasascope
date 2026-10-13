@@ -41,7 +41,7 @@ export function Dialog({
 
   return (
     <div className="fixed inset-0 z-[70] flex items-center justify-center p-4 sm:p-6">
-      <div className="fixed inset-0 bg-navy/45" onClick={() => onOpenChange(false)} aria-hidden="true" />
+      <div className="shell-scrim fixed inset-0" onClick={() => onOpenChange(false)} aria-hidden="true" />
       <div
         ref={panelRef}
         role="dialog"

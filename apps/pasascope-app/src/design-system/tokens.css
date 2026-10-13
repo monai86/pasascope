@@ -46,6 +46,35 @@
   --color-highlight-border: #f9c2ca;
   --color-highlight-text: #c22f47;
 
+  /*
+   * The primary action. The workbench shell uses azure; the chat shell
+   * rebinds these to navy in components.css.
+   */
+  --color-action: var(--color-brand);
+  --color-action-hover: var(--color-brand-hover);
+  --color-action-quiet-text: var(--color-brand);
+  --color-action-quiet-border: var(--color-brand-border);
+  --color-action-quiet-hover: var(--color-brand-soft);
+
+  /* The bubble of the mark: azure to sky here, solid navy in the chat shell. */
+  --color-mark-bubble-from: var(--color-brand);
+  --color-mark-bubble-to: var(--color-sky-strong);
+
+  /*
+   * Chat shell: a grey-blue canvas that warms to peach at the foot, a pale
+   * frame, neutral hairlines and a navy primary action.
+   */
+  --color-chat-canvas-top: #cfd9e6;
+  --color-chat-canvas-mid: #dde2ec;
+  --color-chat-canvas-warm: #f3b9ad;
+  --color-chat-frame: #f6f8fb;
+  --color-chat-frame-warm: #fbeae5;
+  --color-chat-frame-warm-strong: #f9d9d1;
+  --color-chat-line: #e3e8f0;
+  --color-chat-line-strong: #c9d2e0;
+  --color-chat-user-card: #b9c4d3;
+  --color-chat-user-card-text: #2a3550;
+
   /* Semantic state. Success is blue with a check icon, never colour alone. */
   --color-success-bg: #e7f1ff;
   --color-success-border: #9cc4f5;
@@ -73,10 +102,14 @@
   --shadow-soft: 0 1px 2px rgba(22, 35, 63, 0.04), 0 2px 8px rgba(30, 80, 160, 0.06);
   --shadow-lift: 0 8px 24px rgba(30, 80, 160, 0.1);
   --shadow-floating: 0 16px 40px rgba(30, 80, 160, 0.16);
+  --shadow-chat-card: 0 4px 16px rgba(15, 27, 51, 0.05);
+  --shadow-chat-action: 0 8px 20px rgba(15, 27, 51, 0.2);
+  --shadow-chat-composer: 0 8px 24px rgba(15, 27, 51, 0.08);
   --radius-control: 0.75rem;
   --radius-card: 1.25rem;
   --radius-panel: 1.5rem;
   --radius-shell: 1.75rem;
+  --radius-chat-frame: 2rem;
   --radius-pill: 9999px;
 
   /* Layout */

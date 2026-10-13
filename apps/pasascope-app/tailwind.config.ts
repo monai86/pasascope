@@ -32,6 +32,20 @@ const config: Config = {
           soft: "var(--color-brand-soft)",
           border: "var(--color-brand-border)",
         },
+        action: {
+          DEFAULT: "var(--color-action)",
+          hover: "var(--color-action-hover)",
+          "quiet-text": "var(--color-action-quiet-text)",
+          "quiet-border": "var(--color-action-quiet-border)",
+          "quiet-hover": "var(--color-action-quiet-hover)",
+        },
+        chat: {
+          frame: "var(--color-chat-frame)",
+          line: "var(--color-chat-line)",
+          "line-strong": "var(--color-chat-line-strong)",
+          "user-card": "var(--color-chat-user-card)",
+          "user-card-text": "var(--color-chat-user-card-text)",
+        },
         highlight: {
           DEFAULT: "var(--color-highlight)",
           soft: "var(--color-highlight-soft)",
@@ -68,6 +82,9 @@ const config: Config = {
         soft: "var(--shadow-soft)",
         lift: "var(--shadow-lift)",
         floating: "var(--shadow-floating)",
+        "chat-card": "var(--shadow-chat-card)",
+        "chat-action": "var(--shadow-chat-action)",
+        "chat-composer": "var(--shadow-chat-composer)",
       },
       backdropBlur: {
         xs: "2px",
@@ -78,6 +95,7 @@ const config: Config = {
         card: "var(--radius-card)",
         panel: "var(--radius-panel)",
         shell: "var(--radius-shell)",
+        "chat-frame": "var(--radius-chat-frame)",
       },
       borderWidth: {
         3: "3px",

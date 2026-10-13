@@ -9,35 +9,15 @@ import { LanguageToggle } from "@/components/language-toggle";
 import { shellMessages } from "@/components/shell.messages";
 import { Button } from "@/components/ui/button";
 import { useMessages } from "@/i18n/locale-provider";
-import { signOutSupabaseWorkspace } from "@/lib/supabase-workspace-logout";
+import { useShellUser } from "@/components/use-shell-user";
 import { useAppMode } from "@/lib/app-mode";
-import { useRuntimeSettings } from "@/lib/use-runtime-settings";
-import { useSupabaseAccessSession } from "@/lib/use-supabase-access-session";
 
 export function Topbar({ showSearch = true }: { /** Off where the page has its own case search. */ showSearch?: boolean } = {}) {
   const router = useRouter();
   const t = useMessages(shellMessages);
   const [query, setQuery] = useState("");
-  const runtimeSettings = useRuntimeSettings();
-  const supabaseSession = useSupabaseAccessSession();
   const { publicSignup } = useAppMode();
-  const isSupabaseRuntime = runtimeSettings.status === "success" && runtimeSettings.data.auth_mode === "supabase";
-  const clinicianLabel = runtimeSettings.status !== "success"
-    ? runtimeSettings.status === "loading" ? t.user.verifying : t.user.unavailable
-    : isSupabaseRuntime
-      ? supabaseSession?.displayName ?? supabaseSession?.email ?? t.user.fallbackName
-      : t.user.demoName;
-  const workspaceLabel = runtimeSettings.status !== "success"
-    ? runtimeSettings.status === "loading" ? t.user.confirmingWorkspace : t.user.workspaceUnavailable
-    : isSupabaseRuntime
-      ? publicSignup ? t.user.personalWorkspace : `${t.user.signedInWorkspace}${supabaseSession?.role ? ` · ${supabaseSession.role}` : ""}`
-      : t.user.localWorkspace;
-  const showLogout = isSupabaseRuntime || Boolean(supabaseSession?.stage && supabaseSession.stage !== "signed_out");
-
-  async function handleLogout() {
-    await signOutSupabaseWorkspace();
-    window.location.assign("/");
-  }
+  const user = useShellUser();
 
   function handleSearch(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -80,12 +60,12 @@ export function Topbar({ showSearch = true }: { /** Off where the page has its o
         <LanguageToggle />
 
         <div className="min-w-0 max-w-72 rounded-card border border-brand-border bg-brand-soft px-4 py-1.5 text-sm">
-          <p className="truncate text-sm font-semibold text-brand-strong">{clinicianLabel}</p>
-          <p className="truncate text-xs text-ink-muted">{workspaceLabel}</p>
+          <p className="truncate text-sm font-semibold text-brand-strong">{user.name}</p>
+          <p className="truncate text-xs text-ink-muted">{user.workspace}</p>
         </div>
 
-        {showLogout ? (
-          <Button variant="secondary" icon={LogOut} onClick={() => void handleLogout()} className="hidden shrink-0 2xl:inline-flex">
+        {user.showLogout ? (
+          <Button variant="secondary" icon={LogOut} onClick={() => void user.logOut()} className="hidden shrink-0 2xl:inline-flex">
             {t.logOut}
           </Button>
         ) : null}

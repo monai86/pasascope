@@ -12,16 +12,22 @@ import { useLocale, useMessages } from "@/i18n/locale-provider";
  * Switches the interface between Thai and English. Client components update
  * at once; the refresh re-renders server components with the new cookie.
  */
-export function LanguageToggle({ className }: { className?: string }) {
+export function useLanguageSwitch(): { locale: Locale; change: (next: Locale) => void } {
   const router = useRouter();
   const { locale, setLocale } = useLocale();
-  const t = useMessages(shellMessages).language;
 
-  function handleChange(next: Locale) {
+  function change(next: Locale) {
     if (next === locale) return;
     setLocale(next);
     startTransition(() => router.refresh());
   }
+
+  return { locale, change };
+}
+
+export function LanguageToggle({ className }: { className?: string }) {
+  const { locale, change: handleChange } = useLanguageSwitch();
+  const t = useMessages(shellMessages).language;
 
   return (
     <SegmentedControl<Locale>
