@@ -138,6 +138,32 @@ class SqlAlchemyRepository(MockRepository):
         self.audit_log.append(audit.as_dict())
         return self.clone(case)
 
+    def delete_case(self, case_id: str, *, actor_id: str) -> None:
+        case = self.cases[case_id]
+        audit = validate_audit_event(
+            actor_id=actor_id,
+            action="case.delete",
+            target_id=case_id,
+            outcome="success",
+            correlation_id=f"case-delete-{case_id}",
+            message="Empty case deleted.",
+        ).as_dict()
+        audit["organization_id"] = case.organization_id
+        # One transaction: a row that still refers to the case stops all of it.
+        with self.SessionLocal() as db:
+            db.query(CaseCareTeamAssignmentRecord).filter_by(case_id=case_id).delete()
+            db.query(ChildCaseRecord).filter_by(case_id=case_id).delete()
+            db.add(self._audit_to_record(audit))
+            db.commit()
+        del self.cases[case_id]
+        for assignment_id in [
+            assignment_id
+            for assignment_id, assignment in self.care_team_assignments.items()
+            if assignment.case_id == case_id
+        ]:
+            del self.care_team_assignments[assignment_id]
+        self.audit_log.append(audit)
+
     def update_case(
         self,
         case_id: str,

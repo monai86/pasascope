@@ -68,6 +68,8 @@ type CasesCopy = {
     withdrawBody: string;
     withdrawConfirm: string;
     withdrawCancel: string;
+    /** Offered on a case with nothing recorded for it, such as one created by mistake. */
+    remove: { hint: string; action: string; title: string; body: string; confirm: string; cancel: string; failed: string };
     description: string;
     caseCode: (code: string) => string;
     createSession: string;
@@ -231,6 +233,15 @@ export const casesMessages = defineMessages<CasesCopy>({
         "This will redact child details and disable clinical workflows for this case. New sessions stay blocked until consent is granted again.",
       withdrawConfirm: "Withdraw consent",
       withdrawCancel: "Keep consent",
+      remove: {
+        hint: "This case has no sessions. If it was created by mistake, it can be deleted.",
+        action: "Delete case",
+        title: "Delete this case?",
+        body: "The case is removed from your list. It cannot be brought back.",
+        confirm: "Delete case",
+        cancel: "Keep case",
+        failed: "The case could not be deleted. It may have records now; reload the page and check.",
+      },
       description: "Use the persisted case record to review workflow progress, referral context, and therapist-owned next steps.",
       caseCode: (code) => `Case ${code}`,
       createSession: "Create new session",
@@ -399,6 +410,15 @@ export const casesMessages = defineMessages<CasesCopy>({
         "ระบบจะปิดบังรายละเอียดของเด็กและปิดขั้นตอนทางคลินิกของเคสนี้ เซสชันใหม่จะเริ่มไม่ได้จนกว่าจะได้รับความยินยอมอีกครั้ง",
       withdrawConfirm: "ถอนความยินยอม",
       withdrawCancel: "คงความยินยอมไว้",
+      remove: {
+        hint: "เคสนี้ยังไม่มีเซสชัน ถ้าสร้างผิด ลบได้",
+        action: "ลบเคส",
+        title: "ลบเคสนี้ใช่ไหม",
+        body: "เคสจะหายจากรายการของคุณ และกู้คืนไม่ได้",
+        confirm: "ลบเคส",
+        cancel: "เก็บเคสไว้",
+        failed: "ลบเคสไม่สำเร็จ เคสอาจมีข้อมูลแล้ว ลองโหลดหน้าใหม่แล้วตรวจอีกครั้ง",
+      },
       description: "ดูความคืบหน้าของงาน บริบทการส่งต่อ และขั้นถัดไปของนักบำบัด จากข้อมูลเคสที่บันทึกไว้",
       caseCode: (code) => `เคส ${code}`,
       createSession: "สร้างเซสชันใหม่",

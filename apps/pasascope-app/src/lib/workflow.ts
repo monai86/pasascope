@@ -1858,6 +1858,11 @@ export async function createBackendCase(payload: Partial<BackendCase>): Promise<
   });
 }
 
+/** Deletes a case that holds no clinical record. The API refuses any other case with 409. */
+export async function deleteBackendCase(caseId: string): Promise<void> {
+  await apiRequest<{ status: string }>(`/cases/${encodeURIComponent(caseId)}`, { method: "DELETE" });
+}
+
 // Care-team membership and consent state are not editable through PATCH; the
 // backend rejects them. Consent uses grantBackendCaseConsent / withdrawBackendCaseConsent.
 export type BackendCaseUpdate = Pick<BackendCase, "nickname" | "age_months" | "language" | "notes">;

@@ -200,6 +200,41 @@ class MockRepository:
             return self.privacy_operations[target_id].organization_id
         return "pilot_org_001"
 
+    def case_deletion_blocker(self, case_id: str) -> str | None:
+        """Why a case may not be deleted, or ``None`` when nothing has been recorded for it.
+
+        Only a case that holds no clinical record can go: one made by mistake.
+        A case with a session, a goal, a privacy operation or withdrawn consent
+        carries records that have to be kept, so it stays.
+        """
+        case = self.cases[case_id]
+        if case.consent_status == "withdrawn":
+            return "consent_withdrawn"
+        if any(session.case_id == case_id for session in self.sessions.values()):
+            return "has_sessions"
+        if any(goal.case_id == case_id for goal in self.therapy_goals.values()):
+            return "has_goals"
+        if any(operation.case_id == case_id for operation in self.privacy_operations.values()):
+            return "has_privacy_operations"
+        return None
+
+    def delete_case(self, case_id: str, *, actor_id: str) -> None:
+        """Remove an empty case and its care-team rows. The audit event is kept."""
+        case = self.cases.pop(case_id)
+        for assignment_id in [
+            assignment_id
+            for assignment_id, assignment in self.care_team_assignments.items()
+            if assignment.case_id == case_id
+        ]:
+            del self.care_team_assignments[assignment_id]
+        self.add_audit(
+            "case.delete",
+            case_id,
+            "Empty case deleted.",
+            actor_id=actor_id,
+            organization_id=case.organization_id,
+        )
+
     def create_case(
         self,
         payload: ChildCaseCreate,

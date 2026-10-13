@@ -225,6 +225,8 @@ describe("cases workspace", () => {
     expect(await screen.findByText("Expand spontaneous utterances")).toBeInTheDocument();
     expect(await screen.findByText("Session 2026-06-12")).toBeInTheDocument();
     expect(await screen.findByRole("link", { name: "Open session workspace" })).toHaveAttribute("href", "/sessions/session_demo_001?view=intake");
+    // A case with a session keeps its record: deleting is not offered.
+    expect(screen.queryByRole("button", { name: "Delete case" })).not.toBeInTheDocument();
   });
 
   it("progressively discloses long session history with a show-all toggle", async () => {
@@ -442,6 +444,74 @@ describe("cases workspace", () => {
     expect(screen.getByText("No sessions recorded yet for this case.")).toBeInTheDocument();
     expect(screen.getByText("No recent therapist notes recorded yet.")).toBeInTheDocument();
     expect(screen.getByText("Referral or intake context has not been added yet.")).toBeInTheDocument();
+  });
+
+  describe("deleting a case with nothing recorded for it", () => {
+    const emptyCase = {
+      case_id: "case_demo_empty",
+      child_code: "C-1100",
+      nickname: "New intake",
+      age_months: 48,
+      language: "Thai",
+      consent_status: "pending",
+      notes: "",
+      latest_session_date: null,
+      latest_session_status: "Draft",
+      latest_report_status: "Draft",
+      care_team_user_ids: [],
+    };
+
+    function stubApi(deleteResponse: () => Response) {
+      const requests: Array<{ url: string; method: string }> = [];
+      vi.stubGlobal("fetch", vi.fn(async (input: RequestInfo | URL, init?: RequestInit) => {
+        const url = String(input);
+        const method = init?.method ?? "GET";
+        requests.push({ url, method });
+        if (url.endsWith("/cases/case_demo_empty") && method === "DELETE") return deleteResponse();
+        if (url.endsWith("/cases/case_demo_empty")) return jsonResponse(emptyCase);
+        if (url.endsWith("/timeline") || url.endsWith("/goals")) return jsonResponse([]);
+        if (url.endsWith("/cases")) return jsonResponse([emptyCase]);
+        throw new Error(`Unexpected request: ${url}`);
+      }));
+      return requests;
+    }
+
+    it("asks first, then deletes and returns to the list", async () => {
+      const requests = stubApi(() => jsonResponse({ status: "deleted", case_id: "case_demo_empty" }));
+      await renderAsyncPage(CaseDetailPage, { params: { caseId: "case_demo_empty" } });
+
+      fireEvent.click(await screen.findByRole("button", { name: "Delete case" }));
+      const dialog = screen.getByRole("dialog", { name: "Delete this case?" });
+      expect(requests.some((request) => request.method === "DELETE")).toBe(false);
+
+      fireEvent.click(within(dialog).getByRole("button", { name: "Delete case" }));
+
+      await waitFor(() => expect(routerPush).toHaveBeenCalledWith("/cases"));
+      expect(requests.filter((request) => request.method === "DELETE")).toHaveLength(1);
+    });
+
+    it("keeps the case when the dialog is dismissed", async () => {
+      const requests = stubApi(() => jsonResponse({ status: "deleted", case_id: "case_demo_empty" }));
+      await renderAsyncPage(CaseDetailPage, { params: { caseId: "case_demo_empty" } });
+
+      fireEvent.click(await screen.findByRole("button", { name: "Delete case" }));
+      fireEvent.click(within(screen.getByRole("dialog")).getByRole("button", { name: "Keep case" }));
+
+      expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
+      expect(requests.some((request) => request.method === "DELETE")).toBe(false);
+    });
+
+    it("says so when the API refuses, and stays on the case", async () => {
+      routerPush.mockClear();
+      stubApi(() => new Response(JSON.stringify({ detail: "This case has sessions and cannot be deleted." }), { status: 409 }));
+      await renderAsyncPage(CaseDetailPage, { params: { caseId: "case_demo_empty" } });
+
+      fireEvent.click(await screen.findByRole("button", { name: "Delete case" }));
+      fireEvent.click(within(screen.getByRole("dialog")).getByRole("button", { name: "Delete case" }));
+
+      expect(await screen.findByRole("alert")).toHaveTextContent("The case could not be deleted.");
+      expect(routerPush).not.toHaveBeenCalledWith("/cases");
+    });
   });
 
   it("disables session creation and shows warning alert when consent is pending", async () => {

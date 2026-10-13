@@ -1,4 +1,5 @@
 from fastapi import APIRouter, Depends, HTTPException, status
+from sqlalchemy.exc import IntegrityError
 
 from app.api.v1.dependencies import get_repository
 from app.auth.authorization import (
@@ -144,6 +145,38 @@ def update_case(
             status_code=status.HTTP_409_CONFLICT,
             detail="Case was changed by another request; reload and retry.",
         ) from exc
+
+
+# Said to the therapist when a case cannot be deleted. None of them names the child.
+_CASE_NOT_EMPTY = {
+    "consent_withdrawn": "This case's consent was withdrawn, so its record is kept.",
+    "has_sessions": "This case has sessions and cannot be deleted. Withdraw its consent to remove its recordings.",
+    "has_goals": "This case has therapy goals and cannot be deleted.",
+    "has_privacy_operations": "This case has a privacy request on record and cannot be deleted.",
+}
+
+
+@router.delete("/{case_id}")
+def delete_case(
+    case_id: str,
+    user: CurrentUser = Depends(get_current_user),
+    repo: MockRepository = Depends(get_repository),
+):
+    """Delete a case that holds no clinical record, such as one created by mistake."""
+    assert_clinical_mutation_allowed(user)
+    require_case(repo, case_id, user)
+    blocker = repo.case_deletion_blocker(case_id)
+    if blocker is not None:
+        raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail=_CASE_NOT_EMPTY[blocker])
+    try:
+        repo.delete_case(case_id, actor_id=user.user_id)
+    except IntegrityError as exc:
+        # The database holds a row for this case that the checks above do not know.
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail="This case has records and cannot be deleted.",
+        ) from exc
+    return {"status": "deleted", "case_id": case_id}
 
 
 @router.post("/{case_id}/grant-consent", response_model=ChildCase)

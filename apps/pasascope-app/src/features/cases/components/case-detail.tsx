@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { useState, type FormEvent, type ReactNode } from "react";
 import { Activity, ArrowRight, CalendarDays, CircleDot, Gauge, ShieldCheck, Users } from "lucide-react";
 
@@ -22,7 +23,7 @@ import { useLocale, useMessages } from "@/i18n/locale-provider";
 import { useSafetyCopy } from "@/lib/safety-copy";
 import { useGateReason } from "@/lib/gate-reason";
 import { grantConsentBlockedReason } from "@/lib/workflow-gates";
-import type { BackendCase, BackendGoal, BackendTimelineEvent } from "@/lib/workflow";
+import { deleteBackendCase, type BackendCase, type BackendGoal, type BackendTimelineEvent } from "@/lib/workflow";
 
 type Copy = typeof casesMessages.en;
 type Shared = Copy["shared"];
@@ -134,6 +135,27 @@ export function CaseDetail({ model }: { model: CaseDetailViewModel }) {
     void consent.withdrawConsent();
   }
 
+  // A case with nothing recorded for it can be deleted; the API checks again.
+  const router = useRouter();
+  const canDelete =
+    timeline.length === 0 && goals.length === 0 && !caseItem.latest_session_date && localConsent.toLowerCase() !== "withdrawn";
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [deleting, setDeleting] = useState(false);
+  const [deleteFailed, setDeleteFailed] = useState(false);
+
+  async function confirmDelete() {
+    setDeleting(true);
+    setDeleteFailed(false);
+    try {
+      await deleteBackendCase(caseItem.case_id);
+      router.push("/cases");
+    } catch {
+      setDeleteFailed(true);
+      setDeleting(false);
+      setDeleteDialogOpen(false);
+    }
+  }
+
   return (
     <div className="space-y-6">
       <ConfirmDialog
@@ -145,6 +167,17 @@ export function CaseDetail({ model }: { model: CaseDetailViewModel }) {
         destructive
         onConfirm={confirmWithdrawConsent}
         onCancel={() => setWithdrawDialogOpen(false)}
+      />
+      <ConfirmDialog
+        open={deleteDialogOpen}
+        title={t.remove.title}
+        description={t.remove.body}
+        confirmLabel={t.remove.confirm}
+        cancelLabel={t.remove.cancel}
+        destructive
+        busy={deleting}
+        onConfirm={() => void confirmDelete()}
+        onCancel={() => setDeleteDialogOpen(false)}
       />
       <PageHeader
         title={caseLabel(caseItem)}
@@ -165,6 +198,28 @@ export function CaseDetail({ model }: { model: CaseDetailViewModel }) {
           </ActionButton>
         }
       />
+
+      {canDelete ? (
+        <div className="flex flex-wrap items-center justify-between gap-3 text-sm text-ink-muted" data-testid="case-delete">
+          <p>{t.remove.hint}</p>
+          <ActionButton
+            type="button"
+            tone="secondary"
+            onClick={() => setDeleteDialogOpen(true)}
+            className="hover:border-[color:var(--color-danger-text)] hover:bg-[color:var(--color-danger-bg)] hover:text-[color:var(--color-danger-text)]"
+          >
+            {t.remove.action}
+          </ActionButton>
+        </div>
+      ) : null}
+      {deleteFailed ? (
+        <p
+          role="alert"
+          className="rounded-control border border-[color:var(--color-danger-border)] bg-[color:var(--color-danger-bg)] px-4 py-3 text-sm font-medium text-[color:var(--color-danger-text)]"
+        >
+          {t.remove.failed}
+        </p>
+      ) : null}
 
       <PipelineProgressBar currentStatus={localConsent === "granted" ? "ready_for_audio" : "awaiting_consent"} />
 
