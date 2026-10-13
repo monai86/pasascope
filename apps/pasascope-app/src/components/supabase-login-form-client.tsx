@@ -44,9 +44,10 @@ const FIELD =
   "min-h-12 w-full rounded-control border border-chat-line-strong bg-surface py-2 text-base text-ink outline-none transition placeholder:text-ink-subtle focus-visible:ring-4 focus-visible:ring-[color:var(--color-focus-ring)] aria-[invalid=true]:border-[color:var(--color-danger-text)] motion-reduce:transition-none";
 const PRIMARY = `group inline-flex min-h-[52px] w-full items-center justify-center rounded-full bg-action px-6 font-semibold text-white shadow-chat-action transition hover:bg-action-hover disabled:cursor-not-allowed disabled:bg-chat-line disabled:text-ink-subtle disabled:shadow-none motion-reduce:transition-none ${FOCUS_RING}`;
 
-// NIST SP 800-63B-4: 15 characters where the password is the only factor, and no
-// composition rules. It applies to a new password; an existing one still signs in.
-export const PASSWORD_MIN_LENGTH = 15;
+// The owner's choice (2026-10-13). NIST SP 800-63B-4 asks for 15 where the password
+// is the only factor and 8 beside a second one, with no composition rules either way.
+// It applies to a new password; an existing one still signs in.
+export const PASSWORD_MIN_LENGTH = 8;
 
 export const ACCOUNT_NOT_PROVISIONED_MESSAGE =
   "บัญชีนี้ยังไม่ได้รับสิทธิ์เข้าองค์กรใด กรุณาติดต่อผู้ดูแลองค์กรเพื่อรับคำเชิญ · This account has not been added to an organization yet. Ask your organization admin for an invitation.";

@@ -209,12 +209,12 @@ describe("SupabaseLoginFormClient", () => {
     }
 
     it("states the password rule and stops a shorter one before anything is sent", () => {
-      startSignUp("short-one");
-      expect(screen.getByLabelText("Password")).toHaveAccessibleDescription(/At least 15 characters/);
+      startSignUp("short");
+      expect(screen.getByLabelText("Password")).toHaveAccessibleDescription(/At least 8 characters/);
 
       fireEvent.click(screen.getByRole("button", { name: "Create Account" }));
 
-      expect(screen.getByRole("alert")).toHaveTextContent("Use at least 15 characters.");
+      expect(screen.getByRole("alert")).toHaveTextContent("Use at least 8 characters.");
       expect(screen.getByLabelText("Password")).toHaveAttribute("aria-invalid", "true");
       expect(screen.getByLabelText("Password")).toHaveFocus();
       expect(signUp).not.toHaveBeenCalled();
