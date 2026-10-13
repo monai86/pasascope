@@ -120,6 +120,26 @@ def acknowledge_session_cues(
     }
 
 
+def _latest_transcription_job(repo: MockRepository, session_id: str) -> dict[str, str] | None:
+    """The session's most recent transcription job: its identifier and state only.
+
+    A client that started a job and then reloaded has no other way to find it
+    again. Nothing about the recording or the transcript is returned here.
+    """
+    jobs = [
+        job
+        for job in repo.jobs.values()
+        if job.session_id == session_id and "requested_provider" in job.details
+    ]
+    if not jobs:
+        return None
+    latest = max(jobs, key=lambda job: job.created_at)
+    return {
+        "job_id": latest.job_id,
+        "status": latest.status.value if hasattr(latest.status, "value") else str(latest.status),
+    }
+
+
 @router.get("/sessions/{session_id}/status")
 def get_session_status(
     session_id: str,
@@ -137,4 +157,5 @@ def get_session_status(
         "report_id": session.report_id,
         "cues_acknowledged_at": session.cues_acknowledged_at,
         "cues_acknowledged_by": session.cues_acknowledged_by,
+        "transcription_job": _latest_transcription_job(repo, session_id),
     }

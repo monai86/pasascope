@@ -1496,6 +1496,39 @@ def test_audio_process_creates_unreviewed_asr_draft_and_blocks_features():
     assert blocked.status_code == 400
 
 
+def test_session_status_reports_the_latest_transcription_job_and_nothing_about_its_content():
+    get_job_queue().clear()
+    case_id = client.post(
+        "/api/v1/cases",
+        json={"child_code": "C-4011", "age_months": 48, "language": "English", "consent_status": "granted"},
+    ).json()["case_id"]
+    session_id = client.post(
+        f"/api/v1/cases/{case_id}/sessions",
+        json={"session_date": "2026-06-16", "session_type": "therapy_session"},
+    ).json()["session_id"]
+
+    # An upload job is not a transcription job, so there is nothing to resume yet.
+    client.post(
+        f"/api/v1/sessions/{session_id}/audio/upload",
+        json={"filename": "session.wav", "content_type": "audio/wav", "size_bytes": 1024, "duration_seconds": 30},
+    )
+    assert client.get(f"/api/v1/sessions/{session_id}/status").json()["transcription_job"] is None
+
+    job_id = client.post(
+        f"/api/v1/sessions/{session_id}/audio/process",
+        json={"provider": "manual", "draft_text": "THER: what do you see\nCHI: I see car", "duration_seconds": 30, "channels": 1},
+    ).json()["job_id"]
+
+    queued = client.get(f"/api/v1/sessions/{session_id}/status").json()["transcription_job"]
+    assert queued == {"job_id": job_id, "status": "queued"}
+
+    run_worker_once()
+
+    finished = client.get(f"/api/v1/sessions/{session_id}/status").json()["transcription_job"]
+    # Identifier and state only: no draft text, provider detail or storage key.
+    assert finished == {"job_id": job_id, "status": "needs_review"}
+
+
 def test_audio_process_warns_when_no_child_speech_is_detected():
     get_job_queue().clear()
     case_id = client.post(
