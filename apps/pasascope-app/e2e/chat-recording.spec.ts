@@ -35,9 +35,16 @@ test("a recording made in the conversation is not uploaded when speech recogniti
   await expect(page).toHaveURL(/\/sessions\/[^/?]+\?view=chat.*mode=recording/);
 
   const ask = page.getByTestId("chat-ask-audio");
-  await ask.getByRole("button", { name: "Start recording" }).click();
+  const stop = ask.getByRole("button", { name: "Stop recording" });
+  // On a cold dev server the first click can land before the recorder is
+  // interactive, so start again until the recorder reports that it is recording.
+  await expect(async () => {
+    const start = ask.getByRole("button", { name: "Start recording" });
+    if (await start.isVisible()) await start.click();
+    await expect(stop).toBeEnabled({ timeout: 5_000 });
+  }).toPass({ timeout: 60_000 });
   await page.waitForTimeout(1500);
-  await ask.getByRole("button", { name: "Stop recording" }).click();
+  await stop.click();
 
   // Nothing leaves the page until the therapist says so.
   const confirm = page.getByTestId("chat-confirm-upload");

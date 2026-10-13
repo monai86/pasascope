@@ -26,6 +26,7 @@ const allowedOrigins = [
  */
 export default defineConfig({
   testDir: ".",
+  globalSetup: "./e2e/support/warm-chat-routes.ts",
   testMatch: ["e2e/chat-workflow.smoke.spec.ts", "e2e/chat-ui-audit.spec.ts", "e2e/chat-recording.spec.ts"],
   timeout: 120_000,
   expect: {
