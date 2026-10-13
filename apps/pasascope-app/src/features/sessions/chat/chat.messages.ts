@@ -8,6 +8,7 @@ import { defineMessages } from "@/i18n/messages";
  */
 type ChatCopy = {
   threadLabel: string;
+  heading: (caseLabel: string) => string;
   stepsLabel: string;
   steps: Record<ChatStep, string>;
   stepOf: (current: number, total: number) => string;
@@ -99,6 +100,7 @@ type ChatCopy = {
 export const chatMessages = defineMessages<ChatCopy>({
   en: {
     threadLabel: "Session conversation",
+    heading: (caseLabel) => `Session for ${caseLabel}`,
     stepsLabel: "Session steps",
     steps: {
       audio: "Send audio",
@@ -229,6 +231,7 @@ export const chatMessages = defineMessages<ChatCopy>({
   },
   th: {
     threadLabel: "บทสนทนาของเซสชัน",
+    heading: (caseLabel) => `เซสชันของ ${caseLabel}`,
     stepsLabel: "ขั้นตอนของเซสชัน",
     steps: {
       audio: "ส่งเสียง",

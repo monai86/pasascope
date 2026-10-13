@@ -71,7 +71,7 @@ export function ChatHome() {
             onStartOver={reset}
           />
         ) : (
-          <ChatThread label={t.threadLabel} className="flex-1 pb-6">
+          <ChatThread label={t.threadLabel} heading={t.threadLabel} className="flex-1 pb-6">
             <AssistantMessage>
               {home.status === "error" ? (
                 <>

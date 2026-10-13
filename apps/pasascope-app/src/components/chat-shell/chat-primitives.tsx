@@ -13,16 +13,33 @@ const FOCUS_RING =
  * politely, so a result that arrives while the therapist is elsewhere on the
  * page is not missed and does not interrupt.
  */
-export function ChatThread({ label, children, className }: { label: string; children: ReactNode; className?: string }) {
+export function ChatThread({
+  label,
+  heading,
+  children,
+  className,
+}: {
+  label: string;
+  /**
+   * The page's top-level heading. A conversation has no visible title of its
+   * own on desktop, so it is announced without being shown.
+   */
+  heading: string;
+  children: ReactNode;
+  className?: string;
+}) {
   return (
-    <div
-      role="log"
-      aria-live="polite"
-      aria-label={label}
-      className={cn("mx-auto flex w-full max-w-[640px] flex-col gap-6", className)}
-    >
-      {children}
-    </div>
+    <>
+      <h1 className="sr-only">{heading}</h1>
+      <div
+        role="log"
+        aria-live="polite"
+        aria-label={label}
+        className={cn("mx-auto flex w-full max-w-[640px] flex-col gap-6", className)}
+      >
+        {children}
+      </div>
+    </>
   );
 }
 

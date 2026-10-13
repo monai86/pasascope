@@ -131,7 +131,7 @@ export function StartSessionThread({
   }
 
   return (
-    <ChatThread label={t.threadLabel} className="flex-1 pb-6">
+    <ChatThread label={t.threadLabel} heading={t.threadLabel} className="flex-1 pb-6">
       <UserBubble>{openerText}</UserBubble>
 
       {caseItem ? null : creatingCase ? (

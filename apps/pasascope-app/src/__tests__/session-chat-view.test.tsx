@@ -2,9 +2,16 @@ import { fireEvent, render, screen, waitFor, within } from "@testing-library/rea
 import { afterEach, describe, expect, it, vi } from "vitest";
 
 import { SessionChatView, type SessionChatViewProps } from "@/features/sessions/chat/session-chat-view";
+import { LONGITUDINAL_DELTA_CAUTION } from "@/lib/clinical-safety-copy";
 import { createInitialWorkflowState, type FeatureSignal, type TranscriptLine, type WorkflowState } from "@/lib/workflow";
 
 const settings = vi.hoisted(() => ({ external: false }));
+const trend = vi.hoisted(() => ({ previousMlu: null as number | null }));
+
+// The previous session's value comes from the backend's trend; the view only shows it.
+vi.mock("@/features/sessions/chat/use-previous-mlu", () => ({
+  usePreviousMlu: () => trend.previousMlu,
+}));
 
 vi.mock("@/lib/use-runtime-settings", () => ({
   useRuntimeSettings: () => ({
@@ -93,6 +100,7 @@ function recorded(sizeBytes: number) {
 
 afterEach(() => {
   settings.external = false;
+  trend.previousMlu = null;
 });
 
 describe("session conversation view", () => {
@@ -203,6 +211,25 @@ describe("session conversation view", () => {
     expect(within(measures).getByTestId("measure-distinct-words")).toHaveTextContent("61");
     expect(within(measures).getByText(/Therapist interpretation required\./)).toBeInTheDocument();
     expect(within(measures).getByRole("button", { name: "Draft the report" })).toBeEnabled();
+  });
+
+  it("adds the caution about comparing sessions only beside a previous session's value", () => {
+    const state = withTranscript(complete, {
+      analysisStatus: "completed",
+      featuresExtracted: true,
+      featureSignals: [signal("mean_length_of_utterance_words", 2.8)],
+    });
+
+    const first = render(<SessionChatView {...props({ state, lines: complete })} />);
+    expect(screen.queryByText(/previous session/)).toBeNull();
+    expect(screen.queryByText(LONGITUDINAL_DELTA_CAUTION)).toBeNull();
+    first.unmount();
+
+    trend.previousMlu = 2.5;
+    render(<SessionChatView {...props({ state, lines: complete })} />);
+    const measures = screen.getByTestId("chat-measures");
+    expect(within(measures).getByText(/previous session 2\.5/)).toBeInTheDocument();
+    expect(within(measures).getByText(LONGITUDINAL_DELTA_CAUTION)).toBeInTheDocument();
   });
 
   it("shows a blank, never a number, for a measure the backend did not send", () => {

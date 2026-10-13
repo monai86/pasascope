@@ -272,7 +272,11 @@ export function SessionChatView(props: SessionChatViewProps) {
         />
       </ChatShellPanel>
 
-      <ChatThread label={t.threadLabel} className="flex-1 pb-6">
+      <ChatThread
+        label={t.threadLabel}
+        heading={sessionContext.caseLabel ? t.heading(sessionContext.caseLabel) : t.threadLabel}
+        className="flex-1 pb-6"
+      >
         {thread.items.map((item) => (
           <ThreadEntry key={item.id}>
             <ThreadItemView
@@ -616,8 +620,9 @@ function ThreadItemView({
           <MeasuresCard measures={item.measures} />
           <ChatNote>
             {t.measures.descriptive} {safety.THERAPIST_INTERPRETATION_REQUIRED}
-            {item.measures.previousMlu === null ? "" : ` ${safety.LONGITUDINAL_DELTA_CAUTION}`}
           </ChatNote>
+          {/* Shown only beside a previous session's value, which is what it is about. */}
+          {item.measures.previousMlu === null ? null : <ChatNote>{safety.LONGITUDINAL_DELTA_CAUTION}</ChatNote>}
           {renderReplies(item.replies)}
         </AssistantMessage>
       );
