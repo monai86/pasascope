@@ -23,6 +23,7 @@ const allowedOrigins = [
 
 export default defineConfig({
   testDir: ".",
+  globalSetup: "./e2e/support/warm-therapist-routes.ts",
   testMatch: [
     "e2e/**/*.spec.ts",
     ...(benchmarkRun ? ["benchmarks/**/*.spec.ts"] : []),
