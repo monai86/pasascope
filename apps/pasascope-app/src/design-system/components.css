@@ -308,6 +308,84 @@
     }
   }
 
+  /*
+   * Arriving at the site: the mark settles first, then the words under it come
+   * into focus one after another. `--enter` is an element's place in that
+   * order. The whole sequence is over within a second, and nothing that is
+   * typed in or pressed waits for it.
+   */
+  @keyframes site-enter {
+    from {
+      opacity: 0;
+      filter: blur(6px);
+      transform: translateY(14px);
+    }
+    to {
+      opacity: 1;
+      filter: none;
+      transform: none;
+    }
+  }
+
+  @keyframes site-enter-mark {
+    from {
+      opacity: 0;
+      filter: blur(8px);
+      transform: scale(0.88);
+    }
+    to {
+      opacity: 1;
+      filter: none;
+      transform: none;
+    }
+  }
+
+  @keyframes site-enter-panel {
+    from {
+      opacity: 0;
+      transform: translateY(10px);
+    }
+    to {
+      opacity: 1;
+      transform: none;
+    }
+  }
+
+  /* First in the order unless an element says otherwise. */
+  .site-enter,
+  .site-enter-panel {
+    --enter: 0;
+  }
+
+  .site-enter {
+    animation: site-enter 640ms cubic-bezier(0.16, 1, 0.3, 1) both;
+    animation-delay: calc(var(--enter) * 80ms);
+  }
+
+  .site-enter-mark {
+    animation: site-enter-mark 720ms cubic-bezier(0.16, 1, 0.3, 1) both;
+  }
+
+  /* A large surface: it only fades and lifts, since blurring it would cost frames. */
+  .site-enter-panel {
+    animation: site-enter-panel 520ms cubic-bezier(0.16, 1, 0.3, 1) both;
+    animation-delay: calc(var(--enter) * 80ms);
+  }
+
+  /* The three ways to begin on the chat home arrive as a list, after the heading. */
+  .site-enter-list > .chat-rise {
+    --i: 0;
+    animation-delay: calc(240ms + var(--i) * 70ms);
+  }
+
+  .site-enter-list > .chat-rise:nth-child(2) {
+    --i: 1;
+  }
+
+  .site-enter-list > .chat-rise:nth-child(3) {
+    --i: 2;
+  }
+
   /* A message, card or row arriving. */
   .chat-rise {
     animation: chat-rise 280ms cubic-bezier(0.2, 0.7, 0.2, 1) both;
@@ -407,25 +485,25 @@
   }
 
   .login-thread-step:nth-child(1) {
-    animation-delay: 200ms;
+    animation-delay: 320ms;
   }
 
   .login-thread-step:nth-child(1)::after {
     background: linear-gradient(180deg, var(--color-highlight-border), var(--color-sky));
-    animation-delay: 380ms;
+    animation-delay: 500ms;
   }
 
   .login-thread-step:nth-child(2) {
-    animation-delay: 430ms;
+    animation-delay: 550ms;
   }
 
   .login-thread-step:nth-child(2)::after {
     background: linear-gradient(180deg, var(--color-sky), var(--color-chat-line-strong));
-    animation-delay: 610ms;
+    animation-delay: 730ms;
   }
 
   .login-thread-step:nth-child(3) {
-    animation-delay: 660ms;
+    animation-delay: 780ms;
   }
 
   .login-thread-node {

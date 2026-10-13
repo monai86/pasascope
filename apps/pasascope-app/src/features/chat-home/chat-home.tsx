@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { lazy, Suspense, useEffect, useRef, useState, type ReactNode } from "react";
+import { lazy, Suspense, useEffect, useRef, useState, type CSSProperties, type ReactNode } from "react";
 import type { LucideIcon } from "lucide-react";
 import { Clock, FolderOpen, History, Mic, Upload } from "lucide-react";
 
@@ -169,15 +169,15 @@ export function ChatHome() {
         </Suspense>
       ) : (
         <div className="mx-auto flex w-full max-w-[660px] flex-1 flex-col justify-center gap-7 py-4 md:gap-9">
-          <div className="chat-rise flex flex-col items-center text-center">
-            <ChatMarkStage />
-            <h1 className="mt-2 font-display text-3xl font-semibold leading-tight text-ink md:mt-3 md:text-[2.875rem]">
+          <div className="flex flex-col items-center text-center">
+            <ChatMarkStage className="site-enter-mark" />
+            <h1 style={{ "--enter": 1 } as CSSProperties} className="site-enter mt-2 font-display text-3xl font-semibold leading-tight text-ink md:mt-3 md:text-[2.875rem]">
               {t.greeting}
             </h1>
-            <p className="mt-1.5 max-w-[280px] text-ink-subtle md:mt-2.5 md:max-w-none">{t.lead}</p>
+            <p style={{ "--enter": 2 } as CSSProperties} className="site-enter mt-1.5 max-w-[280px] text-ink-subtle md:mt-2.5 md:max-w-none">{t.lead}</p>
           </div>
 
-          <div className="flex flex-col overflow-hidden rounded-card bg-surface shadow-chat-card md:flex-row md:flex-wrap md:gap-3.5 md:overflow-visible md:rounded-none md:bg-transparent md:shadow-none">
+          <div className="site-enter-list flex flex-col overflow-hidden rounded-card bg-surface shadow-chat-card md:flex-row md:flex-wrap md:gap-3.5 md:overflow-visible md:rounded-none md:bg-transparent md:shadow-none">
             <HomeCard
               icon={Mic}
               iconClass="text-highlight"
@@ -210,7 +210,7 @@ export function ChatHome() {
             />
           </div>
 
-          <div className="chat-rise flex flex-wrap justify-center gap-2" style={{ animationDelay: "180ms" }}>
+          <div className="site-enter flex flex-wrap justify-center gap-2" style={{ "--enter": 6 } as CSSProperties}>
             {SUGGESTED.map((topic) => (
               <button
                 key={topic}

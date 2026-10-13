@@ -188,6 +188,10 @@ When the API runs the public workflow (public sign-up, open review gates),
   never guessed at. A typed line may be answered, open a page or begin the
   guided start; it never changes a record, which always takes a button.
   Decision record: `docs/adr/0022-fixed-topic-answers-on-chat-home.md`.
+- **Arrival:** the sign-in page and Home open with one sequence (`site-enter`,
+  ordered by `--enter`): the mark settles, then the heading and its line come
+  into focus. It ends within a second and nothing typed in or pressed waits
+  for it. Other pages only fade in.
 - **Motion:** small and brief. A message, card or row rises 10px into place
   (`chat-rise`, 280ms); an answer is preceded by three dots for under half a
   second; the mark on Home and the sign-in page sits on a white tile, two rings leave it in turn and the bars in its lens move as a waveform (`ChatMarkStage`); the text field lifts

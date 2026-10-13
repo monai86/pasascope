@@ -1,5 +1,6 @@
 "use client";
 
+import type { CSSProperties } from "react";
 import { FileText, ListChecks, Mic, ShieldCheck } from "lucide-react";
 
 import { LanguageToggle } from "@/components/language-toggle";
@@ -11,6 +12,11 @@ import { useMessages } from "@/i18n/locale-provider";
 import { APP_VERSION } from "@/lib/app-version";
 import { useSafetyCopy } from "@/lib/safety-copy";
 
+/** An element's place in the arrival sequence; see `.site-enter` in components.css. */
+function enter(step: number): CSSProperties {
+  return { "--enter": step } as CSSProperties;
+}
+
 const steps = [
   { icon: Mic, tone: "text-highlight" },
   { icon: ListChecks, tone: "text-tint-strong" },
@@ -20,8 +26,9 @@ const steps = [
 /**
  * The sign-in page, drawn like the chat shell it leads to: the same canvas and
  * frame, the mark on its tile, and the workflow as one thread running from the
- * recording to the report. The form is the task, so it is on screen at once and
- * does not move; the thread is the one thing that draws itself in.
+ * recording to the report. Arriving is one short sequence: the mark settles,
+ * the heading and its line come into focus, then the thread draws itself. The
+ * form fades in with the heading and can be used from the first moment.
  */
 export function LoginScreen() {
   const t = useMessages(loginMessages);
@@ -41,14 +48,14 @@ export function LoginScreen() {
         {/* On a phone the form follows the heading, so signing in needs no scrolling past the steps. */}
         <div className="mx-auto grid w-full max-w-[1080px] flex-1 content-center items-center gap-x-16 gap-y-8 lg:grid-cols-[minmax(0,1fr)_minmax(0,432px)]">
           <div className="flex flex-col items-center text-center lg:items-start lg:self-end lg:text-left">
-            <ChatMarkStage className="lg:-ml-[26px]" />
-            <h1 className="login-title mt-5 whitespace-pre-line font-display text-[2rem] font-semibold text-ink md:text-[2.75rem] lg:text-[3rem]">
+            <ChatMarkStage className="site-enter-mark lg:-ml-[26px]" />
+            <h1 style={enter(1)} className="site-enter login-title mt-5 whitespace-pre-line font-display text-[2rem] font-semibold text-ink md:text-[2.75rem] lg:text-[3rem]">
               {t.hero.title}
             </h1>
-            <p className="mt-4 max-w-[44ch] text-lg leading-relaxed text-ink-muted">{t.hero.body}</p>
+            <p style={enter(2)} className="site-enter mt-4 max-w-[44ch] text-lg leading-relaxed text-ink-muted">{t.hero.body}</p>
           </div>
 
-          <section className="mx-auto flex w-full max-w-[480px] flex-col justify-center lg:col-start-2 lg:row-span-2 lg:row-start-1 lg:max-w-none">
+          <section style={enter(1)} className="site-enter-panel mx-auto flex w-full max-w-[480px] flex-col justify-center lg:col-start-2 lg:row-span-2 lg:row-start-1 lg:max-w-none">
             <RuntimeLoginPanelClient />
           </section>
 
@@ -70,7 +77,7 @@ export function LoginScreen() {
               })}
             </ol>
 
-            <p className="flex max-w-[440px] items-start gap-2.5 text-left text-[13px] leading-5 text-ink-muted">
+            <p style={enter(11)} className="site-enter flex max-w-[440px] items-start gap-2.5 text-left text-[13px] leading-5 text-ink-muted">
               <ShieldCheck size={18} aria-hidden="true" className="mt-0.5 shrink-0 text-ink-subtle" />
               <span>{safety.SAFETY_NOTICE_DEFAULT}</span>
             </p>
