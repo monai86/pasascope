@@ -21,16 +21,16 @@ async function expectNoHorizontalOverflow(page: Page) {
   expect(dimensions.document).toBeLessThanOrEqual(dimensions.viewport);
 }
 
-test("the canonical workbench reflows at the 200 percent zoom equivalent", async ({ page }) => {
+test("the home screen reflows at the 200 percent zoom equivalent", async ({ page }) => {
   await page.setViewportSize({ width: 640, height: 800 });
   await setTherapistSession(page);
-  await page.goto("/today", { waitUntil: "networkidle" });
+  await page.goto("/", { waitUntil: "networkidle" });
 
-  await expect(page.getByRole("heading", { name: "Today", exact: true })).toBeVisible();
-  await expect(page.getByRole("link", { name: "Start session", exact: true })).toBeVisible();
+  await expect(page.locator('[data-shell="chat"]')).toBeVisible();
+  await expect(page.getByRole("heading", { level: 1 })).toBeVisible();
   await expectNoHorizontalOverflow(page);
   await page.screenshot({
-    path: path.join(evidenceDirectory, "today-200-percent-zoom-equivalent-640x800.png"),
+    path: path.join(evidenceDirectory, "home-200-percent-zoom-equivalent-640x800.png"),
     fullPage: true,
   });
 });

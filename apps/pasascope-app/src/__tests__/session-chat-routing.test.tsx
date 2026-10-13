@@ -48,18 +48,4 @@ describe("session route in the chat shell", () => {
     rerender(<SessionWorkspace sessionId="s1" view="findings" />);
     expect(screen.getByText("workbench findings")).toBeInTheDocument();
   });
-
-  it("shows Intake for a chat link in a build that opted out of the chat shell", () => {
-    vi.stubEnv("NEXT_PUBLIC_CHAT_SHELL", "false");
-
-    render(<SessionWorkspace sessionId="s1" view="chat" />);
-    expect(screen.getByText("workbench intake")).toBeInTheDocument();
-  });
-
-  it("shows Intake for a chat link while the API still enforces review gates", () => {
-    settings.reviewGates = "strict";
-
-    render(<SessionWorkspace sessionId="s1" view="chat" />);
-    expect(screen.getByText("workbench intake")).toBeInTheDocument();
-  });
 });

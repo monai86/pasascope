@@ -29,7 +29,7 @@ describe("SessionContextHeader", () => {
     expect(screen.getByRole("navigation", { name: "Breadcrumb" })).toBeInTheDocument();
     expect(screen.getByRole("link", { name: "Cases" })).toHaveAttribute("href", "/cases");
     expect(screen.getByRole("link", { name: "C-1024" })).toHaveAttribute("href", "/cases/case-1024");
-    expect(screen.getByRole("link", { name: "Intake" })).toHaveAttribute("aria-current", "page");
+    expect(screen.getByRole("link", { name: "Conversation" })).toHaveAttribute("aria-current", "page");
     expect(screen.getByRole("link", { name: "Transcript" })).toHaveAttribute(
       "href",
       "/sessions/session-1?view=transcript",
@@ -107,7 +107,7 @@ describe("SessionContextHeader step completion", () => {
 
     // The Transcript step sits before the active Findings step, but the
     // transcript was never attested, so it must not look done.
-    expect(screen.getByRole("link", { name: "Intake" })).toHaveAttribute("data-step-state", "complete");
+    expect(screen.getByRole("link", { name: "Conversation" })).toHaveAttribute("data-step-state", "complete");
     expect(screen.getByRole("link", { name: "Transcript" })).toHaveAttribute("data-step-state", "pending");
     expect(screen.getByRole("link", { name: "Findings" })).toHaveAttribute("data-step-state", "current");
     expect(screen.getByRole("link", { name: "Report" })).toHaveAttribute("data-step-state", "pending");
@@ -122,7 +122,7 @@ describe("SessionContextHeader step completion", () => {
       />,
     );
 
-    expect(screen.getByRole("link", { name: "Intake" })).toHaveAccessibleDescription("Step complete");
+    expect(screen.getByRole("link", { name: "Conversation" })).toHaveAccessibleDescription("Step complete");
     expect(screen.getByRole("link", { name: "Transcript" })).not.toHaveAccessibleDescription("Step complete");
   });
 
@@ -135,7 +135,7 @@ describe("SessionContextHeader step completion", () => {
       />,
     );
 
-    for (const name of ["Intake", "Transcript", "Findings"]) {
+    for (const name of ["Conversation", "Transcript", "Findings"]) {
       expect(screen.getByRole("link", { name })).toHaveAttribute("data-step-state", "pending");
     }
   });
@@ -164,7 +164,7 @@ describe("SessionContextHeader in Thai", () => {
     expect(screen.getByRole("region", { name: "ข้อมูลของเซสชัน" })).toBeInTheDocument();
     expect(screen.getByRole("navigation", { name: "ขั้นตอนของเซสชัน" })).toBeInTheDocument();
     expect(screen.getByRole("link", { name: "บทถอดเสียง" })).toHaveAttribute("aria-current", "page");
-    expect(screen.getByRole("link", { name: "รับข้อมูล" })).toHaveAccessibleDescription("ขั้นตอนนี้เสร็จแล้ว");
+    expect(screen.getByRole("link", { name: "บทสนทนา" })).toHaveAccessibleDescription("ขั้นตอนนี้เสร็จแล้ว");
     expect(screen.getByText("ให้ความยินยอมแล้ว")).toBeInTheDocument();
     expect(screen.getByText("เชื่อมต่อแล้ว")).toBeInTheDocument();
     expect(screen.queryByText("Connected")).not.toBeInTheDocument();

@@ -134,7 +134,7 @@ describe("AppShell auth gating", () => {
     }));
 
     render(
-      <AppShell active="Today">
+      <AppShell active="Home">
         <div>Workspace payload</div>
       </AppShell>,
     );

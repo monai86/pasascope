@@ -1,7 +1,6 @@
 import { render, screen } from "@testing-library/react";
 import { describe, expect, it, vi } from "vitest";
 
-import { AppShell } from "@/components/app-shell";
 import { ActionButton } from "@/components/action-button";
 import { DataTable } from "@/components/data-table";
 import { EmptyState } from "@/components/ui/empty-state";
@@ -20,27 +19,6 @@ vi.mock("@/lib/use-runtime-settings", () => ({
 }));
 
 describe("design system primitives", () => {
-  it("renders the shell with accessible navigation, a skip link, and an optional right rail", () => {
-    render(
-      <AppShell
-        active="Cases"
-        rightRail={
-          <div>
-            <h2>Right rail</h2>
-            <p>Clinical safety guidance</p>
-          </div>
-        }
-      >
-        <div>Page content</div>
-      </AppShell>
-    );
-
-    expect(screen.getByRole("link", { name: /skip to main content/i })).toHaveAttribute("href", "#main-content");
-    expect(screen.getByRole("navigation", { name: /primary navigation/i })).toBeInTheDocument();
-    expect(screen.getAllByRole("link", { name: "Cases" })[0]).toHaveAttribute("aria-current", "page");
-    expect(screen.getByRole("heading", { name: "Right rail" })).toBeInTheDocument();
-    expect(screen.getByText("Page content")).toBeInTheDocument();
-  });
 
   it("renders a richer page header with eyebrow, metadata, and actions", () => {
     render(

@@ -16,7 +16,7 @@
     "lint": "eslint .",
     "typecheck": "tsc --noEmit",
     "test": "vitest run",
-    "e2e:smoke": "playwright test e2e/therapist-workflow.smoke.spec.ts",
+    "e2e:smoke": "playwright test e2e/chat-workflow.smoke.spec.ts",
     "audit:ui": "playwright test e2e/ui-design-audit.spec.ts",
     "bench:transcript": "playwright test benchmarks/transcript-workspace.bench.spec.ts",
     "bench:check": "node scripts/check-benchmark-baseline.mjs"

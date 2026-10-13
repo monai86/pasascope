@@ -1,7 +1,8 @@
 import type { LucideIcon } from "lucide-react";
 import { FileText, FolderOpen, Home, Settings2 } from "lucide-react";
 
-import type { ShellActive } from "@/services/navigation/workbench-navigation";
+/** What a page tells the shell it is. */
+export type ShellActive = "Home" | "Cases" | "Session" | "Reports" | "Settings";
 
 export type ChatNavigationKey = "home" | "cases" | "reports" | "settings";
 
@@ -19,7 +20,7 @@ export const CHAT_NAVIGATION: readonly ChatNavigationItem[] = [
   { href: "/settings", key: "settings", icon: Settings2 },
 ];
 
-/** Which chat destination is current for a page that declares a workbench one. */
+/** Which destination is current for a page. A session is shown under Cases. */
 export function chatNavigationKeyFor(active: ShellActive): ChatNavigationKey {
   if (active === "Cases" || active === "Session") return "cases";
   if (active === "Reports") return "reports";

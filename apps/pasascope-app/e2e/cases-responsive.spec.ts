@@ -93,7 +93,7 @@ test("the shared shell loads runtime settings once", async ({ page }) => {
   expect(settingsRequestCount).toBe(1);
 });
 
-test("start-session intent creates only after selection and opens canonical Intake", async ({ page }) => {
+test("start-session intent creates only after selection and opens the conversation", async ({ page }) => {
   await page.setViewportSize({ width: 390, height: 844 });
   await setMockRole(page, "therapist");
   await page.goto("/cases?intent=start-session");
@@ -107,8 +107,8 @@ test("start-session intent creates only after selection and opens canonical Inta
   await expect(page.getByRole("button", { name: /Start session for/ })).toBeEnabled();
   await page.getByRole("button", { name: /Start session for/ }).click();
 
-  await expect(page).toHaveURL(/\/sessions\/[^/?]+\?view=intake$/);
-  await expect(page.getByRole("heading", { name: /Session intake/i })).toBeVisible();
+  await expect(page).toHaveURL(/\/sessions\/[^/?]+\?view=(intake|chat)/);
+  await expect(page.locator('[data-shell="chat"]')).toBeVisible();
   await expectNoHorizontalOverflow(page);
 });
 

@@ -180,13 +180,9 @@ jobs:
         working-directory: apps/pasascope-app
         run: npx playwright install --with-deps chromium
 
-      - name: Run therapist workflow e2e suite (fresh memory backend + dev server)
+      - name: Run the e2e suite (fresh memory backend + dev server)
         working-directory: apps/pasascope-app
         run: npx playwright test
-
-      - name: Run chat shell e2e smoke (public-mode backend + flagged dev server)
-        working-directory: apps/pasascope-app
-        run: npx playwright test -c playwright.chat.config.ts
 
   therapist-benchmark:
     needs: test-backend

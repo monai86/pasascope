@@ -36,30 +36,20 @@ validated `?view=intake|transcript|findings|report`; ค่า query ที่�
 `/cases?intent=start-session`. Report library ต้องเปิด editor ผ่าน Session
 Workspace ไม่สร้าง report editor route แยกอีกชุด.
 
-Shell navigation ใช้ canonical routes ชุดเดียวคือ Today, Dashboard, Cases,
-Session, Reports และ Settings; `/` แสดงหน้าหลักเดียวกับ `/today`. Dashboard เป็น clinic
-overview ของ desktop sidebar เท่านั้น และต้องไม่ปรากฏใน mobile bottom nav ซึ่งคง
-5 รายการ; ถ้าจะเพิ่ม ถอด หรือสลับลำดับ destination ต้องแก้ canonical route-set
-assertion ใน `apps/pasascope-app/src/__tests__/navigation-routes.test.tsx`
-พร้อมกันเสมอ. ถ้ายังไม่มี safe active session identifier, Session navigation
-ต้องไป `/cases?intent=start-session`.
 Presentation-only `/demo/*` routes และ `/reports/preview` ถูกถอดออกแล้ว ที่อยู่
 เหล่านั้นต้องตอบ 404 (ตรวจใน `e2e/route-gates.spec.ts`) และห้ามเพิ่มหน้าที่แสดง
 ข้อมูลตัวอย่างกลับเข้ามาใน app หลัก.
 
-Chat shell เป็น shell ของ workflow แบบ public (ADR
-`docs/adr/0021-chat-first-guided-shell.md`): ทำงานเมื่อ API อยู่ในโหมด public
-(`public_signup` กับ `review_gates=open`) ส่วน API ที่ยังบังคับ review gates ใช้
-shell เดิมและกฎ navigation ข้างบนต่อไป เพราะบทสนทนาไม่มีขั้น attestation และ
-sign-off. Build ที่ตั้ง `NEXT_PUBLIC_CHAT_SHELL=false` ใช้ shell เดิมทุกกรณี.
-`/` เป็นหน้าหลักของ shell ที่กำลังทำงาน (chat home หรือ Today) และไม่ redirect
-ยกเว้น build ที่ opt out ซึ่งยัง redirect ไป `/today`.
-เมื่อ chat shell ทำงาน: navigation มี 4 ปลายทางคือ
+Chat shell เป็น shell เดียวของ app (ADR
+`docs/adr/0021-chat-first-guided-shell.md`); shell แบบ workbench เดิม (sidebar,
+topbar, bottom nav, หน้า Today, Dashboard) และ flag `NEXT_PUBLIC_CHAT_SHELL`
+ถูกถอดออกแล้ว. `/` เป็นหน้าหลัก และ `/today` แสดงหน้าเดียวกันเพราะลิงก์ sign-in
+ยังพามาที่นั่น; `/dashboard` redirect ไป `/`.
+Navigation มี 4 ปลายทางคือ
 Home, Cases, Reports, Settings (ไม่มี bottom nav; ลำดับถูกตรวจใน
 `src/__tests__/chat-shell.test.tsx`), และ Session Workspace เพิ่ม route view
 `?view=chat` เป็นบทสนทนาของเซสชัน โดย `?view=intake` เปิดบทสนทนาเดียวกัน ส่วน
-`transcript|findings|report` ยังเป็นหน้าเต็มเดิม. ถ้า chat shell ไม่ทำงาน
-`?view=chat` ต้อง fallback เป็น `intake`. บทสนทนาเป็นภาพฉายของสถานะเซสชันใน
+`transcript|findings|report` ยังเป็นหน้าเต็มเดิม. บทสนทนาเป็นภาพฉายของสถานะเซสชันใน
 backend ไม่ใช่ log ข้อความที่เก็บไว้ และไม่มี language model; consent ต้องได้รับ
 ก่อนสร้างเซสชันเสมอ. ข้อความที่พิมพ์ในหน้าหลักของ chat shell ถูกจับคู่กับรายการ
 หัวข้อตายตัว (ADR `docs/adr/0022-fixed-topic-answers-on-chat-home.md`): ตอบ

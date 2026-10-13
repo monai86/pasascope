@@ -179,7 +179,7 @@ For local multi-org auth simulation, the maintained shell now exposes an
 explicit active-organization session switcher; only one organization remains
 active per session, and subsequent scoped requests use that selected org.
 
-The canonical therapist path starts from Today or Cases and opens a persisted
+The canonical therapist path starts from Home or Cases and opens a persisted
 session at `/sessions/{sessionId}`. Session Workspace uses the validated
 `?view=intake|transcript|findings|report` query contract and defaults safely to
 `intake`. Legacy `/record`, `/results`, `/review-transcript`, `/transcript`, and
@@ -187,22 +187,14 @@ session at `/sessions/{sessionId}`. Session Workspace uses the validated
 session identifier; identifier-less legacy entry points redirect to
 `/cases?intent=start-session`.
 
-The desktop rail and mobile bottom navigation share the same canonical Today,
-Cases, Session, Reports, and Settings route model. The desktop rail additionally
-exposes Dashboard as the desktop-only clinic overview, so the mobile bottom nav
-stays at five destinations. Adding, removing, or reordering a shell destination
-must update the canonical route-set assertion in
-`src/__tests__/navigation-routes.test.tsx` at the same time. `/` shows the home
-screen, the same one as `/today`. Without a safe active session identifier, the Session item opens
-`/cases?intent=start-session` rather than constructing an identifier-less
-workspace URL. The presentation-only `/demo/*` routes and the sample report
-preview have been removed; those addresses answer 404.
-
-When the API runs the public workflow (public sign-up, open review gates) the
-app uses a chat-first shell instead: a home screen that asks what to do, and
-one conversation per session at `/sessions/{sessionId}?view=chat`. It has no
-language model; what the app says comes from saved session state. To run it
-locally, start the API in public mode:
+The app has one shell, a chat-first one: a home screen that asks what to do,
+four destinations (Home, Cases, Reports, Settings) and one conversation per
+session at `/sessions/{sessionId}?view=chat`. It has no language model; what
+the app says comes from saved session state. `/` is the home screen, and
+`/today` shows the same screen because sign-in links land there. The transcript
+editor, findings and report stay full pages reached from the conversation. The
+presentation-only `/demo/*` routes and the sample report preview have been
+removed; those addresses answer 404. To run it locally:
 
 ```bash
 cd apps/api
@@ -212,14 +204,7 @@ cd ../../apps/pasascope-app
 NEXT_PUBLIC_API_BASE_URL=http://localhost:8000/api/v1 npm run dev
 ```
 
-An API that still enforces review gates gets the workbench shell above, and
-building the web app with `NEXT_PUBLIC_CHAT_SHELL=false` keeps the workbench
-everywhere. See `DESIGN.md` and `docs/adr/0021-chat-first-guided-shell.md`.
-
-Today uses the focused-workbench layout: one prominent Start session action,
-one prioritized queue, and a quiet contextual safety/actions surface. The
-context moves below the queue when the desktop rail is unavailable rather than
-duplicating agenda, result, or action sections across responsive breakpoints.
+See `DESIGN.md` and `docs/adr/0021-chat-first-guided-shell.md`.
 
 Cases and Settings are implemented under feature-owned boundaries. Settings
 uses a fail-closed role matrix: therapist-facing sections are available to all
@@ -497,7 +482,7 @@ pytest tests/test_feature_schema.py -q          # 14-feature schema alignment
 pytest tests/test_transcript_reviewer.py -q     # CHAT transcript QA
 pytest tests/test_clinical_workflow.py -q       # therapist app mock backend
 pytest tests/test_clinical_pilot_backend_contract.py -q
-cd apps/pasascope-app && npx playwright install chromium && npm run e2e:smoke # therapist workflow browser smoke test
+cd apps/pasascope-app && npx playwright install chromium && npm run e2e:smoke # guided session browser smoke test
 PLAYWRIGHT_BACKEND_PORT=8001 PLAYWRIGHT_FRONTEND_PORT=3101 npm run e2e:smoke # use alternate local ports if 8000/3100 are already in use
 ```
 

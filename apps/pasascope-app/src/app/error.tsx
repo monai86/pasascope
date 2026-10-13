@@ -19,7 +19,7 @@ export default function RouteError({ retry }: { error: Error & { digest?: string
         description={t.description}
         retryLabel={t.retry}
         onRetry={retry}
-        action={<Button href="/today" variant="ghost">{t.goToToday}</Button>}
+        action={<Button href="/" variant="ghost">{t.goToHome}</Button>}
       />
     </main>
   );

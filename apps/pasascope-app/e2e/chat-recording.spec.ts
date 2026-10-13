@@ -2,7 +2,7 @@ import { expect, test, type Page } from "@playwright/test";
 
 // Chromium's fake microphone supplies a test tone, so the recorder in the
 // conversation can be driven without a real device.
-const backendPort = process.env.PLAYWRIGHT_CHAT_BACKEND_PORT ?? "8002";
+const backendPort = process.env.PLAYWRIGHT_BACKEND_PORT ?? "8000";
 const mockHeaders = { "X-User-Id": "therapist-demo", "X-Mock-Role": "therapist" };
 
 test.use({

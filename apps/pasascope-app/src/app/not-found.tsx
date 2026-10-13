@@ -17,7 +17,7 @@ export default async function NotFound() {
         description={t.description}
         action={
           <>
-            <Button href="/today">{t.goToToday}</Button>
+            <Button href="/">{t.goToHome}</Button>
             <Button href="/cases" variant="secondary">{t.goToCases}</Button>
           </>
         }

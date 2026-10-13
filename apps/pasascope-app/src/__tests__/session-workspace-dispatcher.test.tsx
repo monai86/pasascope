@@ -29,7 +29,6 @@ afterEach(cleanup);
 
 describe("SessionWorkspace dispatcher", () => {
   test.each([
-    ["intake", "intake"],
     ["transcript", "transcript"],
     ["findings", "findings"],
   ] as const)("dispatches %s through the feature-owned workflow as %s", async (view, implementation) => {

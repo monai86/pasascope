@@ -24,8 +24,6 @@ export default defineConfig({
     "e2e/**/*.spec.ts",
     ...(benchmarkRun ? ["benchmarks/**/*.spec.ts"] : []),
   ],
-  // The chat-shell specs need servers started differently and have their own config.
-  testIgnore: ["e2e/chat-*.spec.ts"],
   timeout: 120_000,
   // The suite runs against a dev server, which can reload a page while it
   // compiles; a test caught by that is tried again in CI and reported as

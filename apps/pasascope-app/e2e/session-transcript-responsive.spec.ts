@@ -119,11 +119,9 @@ for (const viewport of viewports) {
         const mobileHeader = document.querySelector<HTMLElement>("header")!;
         const audio = document.querySelector<HTMLElement>("[data-testid='transcript-audio-inspector']")!;
         const bar = document.querySelector<HTMLElement>("[data-testid='mobile-transcript-primary-actions']")!;
-        const navigation = document.querySelector<HTMLElement>("nav[aria-label='Bottom navigation']")!;
         const firstUtterance = document.querySelector<HTMLElement>("textarea[aria-label='Utterance text 1']")!;
         const mobileBrand = mobileHeader.querySelector<HTMLElement>("span")!;
         const actionRect = bar.getBoundingClientRect();
-        const navigationRect = navigation.getBoundingClientRect();
         const utteranceRect = firstUtterance.getBoundingClientRect();
         return {
           workspacePaddingBottom: Number.parseFloat(getComputedStyle(workspace).paddingBottom),
@@ -132,11 +130,8 @@ for (const viewport of viewports) {
           mobileBrandTop: mobileBrand.getBoundingClientRect().top,
           audioPosition: getComputedStyle(audio).position,
           actionPosition: getComputedStyle(bar).position,
-          navigationPosition: getComputedStyle(navigation).position,
           actionTop: actionRect.top,
           actionBottom: actionRect.bottom,
-          navigationTop: navigationRect.top,
-          navigationBottom: navigationRect.bottom,
           firstUtteranceTop: utteranceRect.top,
           firstUtteranceBottom: utteranceRect.bottom,
           viewportHeight: window.innerHeight,
@@ -148,10 +143,8 @@ for (const viewport of viewports) {
       expect(mobileContract.mobileBrandTop).toBeGreaterThanOrEqual(0);
       expect(mobileContract.audioPosition).toBe("sticky");
       expect(mobileContract.actionPosition).toBe("fixed");
-      expect(mobileContract.navigationPosition).toBe("fixed");
       expect(mobileContract.actionTop).toBeGreaterThanOrEqual(0);
-      expect(mobileContract.actionBottom).toBeLessThanOrEqual(mobileContract.navigationTop + 1);
-      expect(mobileContract.navigationBottom).toBeLessThanOrEqual(mobileContract.viewportHeight + 1);
+      expect(mobileContract.actionBottom).toBeLessThanOrEqual(mobileContract.viewportHeight + 1);
       expect(mobileContract.firstUtteranceTop).toBeGreaterThanOrEqual(0);
       expect(mobileContract.firstUtteranceBottom).toBeLessThanOrEqual(mobileContract.actionTop);
 

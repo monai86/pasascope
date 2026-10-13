@@ -9,7 +9,7 @@ import { UI_AUDIT_HARD_GATES, uiDesignAuditBattery } from "./support/ui-audit-ba
  * chat home, the start-session conversation and a session conversation at
  * each of its stages, on a phone and on a desktop.
  */
-const backendPort = process.env.PLAYWRIGHT_CHAT_BACKEND_PORT ?? "8002";
+const backendPort = process.env.PLAYWRIGHT_BACKEND_PORT ?? "8000";
 const backendBaseUrl = `http://127.0.0.1:${backendPort}`;
 const caseId = "case_demo_001";
 

@@ -14,14 +14,12 @@ vi.mock("@/lib/use-runtime-settings", () => ({
 }));
 
 const PUBLIC = { auth_mode: "mock", access_model: { public_signup: true, review_gates: "open" } };
-const STRICT = { auth_mode: "mock", access_model: { public_signup: false, review_gates: "strict" } };
 
-function renderShell(children: React.ReactNode = <div>Content</div>, active: "Today" | "Session" = "Today") {
+function renderShell(children: React.ReactNode = <div>Content</div>, active: "Home" | "Session" = "Home") {
   return render(<AppShell active={active}>{children}</AppShell>);
 }
 
-/** The chat frame is a lazily loaded chunk; this waits until it has rendered. */
-async function renderChatShell(children?: React.ReactNode, active?: "Today" | "Session") {
+async function renderChatShell(children?: React.ReactNode, active?: "Home" | "Session") {
   const view = renderShell(children, active);
   await screen.findByRole("navigation", { name: "Primary navigation" });
   return view;
@@ -33,7 +31,7 @@ afterEach(() => {
 });
 
 describe("chat shell", () => {
-  it("is the frame whenever the API runs the public workflow", async () => {
+  it("frames every page with the four destinations", async () => {
     const { container } = await renderChatShell();
 
     expect(container.querySelector('[data-shell="chat"]')).not.toBeNull();
@@ -55,22 +53,6 @@ describe("chat shell", () => {
 
     const navigation = screen.getByRole("navigation", { name: "Primary navigation" });
     expect(within(navigation).getByRole("link", { name: "Cases" })).toHaveAttribute("aria-current", "page");
-  });
-
-  it("keeps the workbench in a build that opted out", () => {
-    vi.stubEnv("NEXT_PUBLIC_CHAT_SHELL", "false");
-    const { container } = renderShell();
-
-    expect(container.querySelector('[data-shell="chat"]')).toBeNull();
-    expect(screen.getByRole("navigation", { name: "Bottom navigation" })).toBeInTheDocument();
-  });
-
-  it("keeps the workbench when the API still enforces review gates", () => {
-    settings.data = STRICT;
-    const { container } = renderShell();
-
-    expect(container.querySelector('[data-shell="chat"]')).toBeNull();
-    expect(screen.getByRole("navigation", { name: "Bottom navigation" })).toBeInTheDocument();
   });
 
   it("gives a page its side panel, with a named button to open it as a sheet", async () => {

@@ -9,7 +9,7 @@
   "rebaselineNote": "Next.js 16 stopped printing the Size and First Load JS columns, so the previous numbers (shared 112, routes 213-242) could no longer be measured by any available source and every route was silently skipped. Budgets are re-measured against the served route HTML with the same 5% regression headroom as before.",
   "sharedFirstLoadKb": 175,
   "routes": {
-    "/today": 285,
+    "/today": 290,
     "/cases": 315,
     "/reports": 292,
     "/settings": 298,

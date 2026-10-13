@@ -120,20 +120,6 @@ afterEach(() => {
 });
 
 describe("settings route authorization", () => {
-  it("reuses the shell-confirmed runtime setting for an admin route without a child refetch or account fallback", async () => {
-    saveBrowserMockSession("org_admin");
-    stubAdminApi();
-    useRuntimeSettingsMock
-      .mockImplementationOnce(() => runtimeSettingsState.current)
-      .mockImplementation(() => ({ status: "error", mode: "backend", message: "duplicate request failed" }));
-
-    await renderSettingsPage({ section: "team" });
-
-    expect(await screen.findByRole("heading", { name: "Team" })).toBeInTheDocument();
-    expect(screen.queryByRole("heading", { name: "Account" })).not.toBeInTheDocument();
-    expect(routerReplace).not.toHaveBeenCalled();
-    expect(useRuntimeSettingsMock).toHaveBeenCalledTimes(1);
-  });
 
   it("validates the server query and ignores a forged role query", async () => {
     saveMockAccessSession({ role: "therapist", organizationId: "pilot_org_001", aal: "aal2" });

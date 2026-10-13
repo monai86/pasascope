@@ -16,8 +16,7 @@ import { shellMessages } from "@/components/shell.messages";
 import { useFocusTrap } from "@/components/ui/use-focus-trap";
 import { useMessages } from "@/i18n/locale-provider";
 import { cn } from "@/lib/cn";
-import { chatNavigationKeyFor } from "@/services/navigation/chat-navigation";
-import type { ShellActive } from "@/services/navigation/workbench-navigation";
+import { chatNavigationKeyFor, type ShellActive } from "@/services/navigation/chat-navigation";
 
 const NAV_ID = "chat-navigation";
 const PANEL_ID = "chat-side-panel";

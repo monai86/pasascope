@@ -1,63 +1,35 @@
 "use client";
 
-import { lazy, Suspense, useState, useEffect, ReactNode } from "react";
+import { useState, useEffect, ReactNode } from "react";
 import { useRouter } from "next/navigation";
-import { Menu, X } from "lucide-react";
 
-import { Sidebar, type ShellActive } from "@/components/sidebar";
-import { Topbar } from "@/components/topbar";
-import { BottomNav } from "@/components/bottom-nav";
-import { LanguageToggle } from "@/components/language-toggle";
-import { RightRail } from "@/components/right-rail";
-import { PasaScopeLogo } from "@/components/pasascope-logo";
+import { ChatShellFrame } from "@/components/chat-shell/chat-shell-frame";
 import { shellMessages } from "@/components/shell.messages";
 import { Button } from "@/components/ui/button";
-import { IconButton } from "@/components/ui/icon-button";
-import { useFocusTrap } from "@/components/ui/use-focus-trap";
 import { useMessages } from "@/i18n/locale-provider";
 import { SupabaseAuthRuntimeBridge } from "@/components/supabase-auth-runtime-bridge";
 import { SupabaseWorkspaceAccessGate } from "@/components/supabase-workspace-access-gate";
-import { WorkspaceAccessGate } from "@/components/workspace-access-gate";
 import { ConfirmedRuntimeSettingsProvider } from "@/lib/confirmed-runtime-settings";
 import { loadMockAccessSession } from "@/lib/mock-access-session";
 import { loadOrRestoreSupabaseAccessSession, useSupabaseAccessSession } from "@/lib/use-supabase-access-session";
-import { isChatShellAllowed } from "@/lib/ui-shell";
 import { useRuntimeSettings } from "@/lib/use-runtime-settings";
+import type { ShellActive } from "@/services/navigation/chat-navigation";
 
 export type { ShellActive };
 
-const SIDEBAR_ID = "primary-sidebar";
 const SLOW_START_HINT_MS = 4000;
-
-// Loaded only where the chat shell runs, so workbench routes do not carry it.
-// React's own lazy is used because `next/dynamic` would add its loader to
-// every route through this file.
-const ChatShellFrame = lazy(() =>
-  import("@/components/chat-shell/chat-shell-frame").then((module) => ({ default: module.ChatShellFrame })),
-);
 
 export function AppShell({
   children,
-  active = "Today",
-  activeSessionId,
-  activeCaseId,
-  rightRail,
+  active = "Home",
 }: {
   children: ReactNode;
   active?: ShellActive;
-  activeSessionId?: string;
-  activeCaseId?: string;
-  rightRail?: ReactNode;
 }) {
   const router = useRouter();
   const t = useMessages(shellMessages);
-  const [sidebarOpen, setSidebarOpen] = useState(false);
-  // Focus stays inside the mobile drawer while it is open and returns to the
-  // menu button when it closes; Escape closes it.
-  const drawerRef = useFocusTrap<HTMLElement>(sidebarOpen, () => setSidebarOpen(false));
   const runtimeSettings = useRuntimeSettings();
   const confirmedRuntimeSettings = runtimeSettings.status === "success" ? runtimeSettings.data : null;
-  const session = typeof window !== "undefined" ? loadMockAccessSession() : null;
   const supabaseSession = useSupabaseAccessSession();
   // A host that sleeps when idle takes a while to answer its first request.
   const [slowStart, setSlowStart] = useState(false);
@@ -86,18 +58,9 @@ export function AppShell({
     }
   }, [router, supabaseSession]);
 
-  const gateRequired = confirmedRuntimeSettings?.auth_mode === "mock" && session?.aal === "aal1";
-  const mfaRequired = confirmedRuntimeSettings?.access_model?.required_app_aal === "aal2";
-  const hasValidAal = mfaRequired
-    ? supabaseSession?.aal === "aal2"
-    : Boolean(supabaseSession?.aal && (supabaseSession.aal === "aal1" || supabaseSession.aal === "aal2"));
   const supabaseGateRequired =
     confirmedRuntimeSettings?.auth_mode === "supabase" &&
-    !(
-      supabaseSession?.stage === "authenticated" &&
-      supabaseSession.organizationId &&
-      hasValidAal
-    );
+    !(supabaseSession?.stage === "authenticated" && supabaseSession.organizationId && supabaseSession.aal);
 
   // Workspace content stays hidden until the API has said how access works.
   // Waiting for that answer is not a refusal, so it is shown as loading.
@@ -135,91 +98,10 @@ export function AppShell({
     );
   }
 
-  if (gateRequired) {
-    return (
-      <ConfirmedRuntimeSettingsProvider value={runtimeSettings.data}>
-        <SupabaseAuthRuntimeBridge />
-        <WorkspaceAccessGate>{children}</WorkspaceAccessGate>
-      </ConfirmedRuntimeSettingsProvider>
-    );
-  }
-
-  // The chat shell is the interface of the public workflow, so it is the frame
-  // whenever the API runs in that mode. Any other configuration, or a build
-  // that opted out, keeps the workbench frame.
-  const access = runtimeSettings.data.access_model;
-  if (isChatShellAllowed() && access?.public_signup === true && access?.review_gates === "open") {
-    return (
-      <ConfirmedRuntimeSettingsProvider value={runtimeSettings.data}>
-        <SupabaseAuthRuntimeBridge />
-        {/* The canvas holds the screen for the moment the frame takes to arrive. */}
-        <Suspense fallback={<div className="chat-canvas h-dvh w-full" role="status" aria-busy="true" />}>
-          <ChatShellFrame active={active}>{children}</ChatShellFrame>
-        </Suspense>
-      </ConfirmedRuntimeSettingsProvider>
-    );
-  }
-
   return (
     <ConfirmedRuntimeSettingsProvider value={runtimeSettings.data}>
       <SupabaseAuthRuntimeBridge />
-      <div className="app-canvas flex h-dvh w-full overflow-hidden text-ink">
-        <a
-          href="#main-content"
-          className="sr-only focus:not-sr-only focus:absolute focus:left-4 focus:top-4 focus:z-[80] focus:rounded-full focus:bg-surface focus:px-4 focus:py-2 focus:text-sm focus:font-semibold focus:text-ink focus:shadow-lift"
-        >
-          {t.skipToContent}
-        </a>
-
-        {sidebarOpen ? (
-          <div
-            className="fixed inset-0 z-50 shell-scrim lg:hidden"
-            aria-hidden="true"
-            onClick={() => setSidebarOpen(false)}
-          />
-        ) : null}
-
-        <Sidebar
-          id={SIDEBAR_ID}
-          active={active}
-          activeSessionId={activeSessionId}
-          activeCaseId={activeCaseId}
-          isOpen={sidebarOpen}
-          onClose={() => setSidebarOpen(false)}
-          drawerRef={drawerRef}
-        />
-
-        <div className="flex min-w-0 flex-1 flex-col overflow-hidden">
-          {/* Phone and tablet header; the desktop top bar takes over at lg. */}
-          <header className="glass-chrome flex h-14 shrink-0 items-center justify-between gap-2 border-x-0 border-t-0 px-3 lg:hidden">
-            <IconButton
-              icon={sidebarOpen ? X : Menu}
-              label={sidebarOpen ? t.closeMenu : t.openMenu}
-              aria-expanded={sidebarOpen}
-              aria-controls={SIDEBAR_ID}
-              onClick={() => setSidebarOpen(!sidebarOpen)}
-              className="border-transparent bg-transparent"
-            />
-            <PasaScopeLogo size="sm" showSubtitle={false} href="/today" />
-            <LanguageToggle />
-          </header>
-
-          <Topbar showSearch={active !== "Cases"} />
-
-          {/* The bottom padding reserves room for the fixed mobile bars, and the
-              matching scroll padding keeps anything scrolled into view (a
-              selected transcript line, a focused field) above them. */}
-          <main id="main-content" className="min-w-0 flex-1 overflow-y-auto p-4 max-md:scroll-pb-44 max-md:pb-44 md:p-6">
-            <div className="flex items-start gap-6">
-              <div className="min-w-0 flex-1">{children}</div>
-              {rightRail ? <RightRail>{rightRail}</RightRail> : null}
-            </div>
-          </main>
-
-          {/* Mobile bottom navigation (hidden at md+ via .mobile-bottom-nav) */}
-          <BottomNav active={active} activeSessionId={activeSessionId} activeCaseId={activeCaseId} />
-        </div>
-      </div>
+      <ChatShellFrame active={active}>{children}</ChatShellFrame>
     </ConfirmedRuntimeSettingsProvider>
   );
 }

@@ -1,19 +1,18 @@
 import { chromium, type FullConfig } from "@playwright/test";
 
-// Every route a spec in the default suite opens or is taken to by a click.
+// Every route a spec opens or is taken to by a click.
 // A dynamic segment only has to match the route; "warm-up" is no real record.
 const routes = [
   "/login",
+  "/",
   "/today",
-  "/dashboard",
   "/cases",
   "/cases?intent=start-session",
   "/cases/warm-up",
   "/reports",
   "/settings",
-  "/settings?scope=admin",
   "/privacy",
-  "/sessions/warm-up?view=intake",
+  "/sessions/warm-up?view=chat",
   "/sessions/warm-up?view=transcript",
   "/sessions/warm-up?view=findings",
   "/sessions/warm-up?view=report",
@@ -37,7 +36,7 @@ export default async function warmTherapistRoutes(config: FullConfig): Promise<v
     await page.addInitScript(() => {
       window.sessionStorage.setItem(
         "pasascope.mock-access-session.v1",
-        JSON.stringify({ role: "org_admin", organizationId: "pilot_org_001", aal: "aal2" }),
+        JSON.stringify({ role: "therapist", organizationId: "pilot_org_001", aal: "aal2" }),
       );
     });
     for (const route of routes) {

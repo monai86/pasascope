@@ -17,7 +17,7 @@ export default async function CasesPage({ searchParams }: CasesPageProps) {
   const initialQuery = typeof queryParam === "string" ? queryParam.trim().slice(0, 120) : "";
 
   return (
-    <AppShell active="Cases" activeCaseId={preselectedCaseId}>
+    <AppShell active="Cases">
       <CasesWorkspaceClient intent={intent} preselectedCaseId={preselectedCaseId} initialQuery={initialQuery} />
     </AppShell>
   );

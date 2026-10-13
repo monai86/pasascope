@@ -14,7 +14,6 @@ import {
 } from "@/features/sessions/state/session-view";
 import { useWorkflowStatusLabel } from "@/components/status-badge";
 import { useReportLabel } from "@/features/sessions/findings/use-findings-label";
-import { useChatShellEnabled } from "@/lib/ui-shell";
 
 export type SessionDataMode = "backend" | "local_draft" | "unavailable";
 
@@ -140,14 +139,10 @@ export function SessionContextHeader({
   );
 }
 
-/**
- * In the chat shell a full page is a detour from the session's conversation,
- * so it offers the way back first. The workbench shell has no conversation.
- */
+/** A full page is a detour from the session's conversation, so it offers the way back first. */
 function BackToConversation({ context }: { context: SessionContext }) {
   const t = useMessages(sessionMessages).header;
-  const chatShell = useChatShellEnabled();
-  if (!chatShell || !context.sessionId) return null;
+  if (!context.sessionId) return null;
   return (
     <Link
       href={resolveSessionHref("chat", context.sessionId, { caseId: context.caseId })}
@@ -161,8 +156,6 @@ function BackToConversation({ context }: { context: SessionContext }) {
 
 function SessionViewNavigation({ context, compact = false }: { context: SessionContext; compact?: boolean }) {
   const t = useMessages(sessionMessages);
-  // The conversation stands where Intake does when the chat shell is running.
-  const chatShell = useChatShellEnabled();
   return (
     <nav
       aria-label={t.header.viewsLabel}
@@ -176,7 +169,7 @@ function SessionViewNavigation({ context, compact = false }: { context: SessionC
           return (
             <li key={view} className="flex min-w-0 items-center">
               <Link
-                href={resolveSessionHref(chatShell && view === "intake" ? "chat" : view, context.sessionId)}
+                href={resolveSessionHref(view === "intake" ? "chat" : view, context.sessionId)}
                 aria-current={active ? "page" : undefined}
                 aria-describedby={completed ? stateId : undefined}
                 data-step-state={completed ? "complete" : active ? "current" : "pending"}
@@ -199,7 +192,7 @@ function SessionViewNavigation({ context, compact = false }: { context: SessionC
                     active ? "text-brand-strong" : completed ? "text-ink" : "text-ink-muted"
                   }`}
                 >
-                  {chatShell && view === "intake" ? t.header.conversation : t.views[view]}
+                  {view === "intake" ? t.header.conversation : t.views[view]}
                 </span>
               </Link>
               {/* Describes the tick without changing the link's name. */}

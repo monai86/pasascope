@@ -1,10 +1,6 @@
-import { AppShell } from "@/components/app-shell";
-import { PracticeDashboardClient } from "@/features/dashboard/components/practice-dashboard-client";
+import { redirect } from "next/navigation";
 
+// The practice dashboard is gone; its address leads home.
 export default function DashboardPage() {
-  return (
-    <AppShell active="Dashboard">
-      <PracticeDashboardClient />
-    </AppShell>
-  );
+  redirect("/");
 }
