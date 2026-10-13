@@ -17,12 +17,6 @@ const routes = [
   "/sessions/warm-up?view=transcript",
   "/sessions/warm-up?view=findings",
   "/sessions/warm-up?view=report",
-  "/assessments",
-  "/assessments/warm-up/transcript",
-  "/assessments/warm-up/evidence",
-  "/assessments/warm-up/review",
-  "/assessments/warm-up/report",
-  "/assessments/warm-up/history",
   "/this-route-does-not-exist",
 ];
 
