@@ -20,7 +20,7 @@ copy_tree() { # copy_tree <source> <destination>, without caches or tests
 
 cp "$ROOT/deploy/hf-space/Dockerfile" "$ROOT/deploy/hf-space/README.md" "$OUT/"
 cp "$ROOT/requirements.txt" "$OUT/requirements.txt"
-cp "$ROOT/apps/api/requirements.txt" "$ROOT/apps/api/alembic.ini" "$ROOT/apps/api/alembic-assessment.ini" "$OUT/apps/api/"
+cp "$ROOT/apps/api/requirements.txt" "$ROOT/apps/api/alembic.ini" "$OUT/apps/api/"
 copy_tree "$ROOT/apps/api/app" "$OUT/apps/api/"
 copy_tree "$ROOT/src" "$OUT/"
 copy_tree "$ROOT/packages" "$OUT/"

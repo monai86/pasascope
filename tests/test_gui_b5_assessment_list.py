@@ -228,20 +228,6 @@ def test_assessment_list_403_and_5xx_and_network_error_are_explicit_failures(tk_
         assert "⚠️ Error" in str(app.tree_assessments.item("_error")["values"])
 
 
-def test_assessment_list_malformed_response_raises_contract_error_in_client() -> None:
-    """4. Malformed non-list response is a contract error in client.py, not empty success."""
-    client = PasaScopeClient(mock_mode=False)
-
-    # Mock _http_request returning a dict or string instead of list
-    with mock.patch.object(client, "_http_request", return_value={"status": "not_a_list"}):
-        with pytest.raises(PasaScopeApiError, match="[Mm]alformed response"):
-            client.list_assessments("child-01")
-
-    with mock.patch.object(client, "_http_request", return_value="invalid string"):
-        with pytest.raises(PasaScopeApiError, match="[Mm]alformed response"):
-            client.list_assessments("child-01")
-
-
 def test_assessment_list_failure_on_new_child_does_not_use_old_child_assessments(tk_root: tk.Tk) -> None:
     """5. Failure after existing data must not allow stale data from child A to remain under child B."""
     client = FakeB5ApiClient()

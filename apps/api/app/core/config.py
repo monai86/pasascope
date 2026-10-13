@@ -11,9 +11,6 @@ from sqlalchemy.exc import ArgumentError
 
 
 DEFAULT_DATABASE_URL = "postgresql+psycopg://therapist:therapist@localhost/therapist_app_v2"
-DEFAULT_ASSESSMENT_DATABASE_URL = (
-    "postgresql+psycopg://therapist:therapist@localhost/lingualens_assessment_v2"
-)
 DEFAULT_REDIS_URL = "redis://localhost:6379/0"
 MEBIBYTE = 1024 * 1024
 DEFAULT_SUPABASE_STORAGE_SIGNED_UPLOAD_TTL_SECONDS = 7200
@@ -164,7 +161,6 @@ def _is_positive_int(value: int) -> bool:
 class Settings(BaseModel):
     app_name: str = "PasaScope API"
     api_prefix: str = "/api/v1"
-    assessment_api_prefix: str = "/api/v2"
     mock_mode: bool = True
     auth_mode: str = "mock"
     supabase_jwt_verification_mode: str = "hs256_shared_secret"
@@ -191,10 +187,8 @@ class Settings(BaseModel):
     repository_mode: str = "json"
     json_repository_path: str = ".local/pasascope-app-repository.json"
     database_url: str = DEFAULT_DATABASE_URL
-    assessment_database_url: str = DEFAULT_ASSESSMENT_DATABASE_URL
     sql_create_schema: bool = True
     run_migrations_on_startup: bool = False
-    run_assessment_migrations_on_startup: bool = False
     job_queue_mode: str = "memory"
     inline_job_worker_enabled: bool = True
     # Local Whisper runs on this machine only; recordings are never sent out.
@@ -335,24 +329,6 @@ class Settings(BaseModel):
                 raise ValueError("Production repository mode must be sql.")
             if self.database_url == DEFAULT_DATABASE_URL or _points_at_loopback(self.database_url):
                 raise ValueError("Production database URL must come from managed secrets and cannot use demo defaults.")
-            if self.assessment_database_url == DEFAULT_ASSESSMENT_DATABASE_URL or _points_at_loopback(
-                self.assessment_database_url
-            ):
-                raise ValueError(
-                    "Production assessment database URL must come from managed secrets and cannot use demo defaults."
-                )
-            assessment_url = _parse_database_url(self.assessment_database_url)
-            if assessment_url is None or assessment_url.get_backend_name() != "postgresql":
-                raise ValueError("Production assessment database URL must use PostgreSQL.")
-            v1_url = _parse_database_url(self.database_url)
-            if (
-                v1_url is not None
-                and v1_url.get_backend_name() == "postgresql"
-                and _postgresql_target(v1_url) == _postgresql_target(assessment_url)
-            ):
-                raise ValueError("Production v1 and assessment v2 database URLs must be different.")
-            if self.run_assessment_migrations_on_startup:
-                raise ValueError("Production assessment migrations must be run as a controlled release action, not startup automation.")
             if self.storage_mode not in PRODUCTION_STORAGE_MODES:
                 raise ValueError("Production storage mode must use private managed storage.")
             if self.storage_mode == "supabase_private" and not self.has_valid_supabase_private_storage_configuration:
@@ -435,11 +411,6 @@ class Settings(BaseModel):
                 ".local/pasascope-app-repository.json",
             ),
             database_url=getenv_compat("PASASCOPE_DATABASE_URL", "THERAPIST_APP_V2_DATABASE_URL", DEFAULT_DATABASE_URL),
-            assessment_database_url=(
-                getenv_compat("PASASCOPE_ASSESSMENT_DATABASE_URL")
-                or getenv_compat("PASASCOPE_DATABASE_URL", "THERAPIST_APP_V2_DATABASE_URL", "")
-                or DEFAULT_ASSESSMENT_DATABASE_URL
-            ),
             sql_create_schema=getenv_compat(
                 "PASASCOPE_SQL_CREATE_SCHEMA",
                 "THERAPIST_APP_V2_SQL_CREATE_SCHEMA",
@@ -450,10 +421,6 @@ class Settings(BaseModel):
                 "PASASCOPE_RUN_MIGRATIONS_ON_STARTUP",
                 "THERAPIST_APP_V2_RUN_MIGRATIONS_ON_STARTUP",
                 "false",
-            ).lower()
-            == "true",
-            run_assessment_migrations_on_startup=(
-                getenv_compat("PASASCOPE_RUN_ASSESSMENT_MIGRATIONS_ON_STARTUP", default="false")
             ).lower()
             == "true",
             job_queue_mode=getenv_compat("PASASCOPE_JOB_QUEUE_MODE", "THERAPIST_APP_V2_JOB_QUEUE_MODE", "memory"),

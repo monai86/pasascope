@@ -7,6 +7,8 @@ import time
 from pathlib import Path
 from typing import Any, Optional, TYPE_CHECKING
 
+from packages.tui.adapters.canonical_store import LocalCanonicalStore, default_store_path
+
 if TYPE_CHECKING:
     from packages.tui.client import PasaScopeClient
 
@@ -47,6 +49,8 @@ class HttpClinicalAdapter:
 
     def __init__(self, client: PasaScopeClient) -> None:
         self._client = client
+        # Opened on first use, so a client that never touches these records reads no file.
+        self._canonical_store: LocalCanonicalStore | None = None
 
     def check_health(self) -> bool:
         """Check if backend API is reachable."""
@@ -387,6 +391,14 @@ class HttpClinicalAdapter:
             return self.get_report(rep_id)
         return None
 
+    def _canonical(self) -> LocalCanonicalStore:
+        """Children, consents and assessments live in a file on this machine, not in the API."""
+        if self._canonical_store is None:
+            self._canonical_store = LocalCanonicalStore(
+                path=default_store_path(), default_clinician_id="therapist-local"
+            )
+        return self._canonical_store
+
     def create_child(
         self,
         display_code: str,
@@ -394,19 +406,13 @@ class HttpClinicalAdapter:
         birth_month: int,
         language_context: dict[str, Any] | None = None,
     ) -> dict[str, Any]:
-        from packages.tui.validation import validate_child_input
-        from packages.tui.client import PasaScopeValidationError
-        try:
-            norm = validate_child_input(display_code, birth_year, birth_month, language_context)
-        except ValueError as exc:
-            raise PasaScopeValidationError(str(exc)) from exc
-        return self._client._http_request("POST", "/api/v2/children", norm)
+        return self._canonical().create_child(display_code, birth_year, birth_month, language_context)
 
     def get_child(self, child_id: str) -> dict[str, Any]:
-        return self._client._http_request("GET", f"/api/v2/children/{child_id}")
+        return self._canonical().get_child(child_id)
 
     def list_children(self) -> list[dict[str, Any]]:
-        return self._client._http_request("GET", "/api/v2/children")
+        return self._canonical().list_children()
 
     def record_consent(
         self,
@@ -415,40 +421,13 @@ class HttpClinicalAdapter:
         scope_version: str = "2026.1",
         status: str = "active",
     ) -> dict[str, Any]:
-        from packages.tui.validation import validate_consent_input
-        from packages.tui.client import PasaScopeValidationError
-        try:
-            norm = validate_consent_input(child_id, purpose, scope_version, status)
-        except ValueError as exc:
-            raise PasaScopeValidationError(str(exc)) from exc
-
-        clean_child_id = norm["child_id"]
-        payload = {
-            "purpose": norm["purpose"],
-            "scope_version": norm["scope_version"],
-            "status": norm["status"],
-        }
-        return self._client._http_request("POST", f"/api/v2/children/{clean_child_id}/consents", payload)
+        return self._canonical().record_consent(child_id, purpose, scope_version, status)
 
     def list_consents(self, child_id: str) -> list[dict[str, Any]]:
-        return self._client._http_request("GET", f"/api/v2/children/{child_id}/consents")
+        return self._canonical().list_consents(child_id)
 
     def get_active_consent(self, child_id: str) -> dict[str, Any] | None:
-        consents = self.list_consents(child_id)
-        if not consents:
-            return None
-        matching = [c for c in consents if c.get("purpose") == "clinical_assessment"]
-        if not matching:
-            return None
-        sorted_consents = sorted(
-            enumerate(matching),
-            key=lambda item: (item[1].get("version", 0), item[0]),
-            reverse=True,
-        )
-        latest = sorted_consents[0][1]
-        if latest.get("status") == "active":
-            return latest
-        return None
+        return self._canonical().get_active_consent(child_id)
 
     def create_assessment(
         self,
@@ -456,30 +435,13 @@ class HttpClinicalAdapter:
         purpose: str = "initial",
         assigned_clinician_id: str | None = None,
     ) -> dict[str, Any]:
-        from packages.tui.validation import validate_assessment_input
-        from packages.tui.client import PasaScopeValidationError
-        try:
-            norm = validate_assessment_input(child_id, purpose, assigned_clinician_id)
-        except ValueError as exc:
-            raise PasaScopeValidationError(str(exc)) from exc
-
-        clean_child_id = norm["child_id"]
-        payload: dict[str, Any] = {"purpose": norm["purpose"]}
-        if norm["assigned_clinician_id"]:
-            payload["assigned_clinician_id"] = norm["assigned_clinician_id"]
-        return self._client._http_request("POST", f"/api/v2/children/{clean_child_id}/assessments", payload)
+        return self._canonical().create_assessment(child_id, purpose, assigned_clinician_id)
 
     def list_assessments(self, child_id: str) -> list[dict[str, Any]]:
-        from packages.tui.client import PasaScopeApiError
-        res = self._client._http_request("GET", f"/api/v2/children/{child_id}/assessments")
-        if not isinstance(res, list):
-            raise PasaScopeApiError(
-                f"Malformed response from list_assessments: expected list, got {type(res).__name__}"
-            )
-        return res
+        return self._canonical().list_assessments(child_id)
 
     def get_assessment(self, assessment_id: str) -> dict[str, Any]:
-        return self._client._http_request("GET", f"/api/v2/assessments/{assessment_id}")
+        return self._canonical().get_assessment(assessment_id)
 
     def get_waveform_peaks(self, session_id: str) -> bytes:
         return self._client._http_request_bytes("GET", f"/sessions/{session_id}/audio/waveform-peaks")

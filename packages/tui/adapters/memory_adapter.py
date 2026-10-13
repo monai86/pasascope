@@ -7,6 +7,7 @@ from datetime import datetime, timezone
 from typing import Any, Callable, Optional
 
 from packages.cha.parser import parse_cha_text
+from packages.tui.adapters.canonical_store import LocalCanonicalStore
 
 
 def _default_get_utc_now() -> datetime:
@@ -792,6 +793,10 @@ class InMemoryClinicalAdapter:
                 return r
         return None
 
+    def _canonical(self) -> LocalCanonicalStore:
+        # Built over the current data on each call: tests swap `mock_data` wholesale.
+        return LocalCanonicalStore(self._mock_data, clock=self._get_now)
+
     def create_child(
         self,
         display_code: str,
@@ -799,35 +804,13 @@ class InMemoryClinicalAdapter:
         birth_month: int,
         language_context: dict[str, Any] | None = None,
     ) -> dict[str, Any]:
-        from packages.tui.validation import validate_child_input
-        from packages.tui.client import PasaScopeValidationError
-        try:
-            norm = validate_child_input(display_code, birth_year, birth_month, language_context)
-        except ValueError as exc:
-            raise PasaScopeValidationError(str(exc)) from exc
-
-        if "children" not in self._mock_data:
-            self._mock_data["children"] = []
-        new_child = {
-            "id": f"child-local-{len(self._mock_data['children']) + 1:04d}",
-            "display_code": norm["display_code"],
-            "birth_year": norm["birth_year"],
-            "birth_month": norm["birth_month"],
-            "language_context": norm["language_context"],
-            "version": 1,
-        }
-        self._mock_data["children"].append(new_child)
-        return new_child
+        return self._canonical().create_child(display_code, birth_year, birth_month, language_context)
 
     def get_child(self, child_id: str) -> dict[str, Any]:
-        from packages.tui.client import PasaScopeApiError
-        for c in self._mock_data.get("children", []):
-            if c.get("id") == child_id or c.get("display_code") == child_id:
-                return c
-        raise PasaScopeApiError(f"Child '{child_id}' not found.")
+        return self._canonical().get_child(child_id)
 
     def list_children(self) -> list[dict[str, Any]]:
-        return list(self._mock_data.get("children", []))
+        return self._canonical().list_children()
 
     def record_consent(
         self,
@@ -836,61 +819,13 @@ class InMemoryClinicalAdapter:
         scope_version: str = "2026.1",
         status: str = "active",
     ) -> dict[str, Any]:
-        from packages.tui.validation import validate_consent_input
-        from packages.tui.client import PasaScopeValidationError
-        try:
-            norm = validate_consent_input(child_id, purpose, scope_version, status)
-        except ValueError as exc:
-            raise PasaScopeValidationError(str(exc)) from exc
-
-        clean_child_id = norm["child_id"]
-        # In mock mode, verify child exists first
-        self.get_child(clean_child_id)
-
-        if "consents" not in self._mock_data:
-            self._mock_data["consents"] = {}
-        if clean_child_id not in self._mock_data["consents"]:
-            self._mock_data["consents"][clean_child_id] = []
-
-        now_iso = self._get_now().strftime("%Y-%m-%dT%H:%M:%SZ")
-        purpose_consents = [
-            c for c in self._mock_data["consents"][clean_child_id]
-            if c.get("purpose") == norm["purpose"]
-        ]
-        version_num = max((c.get("version", 0) for c in purpose_consents), default=0) + 1
-        new_consent = {
-            "id": f"consent-local-{version_num:04d}",
-            "child_id": clean_child_id,
-            "purpose": norm["purpose"],
-            "scope_version": norm["scope_version"],
-            "status": norm["status"],
-            "granted_at": now_iso,
-            "withdrawn_at": None if norm["status"] == "active" else now_iso,
-            "version": version_num,
-        }
-        self._mock_data["consents"][clean_child_id].append(new_consent)
-        return new_consent
+        return self._canonical().record_consent(child_id, purpose, scope_version, status)
 
     def list_consents(self, child_id: str) -> list[dict[str, Any]]:
-        consents = list(self._mock_data.get("consents", {}).get(child_id, []))
-        return sorted(consents, key=lambda c: c.get("version", 0), reverse=True)
+        return self._canonical().list_consents(child_id)
 
     def get_active_consent(self, child_id: str) -> dict[str, Any] | None:
-        consents = self.list_consents(child_id)
-        if not consents:
-            return None
-        matching = [c for c in consents if c.get("purpose") == "clinical_assessment"]
-        if not matching:
-            return None
-        sorted_consents = sorted(
-            enumerate(matching),
-            key=lambda item: (item[1].get("version", 0), item[0]),
-            reverse=True,
-        )
-        latest = sorted_consents[0][1]
-        if latest.get("status") == "active":
-            return latest
-        return None
+        return self._canonical().get_active_consent(child_id)
 
     def create_assessment(
         self,
@@ -898,69 +833,13 @@ class InMemoryClinicalAdapter:
         purpose: str = "initial",
         assigned_clinician_id: str | None = None,
     ) -> dict[str, Any]:
-        from packages.tui.validation import (
-            calculate_age_in_months,
-            validate_assessment_input,
-        )
-        from packages.tui.client import (
-            PasaScopeApiError,
-            PasaScopeConflictError,
-            PasaScopeValidationError,
-        )
-
-        try:
-            norm = validate_assessment_input(child_id, purpose, assigned_clinician_id)
-        except ValueError as exc:
-            raise PasaScopeValidationError(str(exc)) from exc
-
-        clean_child_id = norm["child_id"]
-        child = self.get_child(clean_child_id)
-
-        active_consent = self.get_active_consent(clean_child_id)
-        if not active_consent:
-            raise PasaScopeConflictError("Active clinical-assessment consent is required.")
-
-        try:
-            age_months = calculate_age_in_months(
-                child["birth_year"], child["birth_month"], current_date=self._get_now()
-            )
-        except ValueError as exc:
-            raise PasaScopeApiError(str(exc)) from exc
-
-        child_lang = child.get("language_context")
-        if isinstance(child_lang, dict):
-            lang_ctx = dict(child_lang)
-        else:
-            lang_ctx = {"primary": "th", "additional": []}
-
-        if "assessments" not in self._mock_data:
-            self._mock_data["assessments"] = {}
-        if clean_child_id not in self._mock_data["assessments"]:
-            self._mock_data["assessments"][clean_child_id] = []
-
-        new_asmt = {
-            "id": f"asmt-local-{len(self._mock_data['assessments'][clean_child_id]) + 1:04d}",
-            "child_id": clean_child_id,
-            "purpose": norm["purpose"],
-            "state": "draft",
-            "age_months": age_months,
-            "language_context": lang_ctx,
-            "assigned_clinician_id": norm["assigned_clinician_id"] or "therapist-mock",
-            "version": 1,
-        }
-        self._mock_data["assessments"][clean_child_id].append(new_asmt)
-        return new_asmt
+        return self._canonical().create_assessment(child_id, purpose, assigned_clinician_id)
 
     def list_assessments(self, child_id: str) -> list[dict[str, Any]]:
-        return list(self._mock_data.get("assessments", {}).get(child_id, []))
+        return self._canonical().list_assessments(child_id)
 
     def get_assessment(self, assessment_id: str) -> dict[str, Any]:
-        from packages.tui.client import PasaScopeApiError
-        for child_asmts in self._mock_data.get("assessments", {}).values():
-            for a in child_asmts:
-                if a.get("id") == assessment_id:
-                    return a
-        raise PasaScopeApiError(f"Assessment '{assessment_id}' not found.")
+        return self._canonical().get_assessment(assessment_id)
 
     def get_waveform_peaks(self, session_id: str) -> bytes:
         import struct

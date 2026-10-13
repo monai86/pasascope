@@ -209,14 +209,6 @@ LIVE_OPERATIONS = [
     ("sign_off_report", lambda c: c.sign_off_report("rep-demo-101", "Therapist")),
     ("get_report", lambda c: c.get_report("rep-demo-101")),
     ("get_session_report", lambda c: c.get_session_report("sess-demo-101")),
-    ("create_child", lambda c: c.create_child("LL-01", 2021, 5)),
-    ("get_child", lambda c: c.get_child("child-01")),
-    ("list_children", lambda c: c.list_children()),
-    ("record_consent", lambda c: c.record_consent("child-01")),
-    ("list_consents", lambda c: c.list_consents("child-01")),
-    ("create_assessment", lambda c: c.create_assessment("child-01")),
-    ("list_assessments", lambda c: c.list_assessments("child-01")),
-    ("get_assessment", lambda c: c.get_assessment("asmt-01")),
 ]
 
 
@@ -236,6 +228,28 @@ def test_live_api_errors_never_fall_back_to_local_mock_state(op_name, op_func, m
         op_func(client)
 
     # Assert entire mock state is completely untouched and identical
+    assert client._mock_data == initial_mock_state
+
+
+def test_live_mode_keeps_child_records_on_this_machine_without_the_api_or_mock_data(monkeypatch):
+    """Children, consents and assessments are local records: no request is made and demo data is untouched."""
+    client = PasaScopeClient(mock_mode=False, seed_demo=True)
+    initial_mock_state = copy.deepcopy(client._mock_data)
+
+    def fail_request(*args, **kwargs):
+        raise AssertionError("child records must not be requested from the API")
+
+    monkeypatch.setattr(client, "_http_request", fail_request)
+
+    child = client.create_child("LL-01", 2021, 5)
+    client.record_consent(child["id"])
+    assessment = client.create_assessment(child["id"])
+
+    assert [item["id"] for item in client.list_children()] == [child["id"]]
+    assert client.get_child(child["id"])["display_code"] == "LL-01"
+    assert [item["status"] for item in client.list_consents(child["id"])] == ["active"]
+    assert [item["id"] for item in client.list_assessments(child["id"])] == [assessment["id"]]
+    assert client.get_assessment(assessment["id"])["child_id"] == child["id"]
     assert client._mock_data == initial_mock_state
 
 

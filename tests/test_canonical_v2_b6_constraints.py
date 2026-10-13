@@ -111,19 +111,15 @@ def test_create_child_valid_boundaries_and_normalization(
     assert child["birth_month"] == birth_month
     assert child["language_context"] == expected_lang
 
-    # Live mode (verifying outgoing payload)
+    # Live mode keeps the record on this machine, normalised the same way, and asks the API nothing.
     client_live = PasaScopeClient(mock_mode=False)
-    with mock.patch.object(client_live, "_http_request", return_value={"id": "child-live-01", **child}) as mock_http:
+    with mock.patch.object(client_live, "_http_request") as mock_http:
         created = client_live.create_child(display_code, birth_year, birth_month, lang_ctx)
-        assert mock_http.call_count == 1
-        call_args = mock_http.call_args[0]
-        assert call_args[0] == "POST"
-        assert call_args[1] == "/api/v2/children"
-        payload = call_args[2]
-        assert payload["display_code"] == display_code
-        assert payload["birth_year"] == birth_year
-        assert payload["birth_month"] == birth_month
-        assert payload["language_context"] == expected_lang
+        assert mock_http.call_count == 0
+        assert created["display_code"] == display_code
+        assert created["birth_year"] == birth_year
+        assert created["birth_month"] == birth_month
+        assert created["language_context"] == expected_lang
 
 
 @pytest.mark.parametrize(
@@ -206,13 +202,13 @@ def test_record_consent_valid_boundaries(purpose: str, scope_version: str, statu
     assert rec["scope_version"] == scope_version
     assert rec["status"] == status
 
-    # Live mode
+    # Live mode records the consent locally and asks the API nothing.
     client_live = PasaScopeClient(mock_mode=False)
-    with mock.patch.object(client_live, "_http_request", return_value={"id": "consent-01", **rec}) as mock_http:
-        client_live.record_consent(child_id, purpose=purpose, scope_version=scope_version, status=status)
-        assert mock_http.call_count == 1
-        assert mock_http.call_args[0][0] == "POST"
-        assert mock_http.call_args[0][1] == f"/api/v2/children/{child_id}/consents"
+    live_child_id = client_live.create_child("C01", 2021, 6)["id"]
+    with mock.patch.object(client_live, "_http_request") as mock_http:
+        live_rec = client_live.record_consent(live_child_id, purpose=purpose, scope_version=scope_version, status=status)
+        assert mock_http.call_count == 0
+        assert (live_rec["purpose"], live_rec["scope_version"], live_rec["status"]) == (purpose, scope_version, status)
 
 
 @pytest.mark.parametrize(
@@ -456,238 +452,26 @@ def test_gui_create_assessment_rejects_overlong_clinician_without_mutating_conte
 
 
 # ---------------------------------------------------------------------------
-# 5. Differential Parity Tests (Canonical Pydantic Oracle vs Desktop Validators)
+# 5. Language context rules of the desktop validator
 # ---------------------------------------------------------------------------
 
-from pydantic import ValidationError
-from app.assessment_v2.schemas import (
-    ChildCreateRequest,
-    ConsentCreateRequest,
-    AssessmentCreateRequest,
-    _normalize_language_context as canonical_normalize_language_context,
-)
-from packages.tui.validation import (
-    normalize_language_context,
-    validate_child_input,
-    validate_consent_input,
-    validate_assessment_input,
-)
+from packages.tui.validation import normalize_language_context, validate_child_input
 
 
-def test_differential_language_additional_none_rejected_by_both() -> None:
-    """Explicit additional=None must be rejected by both canonical schema and desktop validator."""
+def test_language_additional_none_is_rejected_not_read_as_empty() -> None:
     malformed = {"primary": "th", "additional": None}
 
-    # Canonical oracle
-    with pytest.raises(ValueError, match="additional languages must be a list"):
-        canonical_normalize_language_context(malformed)
-
-    with pytest.raises(ValidationError):
-        ChildCreateRequest(display_code="C1", birth_year=2021, birth_month=6, language_context=malformed)
-
-    # Desktop validator must also reject rather than silently converting None to []
     with pytest.raises(ValueError, match="additional languages must be a list"):
         normalize_language_context(malformed)
-
     with pytest.raises(ValueError, match="additional languages must be a list"):
         validate_child_input("C1", 2021, 6, malformed)
 
-    # Direct client calls must fail closed without POST or mock mutation
     client_live = PasaScopeClient(mock_mode=False)
-    with mock.patch.object(client_live, "_http_request") as mock_http:
-        with pytest.raises(PasaScopeValidationError):
-            client_live.create_child("C1", 2021, 6, malformed)
-        assert mock_http.call_count == 0
-
-    client_mock = PasaScopeClient(mock_mode=True)
-    initial_children = list(client_mock._mock_data.get("children", []))
     with pytest.raises(PasaScopeValidationError):
-        client_mock.create_child("C1", 2021, 6, malformed)
-    assert client_mock._mock_data.get("children", []) == initial_children
+        client_live.create_child("C1", 2021, 6, malformed)
+    assert client_live.list_children() == []
 
 
-def test_differential_language_additional_omitted_valid_in_both() -> None:
-    """Omitted additional field defaults to empty list in both canonical schema and desktop validator."""
-    input_ctx = {"primary": "th"}
-
-    canonical_result = canonical_normalize_language_context(input_ctx)
-    desktop_result = normalize_language_context(input_ctx)
-
-    assert canonical_result == {"primary": "th", "additional": []}
-    assert desktop_result == {"primary": "th", "additional": []}
-    assert canonical_result == desktop_result
-
-
-def test_differential_language_additional_empty_list_valid_in_both() -> None:
-    """Empty list for additional field is valid in both."""
-    input_ctx = {"primary": "en", "additional": []}
-
-    canonical_result = canonical_normalize_language_context(input_ctx)
-    desktop_result = normalize_language_context(input_ctx)
-
-    assert canonical_result == {"primary": "en", "additional": []}
-    assert desktop_result == {"primary": "en", "additional": []}
-    assert canonical_result == desktop_result
-
-
-@pytest.mark.parametrize(
-    "bad_additional",
-    [
-        "en",            # string instead of list
-        123,             # int instead of list
-        {},              # dict instead of list
-        ["toolong"],     # code > 2 chars
-        ["e"],           # code < 2 chars
-        ["12"],          # numeric digits
-        ["en", None],    # None inside list
-        ["en", 123],     # int inside list
-    ],
-)
-def test_differential_language_additional_wrong_types_rejected_by_both(bad_additional: Any) -> None:
-    """Invalid types or entries in additional must be rejected by both."""
-    payload = {"primary": "th", "additional": bad_additional}
-
-    with pytest.raises((ValueError, ValidationError)):
-        canonical_normalize_language_context(payload)
-
-    with pytest.raises(ValueError):
-        normalize_language_context(payload)
-
-
-def test_differential_language_normalization_and_casing() -> None:
-    """Both normalize primary and additional to stripped lowercase."""
-    input_ctx = {"primary": "  TH  ", "additional": ["  EN  ", "JA"]}
-
-    canonical_result = canonical_normalize_language_context(input_ctx)
-    desktop_result = normalize_language_context(input_ctx)
-
-    assert canonical_result == {"primary": "th", "additional": ["en", "ja"]}
-    assert desktop_result == {"primary": "th", "additional": ["en", "ja"]}
-    assert canonical_result == desktop_result
-
-
-def test_differential_language_unknown_fields_rejected_by_both() -> None:
-    """Unknown fields in language_context must be rejected by both."""
-    payload = {"primary": "th", "dialect": "north"}
-
-    with pytest.raises(ValueError):
-        canonical_normalize_language_context(payload)
-
-    with pytest.raises(ValueError):
-        normalize_language_context(payload)
-
-
-def test_differential_whitespace_stripping_and_field_parity() -> None:
-    """Whitespace stripping parity across string/enum fields between canonical models and desktop validators."""
-    # 1. ChildCreateRequest
-    c_req = ChildCreateRequest(
-        display_code="  C-0101  ",
-        birth_year=2022,
-        birth_month=5,
-        language_context={"primary": "th", "additional": ["en"]},
-    )
-    d_val = validate_child_input(
-        "  C-0101  ",
-        2022,
-        5,
-        {"primary": "th", "additional": ["en"]},
-    )
-    assert c_req.display_code == "C-0101"
-    assert d_val["display_code"] == "C-0101"
-
-    # 2. ConsentCreateRequest
-    consent_req = ConsentCreateRequest(
-        purpose="clinical_assessment",  # type: ignore[arg-type]
-        scope_version="  2026.1  ",
-        status="active",  # type: ignore[arg-type]
-    )
-    consent_val = validate_consent_input(
-        child_id="  child-01  ",
-        purpose="clinical_assessment",
-        scope_version="  2026.1  ",
-        status="active",
-    )
-    assert consent_req.purpose.value == "clinical_assessment"
-    assert consent_val["purpose"] == "clinical_assessment"
-    assert consent_req.scope_version == "2026.1"
-    assert consent_val["scope_version"] == "2026.1"
-    assert consent_req.status.value == "active"
-    assert consent_val["status"] == "active"
-
-    # 3. AssessmentCreateRequest
-    asmt_req = AssessmentCreateRequest(
-        purpose="initial",  # type: ignore[arg-type]
-        assigned_clinician_id="  clinician-123  ",
-    )
-    asmt_val = validate_assessment_input(
-        child_id="  child-01  ",
-        purpose="initial",
-        assigned_clinician_id="  clinician-123  ",
-    )
-    assert asmt_req.purpose.value == "initial"
-    assert asmt_val["purpose"] == "initial"
-    assert asmt_req.assigned_clinician_id == "clinician-123"
-    assert asmt_val["assigned_clinician_id"] == "clinician-123"
-
-
-def test_differential_enum_whitespace_rejected_by_both() -> None:
-    """Whitespace-padded enum values are rejected by both canonical schemas and desktop validators."""
-    with pytest.raises(ValidationError):
-        ConsentCreateRequest(purpose="  clinical_assessment  ", scope_version="2026.1", status="active")  # type: ignore[arg-type]
-    with pytest.raises(ValueError):
-        validate_consent_input("child-01", "  clinical_assessment  ", "2026.1", "active")
-
-    with pytest.raises(ValidationError):
-        ConsentCreateRequest(purpose="clinical_assessment", scope_version="2026.1", status="  active  ")  # type: ignore[arg-type]
-    with pytest.raises(ValueError):
-        validate_consent_input("child-01", "clinical_assessment", "2026.1", "  active  ")
-
-    with pytest.raises(ValidationError):
-        AssessmentCreateRequest(purpose="  initial  ")  # type: ignore[arg-type]
-    with pytest.raises(ValueError):
-        validate_assessment_input("child-01", "  initial  ")
-
-
-
-def test_differential_optional_assigned_clinician_id() -> None:
-    """assigned_clinician_id handles None, valid strings, and rejects whitespace-only or overlong."""
-    # None
-    req_none = AssessmentCreateRequest(purpose="initial", assigned_clinician_id=None)
-    val_none = validate_assessment_input("c1", "initial", None)
-    assert req_none.assigned_clinician_id is None
-    assert val_none["assigned_clinician_id"] is None
-
-    # Whitespace-only string -> fails min_length=1
-    with pytest.raises(ValidationError):
-        AssessmentCreateRequest(purpose="initial", assigned_clinician_id="   ")
-    with pytest.raises(ValueError):
-        validate_assessment_input("c1", "initial", "   ")
-
-    # Boundary 128 chars
-    req_128 = AssessmentCreateRequest(purpose="initial", assigned_clinician_id="c" * 128)
-    val_128 = validate_assessment_input("c1", "initial", "c" * 128)
-    assert req_128.assigned_clinician_id == "c" * 128
-    assert val_128["assigned_clinician_id"] == "c" * 128
-
-    # Exceeds 128 chars
-    with pytest.raises(ValidationError):
-        AssessmentCreateRequest(purpose="initial", assigned_clinician_id="c" * 129)
-    with pytest.raises(ValueError):
-        validate_assessment_input("c1", "initial", "c" * 129)
-
-
-def test_client_convenience_default_vs_malformed_nested() -> None:
-    """Documented convenience default language_context=None succeeds; explicit malformed nested value fails closed."""
-    client = PasaScopeClient(mock_mode=True)
-
-    # 1. Calling create_child without language_context (or language_context=None)
-    # uses documented convenience default {"primary": "th", "additional": []}
-    child1 = client.create_child("C-DEFAULT-1", 2021, 6)
-    assert child1["language_context"] == {"primary": "th", "additional": []}
-
-    child2 = client.create_child("C-DEFAULT-2", 2021, 6, language_context=None)
-    assert child2["language_context"] == {"primary": "th", "additional": []}
-
-    # 2. Calling with explicit malformed nested dict must NOT be quietly fixed to valid input
-    with pytest.raises(PasaScopeValidationError):
-        client.create_child("C-BAD", 2021, 6, language_context={"primary": "th", "additional": None})
+def test_language_additional_omitted_or_empty_is_an_empty_list() -> None:
+    assert normalize_language_context({"primary": "th"}) == {"primary": "th", "additional": []}
+    assert normalize_language_context({"primary": "en", "additional": []}) == {"primary": "en", "additional": []}

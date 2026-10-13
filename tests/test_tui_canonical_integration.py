@@ -1,9 +1,10 @@
-"""Canonical integration tests connecting PasaScopeClient to FastAPI Assessment V2 routes.
+"""Integration tests connecting PasaScopeClient to the FastAPI app.
 
-Verifies end-to-end routing, Pydantic schema validation, domain consent gating,
-detail route semantics, error status propagation, and zero mock mutation.
+Children, consents and assessments are kept by the desktop app itself (see
+``packages/tui/adapters/canonical_store.py``), so these tests check that the
+live client keeps them locally and asks the API nothing for them, and that the
+audio routes it does call still answer.
 """
-
 from __future__ import annotations
 
 import io
@@ -12,8 +13,6 @@ from pathlib import Path
 import urllib.error
 import urllib.parse
 import urllib.request
-from datetime import datetime, timezone
-from typing import Any
 
 # Ensure apps/api is resolvable regardless of PYTHONPATH setting
 _apps_api_dir = str(Path(__file__).resolve().parents[1] / "apps" / "api")
@@ -23,29 +22,11 @@ if _apps_api_dir not in sys.path:
 import pytest
 from fastapi.testclient import TestClient
 
-from app.assessment_v2.dependencies import get_assessment_service
-from app.assessment_v2.domain.models import (
-    AccessScope,
-    AssessmentPurpose,
-    AssessmentSnapshot,
-    AssessmentState,
-    ChildSnapshot,
-    ConsentPurpose,
-    ConsentSnapshot,
-    ConsentStatus,
-    CreateAssessment,
-    CreateChild,
-    RecordConsent,
-    StartAssessment,
-)
-from app.assessment_v2.services import ClinicalPolicyError
 from app.main import app
 from packages.tui.client import (
     PasaScopeClient,
     PasaScopeApiError,
-    PasaScopeAuthError,
     PasaScopeConflictError,
-    PasaScopePermissionError,
     PasaScopeValidationError,
 )
 
@@ -89,239 +70,79 @@ class FastAPITransportHandler(urllib.request.BaseHandler):
         return res
 
 
-class InMemoryAssessmentService:
-    """Synthetic service simulating Assessment V2 repository semantics."""
-
-    def __init__(self) -> None:
-        self.children: dict[str, ChildSnapshot] = {}
-        self.consents: dict[str, list[ConsentSnapshot]] = {}
-        self.assessments: dict[str, AssessmentSnapshot] = {}
-        self.scope = AccessScope(user_id="therapist_01", organization_id="org_alpha", role="therapist")
-
-    def create_child(self, command: CreateChild, correlation_id: str) -> ChildSnapshot:
-        child_id = f"child_{len(self.children) + 1:03d}"
-        snapshot = ChildSnapshot(
-            id=child_id,
-            organization_id="org_alpha",
-            display_code=command.display_code,
-            birth_year=command.birth_year,
-            birth_month=command.birth_month,
-            language_context=dict(command.language_context),
-            version=1,
-        )
-        self.children[child_id] = snapshot
-        return snapshot
-
-    def get_child(self, child_id: str) -> ChildSnapshot:
-        if child_id not in self.children:
-            raise ClinicalPolicyError("child_not_found", 404, "Child profile was not found.")
-        return self.children[child_id]
-
-    def list_children(self) -> list[ChildSnapshot]:
-        return list(self.children.values())
-
-    def grant_consent(
-        self, child_id: str, command: RecordConsent, correlation_id: str
-    ) -> ConsentSnapshot:
-        self.get_child(child_id)
-        if child_id not in self.consents:
-            self.consents[child_id] = []
-        now = datetime(2026, 9, 12, 10, 0, tzinfo=timezone.utc)
-        purpose_enum = ConsentPurpose(command.purpose)
-        purpose_consents = [c for c in self.consents[child_id] if c.purpose == purpose_enum]
-        version = max((c.version for c in purpose_consents), default=0) + 1
-        snapshot = ConsentSnapshot(
-            id=f"consent_{child_id}_{version:02d}",
-            organization_id="org_alpha",
-            child_id=child_id,
-            purpose=purpose_enum,
-            scope_version=command.scope_version,
-            status=ConsentStatus(command.status),
-            granted_at=now,
-            withdrawn_at=now if command.status == "withdrawn" else None,
-            recorded_by_user_id="therapist_01",
-            version=version,
-        )
-        self.consents[child_id].append(snapshot)
-        return snapshot
-
-    def list_consents(self, child_id: str) -> list[ConsentSnapshot]:
-        self.get_child(child_id)
-        consents = self.consents.get(child_id, [])
-        return sorted(consents, key=lambda c: c.version, reverse=True)
-
-    def create_assessment(
-        self, child_id: str, command: StartAssessment, correlation_id: str
-    ) -> AssessmentSnapshot:
-        child = self.get_child(child_id)
-        child_consents = [
-            c for c in self.consents.get(child_id, [])
-            if c.purpose == ConsentPurpose.CLINICAL_ASSESSMENT
-        ]
-        # Repository semantics: order by version desc, check if latest is active
-        sorted_consents = sorted(child_consents, key=lambda c: c.version, reverse=True)
-        if not sorted_consents or sorted_consents[0].status != ConsentStatus.ACTIVE:
-            raise ClinicalPolicyError("active_consent_required", 409, "Active clinical-assessment consent is required.")
-
-        asmt_id = f"asmt_{len(self.assessments) + 1:03d}"
-        asmt = AssessmentSnapshot(
-            id=asmt_id,
-            organization_id="org_alpha",
-            child_id=child_id,
-            purpose=AssessmentPurpose(command.purpose),
-            state=AssessmentState.DRAFT,
-            assigned_clinician_id=command.assigned_clinician_id or "therapist_01",
-            version=1,
-            age_months=48,
-            language_context=dict(child.language_context),
-        )
-        self.assessments[asmt_id] = asmt
-        return asmt
-
-    def get_assessment(self, assessment_id: str) -> AssessmentSnapshot:
-        if assessment_id not in self.assessments:
-            raise ClinicalPolicyError("assessment_not_found", 404, "Assessment was not found.")
-        return self.assessments[assessment_id]
-
-    def list_assessments(self, child_id: str) -> list[AssessmentSnapshot]:
-        self.get_child(child_id)
-        return [a for a in self.assessments.values() if a.child_id == child_id]
-
-
 @pytest.fixture
 def canonical_client():
-    service = InMemoryAssessmentService()
-    app.dependency_overrides[get_assessment_service] = lambda: service
+    """A live-mode client whose transport is the FastAPI app, and a log of the requests it made."""
     with TestClient(app) as test_client:
         client = PasaScopeClient(base_url="http://testserver/api/v1", mock_mode=False)
-        client._opener = urllib.request.build_opener(FastAPITransportHandler(test_client))
-        try:
-            yield client, service
-        finally:
-            app.dependency_overrides.clear()
+        handler = FastAPITransportHandler(test_client)
+        requests: list[str] = []
+        original_open = handler.default_open
+
+        def recording_open(req):
+            requests.append(f"{req.get_method()} {urllib.parse.urlsplit(req.full_url).path}")
+            return original_open(req)
+
+        handler.default_open = recording_open
+        client._opener = urllib.request.build_opener(handler)
+        yield client, requests
 
 
-def test_canonical_child_lifecycle(canonical_client):
-    client, service = canonical_client
+def test_child_consent_and_assessment_lifecycle_is_local_and_survives_a_new_client(canonical_client, isolated_desktop_records):
+    """The whole child → consent → assessment path works in live mode without one request to the API."""
+    client, requests = canonical_client
 
-    # 1. Initially empty
-    assert client.list_children() == []
+    child = client.create_child("LL-LIVE-01", 2021, 6, {"primary": "TH", "additional": ["en"]})
+    assert child["language_context"] == {"primary": "th", "additional": ["en"]}
+    assert client.get_child(child["id"]) == child
+    assert client.list_children() == [child]
 
-    # 2. Create child via POST /api/v2/children
-    created = client.create_child(
-        display_code="CANON-01",
-        birth_year=2021,
-        birth_month=4,
-        language_context={"primary": "th", "additional": ["en"]},
-    )
-    assert created["id"] == "child_001"
-    assert created["display_code"] == "CANON-01"
-    assert created["birth_year"] == 2021
-    assert created["birth_month"] == 4
-    assert created["language_context"] == {"primary": "th", "additional": ["en"]}
+    # No consent yet: an assessment is refused, and nothing is created.
+    with pytest.raises(PasaScopeConflictError):
+        client.create_assessment(child["id"])
+    assert client.list_assessments(child["id"]) == []
 
-    # 3. Get child via GET /api/v2/children/{id}
-    fetched = client.get_child("child_001")
-    assert fetched["id"] == "child_001"
-    assert fetched["display_code"] == "CANON-01"
+    consent = client.record_consent(child["id"], purpose="clinical_assessment", status="active")
+    assert consent["version"] == 1 and consent["withdrawn_at"] is None
+    assessment = client.create_assessment(child["id"], purpose="initial")
+    assert assessment["state"] == "draft" and assessment["child_id"] == child["id"]
+    assert assessment["assigned_clinician_id"] == "therapist-local"
+    assert client.get_assessment(assessment["id"]) == assessment
 
-    # 4. List children via GET /api/v2/children
-    all_children = client.list_children()
-    assert len(all_children) == 1
-    assert all_children[0]["id"] == "child_001"
+    # Withdrawing consent closes the gate again.
+    withdrawn = client.record_consent(child["id"], purpose="clinical_assessment", status="withdrawn")
+    assert withdrawn["version"] == 2 and withdrawn["withdrawn_at"] is not None
+    assert client.get_active_consent(child["id"]) is None
+    with pytest.raises(PasaScopeConflictError):
+        client.create_assessment(child["id"])
 
-    # 5. Nonexistent child returns 404
-    with pytest.raises(PasaScopeApiError) as exc_info:
-        client.get_child("child_nonexistent")
-    assert "404" in str(exc_info.value)
+    with pytest.raises(PasaScopeApiError):
+        client.get_assessment("asmt-missing")
+    assert requests == []
 
-
-def test_canonical_consent_lifecycle_and_withdrawn_semantics(canonical_client):
-    client, service = canonical_client
-
-    # Create child first
-    child = client.create_child("CANON-02", 2020, 8)
-    child_id = child["id"]
-
-    # 1. No consent initially
-    assert client.list_consents(child_id) == []
-    assert client.get_active_consent(child_id) is None
-
-    # 2. Record active consent
-    c1 = client.record_consent(
-        child_id=child_id,
-        purpose="clinical_assessment",
-        scope_version="2026.1",
-        status="active",
-    )
-    assert c1["id"] == f"consent_{child_id}_01"
-    assert c1["status"] == "active"
-    assert c1["version"] == 1
-
-    # Active consent found
-    active = client.get_active_consent(child_id)
-    assert active is not None
-    assert active["id"] == c1["id"]
-
-    # 3. Assessment creation succeeds with active consent
-    asmt = client.create_assessment(child_id, purpose="initial")
-    assert asmt["id"] == "asmt_001"
-    assert asmt["child_id"] == child_id
-
-    # 4. Now record consent withdrawal (version 2)
-    c2 = client.record_consent(
-        child_id=child_id,
-        purpose="clinical_assessment",
-        scope_version="2026.1",
-        status="withdrawn",
-    )
-    assert c2["status"] == "withdrawn"
-    assert c2["version"] == 2
-
-    # Verify list_consents returns both records
-    all_consents = client.list_consents(child_id)
-    assert len(all_consents) == 2
-
-    # Verify active consent is now None because latest is withdrawn!
-    assert client.get_active_consent(child_id) is None
-
-    # 5. Creating a new assessment now MUST fail with PasaScopeConflictError (HTTP 409)
-    with pytest.raises(PasaScopeConflictError) as exc_info:
-        client.create_assessment(child_id, purpose="initial")
-    assert "409" in str(exc_info.value) or "conflict" in str(exc_info.value).lower()
+    # The records are on disk: a client started later reads the same ones.
+    assert isolated_desktop_records.is_file()
+    later = PasaScopeClient(base_url="http://testserver/api/v1", mock_mode=False)
+    assert later.list_children() == [child]
+    assert [item["version"] for item in later.list_consents(child["id"])] == [2, 1]
+    assert later.list_assessments(child["id"]) == [assessment]
 
 
-def test_canonical_assessment_detail_and_list(canonical_client):
-    client, service = canonical_client
+def test_a_damaged_records_file_is_reported_and_left_as_it_is(isolated_desktop_records):
+    isolated_desktop_records.write_text("{ not json", encoding="utf-8")
+    client = PasaScopeClient(base_url="http://testserver/api/v1", mock_mode=False)
 
-    child = client.create_child("CANON-03", 2022, 1)
-    child_id = child["id"]
-    client.record_consent(child_id, purpose="clinical_assessment", status="active")
+    with pytest.raises(PasaScopeApiError, match="could not be read"):
+        client.list_children()
+    with pytest.raises(PasaScopeApiError, match="could not be read"):
+        client.create_child("LL-01", 2021, 5)
 
-    # Create assessment
-    asmt = client.create_assessment(child_id, purpose="initial", assigned_clinician_id="therapist_canon")
-    asmt_id = asmt["id"]
-
-    # 1. Detail route: GET /api/v2/assessments/{assessment_id}
-    detail = client.get_assessment(asmt_id)
-    assert detail["id"] == asmt_id
-    assert detail["child_id"] == child_id
-    assert detail["state"] == "draft"
-
-    # 2. List assessments: GET /api/v2/children/{child_id}/assessments
-    asmts = client.list_assessments(child_id)
-    assert len(asmts) == 1
-    assert asmts[0]["id"] == asmt_id
-
-    # 3. Not found detail route returns HTTP 404
-    with pytest.raises(PasaScopeApiError) as exc_info:
-        client.get_assessment("asmt_nonexistent")
-    assert "404" in str(exc_info.value)
+    assert isolated_desktop_records.read_text(encoding="utf-8") == "{ not json"
 
 
 def test_client_create_child_validation_error_fails_closed_zero_dispatch(canonical_client, monkeypatch):
     """Client-side validation rejects invalid intake input immediately with PasaScopeValidationError and zero network dispatch."""
-    client, service = canonical_client
+    client, requests = canonical_client
 
     # Spy on transport dispatch to prove zero HTTP requests are dispatched
     http_calls = []
@@ -343,93 +164,14 @@ def test_client_create_child_validation_error_fails_closed_zero_dispatch(canonic
     # Verify zero network transport dispatch (zero POST calls)
     assert len(http_calls) == 0
 
-    # Verify mock data and backend service states were not mutated
+    # Neither the demo data nor the local records gained a child
     assert len(client._mock_data.get("children", [])) == 0
-    assert len(service.children) == 0
-
-
-def test_canonical_backend_validation_error_422_rejection(canonical_client):
-    """Bypassing client-side validation directly to FastAPI route proves backend rejects malformed payload with HTTP 422 without mutating service state."""
-    client, service = canonical_client
-
-    # Send malformed payload directly through client's live HTTP transport, bypassing client-side validation
-    malformed_payload = {
-        "display_code": "INV-01",
-        "birth_year": 2021,
-        "birth_month": 13,
-        "language_context": {"primary": "th", "additional": []},
-    }
-
-    initial_service_children = len(service.children)
-    initial_mock_children = len(client._mock_data.get("children", []))
-
-    # Expect PasaScopeApiError with HTTP 422 status mapping
-    with pytest.raises(PasaScopeApiError) as exc_info:
-        client._http_request("POST", "/api/v2/children", malformed_payload)
-
-    assert exc_info.value.__class__ is PasaScopeApiError
-    assert "422" in str(exc_info.value)
-
-    # Verify no child was created in backend service or repository state
-    assert len(service.children) == initial_service_children
-    assert len(client._mock_data.get("children", [])) == initial_mock_children
-
-
-def test_canonical_absent_consent_blocks_assessment_creation(canonical_client):
-    """Verify that creating an assessment for a child with zero consents raises 409 active_consent_required."""
-    client, service = canonical_client
-
-    child = client.create_child("NO-CONSENT-01", 2021, 6)
-    child_id = child["id"]
-
-    # Child exists, but no consent recorded
-    assert client.get_active_consent(child_id) is None
-    with pytest.raises(PasaScopeConflictError) as exc_info:
-        client.create_assessment(child_id, purpose="initial")
-    assert "409" in str(exc_info.value) or "conflict" in str(exc_info.value).lower()
-
-
-def test_canonical_auth_and_permission_errors_preserve_state(canonical_client):
-    """Verify that HTTP 401 and 403 errors map to typed exceptions without fallback or mock mutation."""
-    import copy
-    client, service = canonical_client
-
-    # Snapshot initial mock state
-    initial_mock_state = copy.deepcopy(client._mock_data)
-
-    # Simulate 401 Unauthorized via service policy error
-    def raise_401(*args, **kwargs):
-        raise ClinicalPolicyError("unauthorized", 401, "Session expired or invalid token.")
-
-    service.list_children = raise_401  # type: ignore[assignment]
-    with pytest.raises(PasaScopeAuthError):
-        client.list_children()
-    assert client._mock_data == initial_mock_state
-
-    # Simulate 403 Forbidden via service policy error
-    def raise_403(*args, **kwargs):
-        raise ClinicalPolicyError("forbidden", 403, "Action forbidden for current role.")
-
-    service.list_children = raise_403  # type: ignore[assignment]
-    with pytest.raises(PasaScopePermissionError):
-        client.list_children()
-    assert client._mock_data == initial_mock_state
-
-
-def test_canonical_v1_v2_url_resolution(canonical_client):
-    """Verify that a client configured with base_url ending in /api/v1 resolves /api/v2 endpoints cleanly."""
-    client, service = canonical_client
-    assert client.base_url.endswith("/api/v1")
-
-    # Calling Stage 1 V2 method cleanly strips /api/v1 and routes to /api/v2/children
-    res = client.create_child("URL-RES-01", 2022, 3)
-    assert res["id"] == "child_001"
-    assert res["display_code"] == "URL-RES-01"
+    assert client.list_children() == []
 
 
 def test_canonical_consent_versioning_per_purpose_and_child_isolation(canonical_client) -> None:
     """Verify consent version increment per purpose, active consent derivation, and child isolation."""
-    client, service = canonical_client
+    client, requests = canonical_client
     child_1 = client.create_child("LL-SEQ-01", 2021, 6)["id"]
     child_2 = client.create_child("LL-SEQ-02", 2021, 7)["id"]
 

@@ -286,13 +286,7 @@ class PasaScopeClient:
         content_length: int | None = None,
         timeout: float = 3.0,
     ) -> Any:
-        if endpoint.startswith("/api/v2"):
-            if self.base_url.endswith("/api/v1"):
-                url = f"{self.base_url[:-7]}{endpoint}"
-            else:
-                url = f"{self.base_url}{endpoint}"
-        else:
-            url = f"{self.base_url}{endpoint}"
+        url = f"{self.base_url}{endpoint}"
         headers = {"Content-Type": "application/json", "Accept": "application/json"}
 
         req_data = json.dumps(data).encode("utf-8") if data is not None else None
@@ -356,13 +350,7 @@ class PasaScopeClient:
             raise PasaScopeApiError("API request failed unexpectedly.") from None
 
     def _http_request_bytes(self, method: str, endpoint: str, data: dict[str, Any] | None = None) -> bytes:
-        if endpoint.startswith("/api/v2"):
-            if self.base_url.endswith("/api/v1"):
-                url = f"{self.base_url[:-7]}{endpoint}"
-            else:
-                url = f"{self.base_url}{endpoint}"
-        else:
-            url = f"{self.base_url}{endpoint}"
+        url = f"{self.base_url}{endpoint}"
         headers = {"Accept": "application/octet-stream"}
 
         req_data = json.dumps(data).encode("utf-8") if data is not None else None

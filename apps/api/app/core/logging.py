@@ -11,7 +11,6 @@ from starlette.middleware.base import BaseHTTPMiddleware
 from starlette.types import ASGIApp
 
 from app.core.config import get_settings
-from app.assessment_v2.correlation import sanitize_correlation_id
 
 
 class JsonFormatter(logging.Formatter):
@@ -61,11 +60,6 @@ SAFE_PATH_SEGMENTS = {
     "withdraw-consent",
     "grant-consent",
     "private",
-    "v2",
-    "children",
-    "consents",
-    "assessments",
-    "transitions",
 }
 SAFE_REQUEST_ID_RE = re.compile(r"[A-Za-z0-9_.:-]{1,128}")
 ROUTE_PARAMETER_RE = re.compile(r"^\{[A-Za-z_][A-Za-z0-9_]*\}$")
@@ -103,9 +97,7 @@ class RequestLoggingMiddleware(BaseHTTPMiddleware):
     async def dispatch(self, request: Request, call_next):
         settings = get_settings()
         request_id = request.headers.get("x-request-id") or str(uuid4())
-        if request.url.path.startswith(settings.assessment_api_prefix):
-            request_id = sanitize_correlation_id(request_id)
-        elif not SAFE_REQUEST_ID_RE.fullmatch(request_id):
+        if not SAFE_REQUEST_ID_RE.fullmatch(request_id):
             # The id is logged and echoed back; never let a caller put free text there.
             request_id = str(uuid4())
         request.state.request_id = request_id
@@ -114,10 +106,9 @@ class RequestLoggingMiddleware(BaseHTTPMiddleware):
         duration_ms = round((time.perf_counter() - start) * 1000, 2)
         route = request.scope.get("route")
         route_path = getattr(route, "path", request.url.path)
-        for api_prefix in (settings.api_prefix, settings.assessment_api_prefix):
-            if request.url.path.startswith(api_prefix) and not route_path.startswith(api_prefix):
-                route_path = f"{api_prefix}{route_path}"
-                break
+        api_prefix = settings.api_prefix
+        if request.url.path.startswith(api_prefix) and not route_path.startswith(api_prefix):
+            route_path = f"{api_prefix}{route_path}"
         self.logger.info(
             "request_complete",
             extra={

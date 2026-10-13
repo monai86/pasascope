@@ -51,6 +51,13 @@ def _read_app_version() -> str:
 
 APP_VERSION = _read_app_version()
 
+# Tk may only be torn down by the thread that created it: when a worker thread
+# drops the last reference to a root, Tcl aborts the whole process. Workers
+# hold the app in their closures and can outlive the window, so every root is
+# also kept here and is released only when the interpreter exits, on the main
+# thread.
+_ROOTS_KEPT_FOR_MAIN_THREAD: list[tk.Misc] = []
+
 
 class PasaScopeGUIApp:
     """Main Desktop GUI Application window."""
@@ -62,6 +69,7 @@ class PasaScopeGUIApp:
         backend_manager: BackendServerManager | None = None,
     ):
         self.root = root
+        _ROOTS_KEPT_FOR_MAIN_THREAD.append(root)
         self.root.title("PasaScope — Thai Pediatric Speech & Language Assessment Desktop")
         self.root.geometry("1180x800")
         self.root.minsize(980, 640)

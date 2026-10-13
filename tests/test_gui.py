@@ -2914,33 +2914,16 @@ def test_gui_legacy_mode_works_when_not_in_v2(monkeypatch):
     root.destroy()
 
 
-def test_assessment_purposes_canonical_schema_parity():
-    """All purposes offered in UI must validate against canonical AssessmentCreateRequest, while progress/discharge are rejected."""
-    import sys
-    from pathlib import Path
-    api_dir = str(Path(__file__).resolve().parent.parent / "apps" / "api")
-    if api_dir not in sys.path:
-        sys.path.insert(0, api_dir)
+def test_assessment_purposes_offered_are_the_ones_the_desktop_validator_accepts():
+    """Every purpose the dialog offers passes validation; the retired ones are refused."""
+    from packages.tui.validation import validate_assessment_input
 
-    from app.assessment_v2.schemas import AssessmentCreateRequest
-    from app.assessment_v2.domain.models import AssessmentPurpose
-    import pydantic
+    for purpose in ["initial", "developmental_follow_up", "post_intervention_follow_up", "additional_evidence"]:
+        assert validate_assessment_input("child-01", purpose, None)["purpose"] == purpose
 
-    canonical_purposes = [p.value for p in AssessmentPurpose]
-    assert canonical_purposes == [
-        "initial",
-        "developmental_follow_up",
-        "post_intervention_follow_up",
-        "additional_evidence",
-    ]
-
-    for p in canonical_purposes:
-        req = AssessmentCreateRequest(purpose=p)
-        assert req.purpose.value == p
-
-    for invalid_p in ["progress", "discharge", "followup", "other"]:
-        with pytest.raises(pydantic.ValidationError):
-            AssessmentCreateRequest(purpose=invalid_p)
+    for invalid_purpose in ["progress", "discharge", "followup", "other"]:
+        with pytest.raises(ValueError):
+            validate_assessment_input("child-01", invalid_purpose, None)
 
 
 def test_gui_create_assessment_rejects_invalid_purpose_zero_post(monkeypatch):

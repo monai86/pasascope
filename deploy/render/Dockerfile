@@ -18,7 +18,7 @@ RUN pip install --no-cache-dir -r /tmp/api-requirements.txt -r /tmp/render-requi
 
 # Same layout as the repository, so paths resolved from the source tree hold.
 COPY apps/api/app/ ./apps/api/app/
-COPY apps/api/alembic.ini apps/api/alembic-assessment.ini ./apps/api/
+COPY apps/api/alembic.ini ./apps/api/
 COPY src/ ./src/
 COPY packages/ ./packages/
 COPY artifacts/reference_evidence/ ./artifacts/reference_evidence/
