@@ -43,6 +43,8 @@ type CasesCopy = {
     consentPending: string;
     consentWithdrawn: string;
     sort: string;
+    /** The word shown beside the sort control; `sort` is its full accessible name. */
+    sortShort: string;
     sortLatest: string;
     sortNext: string;
     tableCaption: string;
@@ -58,18 +60,8 @@ type CasesCopy = {
     noMatchBody: string;
     clearFilters: string;
     showing: (shown: number, total: number) => string;
-    selectedContext: string;
-    noneYet: string;
-    moreContext: string;
-    consentAndPriority: string;
-    consentWithPriority: (consent: string, priority: string) => string;
-    priority: (value: string) => string;
-    priorityNotSet: string;
-    latestReport: string;
-    reportStatus: (status: string) => string;
-    primaryClinician: string;
-    openDetail: string;
-    noSelection: string;
+    /** Shown beside a case that review has marked as urgent; other priorities are not listed. */
+    highPriority: string;
   };
   detail: {
     withdrawTitle: string;
@@ -193,8 +185,7 @@ export const casesMessages = defineMessages<CasesCopy>({
     },
     list: {
       title: "Cases",
-      description:
-        "Track case workflow progress, consent state, and the next therapist-reviewed action without leaving the current workspace.",
+      description: "Find a case and take its next step.",
       startAssessment: "Start developmental assessment",
       closeForm: "Close form",
       createCase: "Create case",
@@ -210,6 +201,7 @@ export const casesMessages = defineMessages<CasesCopy>({
       consentPending: "Consent pending",
       consentWithdrawn: "Consent withdrawn",
       sort: "Sort cases",
+      sortShort: "Sort",
       sortLatest: "Latest activity",
       sortNext: "Next action",
       tableCaption: "Cases workspace",
@@ -231,18 +223,7 @@ export const casesMessages = defineMessages<CasesCopy>({
       noMatchBody: "Change the search text or filters, or clear them to see every case.",
       clearFilters: "Clear filters",
       showing: (shown, total) => `Showing ${shown ? `1-${shown}` : "0-0"} of ${total} cases`,
-      selectedContext: "Selected case context",
-      noneYet: "None yet",
-      moreContext: "More case context",
-      consentAndPriority: "Consent and priority",
-      consentWithPriority: (consent, priority) => `${consent} consent · ${priority}`,
-      priority: (value) => `${value.charAt(0).toUpperCase()}${value.slice(1)} priority`,
-      priorityNotSet: "Priority not set",
-      latestReport: "Latest report",
-      reportStatus: (status) => `Report ${status}`,
-      primaryClinician: "Primary clinician",
-      openDetail: "Open case detail",
-      noSelection: "No case matches the current filters.",
+      highPriority: "High priority",
     },
     detail: {
       withdrawTitle: "Withdraw consent for this case?",
@@ -372,7 +353,7 @@ export const casesMessages = defineMessages<CasesCopy>({
     },
     list: {
       title: "เคส",
-      description: "ติดตามความคืบหน้าของแต่ละเคส สถานะความยินยอม และงานถัดไปที่นักบำบัดต้องทบทวน ได้ในหน้าเดียว",
+      description: "ค้นหาเคส แล้วทำขั้นถัดไปของเคสนั้น",
       startAssessment: "เริ่มการประเมินพัฒนาการ",
       closeForm: "ปิดแบบฟอร์ม",
       createCase: "สร้างเคส",
@@ -388,6 +369,7 @@ export const casesMessages = defineMessages<CasesCopy>({
       consentPending: "รอความยินยอม",
       consentWithdrawn: "ถอนความยินยอมแล้ว",
       sort: "เรียงเคส",
+      sortShort: "เรียง",
       sortLatest: "ความเคลื่อนไหวล่าสุด",
       sortNext: "งานถัดไป",
       tableCaption: "รายการเคส",
@@ -409,18 +391,7 @@ export const casesMessages = defineMessages<CasesCopy>({
       noMatchBody: "เปลี่ยนคำค้นหรือตัวกรอง หรือล้างตัวกรองเพื่อดูเคสทั้งหมด",
       clearFilters: "ล้างตัวกรอง",
       showing: (shown, total) => `แสดง ${shown ? `1-${shown}` : "0"} จาก ${total} เคส`,
-      selectedContext: "เคสที่เลือก",
-      noneYet: "ยังไม่มี",
-      moreContext: "ข้อมูลเพิ่มเติมของเคส",
-      consentAndPriority: "ความยินยอมและลำดับความสำคัญ",
-      consentWithPriority: (consent, priority) => `${consent} · ${priority}`,
-      priority: (value) => `ลำดับความสำคัญ: ${value}`,
-      priorityNotSet: "ยังไม่กำหนดลำดับความสำคัญ",
-      latestReport: "รายงานล่าสุด",
-      reportStatus: (status) => `รายงาน: ${status}`,
-      primaryClinician: "นักบำบัดหลัก",
-      openDetail: "เปิดรายละเอียดเคส",
-      noSelection: "ไม่มีเคสที่ตรงกับตัวกรองตอนนี้",
+      highPriority: "ลำดับความสำคัญสูง",
     },
     detail: {
       withdrawTitle: "ถอนความยินยอมของเคสนี้ใช่ไหม",

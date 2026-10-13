@@ -32,7 +32,7 @@ export function DataTable<T extends Record<string, React.ReactNode>>({
                 <th
                   key={String(column.key)}
                   scope="col"
-                  className={`px-4 py-3 text-xs font-semibold uppercase tracking-[0.12em] text-ink-subtle ${
+                  className={`px-4 py-3 text-[13px] font-semibold text-ink-muted ${
                     column.align === "right" ? "text-right" : "text-left"
                   }`}
                 >

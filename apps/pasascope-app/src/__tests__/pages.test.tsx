@@ -680,7 +680,7 @@ describe("pasascope pages", () => {
     expect(await screen.findByRole("searchbox", { name: "Search cases" })).toBeInTheDocument();
     expect(await screen.findByRole("columnheader", { name: "Latest activity" })).toBeInTheDocument();
     expect(screen.getByRole("columnheader", { name: "Workflow status" })).toBeInTheDocument();
-    expect(screen.getByText(/Granted consent ·/)).toBeInTheDocument();
+    expect(screen.getAllByRole("link", { name: "Review session" }).length).toBeGreaterThan(0);
     expect(screen.getAllByText("Demo child").length).toBeGreaterThan(0);
   });
 

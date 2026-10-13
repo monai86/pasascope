@@ -60,9 +60,8 @@ for (const viewport of viewports) {
       await expect(page.getByRole("list", { name: "Cases" })).toBeVisible();
       await expect(page.getByRole("table", { name: "Cases workspace" })).toBeHidden();
     }
-    if (viewport.width >= 1024) {
-      await expect(page.getByRole("complementary", { name: "Selected case context" })).toBeVisible();
-    }
+    // Each case is acted on from its own row; there is no second panel repeating it.
+    await expect(page.getByRole("complementary", { name: "Selected case context" })).toHaveCount(0);
 
     await expectNoHorizontalOverflow(page);
     await capturePairedEvidence(page, "cases", viewport);

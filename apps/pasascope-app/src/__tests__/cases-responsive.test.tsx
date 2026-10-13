@@ -211,19 +211,21 @@ describe("responsive Cases workspace", () => {
     expect(within(table).getByRole("link", { name: "Review session" })).toHaveAttribute("href", "/cases/case_alpha");
   });
 
-  it("provides selected-case context in the desktop split view", () => {
+  it("shows each case once, with what is needed to act on it in its own row", () => {
     render(<CaseList model={{ cases }} canFilterByClinician />);
 
-    const context = screen.getByRole("complementary", { name: "Selected case context" });
-    expect(context).toHaveTextContent("Alpha sample");
-
+    // No second panel repeats the selected case, and rows are not selectable.
+    expect(screen.queryByRole("complementary", { name: "Selected case context" })).not.toBeInTheDocument();
     const table = screen.getByRole("table", { name: "Cases workspace" });
     const pendingRow = within(table).getByRole("row", { name: /Pending sample/ });
-    fireEvent.click(pendingRow);
-    expect(pendingRow).toHaveAttribute("aria-selected", "true");
-    expect(context).toHaveTextContent("Pending sample");
-    expect(context).toHaveTextContent("Consent follow-up");
-    expect(context).toHaveTextContent("High priority");
+    expect(pendingRow).not.toHaveAttribute("aria-selected");
+    expect(pendingRow).toHaveTextContent("Consent follow-up");
+    expect(pendingRow).toHaveTextContent("High priority");
+    expect(within(pendingRow).getAllByRole("link")).toHaveLength(2);
+    expect(within(pendingRow).getByRole("link", { name: "Review consent" })).toHaveAttribute("href", "/cases/case_pending");
+
+    // Only an urgent case says so; an ordinary priority is not listed.
+    expect(within(table).getAllByText(/High priority/)).toHaveLength(1);
   });
 
   it("prioritizes latest activity, workflow status, and one next action over secondary analytics", () => {
@@ -232,8 +234,8 @@ describe("responsive Cases workspace", () => {
     const table = screen.getByRole("table", { name: "Cases workspace" });
     expect(screen.getAllByRole("columnheader", { hidden: true }).map((header) => header.textContent)).toEqual([
       "Case",
-      "Latest activity",
       "Workflow status",
+      "Latest activity",
       "Next action",
     ]);
     expect(within(table).getAllByRole("link", { name: /Start session|Review consent|Review session|Finalize report|Continue workflow/ })).toHaveLength(cases.length);
