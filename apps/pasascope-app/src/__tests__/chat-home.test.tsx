@@ -77,12 +77,12 @@ describe("chat home", () => {
     render(<ChatHome />);
     await waitFor(() => expect(api.listBackendCases).toHaveBeenCalled());
 
-    fireEvent.change(screen.getByRole("textbox", { name: "Find a case" }), { target: { value: "tonk" } });
-    fireEvent.click(screen.getByRole("button", { name: "Find case" }));
+    fireEvent.change(screen.getByRole("textbox", { name: "Ask PasaScope or find a case" }), { target: { value: "tonk" } });
+    fireEvent.click(screen.getByRole("button", { name: "Send" }));
 
     const pick = await screen.findByTestId("start-pick-case");
     expect(within(pick).getByRole("button", { name: /Tonkla/ })).toBeInTheDocument();
-    expect(screen.getByRole("textbox", { name: "Find a case" })).toBeEnabled();
+    expect(screen.getByRole("textbox", { name: "Ask PasaScope or find a case" })).toBeEnabled();
     expect(screen.queryByRole("heading", { name: "What would you like to do today?" })).toBeNull();
   });
 
@@ -101,7 +101,7 @@ describe("chat home", () => {
     // The case list is read again in the background; the chosen case must survive that.
     expect(await screen.findByTestId("start-consent")).toBeInTheDocument();
     // Typing only finds a case, so the field is inert once one is chosen.
-    expect(screen.getByRole("textbox", { name: "Find a case" })).toBeDisabled();
+    expect(screen.getByRole("textbox", { name: "Ask PasaScope or find a case" })).toBeDisabled();
     await waitFor(() => expect(api.listBackendCases).toHaveBeenCalledTimes(2));
     expect(screen.getByTestId("start-consent")).toBeInTheDocument();
     expect(screen.queryByTestId("start-pick-case")).toBeNull();

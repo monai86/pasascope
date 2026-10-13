@@ -65,7 +65,7 @@ export function ChatComposer({
       onSubmit={handleSubmit}
       data-testid={testId}
       className={cn(
-        "mx-auto flex w-full max-w-[660px] items-center gap-1 rounded-full bg-surface py-1.5 pl-5 pr-1.5 shadow-chat-composer",
+        "chat-composer mx-auto flex w-full max-w-[660px] items-center gap-1 rounded-full bg-surface py-1.5 pl-5 pr-1.5 shadow-chat-composer",
         roomy && "md:flex-wrap md:gap-2 md:rounded-[28px] md:border md:border-chat-line md:bg-white/70 md:p-3 md:pl-5 md:shadow-none",
       )}
     >
@@ -144,10 +144,10 @@ export function ChatComposer({
         title={submitLabel}
         disabled={!canSubmit}
         className={cn(
-          "grid h-11 w-11 shrink-0 place-items-center rounded-full transition motion-reduce:transition-none",
+          "grid h-11 w-11 shrink-0 place-items-center rounded-full transition duration-200 motion-reduce:transition-none",
           FOCUS_RING,
           roomy && "md:ml-auto",
-          canSubmit ? "bg-action text-white hover:bg-action-hover" : "bg-chat-line text-ink-subtle",
+          canSubmit ? "bg-action text-white shadow-chat-action hover:bg-action-hover" : "bg-chat-line text-ink-subtle",
         )}
       >
         <ArrowUp size={20} aria-hidden="true" />

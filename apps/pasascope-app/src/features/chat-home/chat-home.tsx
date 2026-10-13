@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useState, type ReactNode } from "react";
+import { lazy, Suspense, useEffect, useRef, useState, type ReactNode } from "react";
 import type { LucideIcon } from "lucide-react";
 import { Clock, FolderOpen, History, Mic, Upload } from "lucide-react";
 
@@ -17,7 +17,11 @@ import {
 import { ChatShellPanel } from "@/components/chat-shell/chat-shell-context";
 import { PasaScopeLogoMark } from "@/components/pasascope-logo";
 import { SkeletonLine } from "@/components/skeleton";
+import type { AskTopic } from "@/features/chat-home/assistant/assistant.messages";
+import type { AssistantIntent } from "@/features/chat-home/assistant/interpret";
+import type { HomeTurn, StartKind } from "@/features/chat-home/assistant/replies";
 import { chatHomeMessages } from "@/features/chat-home/chat-home.messages";
+import { matchCaseName } from "@/features/chat-home/chat-home-model";
 import { RecentSessionsPanel } from "@/features/chat-home/recent-sessions-panel";
 import { StartSessionThread, type StartOpener } from "@/features/chat-home/start-session-thread";
 import { useChatHome } from "@/features/chat-home/use-chat-home";
@@ -25,13 +29,33 @@ import { useMessages } from "@/i18n/locale-provider";
 import { cn } from "@/lib/cn";
 
 const AUDIO_TYPES = "audio/*,.wav,.mp3,.m4a,.webm,.ogg,.flac";
+const TURNS_KEPT = 30;
+// Typed requests that begin the guided start instead of being answered.
+const STARTS: Partial<Record<AssistantIntent, StartKind>> = {
+  record: "recording",
+  upload: "audio",
+  newSession: "newSession",
+  findCase: "findCase",
+  newCase: "findCase",
+};
+const SUGGESTED: Array<Extract<AskTopic, "capabilities" | "howto" | "today">> = ["capabilities", "howto", "today"];
+
+// The words it understands and its answers load with the first question, so
+// they are not part of what every visit to the home screen downloads.
+const loadAssistant = () => import("@/features/chat-home/assistant/home-conversation");
+const HomeConversation = lazy(() => loadAssistant().then((module) => ({ default: module.HomeConversation })));
+
 const CARD =
-  "flex min-h-[68px] items-center gap-3.5 border-t border-chat-line px-4 py-2.5 text-left text-ink transition first:border-t-0 hover:bg-chat-frame focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-inset focus-visible:ring-[color:var(--color-focus-ring)] motion-reduce:transition-none md:flex-1 md:basis-[180px] md:flex-col md:items-start md:gap-9 md:rounded-[18px] md:border-t-0 md:bg-surface md:p-4 md:shadow-chat-card md:hover:bg-surface md:hover:shadow-soft md:focus-visible:ring-offset-0";
+  "chat-rise flex min-h-[68px] items-center gap-3.5 border-t border-chat-line px-4 py-2.5 text-left text-ink transition first:border-t-0 md:hover:-translate-y-0.5 hover:bg-chat-frame focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-inset focus-visible:ring-[color:var(--color-focus-ring)] motion-reduce:transition-none md:flex-1 md:basis-[180px] md:flex-col md:items-start md:gap-9 md:rounded-[18px] md:border-t-0 md:bg-surface md:p-4 md:shadow-chat-card md:hover:bg-surface md:hover:shadow-soft md:focus-visible:ring-offset-0";
 
 /**
  * The chat shell's home: one question, three ways to answer it, and a field
- * that finds a case. Starting anything opens a short conversation in place of
- * the greeting; the latest sessions sit in the side panel.
+ * that answers questions about the app and finds a case. Starting anything
+ * opens a short conversation in place of the greeting; the latest sessions sit
+ * in the side panel.
+ *
+ * A typed line is matched to a fixed list of topics. It can be answered, open a
+ * page or begin the guided start; it never changes a record by itself.
  */
 export function ChatHome() {
   const t = useMessages(chatHomeMessages);
@@ -43,6 +67,42 @@ export function ChatHome() {
   // Typing finds a case, so the field is live on the greeting and while a case
   // is being chosen, and inert for the rest of the start conversation.
   const [choosingCase, setChoosingCase] = useState(true);
+  const [turns, setTurns] = useState<HomeTurn[]>([]);
+  const nextTurnId = useRef(0);
+
+  useEffect(() => {
+    // Fetched shortly after the screen settles, so the first answer does not wait for it.
+    const timer = window.setTimeout(() => void loadAssistant(), 1500);
+    return () => window.clearTimeout(timer);
+  }, []);
+
+  function addTurn(turn: Omit<HomeTurn, "id">) {
+    nextTurnId.current += 1;
+    setTurns((current) => [...current, { ...turn, id: nextTurnId.current }].slice(-TURNS_KEPT));
+  }
+
+  async function ask(line: string) {
+    const said = line.trim();
+    if (!said) return;
+    setText("");
+    const cases = home.status === "ready" ? home.cases : [];
+    const { interpret } = await loadAssistant();
+    const read = interpret(said, (query) => matchCaseName(cases, query));
+    if (read.kind === "case") {
+      start({ kind: "search", text: read.query });
+      return;
+    }
+    if (read.kind === "unknown") {
+      addTurn({ said, topic: "unknown" });
+      return;
+    }
+    const startKind = STARTS[read.intent];
+    if (startKind) {
+      start({ kind: startKind, said });
+      return;
+    }
+    addTurn({ said, topic: read.intent as HomeTurn["topic"], understoodAs: read.understoodAs });
+  }
 
   function start(next: StartOpener) {
     setOpener(next);
@@ -96,9 +156,20 @@ export function ChatHome() {
             </AssistantMessage>
           </ChatThread>
         )
+      ) : turns.length > 0 ? (
+        <Suspense fallback={<div className="flex-1" />}>
+          <HomeConversation
+            turns={turns}
+            home={home}
+            onAsk={(topic, label) => addTurn({ said: label, topic })}
+            onStart={(kind) => start({ kind })}
+            onSearch={(query) => start({ kind: "search", text: query })}
+            onClear={() => setTurns([])}
+          />
+        </Suspense>
       ) : (
-        <div className="mx-auto flex w-full max-w-[660px] flex-1 flex-col justify-center gap-7 py-4 md:gap-11">
-          <div className="flex flex-col items-center text-center">
+        <div className="mx-auto flex w-full max-w-[660px] flex-1 flex-col justify-center gap-7 py-4 md:gap-9">
+          <div className="chat-rise flex flex-col items-center text-center">
             <div aria-hidden="true" className="chat-mark-glow grid h-[130px] w-[200px] place-items-center md:h-[150px] md:w-[220px]">
               <PasaScopeLogoMark size="xl" />
             </div>
@@ -140,6 +211,20 @@ export function ChatHome() {
               testId="home-card-resume"
             />
           </div>
+
+          <div className="chat-rise flex flex-wrap justify-center gap-2" style={{ animationDelay: "180ms" }}>
+            {SUGGESTED.map((topic) => (
+              <button
+                key={topic}
+                type="button"
+                data-testid={`home-suggest-${topic}`}
+                onClick={() => addTurn({ said: t.suggestions[topic], topic })}
+                className="min-h-11 rounded-full border border-chat-line bg-white/60 px-4 text-sm font-medium text-ink-muted transition hover:bg-surface hover:text-ink focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-[color:var(--color-focus-ring)] motion-reduce:transition-none"
+              >
+                {t.suggestions[topic]}
+              </button>
+            ))}
+          </div>
         </div>
       )}
 
@@ -154,7 +239,7 @@ export function ChatHome() {
           disabled={Boolean(opener) && !choosingCase}
           onSubmit={() => {
             // While a case is being chosen the text already narrows the list.
-            if (!opener) start({ kind: "search", text: text.trim() });
+            if (!opener) void ask(text);
           }}
           attach={{ label: t.composer.attach, accept: AUDIO_TYPES, onFile: (file) => start({ kind: "file", file }) }}
           chips={[{ label: t.composer.chooseCase, icon: FolderOpen, onClick: () => start({ kind: "findCase" }) }]}

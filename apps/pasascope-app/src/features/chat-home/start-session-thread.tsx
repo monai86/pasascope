@@ -32,7 +32,7 @@ export type StartIntent = "recording" | "audio";
 
 /** What the therapist pressed or typed to begin; it becomes the first bubble. */
 export type StartOpener =
-  | { kind: "recording" | "audio" | "findCase" | "newSession" }
+  | { kind: "recording" | "audio" | "findCase" | "newSession"; said?: string }
   | { kind: "search"; text: string }
   | { kind: "file"; file: File };
 
@@ -84,7 +84,11 @@ export function StartSessionThread({
   const [error, setError] = useState("");
 
   const openerText =
-    opener.kind === "search" ? opener.text : opener.kind === "file" ? s.attached(opener.file.name) : s.intents[opener.kind];
+    opener.kind === "search"
+      ? opener.text
+      : opener.kind === "file"
+        ? s.attached(opener.file.name)
+        : (opener.said ?? s.intents[opener.kind]);
   const query = filter.trim() || (opener.kind === "search" ? opener.text.trim() : "");
   const matching = filterCases(cases, query);
   const consented = caseItem ? consentGranted || hasConsent(caseItem) : false;

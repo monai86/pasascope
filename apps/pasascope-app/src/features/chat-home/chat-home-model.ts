@@ -90,6 +90,19 @@ export function hasConsent(caseItem: BackendCase): boolean {
   return caseItem.consent_status?.toLowerCase() === "granted";
 }
 
+/** Whether a typed line is one of the cases' names or codes, part of one, or neither. */
+export function matchCaseName(cases: readonly BackendCase[], query: string): "exact" | "partial" | "none" {
+  const needle = query.trim().toLowerCase();
+  if (!needle) return "none";
+  const names = cases.flatMap((caseItem) =>
+    [caseItem.nickname, caseItem.child_code, caseItem.display_label, caseItem.anonymized_child_code].filter(
+      (value): value is string => Boolean(value),
+    ),
+  );
+  if (names.some((name) => name.toLowerCase() === needle)) return "exact";
+  return names.some((name) => name.toLowerCase().includes(needle)) ? "partial" : "none";
+}
+
 export function filterCases(cases: readonly BackendCase[], query: string): BackendCase[] {
   return cases.filter((caseItem) =>
     matches([caseItem.nickname, caseItem.child_code, caseItem.display_label, caseItem.anonymized_child_code], query),

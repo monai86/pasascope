@@ -60,8 +60,12 @@ Home, Cases, Reports, Settings (ไม่มี bottom nav; ลำดับถ�
 `?view=chat` เป็นบทสนทนาของเซสชัน โดย `?view=intake` เปิดบทสนทนาเดียวกัน ส่วน
 `transcript|findings|report` ยังเป็นหน้าเต็มเดิม. ถ้า chat shell ไม่ทำงาน
 `?view=chat` ต้อง fallback เป็น `intake`. บทสนทนาเป็นภาพฉายของสถานะเซสชันใน
-backend ไม่ใช่ log ข้อความที่เก็บไว้ ไม่มี language model และห้ามตีความข้อความที่
-ผู้ใช้พิมพ์เป็นคำสั่ง; consent ต้องได้รับก่อนสร้างเซสชันเสมอ.
+backend ไม่ใช่ log ข้อความที่เก็บไว้ และไม่มี language model; consent ต้องได้รับ
+ก่อนสร้างเซสชันเสมอ. ข้อความที่พิมพ์ในหน้าหลักของ chat shell ถูกจับคู่กับรายการ
+หัวข้อตายตัว (ADR `docs/adr/0022-fixed-topic-answers-on-chat-home.md`): ตอบ
+คำถาม เปิดหน้า หรือเริ่ม guided start ได้ แต่ห้ามเปลี่ยน record ใด ๆ จากข้อความที่
+พิมพ์โดยไม่มีการกดปุ่มยืนยัน และห้ามเก็บ ส่งไป API หรือ log ข้อความนั้น. ข้อความที่
+พิมพ์ในบทสนทนาของเซสชันยังเป็น session note เท่านั้น.
 
 Cases และ Settings ใช้ feature-owned components/hooks/services โดย compatibility
 components เดิมเป็น thin entry points เท่านั้น. Settings section matrix ต้อง

@@ -62,7 +62,7 @@ export function UserBubble({ children, testId }: { children: ReactNode; testId?:
     <div
       data-testid={testId}
       data-chat-role="user"
-      className="max-w-[85%] self-end rounded-[22px] bg-surface px-[18px] py-2.5 shadow-chat-card"
+      className="chat-rise max-w-[85%] self-end rounded-[22px] bg-surface px-[18px] py-2.5 shadow-chat-card"
     >
       {children}
     </div>
@@ -72,7 +72,7 @@ export function UserBubble({ children, testId }: { children: ReactNode; testId?:
 /** What the app says, on the left: plain lines, cards and replies, no bubble. */
 export function AssistantMessage({ children, testId }: { children: ReactNode; testId?: string }) {
   return (
-    <div data-testid={testId} data-chat-role="assistant" className="flex w-full max-w-[520px] flex-col gap-3">
+    <div data-testid={testId} data-chat-role="assistant" className="chat-rise flex w-full max-w-[520px] flex-col gap-3">
       {children}
     </div>
   );
@@ -158,7 +158,7 @@ export function QuickReply(props: ReplyButtonProps | ReplyLinkProps) {
         href={props.href}
         onClick={props.onClick}
         data-testid={testId}
-        className={cn(classes, inactive && "pointer-events-none")}
+        className={cn(classes, "active:scale-[0.97]", inactive && "pointer-events-none")}
         aria-disabled={inactive ? "true" : undefined}
         aria-describedby={props["aria-describedby"]}
         tabIndex={inactive ? -1 : undefined}

@@ -17,6 +17,8 @@ type ChatHomeCopy = {
     attach: string;
     chooseCase: string;
   };
+  /** Questions offered under the greeting; pressing one asks it. */
+  suggestions: { capabilities: string; howto: string; today: string };
   recent: {
     title: string;
     trigger: string;
@@ -76,11 +78,16 @@ export const chatHomeMessages = defineMessages<ChatHomeCopy>({
       resume: { title: "Pick up where you left off", none: "Nothing waiting" },
     },
     composer: {
-      label: "Find a case",
-      placeholder: "Type a case name or code…",
-      submit: "Find case",
+      label: "Ask PasaScope or find a case",
+      placeholder: "Ask how it works, or type a case name…",
+      submit: "Send",
       attach: "Attach audio file",
       chooseCase: "Choose a case",
+    },
+    suggestions: {
+      capabilities: "What can you do?",
+      howto: "How do I use it?",
+      today: "What do I have today?",
     },
     recent: {
       title: "Recent sessions",
@@ -150,11 +157,16 @@ export const chatHomeMessages = defineMessages<ChatHomeCopy>({
       resume: { title: "ทำงานที่ค้างต่อ", none: "ยังไม่มีงานค้าง" },
     },
     composer: {
-      label: "ค้นหาเคส",
-      placeholder: "พิมพ์ชื่อหรือรหัสเคส…",
-      submit: "ค้นหาเคส",
+      label: "ถาม PasaScope หรือค้นหาเคส",
+      placeholder: "ถามวิธีใช้ หรือพิมพ์ชื่อเคส…",
+      submit: "ส่ง",
       attach: "แนบไฟล์เสียง",
       chooseCase: "เลือกเคส",
+    },
+    suggestions: {
+      capabilities: "ทำอะไรได้บ้าง",
+      howto: "ใช้งานยังไง",
+      today: "วันนี้มีอะไรบ้าง",
     },
     recent: {
       title: "เซสชันล่าสุด",

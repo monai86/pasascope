@@ -145,7 +145,9 @@ export function ChatShellFrame({ children, active }: { children: ReactNode; acti
             </header>
 
             <main id="main-content" className="flex min-h-0 min-w-0 flex-1 flex-col overflow-y-auto">
-              <div className="flex w-full flex-1 flex-col px-4 pb-4 pt-2 md:px-6 md:pb-6 lg:px-10 lg:pt-7">{children}</div>
+              <div className="chat-page-in flex w-full flex-1 flex-col px-4 pb-4 pt-2 md:px-6 md:pb-6 lg:px-10 lg:pt-7">
+                {children}
+              </div>
             </main>
           </div>
 

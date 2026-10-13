@@ -70,8 +70,12 @@ export function RecentSessionsPanel({ home, onNewSession }: { home: ChatHomeStat
 
         {rows.length > 0 ? (
           <ul>
-            {rows.map((row) => (
-              <li key={row.sessionId} className="border-b border-chat-line">
+            {rows.map((row, index) => (
+              <li
+                key={row.sessionId}
+                className="chat-rise border-b border-chat-line"
+                style={{ animationDelay: `${Math.min(index, 8) * 40}ms` }}
+              >
                 <Link
                   href={row.href}
                   className="flex flex-col gap-1.5 rounded-control py-4 leading-normal text-ink transition hover:bg-chat-frame focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-[color:var(--color-focus-ring)] motion-reduce:transition-none"

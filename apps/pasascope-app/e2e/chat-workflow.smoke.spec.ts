@@ -61,6 +61,32 @@ test.describe("chat shell", () => {
     await expect(page.getByRole("heading", { name: "Recent sessions" })).toBeVisible();
   });
 
+  test("typed questions are answered on the home screen, and an unknown one is not guessed at", async ({ page }) => {
+    await page.goto("/");
+    const field = page.getByRole("textbox", { name: "Ask PasaScope or find a case" });
+
+    await field.fill("What can you do?");
+    await field.press("Enter");
+    await expect(page.getByTestId("home-question")).toHaveText("What can you do?");
+    const first = page.getByTestId("home-answer").first();
+    await expect(first).toContainText("Draft a report you can edit, export and print");
+    await expect(first).toContainText("It is not an AI that can talk about anything.");
+    await expect(page.getByRole("heading", { name: "What would you like to do today?" })).toHaveCount(0);
+
+    await field.fill("tell me a joke");
+    await field.press("Enter");
+    const second = page.getByTestId("home-answer").nth(1);
+    await expect(second).toContainText("PasaScope did not understand that.");
+    // The newest answer is clear of the composer that sits over the foot of the page.
+    await expect(second.getByRole("button", { name: "Back to the start" })).toBeInViewport();
+    await expectNoSidewaysScroll(page);
+
+    // A typed request to begin work opens the guided start; the case is still chosen with a button.
+    await field.fill("I want to record audio");
+    await field.press("Enter");
+    await expect(page.getByTestId("start-pick-case")).toBeVisible();
+  });
+
   test("a session goes from a new case to a report draft in one conversation", async ({ page }) => {
     await startSessionForNewCase(page, `E2E-${Date.now()}`);
 

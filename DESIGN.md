@@ -181,9 +181,19 @@ When the API runs the public workflow (public sign-up, open review gates),
   message offers at most one primary reply; a choice between equals (which
   speaker the remaining lines belong to) has none. Replies on earlier messages
   disappear once their step is done.
-- **Composer:** docked at the foot. On Home, typing finds a case. In a session,
-  typing saves a session note. The app has no language model, so it never
-  implies that it understood a sentence, and no action is inferred from text.
+- **Composer:** docked at the foot. On Home, typing asks a question or finds a
+  case; in a session, typing saves a session note. The app has no language
+  model. On Home a line is matched to a fixed list of topics, each with one
+  prepared answer, and a line that matches none is answered as not understood,
+  never guessed at. A typed line may be answered, open a page or begin the
+  guided start; it never changes a record, which always takes a button.
+  Decision record: `docs/adr/0022-fixed-topic-answers-on-chat-home.md`.
+- **Motion:** small and brief. A message, card or row rises 10px into place
+  (`chat-rise`, 280ms); an answer is preceded by three dots for under half a
+  second; the glow behind the mark on Home breathes; the text field lifts
+  while in use; buttons give under a press; a page fades in. Nothing moves to
+  hold attention, and `prefers-reduced-motion` cuts all of it to an instant
+  change. A control never shrinks below its 44px target while animating.
 - **Clinical wording:** the conversation states what it did and what the session
   needs next. It does not interpret a measure. A value the backend did not send
   is shown as a dash. Safety lines come from `clinical-safety-copy`.
