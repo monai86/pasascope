@@ -15,7 +15,7 @@ import {
   ShieldCheck,
   UserPlus,
 } from "lucide-react";
-import { useEffect, type FormEvent, useState } from "react";
+import { useEffect, useRef, type FormEvent, useState } from "react";
 
 import { type RuntimeSettings } from "@/lib/api";
 import {
@@ -24,6 +24,7 @@ import {
 } from "@/lib/supabase-browser-auth";
 import { getSupabaseBrowserClient } from "@/lib/supabase-browser-client";
 import { getSupabaseBrowserClientConfigStatus } from "@/lib/supabase-browser-client-config";
+import { classifyAuthError } from "@/lib/supabase-auth-error";
 import { publishSupabaseSessionPayload } from "@/lib/supabase-session-source";
 import { useSupabaseAccessSession } from "@/lib/use-supabase-access-session";
 import { supabaseLoginMessages } from "@/components/supabase-login.messages";
@@ -40,8 +41,12 @@ function resolvePostLoginRoute(role: unknown): string {
 const FOCUS_RING = "focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-[color:var(--color-focus-ring)]";
 // 16px text keeps iOS from zooming the page when a field takes focus.
 const FIELD =
-  "min-h-12 w-full rounded-control border border-chat-line-strong bg-surface py-2 text-base text-ink outline-none transition placeholder:text-ink-subtle focus-visible:ring-4 focus-visible:ring-[color:var(--color-focus-ring)] motion-reduce:transition-none";
+  "min-h-12 w-full rounded-control border border-chat-line-strong bg-surface py-2 text-base text-ink outline-none transition placeholder:text-ink-subtle focus-visible:ring-4 focus-visible:ring-[color:var(--color-focus-ring)] aria-[invalid=true]:border-[color:var(--color-danger-text)] motion-reduce:transition-none";
 const PRIMARY = `group inline-flex min-h-[52px] w-full items-center justify-center rounded-full bg-action px-6 font-semibold text-white shadow-chat-action transition hover:bg-action-hover disabled:cursor-not-allowed disabled:bg-chat-line disabled:text-ink-subtle disabled:shadow-none motion-reduce:transition-none ${FOCUS_RING}`;
+
+// NIST SP 800-63B-4: 15 characters where the password is the only factor, and no
+// composition rules. It applies to a new password; an existing one still signs in.
+export const PASSWORD_MIN_LENGTH = 15;
 
 export const ACCOUNT_NOT_PROVISIONED_MESSAGE =
   "บัญชีนี้ยังไม่ได้รับสิทธิ์เข้าองค์กรใด กรุณาติดต่อผู้ดูแลองค์กรเพื่อรับคำเชิญ · This account has not been added to an organization yet. Ask your organization admin for an invitation.";
@@ -72,6 +77,19 @@ export function SupabaseLoginFormClient({
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [showPolicy, setShowPolicy] = useState(false);
+  const [acknowledged, setAcknowledged] = useState(false);
+  // Which sign-up field stopped the form, so its own message can sit beside it.
+  const [fieldError, setFieldError] = useState<"password" | "acknowledge" | null>(null);
+  const passwordInput = useRef<HTMLInputElement>(null);
+  const acknowledgeInput = useRef<HTMLInputElement>(null);
+
+  /** Words for a failed request, in the interface language and without the service's own text. */
+  function describe(error: unknown, fallback: string): string {
+    const problem = classifyAuthError(error);
+    if (problem === "other") return fallback;
+    if (problem === "weakPassword") return t.passwordTooShort(PASSWORD_MIN_LENGTH);
+    return t.problems[problem];
+  }
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isGoogleSubmitting, setIsGoogleSubmitting] = useState(false);
   const [isSendingRecovery, setIsSendingRecovery] = useState(false);
@@ -182,6 +200,19 @@ export function SupabaseLoginFormClient({
       return;
     }
 
+    // Counted in characters as read, so one Thai letter or emoji is one.
+    if (Array.from(password).length < PASSWORD_MIN_LENGTH) {
+      setFieldError("password");
+      passwordInput.current?.focus();
+      return;
+    }
+    if (publicSignup && !acknowledged) {
+      setFieldError("acknowledge");
+      acknowledgeInput.current?.focus();
+      return;
+    }
+    setFieldError(null);
+
     setIsSubmitting(true);
 
     try {
@@ -193,13 +224,15 @@ export function SupabaseLoginFormClient({
             full_name: fullName.trim() || undefined,
             display_name: fullName.trim() || undefined,
             clinical_role: roleTab === "admin" ? "clinic_admin" : roleTab === "parent" ? "parent_guardian" : "therapist_slp",
+            // When the person confirmed they had read the privacy page.
+            privacy_acknowledged_at: publicSignup ? new Date().toISOString() : undefined,
           },
           emailRedirectTo: typeof window === "undefined" ? undefined : `${window.location.origin}${landingPath}`,
         },
       });
 
       if (error) {
-        setErrorMessage(error.message);
+        setErrorMessage(describe(error, t.errors.signUpFailed));
         return;
       }
 
@@ -209,10 +242,10 @@ export function SupabaseLoginFormClient({
         router.push(publicSignup ? landingPath : resolvePostLoginRoute(data.session.user?.app_metadata?.role));
         router.refresh();
       } else {
-        setStatusMessage(t.status.signUpConfirmEmail);
+        setStatusMessage(publicSignup ? t.open.status.signUpConfirmEmail : t.status.signUpConfirmEmail);
       }
     } catch (error) {
-      setErrorMessage(error instanceof Error ? error.message : t.errors.signUpFailed);
+      setErrorMessage(describe(error, t.errors.signUpFailed));
     } finally {
       setIsSubmitting(false);
     }
@@ -237,7 +270,7 @@ export function SupabaseLoginFormClient({
       });
 
       if (error) {
-        setErrorMessage(error.message);
+        setErrorMessage(describe(error, t.errors.signInFailed));
         return;
       }
 
@@ -250,11 +283,11 @@ export function SupabaseLoginFormClient({
       }
 
       publishSupabaseSessionPayload(data.session ?? null);
-      setStatusMessage(t.status.signInAccepted);
+      setStatusMessage(publicSignup ? t.open.status.signInAccepted : t.status.signInAccepted);
       router.push(publicSignup ? landingPath : resolvePostLoginRoute(data.session?.user?.app_metadata?.role));
       router.refresh();
     } catch (error) {
-      setErrorMessage(error instanceof Error ? error.message : t.errors.signInFailed);
+      setErrorMessage(describe(error, t.errors.signInFailed));
     } finally {
       setIsSubmitting(false);
     }
@@ -282,13 +315,13 @@ export function SupabaseLoginFormClient({
       });
 
       if (error) {
-        setErrorMessage(error.message);
+        setErrorMessage(describe(error, t.errors.recoveryFailed));
         return;
       }
 
-      setStatusMessage(t.status.recoverySent);
+      setStatusMessage(publicSignup ? t.open.status.recoverySent : t.status.recoverySent);
     } catch (error) {
-      setErrorMessage(error instanceof Error ? error.message : t.errors.recoveryFailed);
+      setErrorMessage(describe(error, t.errors.recoveryFailed));
     } finally {
       setIsSendingRecovery(false);
     }
@@ -364,6 +397,7 @@ export function SupabaseLoginFormClient({
                 setMode(option);
                 setErrorMessage("");
                 setStatusMessage("");
+                setFieldError(null);
               }}
               className={`min-h-11 rounded-full px-5 text-sm font-semibold transition motion-reduce:transition-none ${FOCUS_RING} ${
                 mode === option ? "bg-surface text-ink shadow-chat-card" : "text-ink-subtle hover:text-ink"
@@ -384,8 +418,9 @@ export function SupabaseLoginFormClient({
       >
         {mode === "signup" && (
           <label className="block text-sm font-medium text-ink">
-            <span className="block mb-1.5">
+            <span className="mb-1.5 flex items-baseline justify-between gap-3">
               {t.displayName}
+              <span className="text-xs font-normal text-ink-subtle">{t.optional}</span>
             </span>
             <input
               className={`${FIELD} px-4`}
@@ -446,8 +481,14 @@ export function SupabaseLoginFormClient({
               className={`${FIELD} pl-11 pr-12`}
               type={showPassword ? "text" : "password"}
               autoComplete={mode === "signup" ? "new-password" : "current-password"}
+              ref={passwordInput}
+              aria-describedby={mode === "signup" ? "clinical-password-hint" : undefined}
+              aria-invalid={mode === "signup" && fieldError === "password" ? true : undefined}
               value={password}
-              onChange={(event) => setPassword(event.target.value)}
+              onChange={(event) => {
+                setPassword(event.target.value);
+                if (fieldError === "password") setFieldError(null);
+              }}
             />
             <button
               type="button"
@@ -458,7 +499,50 @@ export function SupabaseLoginFormClient({
               {showPassword ? <EyeOff size={16} /> : <Eye size={16} />}
             </button>
           </div>
+          {mode === "signup" ? (
+            // One line that is the rule until the form is stopped by it, then the problem.
+            <p
+              id="clinical-password-hint"
+              role={fieldError === "password" ? "alert" : undefined}
+              className={`mt-2 text-[13px] leading-5 ${
+                fieldError === "password" ? "font-medium text-[color:var(--color-danger-text)]" : "text-ink-muted"
+              }`}
+            >
+              {fieldError === "password" ? t.passwordTooShort(PASSWORD_MIN_LENGTH) : t.passwordHint(PASSWORD_MIN_LENGTH)}
+            </p>
+          ) : null}
         </div>
+
+        {mode === "signup" && publicSignup ? (
+          <div>
+            <label className="flex min-h-11 cursor-pointer items-start gap-3 py-2 text-sm leading-6 text-ink">
+              <input
+                ref={acknowledgeInput}
+                type="checkbox"
+                checked={acknowledged}
+                aria-describedby={fieldError === "acknowledge" ? "privacy-acknowledge-error" : undefined}
+                aria-invalid={fieldError === "acknowledge" ? true : undefined}
+                onChange={(event) => {
+                  setAcknowledged(event.target.checked);
+                  if (fieldError === "acknowledge") setFieldError(null);
+                }}
+                className={`mt-0.5 h-5 w-5 shrink-0 rounded ${FOCUS_RING}`}
+              />
+              <span>
+                {t.acknowledge.before}
+                <Link href="/privacy" target="_blank" className="font-semibold text-brand underline underline-offset-4">
+                  {t.acknowledge.link}
+                </Link>
+                {t.acknowledge.after}
+              </span>
+            </label>
+            {fieldError === "acknowledge" ? (
+              <p id="privacy-acknowledge-error" role="alert" className="text-[13px] font-medium leading-5 text-[color:var(--color-danger-text)]">
+                {t.acknowledge.required}
+              </p>
+            ) : null}
+          </div>
+        ) : null}
 
         {/* Primary action */}
         <div className="pt-1">

@@ -1,10 +1,23 @@
 import { defineMessages } from "@/i18n/messages";
+import type { AuthProblem } from "@/lib/supabase-auth-error";
 
 type SupabaseLoginCopy = {
   title: string;
   subtitle: string;
   /** Wording for a deployment anyone can sign up to, where there is no clinic or organization. */
-  open: { title: string; subtitle: string; signIn: string; createAccount: string };
+  open: {
+    title: string;
+    subtitle: string;
+    signIn: string;
+    createAccount: string;
+    status: { signInAccepted: string; signUpConfirmEmail: string; recoverySent: string };
+  };
+  optional: string;
+  passwordHint: (minimum: number) => string;
+  passwordTooShort: (minimum: number) => string;
+  /** The acknowledgement beside the tick box, with the privacy page's link in the middle. */
+  acknowledge: { before: string; link: string; after: string; required: string };
+  problems: Record<Exclude<AuthProblem, "other" | "weakPassword">, string>;
   emailHint: string;
   roles: { slp: string; admin: string; parent: string };
   modes: { signIn: string; signUp: string; invitationOnly: string };
@@ -73,6 +86,29 @@ export const supabaseLoginMessages = defineMessages<SupabaseLoginCopy>({
       subtitle: "Open your cases, transcripts and reports, or create an account to begin.",
       signIn: "Sign in",
       createAccount: "Create account",
+      status: {
+        signInAccepted: "Signed in. Opening your workspace…",
+        signUpConfirmEmail: "Check your inbox: open the message we sent to confirm your email, then sign in.",
+        recoverySent: "If this email has an account, a recovery message is on its way.",
+      },
+    },
+    optional: "optional",
+    passwordHint: (minimum) => `At least ${minimum} characters. A phrase of several words works well; symbols and capitals are not required.`,
+    passwordTooShort: (minimum) => `Use at least ${minimum} characters.`,
+    acknowledge: {
+      before: "I have read ",
+      link: "how PasaScope stores and uses data",
+      after: ".",
+      required: "Tick the box to confirm you have read it.",
+    },
+    problems: {
+      exists: "An account could not be created with this email. If it is yours, sign in or send a recovery email.",
+      invalidCredentials: "The email or password is not right.",
+      emailNotConfirmed: "Confirm your email first: open the message we sent and follow its link.",
+      tooMany: "Too many attempts. Wait a few minutes and try again.",
+      invalidEmail: "That email address is not valid.",
+      signUpClosed: "New accounts are not open right now.",
+      offline: "The sign-in service could not be reached. Check your connection and try again.",
     },
     emailHint: "Clinic email",
     roles: { slp: "Clinician / SLP", admin: "Clinic Admin", parent: "Parent" },
@@ -148,6 +184,29 @@ export const supabaseLoginMessages = defineMessages<SupabaseLoginCopy>({
       subtitle: "เปิดเคส บทถอดเสียง และรายงานของคุณ หรือสร้างบัญชีเพื่อเริ่มใช้งาน",
       signIn: "ลงชื่อเข้าใช้",
       createAccount: "สร้างบัญชี",
+      status: {
+        signInAccepted: "ลงชื่อเข้าใช้แล้ว กำลังเปิดพื้นที่ทำงาน…",
+        signUpConfirmEmail: "เปิดกล่องอีเมล แล้วกดลิงก์ในข้อความที่เราส่งไปเพื่อยืนยันอีเมล จากนั้นลงชื่อเข้าใช้",
+        recoverySent: "ถ้าอีเมลนี้มีบัญชีอยู่ เราได้ส่งข้อความกู้คืนรหัสผ่านไปแล้ว",
+      },
+    },
+    optional: "ไม่บังคับ",
+    passwordHint: (minimum) => `อย่างน้อย ${minimum} ตัวอักษร ใช้วลีหลายคำได้ ไม่บังคับสัญลักษณ์หรือตัวพิมพ์ใหญ่`,
+    passwordTooShort: (minimum) => `ใช้อย่างน้อย ${minimum} ตัวอักษร`,
+    acknowledge: {
+      before: "ฉันอ่าน",
+      link: "วิธีที่ PasaScope เก็บและใช้ข้อมูล",
+      after: "แล้ว",
+      required: "ติ๊กช่องนี้เพื่อยืนยันว่าอ่านแล้ว",
+    },
+    problems: {
+      exists: "สร้างบัญชีด้วยอีเมลนี้ไม่ได้ ถ้าเป็นอีเมลของคุณ ให้ลงชื่อเข้าใช้หรือส่งอีเมลกู้คืนรหัสผ่าน",
+      invalidCredentials: "อีเมลหรือรหัสผ่านไม่ถูกต้อง",
+      emailNotConfirmed: "ยืนยันอีเมลก่อน โดยเปิดข้อความที่เราส่งไปแล้วกดลิงก์ในนั้น",
+      tooMany: "ลองหลายครั้งเกินไป รอสักครู่แล้วลองใหม่",
+      invalidEmail: "อีเมลนี้ไม่ถูกต้อง",
+      signUpClosed: "ขณะนี้ยังไม่เปิดรับบัญชีใหม่",
+      offline: "ติดต่อระบบลงชื่อเข้าใช้ไม่ได้ ตรวจการเชื่อมต่อแล้วลองอีกครั้ง",
     },
     emailHint: "อีเมลของคลินิก",
     roles: { slp: "นักบำบัด / นักแก้ไขการพูด", admin: "ผู้ดูแลคลินิก", parent: "ผู้ปกครอง" },
