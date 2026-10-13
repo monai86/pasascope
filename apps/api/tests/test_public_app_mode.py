@@ -11,12 +11,10 @@ from fastapi import HTTPException
 from fastapi.testclient import TestClient
 
 from app.api.v1.dependencies import get_repository
-from app.api.v1.routes import features as features_route
 from app.auth.supabase_auth import authenticate_supabase_bearer
 from app.core.config import Settings, get_settings
 from app.main import app
 from app.repositories.mock_repository import MockRepository
-from app.services import feature_service, report_service
 
 SECRET = "test-secret-with-at-least-thirty-two-bytes"
 ISSUER = "https://example.supabase.co/auth/v1"
@@ -90,14 +88,6 @@ def test_public_signup_cannot_be_combined_with_required_mfa_or_invitation():
         get_settings().model_copy(update={"public_signup": True, "supabase_require_mfa": True}).validate_runtime_security()
 
 
-def test_review_gates_must_be_a_known_value():
-    with pytest.raises(ValueError):
-        get_settings().model_copy(update={"review_gates": "sometimes"}).validate_runtime_security()
-
-
-# --- personal workspaces are isolated, and the open workflow runs end to end -------------
-
-
 def _headers(user_id: str) -> dict[str, str]:
     # Mock auth with the organization a public sign-up principal would get.
     return {"x-mock-user-id": user_id, "x-mock-role": "therapist", "x-organization-id": f"personal_{user_id}"}
@@ -109,13 +99,6 @@ def client():
     app.dependency_overrides[get_repository] = lambda: repo
     yield TestClient(app)
     app.dependency_overrides.clear()
-
-
-@pytest.fixture()
-def open_gates(monkeypatch):
-    opened = get_settings().model_copy(update={"review_gates": "open"})
-    for module in (features_route, feature_service, report_service):
-        monkeypatch.setattr(module, "get_settings", lambda: opened)
 
 
 def _case_with_transcript(client: TestClient, headers: dict[str, str]) -> dict:
@@ -143,16 +126,7 @@ def test_one_users_case_is_not_visible_to_another_user(client):
     assert mine["case"]["case_id"] not in [item["case_id"] for item in listed]
 
 
-def test_strict_gates_still_block_analysis_without_attestation(client):
-    headers = _headers("user-a")
-    record = _case_with_transcript(client, headers)
-
-    response = client.post(f"/api/v1/transcripts/{record['transcript']['transcript_id']}/extract-features", headers=headers, json={})
-
-    assert response.status_code == 400
-
-
-def test_open_gates_analyse_and_export_without_attestation_or_sign_off(client, open_gates):
+def test_analysis_and_export_need_no_typed_attestation_or_sign_off(client):
     headers = _headers("user-a")
     record = _case_with_transcript(client, headers)
     transcript_id = record["transcript"]["transcript_id"]
@@ -172,21 +146,6 @@ def test_open_gates_analyse_and_export_without_attestation_or_sign_off(client, o
     exported = client.get(f"/api/v1/reports/{report.json()['report_id']}/export?format=markdown", headers=headers)
     assert exported.status_code == 200, exported.text
     assert exported.json()["content"].strip()
-
-
-def test_strict_gates_still_block_export_of_an_unsigned_report(client, open_gates, monkeypatch):
-    headers = _headers("user-a")
-    record = _case_with_transcript(client, headers)
-    client.post(f"/api/v1/transcripts/{record['transcript']['transcript_id']}/extract-features", headers=headers, json={})
-    report = client.post(f"/api/v1/sessions/{record['session']['session_id']}/reports/draft", headers=headers, json={}).json()
-
-    monkeypatch.setattr(report_service, "get_settings", lambda: get_settings().model_copy(update={"review_gates": "strict"}))
-    response = client.get(f"/api/v1/reports/{report['report_id']}/export?format=markdown", headers=headers)
-
-    assert response.status_code == 400
-
-
-# --- recordings survive a wiped disk when a backup target is configured -----------------
 
 
 class _FakeBucket:

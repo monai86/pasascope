@@ -2,7 +2,6 @@ from fastapi import APIRouter, Depends
 
 from app.auth.authorization import assert_clinical_mutation_allowed, require_session, require_transcript
 from app.api.v1.dependencies import get_repository
-from app.core.config import get_settings
 from app.core.errors import bad_request, not_found
 from app.core.security import CurrentUser, get_current_user
 from app.repositories.mock_repository import MockRepository
@@ -29,9 +28,9 @@ def extract(
     assert_clinical_mutation_allowed(user)
     try:
         ensure_transcript_consent_active(repo, transcript_id)
-        if get_settings().review_gates_open and not repo.transcripts[transcript_id].therapist_attested:
-            # With review gates open, analysing a transcript is the user's
-            # acceptance of it. Record that as an attestation, marked automatic.
+        if not repo.transcripts[transcript_id].therapist_attested:
+            # Analysing a transcript is the user's acceptance of it. Record
+            # that as an attestation, marked automatic.
             transcript_service.attest(
                 repo,
                 transcript_id,

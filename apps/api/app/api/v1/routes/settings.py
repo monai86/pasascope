@@ -35,7 +35,8 @@ def settings():
         "access_model": {
             "invitation_only": config.supabase_require_invitation,
             "public_signup": config.public_signup,
-            "review_gates": config.review_gates,
+            # Kept for web builds that read it: there is one way of working now.
+            "review_gates": "open",
             "required_app_aal": "aal2" if config.supabase_require_mfa else "aal1",
             "active_organization_session": "explicit_selection_when_ambiguous",
             "production_mock_mode": "forbidden" if not config.mock_mode else "local_only",

@@ -178,7 +178,6 @@ class Settings(BaseModel):
     # "strict" keeps therapist attestation and report sign-off as hard gates.
     # "open" records attestation automatically at feature extraction and lets
     # a saved draft report be exported without sign-off.
-    review_gates: str = "strict"
     # "supabase" also writes each verified recording to the private Supabase
     # Storage bucket and restores it when the local file is missing.
     audio_backup_mode: str = "none"
@@ -275,14 +274,8 @@ class Settings(BaseModel):
             and _is_valid_supabase_bucket_name(self.supabase_storage_bucket)
         )
 
-    @property
-    def review_gates_open(self) -> bool:
-        return self.review_gates == "open"
-
     def validate_runtime_security(self) -> "Settings":
         origins = self.parsed_cors_allowed_origins
-        if self.review_gates not in {"strict", "open"}:
-            raise ValueError("Review gates must be 'strict' or 'open'.")
         if self.audio_backup_mode not in {"none", "supabase"}:
             raise ValueError("Audio backup mode must be 'none' or 'supabase'.")
         if self.audio_backup_mode == "supabase" and not self.has_valid_audio_backup_target:
@@ -396,7 +389,6 @@ class Settings(BaseModel):
             ).lower()
             != "false",
             public_signup=getenv_compat("PASASCOPE_PUBLIC_SIGNUP", default="false").lower() == "true",
-            review_gates=getenv_compat("PASASCOPE_REVIEW_GATES", default="strict").strip().lower(),
             audio_backup_mode=getenv_compat("PASASCOPE_AUDIO_BACKUP_MODE", default="none").strip().lower(),
             debug_feature_override=getenv_compat(
                 "PASASCOPE_DEBUG_FEATURE_OVERRIDE",

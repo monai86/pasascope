@@ -554,8 +554,6 @@ def export_report(repo: MockRepository, report_id: str, export_format: str) -> E
     requested = export_format.lower()
     if report.status == ReviewStatus.stale:
         raise ValueError("Report export is blocked because this report is stale; regenerate it from the current transcript.")
-    if report.status != ReviewStatus.signed_off and not get_settings().review_gates_open:
-        raise ValueError("Report export is blocked until therapist sign-off is complete.")
     if requested == "html":
         return ExportResponse(
             report_id=report_id,

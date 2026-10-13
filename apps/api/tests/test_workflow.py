@@ -358,9 +358,6 @@ def test_case_session_transcript_feature_report_workflow():
     assert transcript_response.status_code == 200
     transcript_id = transcript_response.json()["transcript_id"]
 
-    blocked = client.post(f"/api/v1/transcripts/{transcript_id}/extract-features", json={})
-    assert blocked.status_code == 400
-
     qa_response = client.post(f"/api/v1/transcripts/{transcript_id}/qa")
     assert qa_response.status_code == 200
     assert qa_response.json()["overall_status"] in {"PASS", "WARNING"}
@@ -1436,7 +1433,7 @@ def test_json_repository_persists_full_workflow_across_repository_restart(tmp_pa
     get_repository_singleton.cache_clear()
 
 
-def test_audio_process_creates_unreviewed_asr_draft_and_blocks_features():
+def test_audio_process_creates_unreviewed_asr_draft_that_analysis_accepts():
     get_job_queue().clear()
     case_id = client.post(
         "/api/v1/cases",
@@ -1492,8 +1489,12 @@ def test_audio_process_creates_unreviewed_asr_draft_and_blocks_features():
     assert transcript["therapist_attested"] is False
     assert any(item["speaker"] == "UNK" for item in transcript["utterances"])
 
-    blocked = client.post(f"/api/v1/transcripts/{transcript_id}/extract-features", json={})
-    assert blocked.status_code == 400
+    # Analysing the draft is the therapist accepting it: that is recorded as an
+    # attestation marked automatic, never as one the therapist typed.
+    analysed = client.post(f"/api/v1/transcripts/{transcript_id}/extract-features", json={})
+    assert analysed.status_code == 200
+    accepted = client.get(f"/api/v1/sessions/{session_id}/transcript").json()
+    assert accepted["therapist_attested"] is True
 
 
 def test_session_status_reports_the_latest_transcription_job_and_nothing_about_its_content():
@@ -2089,7 +2090,7 @@ def test_privacy_operation_requests_are_case_visible_and_org_admin_managed():
     assert "reason" not in patched.json()
 
 
-def test_report_export_requires_signoff_and_supports_formats():
+def test_report_export_works_for_a_draft_and_supports_formats():
     case_id = client.post(
         "/api/v1/cases",
         json={"child_code": "C-EXPORT", "age_months": 57, "language": "English", "consent_status": "granted"},
@@ -2120,8 +2121,9 @@ def test_report_export_requires_signoff_and_supports_formats():
     client.post(f"/api/v1/sessions/{session_id}/ai-review")
     report_id = client.post(f"/api/v1/sessions/{session_id}/reports/draft", json={}).json()["report_id"]
 
-    blocked = client.get(f"/api/v1/reports/{report_id}/export?format=markdown")
-    assert blocked.status_code == 400
+    # A saved draft can be exported; signing it off is still recorded when done.
+    draft_export = client.get(f"/api/v1/reports/{report_id}/export?format=markdown")
+    assert draft_export.status_code == 200
 
     signoff = client.post(f"/api/v1/reports/{report_id}/sign-off", json={"signed_by": "Demo Therapist"})
     assert signoff.status_code == 200
