@@ -163,4 +163,30 @@ describe("SupabaseLoginFormClient", () => {
       )),
     ).toBeInTheDocument();
   });
+
+  it("words the form for a clinic when access is by invitation", () => {
+    render(<SupabaseLoginFormClient runtimeSettings={runtimeSettings} />);
+
+    expect(screen.getByRole("heading", { name: "Sign in to the clinic workspace" })).toBeInTheDocument();
+    expect(screen.getByText("Clinic email")).toBeInTheDocument();
+    expect(screen.getByText("Invitation-only")).toBeInTheDocument();
+  });
+
+  it("drops the clinic wording where anyone can sign up", () => {
+    const open: RuntimeSettings = {
+      ...runtimeSettings,
+      access_model: { ...runtimeSettings.access_model, invitation_only: false, public_signup: true, review_gates: "open" },
+    } as RuntimeSettings;
+    render(<SupabaseLoginFormClient runtimeSettings={open} />);
+
+    expect(screen.getByRole("heading", { name: "Sign in to PasaScope" })).toBeInTheDocument();
+    expect(screen.queryByText(/\bclinic\b/i)).toBeNull();
+    expect(screen.queryByText("Invitation-only")).toBeNull();
+
+    // One of the two is chosen, and choosing the other asks for a display name.
+    expect(screen.getByRole("button", { name: "Sign in", pressed: true })).toBeInTheDocument();
+    fireEvent.click(screen.getByRole("button", { name: "Create account", pressed: false }));
+    expect(screen.getByRole("button", { name: "Create account", pressed: true })).toBeInTheDocument();
+    expect(screen.getByLabelText("Display name")).toBeInTheDocument();
+  });
 });

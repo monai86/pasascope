@@ -37,6 +37,12 @@ function resolvePostLoginRoute(role: unknown): string {
   return "/dashboard";
 }
 
+const FOCUS_RING = "focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-[color:var(--color-focus-ring)]";
+// 16px text keeps iOS from zooming the page when a field takes focus.
+const FIELD =
+  "min-h-12 w-full rounded-control border border-chat-line-strong bg-surface py-2 text-base text-ink outline-none transition placeholder:text-ink-subtle focus-visible:ring-4 focus-visible:ring-[color:var(--color-focus-ring)] motion-reduce:transition-none";
+const PRIMARY = `group inline-flex min-h-[52px] w-full items-center justify-center rounded-full bg-action px-6 font-semibold text-white shadow-chat-action transition hover:bg-action-hover disabled:cursor-not-allowed disabled:bg-chat-line disabled:text-ink-subtle disabled:shadow-none motion-reduce:transition-none ${FOCUS_RING}`;
+
 export const ACCOUNT_NOT_PROVISIONED_MESSAGE =
   "บัญชีนี้ยังไม่ได้รับสิทธิ์เข้าองค์กรใด กรุณาติดต่อผู้ดูแลองค์กรเพื่อรับคำเชิญ · This account has not been added to an organization yet. Ask your organization admin for an invitation.";
 
@@ -297,32 +303,17 @@ export function SupabaseLoginFormClient({
         : t.configInvalid;
 
   return (
-    <div className="rounded-3xl border border-line bg-white p-6 sm:p-8 lg:p-9 shadow-xl transition-all">
-      {/* Header Badge & Security Status */}
-      <div className="flex items-center justify-between pb-3 mb-4 border-b border-line">
-        <div className="flex items-center gap-2">
-          <span className="relative flex h-2 w-2">
-            <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-tint opacity-75"></span>
-            <span className="relative inline-flex rounded-full h-2 w-2 bg-brand"></span>
-          </span>
-          <h2 className="text-xs font-bold uppercase tracking-wider text-[color:var(--color-success-text)]">
-            {t.eyebrow}
-          </h2>
-          <span className="text-xs text-ink-subtle font-medium hidden sm:inline">
-            • {t.eyebrowDetail}
-          </span>
-        </div>
-      </div>
-
-      {/* Main Title & Subtitle */}
-      <div className="mb-5">
-        <h1 className="text-2xl sm:text-[1.7rem] font-extrabold tracking-tight text-ink leading-snug">
-          {t.title}
-        </h1>
-        <p className="mt-1.5 text-xs sm:text-sm text-ink-muted leading-relaxed">
-          {t.subtitle}
-        </p>
-      </div>
+    <div className="rounded-panel bg-surface p-6 shadow-chat-card sm:p-8">
+      <p className="text-[13px] font-medium text-ink-subtle">
+        {t.eyebrow}
+        {publicSignup ? null : <span className="hidden sm:inline"> · {t.eyebrowDetail}</span>}
+      </p>
+      <h2 className="mt-1.5 font-display text-2xl font-semibold leading-snug text-ink sm:text-[1.7rem]">
+        {publicSignup ? t.open.title : t.title}
+      </h2>
+      <p className="mb-5 mt-1.5 text-sm leading-relaxed text-ink-muted">
+        {publicSignup ? t.open.subtitle : t.subtitle}
+      </p>
 
       {/* Role tabs apply only where accounts carry an organization role. */}
       {publicSignup ? null : (
@@ -365,42 +356,28 @@ export function SupabaseLoginFormClient({
       </div>
       )}
 
-      {/* Sign-in / Sign-up Mode Selector */}
-      <div className="mb-5 flex items-center justify-between text-xs">
-        <div className="flex items-center gap-2">
-          <button
-            type="button"
-            onClick={() => {
-              setMode("signin");
-              setErrorMessage("");
-              setStatusMessage("");
-            }}
-            className={`font-semibold pb-1 border-b-2 transition ${
-              mode === "signin"
-                ? "border-brand text-ink"
-                : "border-transparent text-ink-subtle hover:text-ink-muted"
-            }`}
-          >
-            {t.modes.signIn}
-          </button>
-          <span className="text-line-strong">|</span>
-          <button
-            type="button"
-            onClick={() => {
-              setMode("signup");
-              setErrorMessage("");
-              setStatusMessage("");
-            }}
-            className={`font-semibold pb-1 border-b-2 transition ${
-              mode === "signup"
-                ? "border-brand text-ink"
-                : "border-transparent text-ink-subtle hover:text-ink-muted"
-            }`}
-          >
-            {t.modes.signUp}
-          </button>
+      {/* Sign in or create an account */}
+      <div className="mb-5 flex flex-wrap items-center justify-between gap-2">
+        <div className="inline-flex rounded-full bg-chat-frame p-1">
+          {(["signin", "signup"] as const).map((option) => (
+            <button
+              key={option}
+              type="button"
+              aria-pressed={mode === option}
+              onClick={() => {
+                setMode(option);
+                setErrorMessage("");
+                setStatusMessage("");
+              }}
+              className={`min-h-11 rounded-full px-5 text-sm font-semibold transition motion-reduce:transition-none ${FOCUS_RING} ${
+                mode === option ? "bg-surface text-ink shadow-chat-card" : "text-ink-subtle hover:text-ink"
+              }`}
+            >
+              {option === "signin" ? t.modes.signIn : t.modes.signUp}
+            </button>
+          ))}
         </div>
-        {publicSignup ? null : <span className="text-xs text-ink-subtle font-medium">{t.modes.invitationOnly}</span>}
+        {publicSignup ? null : <span className="text-xs font-medium text-ink-subtle">{t.modes.invitationOnly}</span>}
       </div>
 
       {/* Form */}
@@ -410,12 +387,12 @@ export function SupabaseLoginFormClient({
         className="space-y-4"
       >
         {mode === "signup" && (
-          <label className="block text-xs font-bold uppercase tracking-wider text-ink">
+          <label className="block text-sm font-medium text-ink">
             <span className="block mb-1.5">
               {t.displayName}
             </span>
             <input
-              className="min-h-11 w-full rounded-xl border border-line bg-surface-soft px-3.5 py-2 text-sm text-ink placeholder:text-ink-subtle focus:bg-white focus:border-brand focus:ring-2 focus:ring-[color:var(--color-focus-ring)] outline-none transition"
+              className={`${FIELD} px-4`}
               type="text"
               autoComplete="name"
               placeholder={t.displayNamePlaceholder}
@@ -428,18 +405,16 @@ export function SupabaseLoginFormClient({
         {/* Email Field with exact accessible name "Email" for test assertions */}
         <div>
           <div className="flex items-center justify-between mb-1.5">
-            <label htmlFor="clinical-email-input" className="block text-xs font-bold uppercase tracking-wider text-ink">
+            <label htmlFor="clinical-email-input" className="block text-sm font-medium text-ink">
               {t.email}
             </label>
-            <span className="text-xs font-normal text-ink-subtle normal-case">
-              Clinic Email or SLP License ID / อีเมลหรือเลขที่ใบอนุญาต
-            </span>
+            {publicSignup ? null : <span className="text-xs text-ink-subtle">{t.emailHint}</span>}
           </div>
           <div className="relative">
-            <Mail className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-ink-subtle pointer-events-none" />
+            <Mail className="pointer-events-none absolute left-4 top-1/2 h-4 w-4 -translate-y-1/2 text-ink-subtle" />
             <input
               id="clinical-email-input"
-              className="min-h-11 w-full rounded-xl border border-line bg-surface-soft pl-10 pr-3.5 py-2 text-sm text-ink placeholder:text-ink-subtle focus:bg-white focus:border-brand focus:ring-2 focus:ring-[color:var(--color-focus-ring)] outline-none transition font-sans"
+              className={`${FIELD} pl-11 pr-4`}
               type="email"
               inputMode="email"
               autoComplete="username"
@@ -453,23 +428,23 @@ export function SupabaseLoginFormClient({
         {/* Password Field with exact accessible name "Password" for test assertions */}
         <div>
           <div className="flex items-center justify-between mb-1.5">
-            <label htmlFor="clinical-password-input" className="block text-xs font-bold uppercase tracking-wider text-ink">
+            <label htmlFor="clinical-password-input" className="block text-sm font-medium text-ink">
               {t.password}
             </label>
             <button
               type="button"
               onClick={handlePasswordRecovery}
               disabled={!browserClient || isSendingRecovery}
-              className="text-xs font-medium text-[color:var(--color-success-text)] hover:text-[color:var(--color-success-text)] hover:underline transition disabled:opacity-50"
+              className="text-xs font-medium text-brand underline-offset-4 transition hover:underline disabled:opacity-50"
             >
               {isSendingRecovery ? t.sendingRecovery : t.sendRecovery}
             </button>
           </div>
           <div className="relative">
-            <LockKeyhole className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-ink-subtle pointer-events-none" />
+            <LockKeyhole className="pointer-events-none absolute left-4 top-1/2 h-4 w-4 -translate-y-1/2 text-ink-subtle" />
             <input
               id="clinical-password-input"
-              className="min-h-11 w-full rounded-xl border border-line bg-surface-soft pl-10 pr-10 py-2 text-sm text-ink placeholder:text-ink-subtle focus:bg-white focus:border-brand focus:ring-2 focus:ring-[color:var(--color-focus-ring)] outline-none transition font-sans"
+              className={`${FIELD} pl-11 pr-12`}
               type={showPassword ? "text" : "password"}
               autoComplete={mode === "signup" ? "new-password" : "current-password"}
               placeholder="••••••••••••••••"
@@ -479,7 +454,7 @@ export function SupabaseLoginFormClient({
             <button
               type="button"
               onClick={() => setShowPassword(!showPassword)}
-              className="absolute right-3.5 top-1/2 -translate-y-1/2 text-ink-subtle hover:text-ink transition"
+              className={`absolute right-1 top-1/2 grid h-11 w-11 -translate-y-1/2 place-items-center rounded-full text-ink-subtle transition hover:text-ink ${FOCUS_RING}`}
               aria-label={showPassword ? t.hidePassword : t.showPassword}
             >
               {showPassword ? <EyeOff size={16} /> : <Eye size={16} />}
@@ -495,13 +470,15 @@ export function SupabaseLoginFormClient({
               disabled={!browserClient || isSubmitting || !email.trim() || !password}
               aria-disabled={!browserClient || isSubmitting || !email.trim() || !password}
               aria-label={buttonAriaLabel}
-              className="group relative inline-flex min-h-12 w-full items-center justify-center rounded-xl bg-brand px-5 py-3 text-sm font-bold text-white shadow-soft transition hover:bg-brand-hover active:scale-[0.99] disabled:cursor-not-allowed disabled:bg-surface-muted disabled:text-ink-muted disabled:shadow-none"
+              className={PRIMARY}
             >
               <span className="flex items-center justify-center gap-2">
                 <span>
                   {isSubmitting
                     ? t.signingIn
-                    : t.signIn}
+                    : publicSignup
+                      ? t.open.signIn
+                      : t.signIn}
                 </span>
                 <ArrowRight size={17} className="transition-transform group-hover:translate-x-1" />
               </span>
@@ -512,13 +489,15 @@ export function SupabaseLoginFormClient({
               disabled={!browserClient || isSubmitting || !email.trim() || !password}
               aria-disabled={!browserClient || isSubmitting || !email.trim() || !password}
               aria-label={isSubmitting ? t.creatingAccount : t.createAccountLabel}
-              className="group relative inline-flex min-h-12 w-full items-center justify-center rounded-xl bg-brand px-5 py-3 text-sm font-bold text-white shadow-lg transition hover:bg-brand-hover active:scale-[0.99] disabled:cursor-not-allowed disabled:bg-surface-muted disabled:text-ink-muted"
+              className={PRIMARY}
             >
               <span className="flex items-center justify-center gap-2">
                 <span>
                   {isSubmitting
                     ? t.creatingAccount
-                    : t.createAccount}
+                    : publicSignup
+                      ? t.open.createAccount
+                      : t.createAccount}
                 </span>
                 <UserPlus size={17} />
               </span>
@@ -543,10 +522,10 @@ export function SupabaseLoginFormClient({
       {/* Divider */}
       <div className="relative my-6 text-center">
         <div className="absolute inset-0 flex items-center" aria-hidden="true">
-          <div className="w-full border-t border-line" />
+          <div className="w-full border-t border-chat-line" />
         </div>
         <div className="relative flex justify-center">
-          <span className="bg-white px-3 text-xs font-semibold uppercase tracking-wider text-ink-subtle">
+          <span className="bg-surface px-3 text-xs font-medium text-ink-subtle">
             {t.orContinueWith}
           </span>
         </div>
@@ -558,7 +537,7 @@ export function SupabaseLoginFormClient({
           type="button"
           onClick={handleGoogleSignIn}
           disabled={isGoogleSubmitting || isSubmitting}
-          className="inline-flex min-h-11 items-center justify-center gap-2.5 rounded-xl border border-line bg-white px-3.5 py-2 text-xs font-semibold text-ink shadow-2xs transition hover:bg-surface-soft hover:border-line-strong disabled:opacity-50"
+          className={`inline-flex min-h-[52px] items-center justify-center gap-2.5 rounded-full border border-action-quiet-border bg-surface px-5 text-sm font-semibold text-ink transition hover:bg-action-quiet-hover disabled:opacity-50 motion-reduce:transition-none ${FOCUS_RING}`}
         >
           <svg className="h-4 w-4 shrink-0" viewBox="0 0 24 24" aria-hidden="true">
             <path
@@ -585,7 +564,7 @@ export function SupabaseLoginFormClient({
       </div>
 
       {publicSignup ? (
-        <div className="mt-4 space-y-2 border-t border-line pt-3 text-xs leading-relaxed text-ink-muted">
+        <div className="mt-5 space-y-2 border-t border-chat-line pt-4 text-[13px] leading-5 text-ink-subtle">
           <p>{t.publicNote.stored}</p>
           <p>{t.publicNote.boundary}</p>
           <p><Link href="/privacy" className="font-semibold text-brand underline">{t.publicNote.privacy}</Link></p>

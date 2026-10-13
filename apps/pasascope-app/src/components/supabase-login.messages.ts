@@ -5,6 +5,9 @@ type SupabaseLoginCopy = {
   eyebrowDetail: string;
   title: string;
   subtitle: string;
+  /** Wording for a deployment anyone can sign up to, where there is no clinic or organization. */
+  open: { title: string; subtitle: string; signIn: string; createAccount: string };
+  emailHint: string;
   roles: { slp: string; admin: string; parent: string };
   modes: { signIn: string; signUp: string; invitationOnly: string };
   formLabel: string;
@@ -69,6 +72,13 @@ export const supabaseLoginMessages = defineMessages<SupabaseLoginCopy>({
     eyebrowDetail: "Clinic workspace",
     title: "Sign in to the clinic workspace",
     subtitle: "Sign in to open cases, session transcripts and reports.",
+    open: {
+      title: "Sign in to PasaScope",
+      subtitle: "Open your cases, transcripts and reports, or create an account to begin.",
+      signIn: "Sign in",
+      createAccount: "Create account",
+    },
+    emailHint: "Clinic email",
     roles: { slp: "Clinician / SLP", admin: "Clinic Admin", parent: "Parent" },
     modes: { signIn: "Sign in", signUp: "Create account", invitationOnly: "Invitation-only" },
     formLabel: "Supabase login form",
@@ -139,6 +149,13 @@ export const supabaseLoginMessages = defineMessages<SupabaseLoginCopy>({
     eyebrowDetail: "พื้นที่ทำงานของคลินิก",
     title: "ลงชื่อเข้าใช้พื้นที่ทำงานของคลินิก",
     subtitle: "ลงชื่อเข้าใช้เพื่อเปิดเคส บทถอดเสียงของเซสชัน และรายงาน",
+    open: {
+      title: "ลงชื่อเข้าใช้ PasaScope",
+      subtitle: "เปิดเคส บทถอดเสียง และรายงานของคุณ หรือสร้างบัญชีเพื่อเริ่มใช้งาน",
+      signIn: "ลงชื่อเข้าใช้",
+      createAccount: "สร้างบัญชี",
+    },
+    emailHint: "อีเมลของคลินิก",
     roles: { slp: "นักบำบัด / นักแก้ไขการพูด", admin: "ผู้ดูแลคลินิก", parent: "ผู้ปกครอง" },
     modes: { signIn: "ลงชื่อเข้าใช้", signUp: "สร้างบัญชี", invitationOnly: "เฉพาะผู้ได้รับเชิญ" },
     formLabel: "แบบฟอร์มลงชื่อเข้าใช้ด้วย Supabase",

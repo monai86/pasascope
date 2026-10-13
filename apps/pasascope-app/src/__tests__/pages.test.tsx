@@ -235,7 +235,7 @@ describe("pasascope pages", () => {
 
     render(<LoginPage />);
 
-    expect(await screen.findByRole("heading", { name: "Secure sign in" })).toBeInTheDocument();
+    expect(await screen.findByRole("heading", { name: "Sign in to the clinic workspace" })).toBeInTheDocument();
     expect(screen.queryByRole("link", { name: "Enter workspace" })).not.toBeInTheDocument();
     expect(screen.getByText("Public signup is off. Only users with an accepted invitation can continue to account access.")).toBeInTheDocument();
     expect(screen.getByText(/After invitation acceptance, TOTP MFA enrollment is mandatory\./)).toBeInTheDocument();
