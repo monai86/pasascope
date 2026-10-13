@@ -26,7 +26,7 @@ const allowedOrigins = [
  */
 export default defineConfig({
   testDir: ".",
-  testMatch: ["e2e/chat-workflow.smoke.spec.ts", "e2e/chat-ui-audit.spec.ts"],
+  testMatch: ["e2e/chat-workflow.smoke.spec.ts", "e2e/chat-ui-audit.spec.ts", "e2e/chat-recording.spec.ts"],
   timeout: 120_000,
   expect: {
     timeout: 10_000,

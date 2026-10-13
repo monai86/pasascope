@@ -33,9 +33,12 @@ test("the retired assistant route redirects to Today", async ({ request }) => {
   expect(response.headers().location).toMatch(/\/today$/);
 });
 
-test("the root route redirects to Today", async ({ request }) => {
+test("the root route is the home screen itself, not a redirect", async ({ request, page }) => {
   const response = await request.get("/", { maxRedirects: 0 });
+  expect(response.status()).toBe(200);
 
-  expect([307, 308]).toContain(response.status());
-  expect(response.headers().location).toMatch(/\/today$/);
+  // This suite's backend enforces review gates, so the home is the Today queue.
+  await page.goto("/");
+  await expect(page).toHaveURL(/\/$/);
+  await expect(page.getByRole("heading", { name: "Today", level: 1 })).toBeVisible();
 });
