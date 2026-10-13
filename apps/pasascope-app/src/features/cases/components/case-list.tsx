@@ -161,20 +161,15 @@ export function CaseList({
         title={t.title}
         description={t.description}
         actions={
-          <>
-            <ActionButton href="/assessments" tone="secondary">
-              {t.startAssessment}
+          canCreateCase ? (
+            <ActionButton
+              type="button"
+              icon={<Plus size={18} aria-hidden="true" />}
+              onClick={() => setShowCreateForm((visible) => !visible)}
+            >
+              {showCreateForm ? t.closeForm : t.createCase}
             </ActionButton>
-            {canCreateCase ? (
-              <ActionButton
-                type="button"
-                icon={<Plus size={18} aria-hidden="true" />}
-                onClick={() => setShowCreateForm((visible) => !visible)}
-              >
-                {showCreateForm ? t.closeForm : t.createCase}
-              </ActionButton>
-            ) : null}
-          </>
+          ) : null
         }
       />
 

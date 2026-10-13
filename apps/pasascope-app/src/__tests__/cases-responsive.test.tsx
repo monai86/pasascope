@@ -139,7 +139,8 @@ describe("responsive Cases workspace", () => {
   it("offers the developmental assessment workflow as a separate therapist entry point", () => {
     render(<CaseList model={{ cases: [cases[0]] }} canFilterByClinician />);
 
-    expect(screen.getByRole("link", { name: "Start developmental assessment" })).toHaveAttribute("href", "/assessments");
+    // The assessment feature is being retired; the Cases page no longer leads to it.
+    expect(screen.queryByRole("link", { name: "Start developmental assessment" })).not.toBeInTheDocument();
   });
 
   it("preselects the consented case when the deep link carries case_id", async () => {

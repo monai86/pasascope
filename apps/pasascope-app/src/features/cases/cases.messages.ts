@@ -28,7 +28,6 @@ type CasesCopy = {
   list: {
     title: string;
     description: string;
-    startAssessment: string;
     closeForm: string;
     createCase: string;
     searchLabel: string;
@@ -188,7 +187,6 @@ export const casesMessages = defineMessages<CasesCopy>({
     list: {
       title: "Cases",
       description: "Find a case and take its next step.",
-      startAssessment: "Start developmental assessment",
       closeForm: "Close form",
       createCase: "Create case",
       searchLabel: "Search cases",
@@ -365,7 +363,6 @@ export const casesMessages = defineMessages<CasesCopy>({
     list: {
       title: "เคส",
       description: "ค้นหาเคส แล้วทำขั้นถัดไปของเคสนั้น",
-      startAssessment: "เริ่มการประเมินพัฒนาการ",
       closeForm: "ปิดแบบฟอร์ม",
       createCase: "สร้างเคส",
       searchLabel: "ค้นหาเคส",
