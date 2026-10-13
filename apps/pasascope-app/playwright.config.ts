@@ -31,6 +31,10 @@ export default defineConfig({
   // The demo and chat-shell specs need servers started differently; each has its own config.
   testIgnore: ["e2e/demo-mode.smoke.spec.ts", "e2e/chat-*.spec.ts"],
   timeout: 120_000,
+  // The suite runs against a dev server, which can reload a page while it
+  // compiles; a test caught by that is tried again in CI and reported as
+  // flaky when it then passes, apart from the ones that fail every time.
+  retries: process.env.CI ? 2 : 0,
   expect: {
     timeout: 10_000,
   },
