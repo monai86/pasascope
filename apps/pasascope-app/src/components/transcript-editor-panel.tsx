@@ -2,7 +2,7 @@
 
 import { speakerBulkMessages } from "@/components/transcript-speaker-bulk.messages";
 import { useMessages } from "@/i18n/locale-provider";
-import { useCallback, useMemo, useRef, useState } from "react";
+import { useCallback, useMemo, useRef, useState, type KeyboardEvent } from "react";
 import { FileCode, ListFilter, Plus, Table } from "lucide-react";
 
 import { REVIEW_REQUIRED_LABEL, TRANSCRIPT_REVIEW_REQUIRED_LABEL } from "@/lib/clinical-safety-copy";
@@ -10,10 +10,11 @@ import { REVIEW_REQUIRED_LABEL, TRANSCRIPT_REVIEW_REQUIRED_LABEL } from "@/lib/c
 import {
   buildWaveformHeights,
   createLineId,
-  findSplitPoint,
   getQaBlockedReason,
+  hasNoSpeaker,
   lineMatchesFilter,
-  midpointTimestamp,
+  listKeyAction,
+  splitLineAt,
   transcriptFilters,
   type TranscriptFilter,
 } from "@/components/transcript-editor-support";
@@ -38,10 +39,6 @@ type TranscriptEditorPanelProps = {
   backendUnavailable?: boolean;
   audioUrl?: string;
 };
-
-function hasNoSpeaker(line: TranscriptLine): boolean {
-  return !line.speaker.trim() || line.speaker === "UNK";
-}
 
 export function TranscriptEditorPanel({
   lines,
@@ -72,12 +69,19 @@ export function TranscriptEditorPanel({
   const lineRowRefs = useRef(new Map<string, HTMLElement>());
   const linesRef = useRef(lines);
   const onChangeRef = useRef(onChange);
+  // Where playback of a single line ends; cleared when the therapist takes over the player.
+  const stopAtMsRef = useRef<number | null>(null);
+  const lineSeekRef = useRef(false);
   linesRef.current = lines;
   onChangeRef.current = onChange;
 
   function handleTimeUpdate() {
     if (!audioRef.current) return;
     const timeMs = Math.round(audioRef.current.currentTime * 1000);
+    if (stopAtMsRef.current !== null && timeMs >= stopAtMsRef.current) {
+      stopAtMsRef.current = null;
+      audioRef.current.pause();
+    }
     const active = lines.find(
       (line) =>
         line.startMs !== undefined &&
@@ -133,29 +137,22 @@ export function TranscriptEditorPanel({
     onChangeRef.current(linesRef.current.filter((_, lineIndex) => lineIndex !== index));
   }, []);
 
-  const splitLine = useCallback((index: number) => {
+  const splitLine = useCallback((index: number, cursor?: number | null) => {
     const currentLines = linesRef.current;
-    const line = currentLines[index];
-    const splitAt = findSplitPoint(line.text);
-    const left = line.text.slice(0, splitAt).trim();
-    const right = line.text.slice(splitAt).trim();
-    const midpoint = midpointTimestamp(line);
+    const [first, second] = splitLineAt(currentLines[index], cursor);
+    onChangeRef.current([...currentLines.slice(0, index), first, second, ...currentLines.slice(index + 1)]);
+    if (cursor != null) setSelectedLineId(second.lineId);
+  }, []);
 
-    onChangeRef.current([
-      ...currentLines.slice(0, index),
-      {
-        ...line,
-        text: left,
-        ...(midpoint === undefined ? {} : { endMs: midpoint })
-      },
-      {
-        ...line,
-        lineId: createLineId(),
-        text: right,
-        ...(midpoint === undefined ? {} : { startMs: midpoint })
-      },
-      ...currentLines.slice(index + 1)
-    ]);
+  // Sets the speaker and moves on to the next line that still has none.
+  const assignSpeaker = useCallback((index: number, speaker: "CHI" | "THER") => {
+    const currentLines = linesRef.current;
+    onChangeRef.current(currentLines.map((line, lineIndex) => lineIndex === index ? { ...line, speaker } : line));
+    const next = currentLines.find((line, lineIndex) => lineIndex > index && hasNoSpeaker(line));
+    if (next) {
+      setSelectedLineId(next.lineId);
+      queueMicrotask(() => lineRowRefs.current.get(next.lineId)?.scrollIntoView?.({ block: "nearest", inline: "nearest" }));
+    }
   }, []);
 
   const mergeLine = useCallback((index: number, direction: "previous" | "next") => {
@@ -228,9 +225,20 @@ export function TranscriptEditorPanel({
   const playLine = useCallback((line: TranscriptLine) => {
     setSelectedLineId(line.lineId);
     if (!audioRef.current || line.startMs === undefined) return;
+    lineSeekRef.current = true;
     audioRef.current.currentTime = line.startMs / 1000;
+    stopAtMsRef.current = line.endMs ?? null;
     void audioRef.current.play();
   }, []);
+
+  function handleListKeyDown(event: KeyboardEvent<HTMLDivElement>) {
+    const action = listKeyAction(event, visibleLines, selectedLineId);
+    if (!action) return;
+    event.preventDefault();
+    if (action.kind === "select") selectLine(action.line.lineId);
+    else if (action.kind === "play") playLine(action.line);
+    else if (action.kind === "speaker" && !busy) assignSpeaker(lineIndexById.get(action.line.lineId) ?? -1, action.speaker);
+  }
 
   return (
     <section
@@ -350,6 +358,10 @@ export function TranscriptEditorPanel({
               src={audioUrl}
               controls
               onTimeUpdate={handleTimeUpdate}
+              onSeeking={() => {
+                if (lineSeekRef.current) lineSeekRef.current = false;
+                else stopAtMsRef.current = null;
+              }}
               className="w-full min-w-0 max-w-md outline-none focus:ring-2 focus:ring-[color:var(--color-focus-ring)]"
               aria-label="Workspace audio playback"
             />
@@ -403,6 +415,12 @@ export function TranscriptEditorPanel({
             <span className="basis-full text-xs">{bulk.hint}</span>
           </div>
         ) : null}
+        {lines.length > 0 ? (
+          <div className="mt-3 grid gap-1 text-xs text-ink-muted">
+            <p>{bulk.splitHint}</p>
+            <p className="hidden md:block">{bulk.shortcuts}</p>
+          </div>
+        ) : null}
 
         <TranscriptLineList
           lines={lines}
@@ -413,6 +431,10 @@ export function TranscriptEditorPanel({
           selectedLineId={selectedLineId}
           openMenuLineId={openMenuLineId}
           audioUrl={audioUrl}
+          busy={busy}
+          copy={bulk}
+          onKeyDown={handleListKeyDown}
+          assignSpeaker={assignSpeaker}
           updateLine={updateLine}
           selectLine={selectLine}
           playLine={playLine}

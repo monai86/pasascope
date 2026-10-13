@@ -1,4 +1,4 @@
-import { memo, type ReactNode } from "react";
+import { memo, type KeyboardEvent, type ReactNode } from "react";
 
 import type { PersistenceStatus, TranscriptLine, TranscriptQaStatus } from "@/lib/workflow";
 
@@ -11,6 +11,8 @@ export type TranscriptRowBoundaryProps = {
   selected: boolean;
   menuOpen: boolean;
   audioLinked: boolean;
+  /** Interface strings of the row; a new object means the language changed. */
+  copy?: unknown;
   children: ReactNode;
 };
 
@@ -25,6 +27,7 @@ export const TranscriptRowBoundary = memo(function TranscriptRowBoundary({ child
   && previous.selected === next.selected
   && previous.menuOpen === next.menuOpen
   && previous.audioLinked === next.audioLinked
+  && previous.copy === next.copy
 ));
 
 export type TranscriptFilter = "all" | "needs_review" | "low_confidence" | "missing_speaker" | "possible_error" | "notes";
@@ -175,6 +178,63 @@ export function findSplitPoint(text: string) {
   if (nextSpace === -1) return previousSpace;
   if (previousSpace === -1) return nextSpace;
   return midpoint - previousSpace <= nextSpace - midpoint ? previousSpace : nextSpace;
+}
+
+type ListKeyAction =
+  | { kind: "select" | "play"; line: TranscriptLine }
+  | { kind: "speaker"; line: TranscriptLine; speaker: "CHI" | "THER" };
+
+/**
+ * What a key pressed on the line list does: arrows choose a line, 1 and 2 set
+ * the speaker of the chosen line, Space plays it. Keys typed into a field or
+ * pressed on a control keep their own meaning.
+ */
+export function listKeyAction(
+  event: KeyboardEvent<HTMLElement>,
+  visibleLines: TranscriptLine[],
+  selectedLineId: string | null,
+): ListKeyAction | null {
+  if (event.metaKey || event.ctrlKey || event.altKey) return null;
+  if ((event.target as HTMLElement).closest("input, textarea, select, button, [role='menu']")) return null;
+  const position = visibleLines.findIndex((line) => line.lineId === selectedLineId);
+  if (event.key === "ArrowDown" || event.key === "ArrowUp") {
+    const target = visibleLines[position + (event.key === "ArrowDown" ? 1 : -1)] ?? visibleLines[Math.max(position, 0)];
+    return target ? { kind: "select", line: target } : null;
+  }
+  const line = visibleLines[position];
+  if (!line) return null;
+  if (event.key === "1" || event.key === "2") return { kind: "speaker", line, speaker: event.key === "1" ? "CHI" : "THER" };
+  return event.key === " " ? { kind: "play", line } : null;
+}
+
+export function hasNoSpeaker(line: TranscriptLine): boolean {
+  return !line.speaker.trim() || line.speaker === "UNK";
+}
+
+/**
+ * Splits a line in two. With a cursor position inside the text the line is cut
+ * there and the time is divided in proportion; otherwise it is cut at the
+ * space nearest the middle. Both halves keep the speaker of the original.
+ */
+export function splitLineAt(line: TranscriptLine, cursor?: number | null): [TranscriptLine, TranscriptLine] {
+  const atCursor = typeof cursor === "number"
+    && line.text.slice(0, cursor).trim().length > 0
+    && line.text.slice(cursor).trim().length > 0;
+  const splitAt = atCursor ? cursor : findSplitPoint(line.text);
+  const boundary = line.startMs === undefined || line.endMs === undefined
+    ? undefined
+    : atCursor
+      ? Math.round(line.startMs + (line.endMs - line.startMs) * (splitAt / line.text.length))
+      : midpointTimestamp(line);
+  return [
+    { ...line, text: line.text.slice(0, splitAt).trim(), ...(boundary === undefined ? {} : { endMs: boundary }) },
+    {
+      ...line,
+      lineId: createLineId(),
+      text: line.text.slice(splitAt).trim(),
+      ...(boundary === undefined ? {} : { startMs: boundary }),
+    },
+  ];
 }
 
 export function midpointTimestamp(line: TranscriptLine) {

@@ -105,6 +105,118 @@ describe("TranscriptEditorPanel", () => {
     ]);
   });
 
+  function renderEditor(editorLines: TranscriptLine[], extra: { audioUrl?: string } = {}) {
+    const onChange = vi.fn();
+    render(
+      <TranscriptEditorPanel
+        lines={editorLines}
+        qaStatus="not_run"
+        qaIssues={[]}
+        attested={false}
+        busy={false}
+        saveStatus="saved"
+        onChange={onChange}
+        onSaveDraft={vi.fn()}
+        onRunQa={vi.fn()}
+        onAttest={vi.fn()}
+        onExport={vi.fn()}
+        {...extra}
+      />
+    );
+    return onChange;
+  }
+
+  const unknownLines: TranscriptLine[] = [
+    { lineId: "u-1", speaker: "UNK", text: "what is this cookies", startMs: 0, endMs: 2000 },
+    { lineId: "u-2", speaker: "THER", text: "good job" },
+    { lineId: "u-3", speaker: "UNK", text: "more" }
+  ];
+
+  it("splits a line at the cursor, divides its time in proportion, and keeps the speaker", () => {
+    const onChange = renderEditor(unknownLines);
+    const text = screen.getByLabelText("Utterance text 1") as HTMLTextAreaElement;
+    text.setSelectionRange(13, 13);
+
+    fireEvent.click(screen.getByRole("button", { name: "More actions for line 1" }));
+    fireEvent.click(screen.getByRole("menuitem", { name: "Split line" }));
+
+    expect(onChange).toHaveBeenLastCalledWith([
+      { lineId: "u-1", speaker: "UNK", text: "what is this", startMs: 0, endMs: 1300 },
+      expect.objectContaining({ speaker: "UNK", text: "cookies", startMs: 1300, endMs: 2000 }),
+      unknownLines[1],
+      unknownLines[2]
+    ]);
+
+    text.setSelectionRange(4, 4);
+    fireEvent.keyDown(text, { key: "Enter", ctrlKey: true });
+    expect(onChange).toHaveBeenLastCalledWith([
+      expect.objectContaining({ text: "what", endMs: 400 }),
+      expect.objectContaining({ text: "is this cookies", startMs: 400 }),
+      unknownLines[1],
+      unknownLines[2]
+    ]);
+  });
+
+  it("sets the speaker of a line with one button and moves to the next line without a speaker", () => {
+    const onChange = renderEditor(unknownLines);
+
+    const child = screen.getByRole("button", { name: "Set line 1 to Child" });
+    expect(child).toHaveAttribute("aria-pressed", "false");
+    expect(screen.getByRole("button", { name: "Set line 2 to Therapist" })).toHaveAttribute("aria-pressed", "true");
+    fireEvent.click(child);
+
+    expect(onChange).toHaveBeenLastCalledWith([
+      { ...unknownLines[0], speaker: "CHI" },
+      unknownLines[1],
+      unknownLines[2]
+    ]);
+    expect(screen.getByRole("option", { name: "Transcript line 3" })).toHaveAttribute("aria-selected", "true");
+  });
+
+  it("assigns speakers and moves between lines from the keyboard, but not while typing", () => {
+    const onChange = renderEditor(unknownLines);
+    const list = screen.getByRole("listbox", { name: "Transcript lines" });
+
+    fireEvent.keyDown(list, { key: "2" });
+    expect(onChange).toHaveBeenLastCalledWith([
+      { ...unknownLines[0], speaker: "THER" },
+      unknownLines[1],
+      unknownLines[2]
+    ]);
+    expect(screen.getByRole("option", { name: "Transcript line 3" })).toHaveAttribute("aria-selected", "true");
+
+    fireEvent.keyDown(list, { key: "ArrowUp" });
+    expect(screen.getByRole("option", { name: "Transcript line 2" })).toHaveAttribute("aria-selected", "true");
+    expect(list).toHaveAttribute("aria-activedescendant", "transcript-line-u-2");
+
+    onChange.mockClear();
+    fireEvent.keyDown(screen.getByLabelText("Utterance text 2"), { key: "1" });
+    expect(onChange).not.toHaveBeenCalled();
+  });
+
+  it("plays one line from its own button and stops at the end of that line", () => {
+    const play = vi.spyOn(HTMLMediaElement.prototype, "play").mockResolvedValue(undefined);
+    const pause = vi.spyOn(HTMLMediaElement.prototype, "pause").mockImplementation(() => undefined);
+    try {
+      renderEditor(unknownLines, { audioUrl: "blob:session-audio" });
+      expect(screen.queryByRole("button", { name: "Play line 2" })).not.toBeInTheDocument();
+
+      fireEvent.click(screen.getByRole("button", { name: "Play line 1" }));
+      const audio = screen.getByLabelText("Workspace audio playback") as HTMLAudioElement;
+      expect(play).toHaveBeenCalledTimes(1);
+
+      audio.currentTime = 1.5;
+      fireEvent.timeUpdate(audio);
+      expect(pause).not.toHaveBeenCalled();
+      audio.currentTime = 2.1;
+      fireEvent.timeUpdate(audio);
+      expect(pause).toHaveBeenCalledTimes(1);
+    } finally {
+      play.mockRestore();
+      pause.mockRestore();
+    }
+  });
+
   it("exposes draft, QA, attestation, and export actions with report gate context", () => {
     const onSaveDraft = vi.fn();
     const onRunQa = vi.fn();

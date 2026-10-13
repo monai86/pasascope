@@ -1,4 +1,4 @@
-import { memo } from "react";
+import { memo, useRef, type KeyboardEventHandler } from "react";
 import { AlertTriangle, GitMerge, GitPullRequest, MoreHorizontal, Play, Trash2 } from "lucide-react";
 
 import {
@@ -9,7 +9,10 @@ import {
   getRowStatus,
   parseTimestampRange,
 } from "@/components/transcript-editor-support";
+import type { speakerBulkMessages } from "@/components/transcript-speaker-bulk.messages";
 import type { TranscriptLine, TranscriptQaStatus } from "@/lib/workflow";
+
+type LineCopy = (typeof speakerBulkMessages)["en"];
 
 type TranscriptLineListProps = {
   lines: TranscriptLine[];
@@ -20,6 +23,10 @@ type TranscriptLineListProps = {
   selectedLineId: string | null;
   openMenuLineId: string | null;
   audioUrl?: string;
+  busy: boolean;
+  copy: LineCopy;
+  onKeyDown: KeyboardEventHandler<HTMLDivElement>;
+  assignSpeaker: (index: number, speaker: "CHI" | "THER") => void;
   updateLine: (index: number, patch: Partial<TranscriptLine>) => void;
   selectLine: (lineId: string) => void;
   playLine: (line: TranscriptLine) => void;
@@ -27,7 +34,7 @@ type TranscriptLineListProps = {
   registerMenuButton: (lineId: string, node: HTMLButtonElement | null) => void;
   toggleLineMenu: (lineId: string) => void;
   closeLineMenu: (lineId: string, restoreFocus?: boolean) => void;
-  splitLine: (index: number) => void;
+  splitLine: (index: number, cursor?: number | null) => void;
   mergeLine: (index: number, direction: "previous" | "next") => void;
   deleteLine: (index: number) => void;
 };
@@ -41,6 +48,10 @@ export function TranscriptLineList({
   selectedLineId,
   openMenuLineId,
   audioUrl,
+  busy,
+  copy,
+  onKeyDown,
+  assignSpeaker,
   updateLine,
   selectLine,
   playLine,
@@ -61,7 +72,14 @@ export function TranscriptLineList({
         <span>QA</span>
         <span>Confidence</span>
       </div>
-      <div className="divide-y divide-line" role="listbox" aria-label="Transcript lines">
+      <div
+        className="divide-y divide-line outline-none focus-visible:ring-4 focus-visible:ring-inset focus-visible:ring-[color:var(--color-focus-ring)]"
+        role="listbox"
+        aria-label="Transcript lines"
+        aria-activedescendant={selectedLineId && visibleLines.some((line) => line.lineId === selectedLineId) ? rowId(selectedLineId) : undefined}
+        tabIndex={0}
+        onKeyDown={onKeyDown}
+      >
         {visibleLines.map((line) => {
           const index = lineIndexById.get(line.lineId) ?? -1;
           return (
@@ -75,6 +93,9 @@ export function TranscriptLineList({
               selected={line.lineId === selectedLineId}
               menuOpen={openMenuLineId === line.lineId}
               audioLinked={Boolean(audioUrl)}
+              busy={busy}
+              copy={copy}
+              assignSpeaker={assignSpeaker}
               updateLine={updateLine}
               selectLine={selectLine}
               playLine={playLine}
@@ -102,6 +123,9 @@ type TranscriptLineRowProps = {
   selected: boolean;
   menuOpen: boolean;
   audioLinked: boolean;
+  busy: boolean;
+  copy: LineCopy;
+  assignSpeaker: (index: number, speaker: "CHI" | "THER") => void;
   updateLine: (index: number, patch: Partial<TranscriptLine>) => void;
   selectLine: (lineId: string) => void;
   playLine: (line: TranscriptLine) => void;
@@ -109,7 +133,7 @@ type TranscriptLineRowProps = {
   registerMenuButton: (lineId: string, node: HTMLButtonElement | null) => void;
   toggleLineMenu: (lineId: string) => void;
   closeLineMenu: (lineId: string, restoreFocus?: boolean) => void;
-  splitLine: (index: number) => void;
+  splitLine: (index: number, cursor?: number | null) => void;
   mergeLine: (index: number, direction: "previous" | "next") => void;
   deleteLine: (index: number) => void;
 };
@@ -123,6 +147,9 @@ const TranscriptLineRow = memo(function TranscriptLineRow({
   selected,
   menuOpen,
   audioLinked,
+  busy,
+  copy,
+  assignSpeaker,
   updateLine,
   selectLine,
   playLine,
@@ -134,6 +161,7 @@ const TranscriptLineRow = memo(function TranscriptLineRow({
   mergeLine,
   deleteLine,
 }: TranscriptLineRowProps) {
+  const textRef = useRef<HTMLTextAreaElement>(null);
   const rowStatus = getRowStatus(line, qaStatus);
   const confidence = getLineConfidence(line);
   const hasTiming = line.startMs !== undefined && line.endMs !== undefined;
@@ -148,8 +176,10 @@ const TranscriptLineRow = memo(function TranscriptLineRow({
       selected={selected}
       menuOpen={menuOpen}
       audioLinked={audioLinked}
+      copy={copy}
     >
       <article
+        id={rowId(line.lineId)}
         ref={(node) => registerLineRow(line.lineId, node)}
         role="option"
         aria-label={`Transcript line ${index + 1}`}
@@ -189,9 +219,16 @@ const TranscriptLineRow = memo(function TranscriptLineRow({
           <label className="grid gap-1 text-xs font-semibold uppercase tracking-wide text-ink-muted">
             <span className="min-[1380px]:sr-only">Utterance</span>
             <textarea
+              ref={textRef}
               value={line.text}
               onChange={(event) => updateLine(index, { text: event.target.value })}
               onFocus={() => selectLine(line.lineId)}
+              onKeyDown={(event) => {
+                if (event.key === "Enter" && (event.ctrlKey || event.metaKey) && line.text.trim()) {
+                  event.preventDefault();
+                  splitLine(index, event.currentTarget.selectionStart);
+                }
+              }}
               aria-label={`Utterance text ${index + 1}`}
               className="min-h-14 w-full min-w-0 resize-y rounded-card border border-line bg-surface px-3 py-2 text-sm font-normal normal-case leading-6 tracking-normal text-ink outline-none focus:ring-2 focus:ring-brand"
             />
@@ -207,6 +244,39 @@ const TranscriptLineRow = memo(function TranscriptLineRow({
             </span>
           </div>
           <div className="col-span-2 flex flex-wrap gap-2 md:col-span-1 min-[1380px]:col-span-3 min-[1380px]:col-start-3 min-[1380px]:justify-start">
+            {hasTiming && audioLinked ? (
+              <button
+                type="button"
+                aria-label={copy.playLine(index + 1)}
+                onClick={(event) => {
+                  event.stopPropagation();
+                  playLine(line);
+                }}
+                className={rowButtonClass}
+              >
+                <Play size={15} fill="currentColor" aria-hidden="true" />
+              </button>
+            ) : null}
+            {quickSpeakers.map((speaker) => {
+              const label = speaker === "CHI" ? copy.childShort : copy.therapistShort;
+              const chosen = line.speaker === speaker;
+              return (
+                <button
+                  key={speaker}
+                  type="button"
+                  aria-label={copy.setSpeaker(index + 1, label)}
+                  aria-pressed={chosen}
+                  disabled={busy}
+                  onClick={(event) => {
+                    event.stopPropagation();
+                    assignSpeaker(index, speaker);
+                  }}
+                  className={`${rowButtonShape} border px-3 text-sm font-semibold disabled:opacity-60 ${chosen ? "border-brand bg-brand-soft text-brand-strong" : "border-line bg-surface text-ink"}`}
+                >
+                  {label}
+                </button>
+              );
+            })}
             <div className="relative">
               <button
                 ref={(node) => registerMenuButton(line.lineId, node)}
@@ -240,7 +310,7 @@ const TranscriptLineRow = memo(function TranscriptLineRow({
                       <Play size={15} fill="currentColor" aria-hidden="true" />
                     </LineMenuItem>
                   ) : null}
-                  <LineMenuItem label="Split line" onClick={() => { splitLine(index); closeLineMenu(line.lineId); }} disabled={!line.text.trim()} autoFocus={!hasTiming || !audioLinked}>
+                  <LineMenuItem label="Split line" onClick={() => { splitLine(index, textRef.current?.selectionStart); closeLineMenu(line.lineId); }} disabled={!line.text.trim()} autoFocus={!hasTiming || !audioLinked}>
                     <GitPullRequest size={15} aria-hidden="true" />
                   </LineMenuItem>
                   <LineMenuItem label="Merge with previous" onClick={() => { mergeLine(index, "previous"); closeLineMenu(line.lineId); }} disabled={index === 0}>
@@ -266,3 +336,10 @@ const TranscriptLineRow = memo(function TranscriptLineRow({
 });
 
 const speakers = ["CHI", "THER", "PAR", "INV", "MOT", "FAT", "UNK"];
+const quickSpeakers = ["CHI", "THER"] as const;
+const rowButtonShape = "inline-flex min-h-11 min-w-11 items-center justify-center rounded-lg";
+const rowButtonClass = `${rowButtonShape} border border-line bg-surface text-ink`;
+
+function rowId(lineId: string) {
+  return `transcript-line-${lineId}`;
+}

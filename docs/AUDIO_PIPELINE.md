@@ -270,6 +270,30 @@ reason, age-aware F0 threshold, and tunable config. Use this before running a
 real audio job so speaker-label quality issues can be separated from transcript
 review and benchmark issues.
 
+## Speaker separation on the hosted deployment (tried 2026-10-13, not adopted)
+
+The public deployment transcribes with a hosted Whisper service on a 512 MB
+host, and every line comes back as `UNK`. Separating speakers there for free
+was tried on one 3.5-minute English recording of a therapist and a young
+child, with no reference labels (results were judged from the wording):
+
+| Approach | Result |
+|---|---|
+| ECAPA embedding per Whisper line, two clusters | 23 of 24 lines in one cluster. Whisper lines are 5–15 s and hold both speakers. |
+| ECAPA on a sliding 1 s window, words assigned by time | Found some of the child's one-word answers, and gave as many therapist words to the child. |
+| Split at pauses between Whisper word times, then cluster | Word times from Whisper `small` drift by seconds; chunks of 20–30 s held both speakers. |
+| `sherpa-onnx` (pyannote segmentation 3.0 + 3D-Speaker embedding), audio first | Found about 8 s of a second speaker in 10 stretches; about half were clearly the child's answers, some of the child's words were missed, and the int8 model gave a different set. |
+
+The audio-first approach is the only one worth returning to, and it means
+separating first and transcribing each stretch after, because Whisper's
+timings cannot carry speaker turns. It does not fit the free host: 430–480 MB
+peak memory and 85–124 s of one full core for 3.5 minutes of audio.
+
+Until there are Thai sessions with known speakers to measure against, the
+therapist assigns speakers, and the transcript editor is built to make that
+quick (speaker buttons and playback on every line, split at the cursor,
+keyboard shortcuts).
+
 ## CHATTER validator setup
 
 CHATTER (https://talkbank.org/software/chatter.html) is the official
