@@ -240,7 +240,6 @@ def test_live_api_errors_never_fall_back_to_local_mock_state(op_name, op_func, m
 
 
 LOCAL_ONLY_UNSUPPORTED_OPERATIONS = [
-    ("ingest_audio_file", lambda c, tmp: c.ingest_audio_file("sess-demo-101", str(tmp / "fake.wav"))),
     ("update_utterance", lambda c, tmp: c.update_utterance("tr-demo-001", "u-1", "new text", "CHI")),
     ("auto_refine_speakers", lambda c, tmp: c.auto_refine_speakers("tr-demo-001")),
     ("swap_speakers", lambda c, tmp: c.swap_speakers("tr-demo-001", "CHI", "INV")),
@@ -262,6 +261,86 @@ def test_live_client_rejects_unsupported_local_only_operations(op_name, op_func,
 
     assert "unsupported" in str(exc_info.value).lower() or "local mode" in str(exc_info.value).lower()
     assert client._mock_data == initial_mock_state
+
+
+def _fake_audio_backend(job_statuses, calls):
+    """Stand-in for the API's upload -> process -> poll audio routes."""
+    statuses = iter(job_statuses)
+
+    def fake_request(method, endpoint, data=None, **kwargs):
+        calls.append((method, endpoint, data, kwargs))
+        if endpoint == "/sessions/sess-1/audio/upload":
+            return {"job_id": "job-up", "details": {"audio_file": {"audio_file_id": "aud-1"}}}
+        if endpoint == "/audio/aud-1/upload-file":
+            assert kwargs["body"].read() == b"RIFFdummyWAVEfmt "
+            return {"status": "success"}
+        if endpoint == "/audio/aud-1/complete-upload":
+            return {"audio_file_id": "aud-1", "upload_status": "uploaded"}
+        if endpoint in ("/sessions/sess-1/audio/process", "/jobs/job-1"):
+            return {"job_id": "job-1", "status": next(statuses), "message": "Provider 'local_whisper' is unavailable."}
+        if endpoint == "/sessions/sess-1":
+            return {"session_id": "sess-1", "transcript_id": "tr-1"}
+        if endpoint == "/sessions/sess-1/transcript":
+            return {
+                "transcript_id": "tr-1",
+                "therapist_attested": False,
+                "utterances": [
+                    {"utterance_id": "utt-1", "speaker": "CHI", "text": "บอล", "start_ms": 1500, "end_ms": 2250}
+                ],
+            }
+        raise AssertionError(f"unexpected request: {method} {endpoint}")
+
+    return fake_request
+
+
+def test_live_client_ingests_audio_through_backend_job(monkeypatch, tmp_path):
+    """In live mode a recording is uploaded, transcribed by the backend, and returned in the local transcript shape."""
+    from packages.tui.adapters import http_adapter
+
+    fake_wav = tmp_path / "fake.wav"
+    fake_wav.write_bytes(b"RIFFdummyWAVEfmt ")
+    client = PasaScopeClient(mock_mode=False, seed_demo=False)
+    calls: list = []
+    monkeypatch.setattr(client, "_http_request", _fake_audio_backend(["queued", "processing", "needs_review"], calls))
+    monkeypatch.setattr(http_adapter, "AUDIO_JOB_POLL_SECONDS", 0)
+    progress: list[float] = []
+
+    transcript = client.ingest_audio_file("sess-1", str(fake_wav), progress_callback=lambda pct, msg: progress.append(pct))
+
+    upload = calls[0]
+    assert upload[2] == {"filename": "fake.wav", "content_type": "audio/wav", "size_bytes": 17}
+    process = next(call for call in calls if call[1] == "/sessions/sess-1/audio/process")
+    assert process[2]["audio_id"] == "aud-1"
+    assert process[2]["provider"] == "local_whisper"
+    assert process[2]["config"]["allow_fallback_to_mock"] is False
+    assert transcript["attested"] is False
+    assert transcript["utterances"][0]["id"] == "utt-1"
+    assert transcript["utterances"][0]["start_time"] == 1.5
+    assert transcript["utterances"][0]["end_time"] == 2.25
+    assert progress == sorted(progress) and progress[-1] == 1.0
+
+
+def test_live_client_reports_failed_audio_job(monkeypatch, tmp_path):
+    """A job the backend fails must raise with the backend's reason, never return a transcript."""
+    fake_wav = tmp_path / "fake.wav"
+    fake_wav.write_bytes(b"RIFFdummyWAVEfmt ")
+    client = PasaScopeClient(mock_mode=False, seed_demo=False)
+    monkeypatch.setattr(client, "_http_request", _fake_audio_backend(["failed"], []))
+
+    with pytest.raises(PasaScopeApiError, match="local_whisper' is unavailable"):
+        client.ingest_audio_file("sess-1", str(fake_wav))
+
+
+def test_live_client_rejects_unsupported_recording_type_before_upload(monkeypatch, tmp_path):
+    notes = tmp_path / "notes.txt"
+    notes.write_text("not a recording")
+    client = PasaScopeClient(mock_mode=False, seed_demo=False)
+    calls: list = []
+    monkeypatch.setattr(client, "_http_request", _fake_audio_backend([], calls))
+
+    with pytest.raises(PasaScopeApiError, match="Unsupported recording type"):
+        client.ingest_audio_file("sess-1", str(notes))
+    assert calls == []
 
 
 def test_workflow_runner_recovers_from_api_error_in_main_loop(monkeypatch):

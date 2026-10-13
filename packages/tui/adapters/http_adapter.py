@@ -3,10 +3,43 @@
 from __future__ import annotations
 
 import re
+import time
+from pathlib import Path
 from typing import Any, Optional, TYPE_CHECKING
 
 if TYPE_CHECKING:
     from packages.tui.client import PasaScopeClient
+
+
+# Recording types the API accepts, keyed by file extension.
+AUDIO_CONTENT_TYPES = {
+    ".wav": "audio/wav",
+    ".mp3": "audio/mpeg",
+    ".m4a": "audio/x-m4a",
+    ".mp4": "video/mp4",
+    ".mov": "video/quicktime",
+    ".webm": "audio/webm",
+    ".ogg": "audio/ogg",
+}
+AUDIO_UPLOAD_TIMEOUT_SECONDS = 300.0
+AUDIO_JOB_POLL_SECONDS = 1.0
+# On-device Whisper runs slower than real time on a laptop CPU.
+AUDIO_JOB_TIMEOUT_SECONDS = 2 * 60 * 60
+AUDIO_JOB_FINISHED = {"needs_review", "failed", "cancelled"}
+
+
+def _to_local_transcript_shape(transcript: dict[str, Any]) -> dict[str, Any]:
+    """Add the keys the TUI/GUI read (seconds, ``id``, ``attested``) to an API transcript."""
+    transcript.setdefault("attested", bool(transcript.get("therapist_attested")))
+    for utterance in transcript.get("utterances") or []:
+        if not isinstance(utterance, dict):
+            continue
+        utterance.setdefault("id", utterance.get("utterance_id"))
+        for seconds_key, ms_key in (("start_time", "start_ms"), ("end_time", "end_ms")):
+            if seconds_key not in utterance and utterance.get(ms_key) is not None:
+                utterance[seconds_key] = utterance[ms_key] / 1000.0
+        utterance.setdefault("qa_flags", [])
+    return transcript
 
 
 class HttpClinicalAdapter:
@@ -130,7 +163,8 @@ class HttpClinicalAdapter:
         if not tr_id:
             return None
         try:
-            return self._client._http_request("GET", f"/sessions/{session_id}/transcript")
+            transcript = self._client._http_request("GET", f"/sessions/{session_id}/transcript")
+            return _to_local_transcript_shape(transcript) if isinstance(transcript, dict) else transcript
         except PasaScopeApiError as exc:
             if "404" in str(exc):
                 return None
@@ -145,11 +179,88 @@ class HttpClinicalAdapter:
         audio_path: str,
         progress_callback: Optional[Any] = None,
     ) -> dict[str, Any]:
-        from packages.tui.client import PasaScopeUnsupportedOperationError
-        raise PasaScopeUnsupportedOperationError(
-            "Audio ingestion is unsupported in live thin-client mode. "
-            "Use local mode or backend processing queue."
+        from packages.tui.client import PasaScopeApiError
+
+        def _progress(fraction: float, message: str) -> None:
+            if progress_callback is not None:
+                progress_callback(fraction, message)
+
+        path = Path(audio_path).resolve()
+        if not path.is_file():
+            raise FileNotFoundError(f"Audio/video file not found at: {audio_path}")
+        content_type = AUDIO_CONTENT_TYPES.get(path.suffix.lower())
+        if content_type is None:
+            raise PasaScopeApiError(
+                f"Unsupported recording type '{path.suffix}'. Use one of: {', '.join(sorted(AUDIO_CONTENT_TYPES))}."
+            )
+        size_bytes = path.stat().st_size
+        # The API rejects path-like names; the stored object gets its own opaque key.
+        filename = re.sub(r"\.{2,}", ".", path.name).replace("/", "_").replace("\\", "_")
+
+        _progress(0.02, "Registering recording with the backend...")
+        upload_job = self._client._http_request(
+            "POST",
+            f"/sessions/{session_id}/audio/upload",
+            {"filename": filename, "content_type": content_type, "size_bytes": size_bytes},
         )
+        audio_file = (upload_job.get("details") or {}).get("audio_file") if isinstance(upload_job, dict) else None
+        audio_file_id = audio_file.get("audio_file_id") if isinstance(audio_file, dict) else None
+        if not audio_file_id:
+            raise PasaScopeApiError("Malformed API response: upload intent has no audio file id.")
+
+        _progress(0.05, "Uploading recording to the backend...")
+        with path.open("rb") as handle:
+            self._client._http_request(
+                "PUT",
+                f"/audio/{audio_file_id}/upload-file",
+                body=handle,
+                content_type=content_type,
+                content_length=size_bytes,
+                timeout=AUDIO_UPLOAD_TIMEOUT_SECONDS,
+            )
+        self._client._http_request(
+            "POST", f"/audio/{audio_file_id}/complete-upload", {"size_bytes": size_bytes}
+        )
+
+        _progress(0.15, "Queueing on-device transcription...")
+        job = self._client._http_request(
+            "POST",
+            f"/sessions/{session_id}/audio/process",
+            {
+                "audio_id": audio_file_id,
+                "provider": "local_whisper",
+                "config": {
+                    "language": "th",
+                    "return_word_timestamps": True,
+                    "return_speaker_segments": True,
+                    "allow_fallback_to_mock": False,
+                },
+            },
+        )
+        deadline = time.monotonic() + AUDIO_JOB_TIMEOUT_SECONDS
+        started = time.monotonic()
+        while isinstance(job, dict) and job.get("status") not in AUDIO_JOB_FINISHED:
+            if time.monotonic() > deadline:
+                raise PasaScopeApiError("Timed out waiting for the backend to finish transcription.")
+            elapsed = int(time.monotonic() - started)
+            # The backend reports no percentage; creep towards 95% so the bar keeps moving.
+            _progress(
+                0.15 + 0.80 * (1 - 1 / (1 + elapsed / 120)),
+                f"Backend is transcribing ({job.get('status', 'queued')}, {elapsed // 60}:{elapsed % 60:02d} elapsed)...",
+            )
+            time.sleep(AUDIO_JOB_POLL_SECONDS)
+            job = self._client._http_request("GET", f"/jobs/{job['job_id']}")
+
+        if not isinstance(job, dict) or job.get("status") != "needs_review":
+            message = job.get("message") if isinstance(job, dict) else None
+            raise PasaScopeApiError(f"Audio transcription failed: {message or 'no reason reported by the backend'}")
+
+        _progress(0.97, "Loading draft transcript...")
+        transcript = self.get_session_transcript(session_id)
+        if not transcript:
+            raise PasaScopeApiError("Transcription finished but no transcript was returned for this session.")
+        _progress(1.0, "Draft transcript ready for review.")
+        return transcript
 
     def update_utterance(
         self,

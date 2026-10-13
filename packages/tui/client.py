@@ -275,7 +275,17 @@ class PasaScopeClient:
             else:
                 self._session = None
 
-    def _http_request(self, method: str, endpoint: str, data: dict[str, Any] | None = None) -> Any:
+    def _http_request(
+        self,
+        method: str,
+        endpoint: str,
+        data: dict[str, Any] | None = None,
+        *,
+        body: Any = None,
+        content_type: str | None = None,
+        content_length: int | None = None,
+        timeout: float = 3.0,
+    ) -> Any:
         if endpoint.startswith("/api/v2"):
             if self.base_url.endswith("/api/v1"):
                 url = f"{self.base_url[:-7]}{endpoint}"
@@ -286,6 +296,12 @@ class PasaScopeClient:
         headers = {"Content-Type": "application/json", "Accept": "application/json"}
 
         req_data = json.dumps(data).encode("utf-8") if data is not None else None
+        if body is not None:
+            # Raw upload (bytes or an open binary file) instead of a JSON payload.
+            req_data = body
+            headers["Content-Type"] = content_type or "application/octet-stream"
+            if content_length is not None:
+                headers["Content-Length"] = str(content_length)
 
         with self._session_lock:
             active_session = self._session
@@ -305,7 +321,7 @@ class PasaScopeClient:
 
         req = urllib.request.Request(url, data=req_data, headers=headers, method=method)
         try:
-            with self._opener.open(req, timeout=3.0) as resp:
+            with self._opener.open(req, timeout=timeout) as resp:
                 resp_text = resp.read().decode("utf-8")
                 if not resp_text:
                     return {}

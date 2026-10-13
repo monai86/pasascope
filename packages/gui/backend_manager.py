@@ -123,6 +123,12 @@ class BackendServerManager:
         )
         env["PYTHONPATH"] = new_pythonpath
         env["PYTHONUNBUFFERED"] = "1"
+        # The desktop app transcribes recordings on this machine; an explicit
+        # setting in the caller's environment still wins.
+        env.setdefault("PASASCOPE_ASR_LOCAL_WHISPER_ENABLED", "true")
+        # Recordings may be Thai or English; let Whisper detect the language
+        # per recording instead of the API's Thai-only default.
+        env.setdefault("PASASCOPE_ASR_LANGUAGE_STRATEGY", "auto")
 
         cmd = [
             sys.executable,
