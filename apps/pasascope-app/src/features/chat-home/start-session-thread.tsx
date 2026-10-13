@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, type FormEvent } from "react";
+import { useEffect, useState, type FormEvent } from "react";
 import { useRouter } from "next/navigation";
 import { FolderOpen, Mic, Plus, Upload } from "lucide-react";
 
@@ -59,6 +59,7 @@ export function StartSessionThread({
   opener,
   cases,
   filter,
+  onChoosingCaseChange,
   onCaseCreated,
   onStartOver,
 }: {
@@ -66,6 +67,8 @@ export function StartSessionThread({
   cases: BackendCase[];
   /** The composer's text, narrowing the case list while one is being chosen. */
   filter: string;
+  /** Told whether the case list is on screen, the only time typing does anything here. */
+  onChoosingCaseChange?: (choosing: boolean) => void;
   onCaseCreated: () => void;
   onStartOver: () => void;
 }) {
@@ -85,6 +88,11 @@ export function StartSessionThread({
   const query = filter.trim() || (opener.kind === "search" ? opener.text.trim() : "");
   const matching = filterCases(cases, query);
   const consented = caseItem ? consentGranted || hasConsent(caseItem) : false;
+  const choosingCase = !caseItem && !creatingCase;
+
+  useEffect(() => {
+    onChoosingCaseChange?.(choosingCase);
+  }, [choosingCase, onChoosingCaseChange]);
 
   async function openSession(target: BackendCase, how: StartIntent) {
     setBusy(true);

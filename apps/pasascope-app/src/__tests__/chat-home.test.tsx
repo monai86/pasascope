@@ -82,6 +82,7 @@ describe("chat home", () => {
 
     const pick = await screen.findByTestId("start-pick-case");
     expect(within(pick).getByRole("button", { name: /Tonkla/ })).toBeInTheDocument();
+    expect(screen.getByRole("textbox", { name: "Find a case" })).toBeEnabled();
     expect(screen.queryByRole("heading", { name: "What would you like to do today?" })).toBeNull();
   });
 
@@ -99,6 +100,8 @@ describe("chat home", () => {
 
     // The case list is read again in the background; the chosen case must survive that.
     expect(await screen.findByTestId("start-consent")).toBeInTheDocument();
+    // Typing only finds a case, so the field is inert once one is chosen.
+    expect(screen.getByRole("textbox", { name: "Find a case" })).toBeDisabled();
     await waitFor(() => expect(api.listBackendCases).toHaveBeenCalledTimes(2));
     expect(screen.getByTestId("start-consent")).toBeInTheDocument();
     expect(screen.queryByTestId("start-pick-case")).toBeNull();

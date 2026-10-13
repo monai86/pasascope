@@ -40,16 +40,21 @@ export function ChatHome() {
   // Remounts the conversation when a new one starts while another is open.
   const [threadKey, setThreadKey] = useState(0);
   const [text, setText] = useState("");
+  // Typing finds a case, so the field is live on the greeting and while a case
+  // is being chosen, and inert for the rest of the start conversation.
+  const [choosingCase, setChoosingCase] = useState(true);
 
   function start(next: StartOpener) {
     setOpener(next);
     setThreadKey((current) => current + 1);
     setText("");
+    setChoosingCase(true);
   }
 
   function reset() {
     setOpener(null);
     setText("");
+    setChoosingCase(true);
   }
 
   const resume = home.status === "ready" ? home.model.resume : null;
@@ -67,6 +72,7 @@ export function ChatHome() {
             opener={opener}
             cases={home.cases}
             filter={text}
+            onChoosingCaseChange={setChoosingCase}
             onCaseCreated={home.reload}
             onStartOver={reset}
           />
@@ -145,6 +151,7 @@ export function ChatHome() {
           submitLabel={t.composer.submit}
           value={text}
           onChange={setText}
+          disabled={Boolean(opener) && !choosingCase}
           onSubmit={() => {
             // While a case is being chosen the text already narrows the list.
             if (!opener) start({ kind: "search", text: text.trim() });
