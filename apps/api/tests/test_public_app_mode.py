@@ -1,7 +1,4 @@
-"""Public sign-up and open review gates: opt-in settings for a public app.
-
-Defaults stay strict; these tests turn the settings on per test.
-"""
+"""Anyone may sign up; each account works alone in a workspace of its own."""
 from __future__ import annotations
 
 import time
@@ -28,8 +25,6 @@ def _settings(**overrides) -> Settings:
             "supabase_jwt_secret": SECRET,
             "supabase_jwt_issuer": ISSUER,
             "supabase_jwt_audience": "authenticated",
-            "supabase_require_mfa": False,
-            "supabase_require_invitation": False,
             **overrides,
         }
     )
@@ -47,26 +42,19 @@ def _token(sub: str, **claims) -> str:
     return "Bearer " + jwt.encode(payload, SECRET, algorithm="HS256")
 
 
-def test_new_user_without_organization_claims_is_rejected_by_default():
-    with pytest.raises(HTTPException) as error:
-        authenticate_supabase_bearer(_token("user-a"), _settings())
-    assert error.value.status_code == 401
-
-
 def test_public_signup_gives_a_new_user_a_personal_workspace():
-    principal = authenticate_supabase_bearer(_token("user-a"), _settings(public_signup=True))
+    principal = authenticate_supabase_bearer(_token("user-a"), _settings())
 
     assert principal.user_id == "user-a"
     assert principal.organization_id == "personal_user-a"
     assert principal.role == "therapist"
-    assert principal.membership_active is True
     assert principal.display_name == "user-a@example.test"
 
 
 def test_public_signup_ignores_organization_claims_in_the_token():
     token = _token("user-a", app_metadata={"organization_id": "someone_elses_org", "role": "org_admin"})
 
-    principal = authenticate_supabase_bearer(token, _settings(public_signup=True))
+    principal = authenticate_supabase_bearer(token, _settings())
 
     assert principal.organization_id == "personal_user-a"
     assert principal.role == "therapist"
@@ -79,13 +67,8 @@ def test_public_signup_still_rejects_a_token_signed_with_another_key():
         algorithm="HS256",
     )
     with pytest.raises(HTTPException) as error:
-        authenticate_supabase_bearer(forged, _settings(public_signup=True))
+        authenticate_supabase_bearer(forged, _settings())
     assert error.value.status_code == 401
-
-
-def test_public_signup_cannot_be_combined_with_required_mfa_or_invitation():
-    with pytest.raises(ValueError):
-        get_settings().model_copy(update={"public_signup": True, "supabase_require_mfa": True}).validate_runtime_security()
 
 
 def _headers(user_id: str) -> dict[str, str]:

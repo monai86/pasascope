@@ -39,41 +39,6 @@ def test_non_mock_runtime_rejects_mock_auth_mode():
         ).validate_runtime_security()
 
 
-def test_evaluation_routes_are_disabled_in_production_like_runtime():
-    repo = MockRepository()
-    production_settings = Settings(
-        mock_mode=False,
-        auth_mode="supabase",
-        supabase_jwt_secret="test-supabase-jwt-secret",
-        supabase_jwt_issuer="https://project-ref.supabase.co/auth/v1",
-        cors_allowed_origins="https://clinic.example",
-        repository_mode="sql",
-        database_url="postgresql+psycopg://prod_user:prod_password@db.example/therapist_app_v2",
-        sql_create_schema=False,
-        storage_mode="private",
-        job_queue_mode="redis",
-        redis_url="rediss://redis.example:6379/0",
-        observability_enabled=True,
-        observability_provider="sentry",
-        critical_alert_route="pagerduty-critical",
-        secret_store_provider="aws_secrets_manager",
-        credential_rotation_runbook="docs/SECRET_ROTATION_RUNBOOK.md",
-    )
-    app.dependency_overrides[get_repository] = lambda: repo
-    app.dependency_overrides[get_settings] = lambda: production_settings
-    client = TestClient(app)
-    try:
-        response = client.post(
-            "/api/v1/evaluation/asr",
-            json={"reference_text": "*CHI:\thello .", "hypothesis_text": "*CHI:\thello .", "reference_speakers": ["CHI"]},
-        )
-    finally:
-        _clear_overrides()
-
-    assert response.status_code == 403
-    assert response.json()["detail"] == "Evaluation routes are not available in production-like runtime."
-
-
 def test_provider_discovery_routes_require_authenticated_runtime_session():
     repo = MockRepository()
     production_settings = Settings(

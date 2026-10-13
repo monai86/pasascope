@@ -8,16 +8,12 @@ from fastapi.middleware.cors import CORSMiddleware
 
 from app.api.v1.routes import (
     ai_review,
-    audit,
     audio_review,
     cases,
     dashboard,
-    evaluation,
     features,
     jobs,
     ml_review,
-    organization_admin,
-    privacy,
     reports,
     sessions,
     settings,
@@ -125,7 +121,6 @@ app.add_middleware(
 app.include_router(cases.router, prefix=settings_obj.api_prefix)
 app.include_router(dashboard.router, prefix=settings_obj.api_prefix)
 app.include_router(sessions.router, prefix=settings_obj.api_prefix)
-app.include_router(organization_admin.router, prefix=settings_obj.api_prefix)
 app.include_router(therapy_goals.router, prefix=settings_obj.api_prefix)
 app.include_router(transcripts.router, prefix=settings_obj.api_prefix)
 app.include_router(features.router, prefix=settings_obj.api_prefix)
@@ -134,10 +129,7 @@ app.include_router(ml_review.router, prefix=settings_obj.api_prefix)
 app.include_router(reports.router, prefix=settings_obj.api_prefix)
 app.include_router(jobs.router, prefix=settings_obj.api_prefix)
 app.include_router(audio_review.router, prefix=settings_obj.api_prefix)
-app.include_router(privacy.router, prefix=settings_obj.api_prefix)
 app.include_router(settings.router, prefix=settings_obj.api_prefix)
-app.include_router(evaluation.router, prefix=settings_obj.api_prefix)
-app.include_router(audit.router, prefix=settings_obj.api_prefix)
 @app.get("/health")
 @app.get("/api/v1/health")
 def health():

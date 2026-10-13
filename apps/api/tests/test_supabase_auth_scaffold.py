@@ -252,24 +252,9 @@ def test_runtime_security_requires_jwks_url_for_remote_asymmetric_verification()
         ).validate_runtime_security()
 
 
-@pytest.mark.parametrize(
-    ("override", "message"),
-    [
-        ({"supabase_require_mfa": False}, "Production Supabase auth must require MFA."),
-        ({"supabase_require_invitation": False}, "Production Supabase auth must require invitation acceptance."),
-    ],
-)
-def test_runtime_security_requires_mfa_and_invitation_guards(override: dict, message: str):
-    values = _production_settings().model_dump()
-    values.update(override)
-
-    with pytest.raises(ValueError, match=message):
-        Settings(**values).validate_runtime_security()
-
-
 def test_supabase_auth_accepts_valid_token_and_ignores_mock_headers():
     repo = MockRepository()
-    repo.cases["case_demo_001"].organization_id = "org_a"
+    repo.cases["case_demo_001"].organization_id = "personal_clinician_a"
     repo.cases["case_demo_001"].care_team_user_ids = ["clinician_a"]
     app.dependency_overrides[get_repository] = lambda: repo
     app.dependency_overrides[get_settings] = _production_settings
@@ -288,12 +273,12 @@ def test_supabase_auth_accepts_valid_token_and_ignores_mock_headers():
         _clear_overrides()
 
     assert response.status_code == 200
-    assert response.json()["organization_id"] == "org_a"
+    assert response.json()["organization_id"] == "personal_clinician_a"
 
 
 def test_supabase_auth_accepts_valid_rs256_token_from_local_jwks():
     repo = MockRepository()
-    repo.cases["case_demo_001"].organization_id = "org_a"
+    repo.cases["case_demo_001"].organization_id = "personal_clinician_a"
     repo.cases["case_demo_001"].care_team_user_ids = ["clinician_a"]
     private_key, jwks_json = _rsa_bundle()
     app.dependency_overrides[get_repository] = lambda: repo
@@ -310,12 +295,12 @@ def test_supabase_auth_accepts_valid_rs256_token_from_local_jwks():
         _clear_overrides()
 
     assert response.status_code == 200
-    assert response.json()["organization_id"] == "org_a"
+    assert response.json()["organization_id"] == "personal_clinician_a"
 
 
 def test_supabase_auth_accepts_valid_es256_token_from_local_jwks():
     repo = MockRepository()
-    repo.cases["case_demo_001"].organization_id = "org_a"
+    repo.cases["case_demo_001"].organization_id = "personal_clinician_a"
     repo.cases["case_demo_001"].care_team_user_ids = ["clinician_a"]
     private_key, jwks_json = _ec_bundle()
     app.dependency_overrides[get_repository] = lambda: repo
@@ -332,12 +317,12 @@ def test_supabase_auth_accepts_valid_es256_token_from_local_jwks():
         _clear_overrides()
 
     assert response.status_code == 200
-    assert response.json()["organization_id"] == "org_a"
+    assert response.json()["organization_id"] == "personal_clinician_a"
 
 
 def test_supabase_auth_accepts_valid_rs256_token_from_fetched_jwks(monkeypatch):
     repo = MockRepository()
-    repo.cases["case_demo_001"].organization_id = "org_a"
+    repo.cases["case_demo_001"].organization_id = "personal_clinician_a"
     repo.cases["case_demo_001"].care_team_user_ids = ["clinician_a"]
     private_key, jwks_json = _rsa_bundle()
     fetch_calls: list[str] = []
@@ -416,7 +401,7 @@ def test_supabase_auth_refreshes_jwks_url_when_cached_keys_miss_new_kid(monkeypa
     )
 
     reset_jwks_cache_for_tests()
-    assert principal.organization_id == "org_a"
+    assert principal.organization_id == "personal_clinician_a"
     assert fetch_calls == [
         "https://supabase.example/jwks",
         "https://supabase.example/jwks",
@@ -535,351 +520,3 @@ def test_supabase_auth_rejects_jwks_algorithm_mismatch():
 
     assert exc.value.status_code == 401
     assert exc.value.detail == "Bearer token algorithm does not match signing key."
-
-
-@pytest.mark.parametrize(
-    ("metadata", "message"),
-    [
-        ({"membership_active": False}, "Membership is not active."),
-        ({}, "AAL2 session is required."),
-        ({"invitation_status": "pending"}, "Invitation must be accepted."),
-    ],
-)
-def test_supabase_auth_rejects_incomplete_user_lifecycle(metadata: dict, message: str):
-    claims = _claims(**metadata)
-    if message == "AAL2 session is required.":
-        claims["aal"] = "aal1"
-    with pytest.raises(HTTPException) as exc:
-        get_current_user(
-            authorization=f"Bearer {_jwt(claims)}",
-            settings=_production_settings(),
-        )
-
-    assert exc.value.status_code == 403
-    assert exc.value.detail == message
-
-
-def test_break_glass_claim_requires_reason_and_time_limit():
-    with pytest.raises(HTTPException) as missing_category:
-        get_current_user(
-            authorization=f"Bearer {_jwt(_claims(role='platform_operator', break_glass={'active': True, 'case_id': 'case_demo_001', 'reason': 'incident review', 'expires_at': int(time.time()) + 60}))}",
-            settings=_production_settings(),
-        )
-
-    with pytest.raises(HTTPException) as missing_reason:
-        get_current_user(
-            authorization=f"Bearer {_jwt(_claims(role='platform_operator', break_glass={'active': True, 'case_id': 'case_demo_001', 'category': 'incident_review', 'expires_at': int(time.time()) + 60}))}",
-            settings=_production_settings(),
-        )
-
-    with pytest.raises(HTTPException) as missing_case:
-        get_current_user(
-            authorization=f"Bearer {_jwt(_claims(role='platform_operator', break_glass={'active': True, 'category': 'incident_review', 'reason': 'incident review', 'expires_at': int(time.time()) + 60}))}",
-            settings=_production_settings(),
-        )
-
-    with pytest.raises(HTTPException) as too_long:
-        get_current_user(
-            authorization=f"Bearer {_jwt(_claims(role='platform_operator', break_glass={'active': True, 'case_id': 'case_demo_001', 'category': 'incident_review', 'reason': 'incident review', 'expires_at': int(time.time()) + 7200}))}",
-            settings=_production_settings(),
-        )
-
-    with pytest.raises(HTTPException) as expired:
-        get_current_user(
-            authorization=f"Bearer {_jwt(_claims(role='platform_operator', break_glass={'active': True, 'case_id': 'case_demo_001', 'category': 'incident_review', 'reason': 'incident review', 'expires_at': int(time.time()) - 1}))}",
-            settings=_production_settings(),
-        )
-
-    assert missing_category.value.status_code == 403
-    assert missing_category.value.detail == "Break-glass access requires a category."
-    assert missing_reason.value.status_code == 403
-    assert missing_reason.value.detail == "Break-glass access requires a reason."
-    assert missing_case.value.status_code == 403
-    assert missing_case.value.detail == "Break-glass access requires a scoped case."
-    assert too_long.value.status_code == 403
-    assert too_long.value.detail == "Break-glass access exceeds the one-hour limit."
-    assert expired.value.status_code == 403
-    assert expired.value.detail == "Break-glass access is expired."
-
-
-@pytest.mark.parametrize(
-    ("metadata", "message", "status_code"),
-    [
-        ({"membership_active": "false"}, "Supabase claim 'membership_active' must be a boolean.", 401),
-        ({"role": "admin"}, "Supabase claim 'role' is invalid.", 401),
-        ({"invitation_status": "unknown"}, "Supabase claim 'invitation_status' is invalid.", 401),
-        ({"break_glass": "active"}, "Supabase claim 'break_glass' is invalid.", 401),
-        (
-            {"break_glass": {"active": "true"}},
-            "Supabase claim 'break_glass.active' must be a boolean.",
-            401,
-        ),
-        (
-            {
-                "role": "platform_operator",
-                "break_glass": {
-                    "active": True,
-                    "case_id": "case_demo_001",
-                    "category": "incident_review",
-                    "reason": "incident review",
-                    "expires_at": "tomorrow",
-                },
-            },
-            "Supabase claim 'break_glass.expires_at' must be an integer.",
-            401,
-        ),
-        (
-            {
-                "organizations": [
-                    {"organization_id": "org_b", "role": "therapist"},
-                ],
-            },
-            "Active organization is not present in the membership claims.",
-            403,
-        ),
-        (
-            {
-                "organizations": [
-                    {"organization_id": "org_a", "role": "org_admin"},
-                ],
-            },
-            "Active organization role does not match the selected membership.",
-            401,
-        ),
-        (
-            {
-                "organizations": [
-                    {"organization_id": "org_a", "role": "therapist", "active": "true"},
-                ],
-            },
-            "Supabase claim 'organizations' contains an invalid active flag.",
-            401,
-        ),
-        (
-            {
-                "organizations": [
-                    {"organization_id": "org_a", "role": "therapist", "active": False},
-                ],
-            },
-            "Active organization membership is not active.",
-            403,
-        ),
-    ],
-)
-def test_supabase_auth_rejects_invalid_claim_shapes_and_membership_context(
-    metadata: dict,
-    message: str,
-    status_code: int,
-):
-    with pytest.raises(HTTPException) as exc:
-        get_current_user(
-            authorization=f"Bearer {_jwt(_claims(**metadata))}",
-            settings=_production_settings(),
-        )
-
-    assert exc.value.status_code == status_code
-    assert exc.value.detail == message
-
-
-def test_supabase_auth_uses_explicit_active_organization_header_when_membership_matches():
-    token = _jwt(
-        _claims(
-            role="therapist",
-            organization_id="org_a",
-            organizations=[
-                {"organization_id": "org_a", "role": "therapist", "active": True},
-                {"organization_id": "org_b", "role": "clinical_supervisor", "active": True},
-            ],
-        )
-    )
-    principal = get_current_user(
-        authorization=f"Bearer {token}",
-        x_organization_id="org_b",
-        settings=_production_settings(),
-    )
-
-    assert principal.organization_id == "org_b"
-    assert principal.role == "clinical_supervisor"
-
-
-def test_supabase_auth_requires_explicit_active_organization_when_multi_org_claims_are_ambiguous():
-    token = _jwt(
-        _claims(
-            organization_id="",
-            organizations=[
-                {"organization_id": "org_a", "role": "therapist", "active": True},
-                {"organization_id": "org_b", "role": "clinical_supervisor", "active": True},
-            ],
-        )
-    )
-    with pytest.raises(HTTPException) as exc:
-        get_current_user(
-            authorization=f"Bearer {token}",
-            settings=_production_settings(),
-        )
-
-    assert exc.value.status_code == 403
-    assert exc.value.detail == "Active organization selection is required."
-
-
-def test_break_glass_claim_is_rejected_for_non_platform_roles():
-    with pytest.raises(HTTPException) as exc:
-        get_current_user(
-            authorization=(
-                f"Bearer {_jwt(_claims(role='clinical_supervisor', break_glass={'active': True, 'case_id': 'case_demo_001', 'category': 'incident_review', 'reason': 'incident review', 'expires_at': int(time.time()) + 60}))}"
-            ),
-            settings=_production_settings(),
-        )
-
-    assert exc.value.status_code == 403
-    assert exc.value.detail == "Break-glass access is limited to platform operators."
-
-
-def test_supabase_auth_accepts_inactive_break_glass_claim_without_scoped_access():
-    principal = get_current_user(
-        authorization=(
-            f"Bearer {_jwt(_claims(role='platform_operator', break_glass={'active': False, 'case_id': 'case_demo_001', 'category': 'incident_review', 'reason': 'incident review', 'expires_at': int(time.time()) + 60}))}"
-        ),
-        settings=_production_settings(),
-    )
-
-    assert principal.role == "platform_operator"
-    assert principal.break_glass_case_id is None
-    assert principal.break_glass_expires_at is None
-
-
-def test_supabase_claim_runtime_enforces_launch_role_matrix_on_case_access():
-    repo = MockRepository()
-    repo.cases["case_demo_001"].organization_id = "org_a"
-    repo.cases["case_demo_001"].care_team_user_ids = ["clinician_a"]
-    repo.cases["case_demo_001"].primary_therapist_user_id = "clinician_a"
-    repo.upsert_membership(
-        "org_a",
-        OrganizationMembershipCreate(
-            user_id="admin_a",
-            display_name="Admin A",
-            role="org_admin",
-        ),
-        actor_id="seed",
-    )
-    app.dependency_overrides[get_repository] = lambda: repo
-    app.dependency_overrides[get_settings] = _production_settings
-    client = TestClient(app)
-    try:
-        assigned_therapist = client.get(
-            "/api/v1/cases/case_demo_001",
-            headers={"authorization": f"Bearer {_jwt(_claims())}"},
-        )
-        unassigned_therapist = client.get(
-            "/api/v1/cases/case_demo_001",
-            headers={"authorization": f"Bearer {_jwt(_claims_for_user('clinician_b'))}"},
-        )
-        supervisor = client.get(
-            "/api/v1/cases/case_demo_001",
-            headers={"authorization": f"Bearer {_jwt(_claims_for_user('supervisor_a', role='clinical_supervisor'))}"},
-        )
-        org_admin_case = client.get(
-            "/api/v1/cases/case_demo_001",
-            headers={"authorization": f"Bearer {_jwt(_claims_for_user('admin_a', role='org_admin'))}"},
-        )
-        org_admin_memberships = client.get(
-            "/api/v1/organizations/current/memberships",
-            headers={"authorization": f"Bearer {_jwt(_claims_for_user('admin_a', role='org_admin'))}"},
-        )
-    finally:
-        _clear_overrides()
-
-    assert assigned_therapist.status_code == 200
-    assert unassigned_therapist.status_code == 403
-    assert unassigned_therapist.json()["detail"] == "Care-team assignment required."
-    assert supervisor.status_code == 200
-    assert org_admin_case.status_code == 403
-    assert org_admin_case.json()["detail"] == "Care-team assignment required."
-    assert org_admin_memberships.status_code == 200
-    assert [item["user_id"] for item in org_admin_memberships.json()] == ["admin_a"]
-
-
-def test_supabase_claim_runtime_applies_selected_active_organization_to_request_scope():
-    repo = MockRepository()
-    repo.cases["case_demo_001"].organization_id = "org_a"
-    repo.cases["case_demo_002"] = repo.cases["case_demo_001"].model_copy(
-        update={
-            "case_id": "case_demo_002",
-            "organization_id": "org_b",
-            "care_team_user_ids": ["supervisor_a"],
-            "primary_therapist_user_id": "therapist_b",
-        }
-    )
-    app.dependency_overrides[get_repository] = lambda: repo
-    app.dependency_overrides[get_settings] = _production_settings
-    client = TestClient(app)
-    supervisor_token = _jwt(
-        _claims_for_user(
-            "supervisor_a",
-            role="clinical_supervisor",
-            organization_id="org_a",
-            organizations=[
-                {"organization_id": "org_a", "role": "clinical_supervisor", "active": True},
-                {"organization_id": "org_b", "role": "clinical_supervisor", "active": True},
-            ],
-        )
-    )
-    try:
-        selected_org_b = client.get(
-            "/api/v1/cases/case_demo_002",
-            headers={
-                "authorization": f"Bearer {supervisor_token}",
-                "x-organization-id": "org_b",
-            },
-        )
-        still_org_b_on_org_a_case = client.get(
-            "/api/v1/cases/case_demo_001",
-            headers={
-                "authorization": f"Bearer {supervisor_token}",
-                "x-organization-id": "org_b",
-            },
-        )
-    finally:
-        _clear_overrides()
-
-    assert selected_org_b.status_code == 200
-    assert selected_org_b.json()["case_id"] == "case_demo_002"
-    assert still_org_b_on_org_a_case.status_code == 404
-    assert still_org_b_on_org_a_case.json()["detail"] == "Case not found."
-
-
-def test_supabase_break_glass_is_scoped_and_fails_closed_after_expiry():
-    repo = MockRepository()
-    repo.cases["case_demo_001"].organization_id = "org_a"
-    app.dependency_overrides[get_repository] = lambda: repo
-    app.dependency_overrides[get_settings] = _production_settings
-    client = TestClient(app)
-    active_break_glass = {
-        "authorization": f"Bearer {_jwt(_claims_for_user('platform_a', role='platform_operator', break_glass={'active': True, 'case_id': 'case_demo_001', 'category': 'incident_review', 'reason': 'incident review', 'expires_at': int(time.time()) + 60}))}",
-    }
-    wrong_case_break_glass = {
-        "authorization": f"Bearer {_jwt(_claims_for_user('platform_a', role='platform_operator', break_glass={'active': True, 'case_id': 'case_demo_002', 'category': 'incident_review', 'reason': 'incident review', 'expires_at': int(time.time()) + 60}))}",
-    }
-    expired_break_glass = {
-        "authorization": f"Bearer {_jwt(_claims_for_user('platform_a', role='platform_operator', break_glass={'active': True, 'case_id': 'case_demo_001', 'category': 'incident_review', 'reason': 'incident review', 'expires_at': int(time.time()) - 1}))}",
-    }
-    try:
-        scoped_access = client.post("/api/v1/cases/case_demo_001/break-glass-access", headers=active_break_glass)
-        wrong_case_access = client.post("/api/v1/cases/case_demo_001/break-glass-access", headers=wrong_case_break_glass)
-        routine_case_read = client.get("/api/v1/cases/case_demo_001", headers=active_break_glass)
-        expired_access = client.post("/api/v1/cases/case_demo_001/break-glass-access", headers=expired_break_glass)
-    finally:
-        _clear_overrides()
-
-    assert scoped_access.status_code == 200
-    assert scoped_access.json()["case_id"] == "case_demo_001"
-    assert wrong_case_access.status_code == 403
-    assert wrong_case_access.json()["detail"] == "Break-glass access is limited to the scoped case."
-    assert routine_case_read.status_code == 403
-    assert routine_case_read.json()["detail"] == "Clinical content access denied."
-    assert expired_access.status_code == 403
-    assert expired_access.json()["detail"] == "Break-glass access is expired."
-    assert any(
-        entry["target_id"] == "case_demo_001" and entry["message"] == "Scoped break-glass case access granted."
-        for entry in repo.audit_log
-    )

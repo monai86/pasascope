@@ -27,14 +27,6 @@ services:
         value: "true"
       - key: PASASCOPE_AUTH_MODE
         value: supabase
-      - key: PASASCOPE_PUBLIC_SIGNUP
-        value: "true"
-      - key: PASASCOPE_REVIEW_GATES
-        value: open
-      - key: PASASCOPE_SUPABASE_REQUIRE_MFA
-        value: "false"
-      - key: PASASCOPE_SUPABASE_REQUIRE_INVITATION
-        value: "false"
       - key: PASASCOPE_SUPABASE_JWT_VERIFICATION_MODE
         value: jwks_url
       - key: PASASCOPE_SUPABASE_JWT_JWKS_URL

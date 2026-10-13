@@ -31,13 +31,13 @@ def settings():
         "model_version": "v2-mock",
         "feature_schema": "pasascope-app.1",
         "guideline_mapping": "review-support-only",
-        "user_roles": ["therapist", "clinical_supervisor", "org_admin"],
+        "user_roles": ["therapist"],
         "access_model": {
-            "invitation_only": config.supabase_require_invitation,
-            "public_signup": config.public_signup,
+            "invitation_only": False,
+            "public_signup": True,
             # Kept for web builds that read it: there is one way of working now.
             "review_gates": "open",
-            "required_app_aal": "aal2" if config.supabase_require_mfa else "aal1",
+            "required_app_aal": "aal1",
             "active_organization_session": "explicit_selection_when_ambiguous",
             "production_mock_mode": "forbidden" if not config.mock_mode else "local_only",
         },

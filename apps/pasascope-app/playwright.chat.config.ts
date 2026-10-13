@@ -40,7 +40,7 @@ export default defineConfig({
   },
   webServer: [
     {
-      command: `PYTHONPATH=.:../..:../../src PASASCOPE_REPOSITORY_MODE=memory PASASCOPE_PUBLIC_SIGNUP=true PASASCOPE_REVIEW_GATES=open PASASCOPE_SUPABASE_REQUIRE_MFA=false PASASCOPE_SUPABASE_REQUIRE_INVITATION=false PASASCOPE_CORS_ALLOWED_ORIGINS=${allowedOrigins} python3 -m uvicorn app.main:app --host 127.0.0.1 --port ${backendPort}`,
+      command: `PYTHONPATH=.:../..:../../src PASASCOPE_REPOSITORY_MODE=memory PASASCOPE_SUPABASE_REQUIRE_MFA=false PASASCOPE_SUPABASE_REQUIRE_INVITATION=false PASASCOPE_CORS_ALLOWED_ORIGINS=${allowedOrigins} python3 -m uvicorn app.main:app --host 127.0.0.1 --port ${backendPort}`,
       cwd: "../api",
       url: `http://127.0.0.1:${backendPort}/health`,
       reuseExistingServer: true,

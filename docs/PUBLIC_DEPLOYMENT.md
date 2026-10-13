@@ -124,10 +124,6 @@ PasaScope เป็นต้นแบบเพื่อการวิจัย�
    |---|---|
    | `PASASCOPE_MOCK_MODE` | `true` (ให้ใช้คิวงานในโปรเซสเดียวและสร้างตารางอัตโนมัติ) |
    | `PASASCOPE_AUTH_MODE` | `supabase` |
-   | `PASASCOPE_PUBLIC_SIGNUP` | `true` |
-   | `PASASCOPE_REVIEW_GATES` | `open` |
-   | `PASASCOPE_SUPABASE_REQUIRE_MFA` | `false` |
-   | `PASASCOPE_SUPABASE_REQUIRE_INVITATION` | `false` |
    | `PASASCOPE_SUPABASE_JWT_VERIFICATION_MODE` | `jwks_url` |
    | `PASASCOPE_SUPABASE_JWT_JWKS_URL` | `https://<ref>.supabase.co/auth/v1/.well-known/jwks.json` |
    | `PASASCOPE_SUPABASE_JWT_ISSUER` | `https://<ref>.supabase.co/auth/v1` |

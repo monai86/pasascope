@@ -16,19 +16,6 @@ from jwt import PyJWK
 
 from app.core.config import Settings
 
-ALLOWED_SUPABASE_ROLES = {
-    "therapist",
-    "clinical_supervisor",
-    "org_admin",
-    "platform_operator",
-}
-ALLOWED_INVITATION_STATUSES = {
-    "pending",
-    "accepted",
-    "revoked",
-    "expired",
-}
-BREAK_GLASS_MAX_DURATION_SECONDS = 60 * 60
 ALLOWED_JWKS_ALGORITHMS = {"RS256", "ES256"}
 _JWKS_CACHE: dict[str, tuple[float, str]] = {}
 # An unknown key id may mean the keys rotated, or that someone is sending junk
@@ -44,81 +31,23 @@ class SupabasePrincipal:
     display_name: str
     organization_id: str
     aal: str
-    invitation_status: str
-    membership_active: bool
-    break_glass_category: str | None = None
-    break_glass_reason: str | None = None
-    break_glass_case_id: str | None = None
-    break_glass_expires_at: int | None = None
-
-
-def authenticate_supabase_bearer(
-    authorization: str | None,
-    settings: Settings,
-    *,
-    selected_organization_id: str | None = None,
-) -> SupabasePrincipal:
-    if not authorization or not authorization.lower().startswith("bearer "):
-        raise _unauthorized("Bearer token required.")
-    token = authorization.split(" ", 1)[1].strip()
-    claims = _decode_supabase_jwt(token, settings)
-    if settings.public_signup:
-        return _public_signup_principal(claims)
-    metadata = claims.get("app_metadata")
-    if not isinstance(metadata, dict):
-        raise _unauthorized("Supabase app metadata is required.")
-
-    memberships = _normalized_memberships(metadata)
-    user_id = _required_str(claims, "sub")
-    organization_id, role = _resolve_active_organization_context(
-        metadata,
-        memberships,
-        selected_organization_id=selected_organization_id,
-    )
-    display_name = _display_name(claims, metadata, user_id)
-    aal = _required_str(claims, "aal")
-    membership_active = _required_bool(metadata, "membership_active")
-    invitation_status = _required_invitation_status(metadata)
-
-    if not membership_active:
-        raise _forbidden("Membership is not active.")
-    if settings.supabase_require_mfa and aal != "aal2":
-        raise _forbidden("AAL2 session is required.")
-    if settings.supabase_require_invitation and invitation_status != "accepted":
-        raise _forbidden("Invitation must be accepted.")
-
-    (
-        break_glass_category,
-        break_glass_reason,
-        break_glass_case_id,
-        break_glass_expires_at,
-    ) = _parse_break_glass_claim(metadata, role)
-
-    return SupabasePrincipal(
-        user_id=user_id,
-        role=role,
-        display_name=display_name,
-        organization_id=organization_id,
-        aal=aal,
-        invitation_status=invitation_status,
-        membership_active=membership_active,
-        break_glass_category=break_glass_category,
-        break_glass_reason=break_glass_reason,
-        break_glass_case_id=break_glass_case_id,
-        break_glass_expires_at=break_glass_expires_at,
-    )
 
 
 PERSONAL_ORGANIZATION_PREFIX = "personal_"
 
 
-def _public_signup_principal(claims: dict[str, Any]) -> SupabasePrincipal:
+def authenticate_supabase_bearer(authorization: str | None, settings: Settings) -> SupabasePrincipal:
     """Give any verified Supabase user a workspace of their own.
 
-    The token's signature, issuer and audience are already verified. Nothing
-    in the token is trusted for access: the workspace id is derived from the
-    subject, so a user can only ever reach records created under their own id.
+    The token's signature, issuer and audience are verified. Nothing else in
+    the token is trusted for access: the workspace id is derived from the
+    subject, so a user can only ever reach records created under their own id,
+    and organization or role claims in a token are ignored.
     """
+    if not authorization or not authorization.lower().startswith("bearer "):
+        raise _unauthorized("Bearer token required.")
+    token = authorization.split(" ", 1)[1].strip()
+    claims = _decode_supabase_jwt(token, settings)
     user_id = _required_str(claims, "sub")
     user_metadata = claims.get("user_metadata")
     display_name = user_id
@@ -137,8 +66,6 @@ def _public_signup_principal(claims: dict[str, Any]) -> SupabasePrincipal:
         display_name=display_name,
         organization_id=f"{PERSONAL_ORGANIZATION_PREFIX}{user_id}",
         aal=aal if isinstance(aal, str) and aal else "aal1",
-        invitation_status="accepted",
-        membership_active=True,
     )
 
 
@@ -310,163 +237,6 @@ def _required_str(container: dict[str, Any], key: str) -> str:
     if not isinstance(value, str) or not value.strip():
         raise _unauthorized(f"Supabase claim '{key}' is required.")
     return value.strip()
-
-
-def _required_bool(container: dict[str, Any], key: str) -> bool:
-    value = container.get(key)
-    if not isinstance(value, bool):
-        raise _unauthorized(f"Supabase claim '{key}' must be a boolean.")
-    return value
-
-
-def _required_role(metadata: dict[str, Any]) -> str:
-    role = _required_str(metadata, "role")
-    if role not in ALLOWED_SUPABASE_ROLES:
-        raise _unauthorized("Supabase claim 'role' is invalid.")
-    return role
-
-
-def _required_invitation_status(metadata: dict[str, Any]) -> str:
-    invitation_status = _required_str(metadata, "invitation_status")
-    if invitation_status not in ALLOWED_INVITATION_STATUSES:
-        raise _unauthorized("Supabase claim 'invitation_status' is invalid.")
-    return invitation_status
-
-
-def _normalized_memberships(metadata: dict[str, Any]) -> list[dict[str, Any]] | None:
-    memberships = metadata.get("organizations")
-    if memberships is None:
-        memberships = metadata.get("organization_memberships")
-    if memberships is None:
-        return None
-    if not isinstance(memberships, list):
-        raise _unauthorized("Supabase claim 'organizations' must be a list when present.")
-
-    normalized_memberships: list[dict[str, Any]] = []
-    for membership in memberships:
-        if not isinstance(membership, dict):
-            raise _unauthorized("Supabase claim 'organizations' contains an invalid membership entry.")
-        candidate_org = membership.get("organization_id")
-        candidate_role = membership.get("role")
-        candidate_active = membership.get("active")
-        if not isinstance(candidate_org, str) or not candidate_org.strip():
-            raise _unauthorized("Supabase claim 'organizations' contains an invalid organization_id.")
-        if not isinstance(candidate_role, str) or not candidate_role.strip():
-            raise _unauthorized("Supabase claim 'organizations' contains an invalid role.")
-        normalized_role = candidate_role.strip()
-        if normalized_role not in ALLOWED_SUPABASE_ROLES:
-            raise _unauthorized("Supabase claim 'organizations' contains an invalid role.")
-        if candidate_active is not None and not isinstance(candidate_active, bool):
-            raise _unauthorized("Supabase claim 'organizations' contains an invalid active flag.")
-        normalized_memberships.append(
-            {
-                "organization_id": candidate_org.strip(),
-                "role": normalized_role,
-                "active": candidate_active,
-            }
-        )
-    return normalized_memberships
-
-
-def _resolve_active_organization_context(
-    metadata: dict[str, Any],
-    memberships: list[dict[str, Any]] | None,
-    *,
-    selected_organization_id: str | None,
-) -> tuple[str, str]:
-    requested_org = _optional_str(selected_organization_id)
-    if memberships is None:
-        if requested_org is not None and requested_org != _required_str(metadata, "organization_id"):
-            raise _forbidden("Active organization is not present in the membership claims.")
-        return _required_str(metadata, "organization_id"), _required_role(metadata)
-
-    if requested_org is not None:
-        return _resolve_membership_context(memberships, requested_org)
-
-    claim_organization_id = _optional_str(metadata.get("organization_id"))
-    if claim_organization_id is not None:
-        claim_role = _required_role(metadata)
-        return _resolve_membership_context(memberships, claim_organization_id, expected_role=claim_role)
-
-    active_memberships = [membership for membership in memberships if membership.get("active") is not False]
-    if len(active_memberships) == 1:
-        return active_memberships[0]["organization_id"], active_memberships[0]["role"]
-
-    raise _forbidden("Active organization selection is required.")
-
-
-def _resolve_membership_context(
-    memberships: list[dict[str, Any]],
-    organization_id: str,
-    *,
-    expected_role: str | None = None,
-) -> tuple[str, str]:
-    for membership in memberships:
-        if membership["organization_id"] != organization_id:
-            continue
-        if expected_role is not None and membership["role"] != expected_role:
-            raise _unauthorized("Active organization role does not match the selected membership.")
-        if membership.get("active") is False:
-            raise _forbidden("Active organization membership is not active.")
-        return membership["organization_id"], membership["role"]
-
-    raise _forbidden("Active organization is not present in the membership claims.")
-
-
-def _parse_break_glass_claim(
-    metadata: dict[str, Any],
-    role: str,
-) -> tuple[str | None, str | None, str | None, int | None]:
-    if "break_glass" not in metadata:
-        return None, None, None, None
-
-    break_glass = metadata.get("break_glass")
-    if break_glass is None:
-        return None, None, None, None
-    if not isinstance(break_glass, dict):
-        raise _unauthorized("Supabase claim 'break_glass' is invalid.")
-
-    active = break_glass.get("active")
-    if not isinstance(active, bool):
-        raise _unauthorized("Supabase claim 'break_glass.active' must be a boolean.")
-    if not active:
-        return None, None, None, None
-
-    if role != "platform_operator":
-        raise _forbidden("Break-glass access is limited to platform operators.")
-
-    category = _required_break_glass_str(break_glass, "category", "Break-glass access requires a category.")
-    reason = _required_break_glass_str(break_glass, "reason", "Break-glass access requires a reason.")
-    case_id = _required_break_glass_str(break_glass, "case_id", "Break-glass access requires a scoped case.")
-    expires_at = break_glass.get("expires_at")
-    if not isinstance(expires_at, int):
-        raise _unauthorized("Supabase claim 'break_glass.expires_at' must be an integer.")
-    now = int(time.time())
-    if expires_at <= now:
-        raise _forbidden("Break-glass access is expired.")
-    if expires_at - now > BREAK_GLASS_MAX_DURATION_SECONDS:
-        raise _forbidden("Break-glass access exceeds the one-hour limit.")
-    return category, reason, case_id, expires_at
-
-
-def _required_break_glass_str(container: dict[str, Any], key: str, detail: str) -> str:
-    value = container.get(key)
-    if not isinstance(value, str) or not value.strip():
-        raise _forbidden(detail)
-    return value.strip()
-
-
-def _optional_str(value: Any) -> str | None:
-    if isinstance(value, str) and value.strip():
-        return value.strip()
-    return None
-
-
-def _display_name(claims: dict[str, Any], metadata: dict[str, Any], user_id: str) -> str:
-    for value in (metadata.get("display_name"), claims.get("email")):
-        if isinstance(value, str) and value.strip():
-            return value.strip()
-    return user_id
 
 
 def _unauthorized(detail: str) -> HTTPException:

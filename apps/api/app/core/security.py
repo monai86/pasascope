@@ -1,8 +1,3 @@
-import re
-import time
-from hashlib import sha256
-from typing import Protocol
-from uuid import uuid4
 
 from fastapi import Header, HTTPException, status
 from fastapi import Depends, Request
@@ -16,26 +11,8 @@ from app.core.config import Settings, get_settings
 
 
 UNSAFE_METHODS = {"POST", "PUT", "PATCH", "DELETE"}
-BREAK_GLASS_MAX_DURATION_SECONDS = 60 * 60
-ALLOWED_LAUNCH_ROLES = {"therapist", "clinical_supervisor", "org_admin", "platform_operator"}
-ORG_ADMIN_DENIAL_DETAIL = "Not authorized for organization administration."
-_SAFE_CORRELATION_ID_RE = re.compile(r"^[A-Za-z0-9_.:-]{1,128}$")
-
-
-class OrganizationAdminRepository(Protocol):
-    def has_active_org_admin_membership(self, user_id: str, organization_id: str) -> bool: ...
-
-    def append_organization_admin_denial_audit(
-        self,
-        action: str,
-        target_id: str,
-        message: str,
-        *,
-        actor_id: str,
-        outcome: str,
-        correlation_id: str,
-        organization_id: str,
-    ) -> None: ...
+# Local mock sign-in only: a signed-in Supabase user is always a therapist.
+ALLOWED_LAUNCH_ROLES = {"therapist", "clinical_supervisor"}
 
 
 class CurrentUser(BaseModel):
@@ -44,12 +21,6 @@ class CurrentUser(BaseModel):
     display_name: str = "Demo Therapist"
     organization_id: str = "pilot_org_001"
     aal: str = "aal1"
-    invitation_status: str = "local_mock"
-    membership_active: bool = True
-    break_glass_category: str | None = None
-    break_glass_reason: str | None = None
-    break_glass_case_id: str | None = None
-    break_glass_expires_at: int | None = None
 
 
 def get_current_user(
@@ -59,87 +30,23 @@ def get_current_user(
     x_mock_role: str | None = Header(default=None),
     x_mock_display_name: str | None = Header(default=None),
     x_organization_id: str | None = Header(default=None, alias="X-Organization-Id"),
-    x_break_glass_category: str | None = Header(default=None),
-    x_break_glass_reason: str | None = Header(default=None),
-    x_break_glass_case_id: str | None = Header(default=None),
-    x_break_glass_expires_at: int | None = Header(default=None),
     settings: Settings = Depends(get_settings),
 ) -> CurrentUser:
     if settings.auth_mode != "mock":
-        principal = authenticate_supabase_bearer(
-            authorization,
-            settings,
-            selected_organization_id=x_organization_id,
-        )
+        principal = authenticate_supabase_bearer(authorization, settings)
         return CurrentUser(
             user_id=principal.user_id,
             role=principal.role,
             display_name=principal.display_name,
             organization_id=principal.organization_id,
             aal=principal.aal,
-            invitation_status=principal.invitation_status,
-            membership_active=principal.membership_active,
-            break_glass_category=principal.break_glass_category,
-            break_glass_reason=principal.break_glass_reason,
-            break_glass_case_id=principal.break_glass_case_id,
-            break_glass_expires_at=principal.break_glass_expires_at,
         )
-    role = _validate_mock_role(x_mock_role or "therapist")
-    user = CurrentUser(
+    return CurrentUser(
         user_id=x_user_id or x_mock_user_id or "therapist-demo",
-        role=role,
+        role=_validate_mock_role(x_mock_role or "therapist"),
         display_name=x_mock_display_name or "Demo Therapist",
         organization_id=x_organization_id or "pilot_org_001",
-        break_glass_category=x_break_glass_category.strip() if x_break_glass_category else None,
-        break_glass_reason=x_break_glass_reason.strip() if x_break_glass_reason else None,
-        break_glass_case_id=x_break_glass_case_id.strip() if x_break_glass_case_id else None,
-        break_glass_expires_at=x_break_glass_expires_at,
     )
-    _validate_mock_break_glass(user)
-    return user
-
-
-def require_org_admin(user: CurrentUser) -> CurrentUser:
-    if user.role != "org_admin":
-        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Organization admin role required.")
-    return user
-
-
-def require_organization_admin(
-    user: CurrentUser,
-    repo: OrganizationAdminRepository,
-    *,
-    organization_id: str,
-    denied_action: str,
-    target_id: str,
-    request_id: str | None = None,
-) -> CurrentUser:
-    if (
-        user.role == "org_admin"
-        and user.membership_active
-        and user.organization_id == organization_id
-        and repo.has_active_org_admin_membership(user.user_id, organization_id)
-    ):
-        return user
-
-    correlation_id = request_id if request_id and _SAFE_CORRELATION_ID_RE.fullmatch(request_id) else None
-    repo.append_organization_admin_denial_audit(
-        denied_action,
-        target_id,
-        "Organization administration access denied.",
-        actor_id=_safe_audit_actor_id(user.user_id),
-        outcome="denied",
-        correlation_id=correlation_id or f"org-admin-{uuid4().hex}",
-        organization_id=organization_id,
-    )
-    raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail=ORG_ADMIN_DENIAL_DETAIL)
-
-
-def _safe_audit_actor_id(actor_id: str) -> str:
-    if _SAFE_CORRELATION_ID_RE.fullmatch(actor_id):
-        return actor_id
-    digest = sha256(actor_id.encode("utf-8")).hexdigest()[:24]
-    return f"actor_{digest}"
 
 
 def require_therapist(user: CurrentUser) -> CurrentUser:
@@ -156,24 +63,6 @@ def _validate_mock_role(role: str) -> str:
             detail=f"Mock role '{normalized or role}' is invalid.",
         )
     return normalized
-
-
-def _validate_mock_break_glass(user: CurrentUser) -> None:
-    if user.role != "platform_operator" or user.break_glass_expires_at is None:
-        return
-    if not user.break_glass_category:
-        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Break-glass access requires a category.")
-    if not user.break_glass_reason:
-        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Break-glass access requires a reason.")
-    if not user.break_glass_case_id:
-        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Break-glass access requires a scoped case.")
-    if user.break_glass_expires_at <= int(time.time()):
-        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Break-glass access is expired.")
-    if user.break_glass_expires_at - int(time.time()) > BREAK_GLASS_MAX_DURATION_SECONDS:
-        raise HTTPException(
-            status_code=status.HTTP_403_FORBIDDEN,
-            detail="Break-glass access exceeds the one-hour limit.",
-        )
 
 
 class OriginGuardMiddleware(BaseHTTPMiddleware):

@@ -170,16 +170,6 @@ class Settings(BaseModel):
     supabase_jwt_jwks_cache_ttl_seconds: int = 300
     supabase_jwt_issuer: str = ""
     supabase_jwt_audience: str = "authenticated"
-    supabase_require_mfa: bool = True
-    supabase_require_invitation: bool = True
-    # Public sign-up: any verified Supabase user gets a personal workspace
-    # (organization "personal_<user id>") without invitation, membership or MFA claims.
-    public_signup: bool = False
-    # "strict" keeps therapist attestation and report sign-off as hard gates.
-    # "open" records attestation automatically at feature extraction and lets
-    # a saved draft report be exported without sign-off.
-    # "supabase" also writes each verified recording to the private Supabase
-    # Storage bucket and restores it when the local file is missing.
     audio_backup_mode: str = "none"
     debug_feature_override: bool = False
     max_audio_file_size_mb: int = DEFAULT_CAPTURE_MAX_UPLOAD_SIZE_BYTES // MEBIBYTE
@@ -284,8 +274,6 @@ class Settings(BaseModel):
             self.asr_hosted_api_key.strip() and self.asr_hosted_base_url.startswith("https://")
         ):
             raise ValueError("Hosted transcription needs an API key and an https base URL.")
-        if self.public_signup and (self.supabase_require_mfa or self.supabase_require_invitation):
-            raise ValueError("Public sign-up cannot be combined with required MFA or invitation.")
         if self.repository_mode in {"sql", "sqlalchemy"} and self.web_concurrency > 1:
             # The SQL repository keeps a per-process cache of clinical records;
             # a second worker would serve and write stale state.
@@ -314,10 +302,6 @@ class Settings(BaseModel):
                     raise ValueError("Production Supabase JWKS URL must be configured for remote asymmetric verification.")
                 if self.supabase_jwt_jwks_cache_ttl_seconds <= 0:
                     raise ValueError("Production Supabase JWKS cache TTL must be positive.")
-            if not self.supabase_require_mfa:
-                raise ValueError("Production Supabase auth must require MFA.")
-            if not self.supabase_require_invitation:
-                raise ValueError("Production Supabase auth must require invitation acceptance.")
             if self.repository_mode != "sql":
                 raise ValueError("Production repository mode must be sql.")
             if self.database_url == DEFAULT_DATABASE_URL or _points_at_loopback(self.database_url):
@@ -376,19 +360,6 @@ class Settings(BaseModel):
                 "THERAPIST_APP_V2_SUPABASE_JWT_AUDIENCE",
                 "authenticated",
             ),
-            supabase_require_mfa=getenv_compat(
-                "PASASCOPE_SUPABASE_REQUIRE_MFA",
-                "THERAPIST_APP_V2_SUPABASE_REQUIRE_MFA",
-                "true",
-            ).lower()
-            != "false",
-            supabase_require_invitation=getenv_compat(
-                "PASASCOPE_SUPABASE_REQUIRE_INVITATION",
-                "THERAPIST_APP_V2_SUPABASE_REQUIRE_INVITATION",
-                "true",
-            ).lower()
-            != "false",
-            public_signup=getenv_compat("PASASCOPE_PUBLIC_SIGNUP", default="false").lower() == "true",
             audio_backup_mode=getenv_compat("PASASCOPE_AUDIO_BACKUP_MODE", default="none").strip().lower(),
             debug_feature_override=getenv_compat(
                 "PASASCOPE_DEBUG_FEATURE_OVERRIDE",

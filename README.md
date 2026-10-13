@@ -206,8 +206,6 @@ locally, start the API in public mode:
 
 ```bash
 cd apps/api
-PASASCOPE_PUBLIC_SIGNUP=true PASASCOPE_REVIEW_GATES=open \
-PASASCOPE_SUPABASE_REQUIRE_MFA=false PASASCOPE_SUPABASE_REQUIRE_INVITATION=false \
 PYTHONPATH=.:../..:../../src uvicorn app.main:app --reload --port 8000
 
 cd ../../apps/pasascope-app

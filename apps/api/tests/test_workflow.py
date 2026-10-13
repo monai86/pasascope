@@ -186,13 +186,9 @@ def test_active_api_accepts_x_user_id_header_for_user_scoped_routes():
         json={"child_code": "C-HEADER-001", "age_months": 48, "language": "English", "consent_status": "granted"},
     ).json()["case_id"]
 
-    response = client.post(
-        f"/api/v1/cases/{case_id}/privacy-requests",
-        headers=headers,
-        json={"operation_type": "case_export", "reason": "Header compatibility test"},
-    )
+    response = client.get(f"/api/v1/cases/{case_id}", headers=headers)
     assert response.status_code == 200
-    assert response.json()["requested_by"] == "user_therapist_001"
+    assert response.json()["primary_therapist_user_id"] == "user_therapist_001"
 
 
 def test_repository_mode_defaults_to_json_without_environment_override(monkeypatch):
@@ -854,45 +850,6 @@ def test_ai_review_can_be_rejected_only_with_reason():
     assert report.status_code == 200
     assert "Summary was not clinically useful" not in report.json()["markdown"]
     assert "was rejected or withdrawn by the therapist" in report.json()["markdown"]
-
-
-def test_asr_evaluation_metrics():
-    response = client.post(
-        "/api/v1/evaluation/asr",
-        json={
-            "reference_text": "*CHI:\tI see car .",
-            "hypothesis_text": "*CHI:\tI see a car .",
-            "reference_speakers": ["CHI"],
-            "hypothesis_speakers": ["CHI"],
-            "audio_duration_seconds": 10,
-            "transcribed_duration_seconds": 8,
-        },
-    )
-    assert response.status_code == 200
-    assert response.json()["coverage"] == 0.8
-    assert response.json()["speaker_accuracy"] == 1.0
-
-
-def test_asr_dataset_evaluation_endpoint(tmp_path):
-    dataset = tmp_path / "evaluation"
-    gold = dataset / "gold_transcripts"
-    hypotheses = dataset / "hypothesis_transcripts"
-    audio = dataset / "audio_samples"
-    gold.mkdir(parents=True)
-    hypotheses.mkdir()
-    audio.mkdir()
-    (gold / "sample_001.cha").write_text("*CHI:\tI see car .\n*THER:\ttell me more .\n", encoding="utf-8")
-    (hypotheses / "sample_001.cha").write_text("*CHI:\tI see a car .\n*THER:\ttell me more .\n", encoding="utf-8")
-    (audio / "sample_001.wav").write_text("placeholder only", encoding="utf-8")
-
-    response = client.post("/api/v1/evaluation/asr-dataset", json={"dataset_dir": str(dataset)})
-
-    assert response.status_code == 200
-    body = response.json()
-    assert body["sample_count"] == 1
-    assert body["samples"][0]["sample_id"] == "sample_001"
-    assert body["samples"][0]["audio_present"] is True
-    assert body["aggregate_metrics"]["speaker_accuracy"] == 1.0
 
 
 def test_transcript_split_merge_and_export_cha():
@@ -1891,48 +1848,6 @@ def test_audio_process_fails_on_quality_blocker():
     assert failed["error_code"] == "audio_quality_failed"
 
 
-def test_ml_dataset_baseline_and_model_card(tmp_path):
-    source = tmp_path / "dataset"
-    asd = source / "ASD"
-    td = source / "TD"
-    asd.mkdir(parents=True)
-    td.mkdir(parents=True)
-    cha = "\n".join(
-        [
-            "@Begin",
-            "@Languages:\teng",
-            "@Participants:\tCHI Child Target_Child, THER Therapist Investigator",
-            "@ID:\teng|Demo|CHI|4;06.00|male|||Target_Child|||",
-            "*CHI:\tI see a car .",
-            "*CHI:\tmore car ?",
-            "*UNK:\tbackground speech .",
-            "*CHI:\tcar car [/] goes .",
-            "@End",
-        ]
-    )
-    (asd / "a.cha").write_text(cha, encoding="utf-8")
-    (td / "b.cha").write_text(cha.replace("more car", "blue truck"), encoding="utf-8")
-
-    dataset = client.post("/api/v1/evaluation/ml-dataset", json={"source_dir": str(source)}).json()
-    assert dataset["dataset_size"] == 2
-    assert dataset["class_distribution"] == {"ASD": 1, "TD": 1}
-    assert dataset["rows"][0]["features"]["child_utterance_count"] == 3
-    assert dataset["rows"][0]["features"]["unknown_speaker_ratio"] == 0.25
-    assert dataset["rows"][0]["features"]["question_ratio"] == 0.3333
-    assert dataset["rows"][0]["features"]["repetition_marker_count"] == 2
-
-    baseline = client.post("/api/v1/evaluation/ml-baseline", json={"source_dir": str(source)}).json()
-    assert baseline["dataset_size"] == 2
-    assert baseline["models"]["Logistic Regression"]["status"] == "insufficient_data"
-
-    card = client.post("/api/v1/evaluation/model-card", json={"source_dir": str(source)}).json()
-    assert card["dataset_size"] == 2
-    assert "type_token_ratio" in card["feature_list"]
-    assert "unknown_speaker_ratio" in card["feature_list"]
-    assert "question_ratio" in card["feature_list"]
-    assert "repetition_marker_count" in card["feature_list"]
-
-
 def test_repository_mode_selection_supports_memory_and_json(tmp_path, monkeypatch):
     get_settings.cache_clear()
     get_repository_singleton.cache_clear()
@@ -2000,94 +1915,6 @@ def test_sqlalchemy_metadata_contains_v2_clinical_tables():
         "audit_logs",
     }
     assert expected.issubset(set(Base.metadata.tables))
-
-
-def test_audit_logs_are_org_admin_only():
-    get_repository_singleton().upsert_membership(
-        "pilot_org_001",
-        OrganizationMembershipCreate(
-            user_id="org-admin-audit",
-            display_name="Audit Administrator",
-            role="org_admin",
-        ),
-        actor_id="system",
-    )
-    org_a_case = client.post(
-        "/api/v1/cases",
-        json={"child_code": "C-AUDIT", "age_months": 50, "language": "English", "consent_status": "granted"},
-    ).json()
-    org_b_case = client.post(
-        "/api/v1/cases",
-        headers={"x-mock-user-id": "therapist-b", "x-mock-role": "therapist", "x-organization-id": "org_b"},
-        json={"child_code": "C-AUDIT-B", "age_months": 48, "language": "English", "consent_status": "granted"},
-    ).json()
-    therapist_response = client.get("/api/v1/audit/logs")
-    assert therapist_response.status_code == 403
-
-    org_admin_response = client.get(
-        "/api/v1/audit/logs",
-        headers={"x-mock-role": "org_admin", "x-mock-user-id": "org-admin-audit"},
-    )
-    assert org_admin_response.status_code == 200
-    assert any(item["action"] == "case.create" and item["target_id"] == org_a_case["case_id"] for item in org_admin_response.json())
-    assert all(item["organization_id"] == "pilot_org_001" for item in org_admin_response.json())
-    assert all(item["target_id"] != org_b_case["case_id"] for item in org_admin_response.json())
-
-def test_privacy_operation_requests_are_case_visible_and_org_admin_managed():
-    therapist_headers = {"x-mock-user-id": "therapist-privacy", "x-mock-role": "therapist"}
-    case_id = client.post(
-        "/api/v1/cases",
-        headers=therapist_headers,
-        json={"child_code": "C-PRIVACY", "age_months": 50, "language": "English", "consent_status": "granted"},
-    ).json()["case_id"]
-    created = client.post(
-        f"/api/v1/cases/{case_id}/privacy-requests",
-        json={"operation_type": "case_export", "reason": "Guardian requested a copy of retained records."},
-        headers=therapist_headers,
-    )
-    assert created.status_code == 200
-    operation = created.json()
-    assert operation["status"] == "requested"
-    assert operation["requested_by"] == "therapist-privacy"
-    assert operation["requester_role"] == "therapist"
-
-    case_requests = client.get(f"/api/v1/cases/{case_id}/privacy-requests", headers=therapist_headers)
-    assert case_requests.status_code == 200
-    assert case_requests.json()[0]["privacy_operation_id"] == operation["privacy_operation_id"]
-
-    therapist_queue = client.get("/api/v1/privacy/requests")
-    assert therapist_queue.status_code == 403
-
-    get_repository_singleton().upsert_membership(
-        "pilot_org_001",
-        OrganizationMembershipCreate(
-            user_id="org-admin-privacy",
-            display_name="Privacy Administrator",
-            role="org_admin",
-        ),
-        actor_id="system",
-    )
-
-    org_admin_queue = client.get(
-        "/api/v1/privacy/requests",
-        headers={"x-mock-role": "org_admin", "x-mock-user-id": "org-admin-privacy"},
-    )
-    assert org_admin_queue.status_code == 200
-    assert any(item["privacy_operation_id"] == operation["privacy_operation_id"] for item in org_admin_queue.json())
-    assert all("requested_by" not in item for item in org_admin_queue.json())
-    assert all("reason" not in item for item in org_admin_queue.json())
-    assert all("admin_note" not in item for item in org_admin_queue.json())
-
-    patched = client.patch(
-        f"/api/v1/privacy/requests/{operation['privacy_operation_id']}",
-        json={"status": "in_review", "admin_note": "Verifying retention policy before export."},
-        headers={"x-mock-role": "org_admin", "x-mock-user-id": "org-admin-privacy"},
-    )
-    assert patched.status_code == 200
-    assert patched.json()["status"] == "in_review"
-    assert "admin_note" not in patched.json()
-    assert "requested_by" not in patched.json()
-    assert "reason" not in patched.json()
 
 
 def test_report_export_works_for_a_draft_and_supports_formats():

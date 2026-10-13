@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 from copy import deepcopy
-from datetime import timedelta
 import json
 from pathlib import Path
 from uuid import uuid4
@@ -9,18 +8,11 @@ from uuid import uuid4
 from app.schemas.clinical import (
     AiReview,
     AudioFileMetadata,
-    CareTeamAssignment,
-    CareTeamAssignmentCreate,
     ChildCase,
     ChildCaseCreate,
     ChildCaseUpdate,
     FeatureSet,
     MLResult,
-    OrganizationMembership,
-    OrganizationMembershipCreate,
-    OrganizationInvitation,
-    OrganizationInvitationAccept,
-    OrganizationInvitationCreate,
     PrivacyOperation,
     ProcessingJob,
     Report,
@@ -40,8 +32,6 @@ from app.repositories.base import (
 )
 from app.services.audit_safety import validate_audit_event
 
-INVITATION_EXPIRY_DAYS = 7
-
 
 def new_id(prefix: str) -> str:
     return f"{prefix}_{uuid4().hex[:10]}"
@@ -58,9 +48,6 @@ class MockRepository:
         self.ml_results: dict[str, MLResult] = {}
         self.ai_reviews: dict[str, AiReview] = {}
         self.reports: dict[str, Report] = {}
-        self.memberships: dict[str, OrganizationMembership] = {}
-        self.invitations: dict[str, OrganizationInvitation] = {}
-        self.care_team_assignments: dict[str, CareTeamAssignment] = {}
         self.therapy_goals: dict[str, TherapyGoal] = {}
         self.audio_files: dict[str, AudioFileMetadata] = {}
         self.jobs: dict[str, ProcessingJob] = {}
@@ -139,36 +126,6 @@ class MockRepository:
         event_data["organization_id"] = organization_id or self._organization_for_target(target_id)
         self.audit_log.append(event_data)
 
-    def has_active_org_admin_membership(self, user_id: str, organization_id: str) -> bool:
-        return any(
-            membership.user_id == user_id
-            and membership.organization_id == organization_id
-            and membership.role == "org_admin"
-            and membership.active
-            for membership in self.memberships.values()
-        )
-
-    def append_organization_admin_denial_audit(
-        self,
-        action: str,
-        target_id: str,
-        message: str,
-        *,
-        actor_id: str,
-        outcome: str,
-        correlation_id: str,
-        organization_id: str,
-    ) -> None:
-        self.add_audit(
-            action,
-            target_id,
-            message,
-            actor_id=actor_id,
-            outcome=outcome,
-            correlation_id=correlation_id,
-            organization_id=organization_id,
-        )
-
     def _organization_for_target(self, target_id: str) -> str:
         if target_id in self.cases:
             return self.cases[target_id].organization_id
@@ -184,12 +141,6 @@ class MockRepository:
             return self.ai_reviews[target_id].organization_id
         if target_id in self.reports:
             return self.reports[target_id].organization_id
-        if target_id in self.memberships:
-            return self.memberships[target_id].organization_id
-        if target_id in self.invitations:
-            return self.invitations[target_id].organization_id
-        if target_id in self.care_team_assignments:
-            return self.care_team_assignments[target_id].organization_id
         if target_id in self.therapy_goals:
             return self.therapy_goals[target_id].organization_id
         if target_id in self.audio_files:
@@ -219,14 +170,8 @@ class MockRepository:
         return None
 
     def delete_case(self, case_id: str, *, actor_id: str) -> None:
-        """Remove an empty case and its care-team rows. The audit event is kept."""
+        """Remove an empty case. The audit event is kept."""
         case = self.cases.pop(case_id)
-        for assignment_id in [
-            assignment_id
-            for assignment_id, assignment in self.care_team_assignments.items()
-            if assignment.case_id == case_id
-        ]:
-            del self.care_team_assignments[assignment_id]
         self.add_audit(
             "case.delete",
             case_id,
@@ -272,241 +217,6 @@ class MockRepository:
         case.version += 1
         self.add_audit("case.update", case_id, "Case updated.", actor_id=actor_id)
         return self.clone(case)
-
-    def upsert_membership(
-        self,
-        organization_id: str,
-        payload: OrganizationMembershipCreate,
-        *,
-        actor_id: str,
-    ) -> OrganizationMembership:
-        existing = next(
-            (
-                membership
-                for membership in self.memberships.values()
-                if membership.organization_id == organization_id and membership.user_id == payload.user_id
-            ),
-            None,
-        )
-        if existing:
-            existing.display_name = payload.display_name
-            existing.role = payload.role
-            existing.active = payload.active
-            membership = existing
-        else:
-            membership = OrganizationMembership(
-                membership_id=new_id("mbr"),
-                organization_id=organization_id,
-                user_id=payload.user_id,
-                display_name=payload.display_name,
-                role=payload.role,
-                active=payload.active,
-            )
-            self.memberships[membership.membership_id] = membership
-        self.add_audit(
-            "membership.upsert",
-            membership.membership_id,
-            "Organization membership updated.",
-            actor_id=actor_id,
-        )
-        return self.clone(membership)
-
-    def list_memberships(self, organization_id: str) -> list[OrganizationMembership]:
-        memberships = [item for item in self.memberships.values() if item.organization_id == organization_id]
-        memberships.sort(key=lambda item: item.created_at)
-        return [self.clone(item) for item in memberships]
-
-    def revoke_membership(self, organization_id: str, membership_id: str, *, actor_id: str) -> OrganizationMembership:
-        membership = self.memberships[membership_id]
-        if membership.organization_id != organization_id:
-            raise KeyError(membership_id)
-        membership.active = False
-        for assignment in self.care_team_assignments.values():
-            if assignment.organization_id == organization_id and assignment.user_id == membership.user_id:
-                assignment.active = False
-                assignment.is_primary = False
-                if assignment.case_id in self.cases:
-                    case = self.cases[assignment.case_id]
-                    case.care_team_user_ids = [
-                        user_id for user_id in case.care_team_user_ids if user_id != membership.user_id
-                    ]
-                    if case.primary_therapist_user_id == membership.user_id:
-                        case.primary_therapist_user_id = None
-        self.add_audit(
-            "membership.revoke",
-            membership.membership_id,
-            "Organization membership revoked.",
-            actor_id=actor_id,
-        )
-        return self.clone(membership)
-
-    def create_invitation(
-        self,
-        organization_id: str,
-        payload: OrganizationInvitationCreate,
-        *,
-        actor_id: str,
-    ) -> OrganizationInvitation:
-        now = utc_now()
-        invitation = OrganizationInvitation(
-            invitation_id=new_id("inv"),
-            organization_id=organization_id,
-            email=payload.email,
-            display_name=payload.display_name,
-            role=payload.role,
-            invited_by=actor_id,
-            expires_at=now + timedelta(days=INVITATION_EXPIRY_DAYS),
-        )
-        self.invitations[invitation.invitation_id] = invitation
-        self.add_audit(
-            "invitation.create",
-            invitation.invitation_id,
-            "Organization invitation created.",
-            actor_id=actor_id,
-        )
-        return self.clone(invitation)
-
-    def list_invitations(self, organization_id: str) -> list[OrganizationInvitation]:
-        invitations = [item for item in self.invitations.values() if item.organization_id == organization_id]
-        invitations.sort(key=lambda item: item.created_at)
-        return [self.clone(item) for item in invitations]
-
-    def accept_invitation(
-        self,
-        organization_id: str,
-        invitation_id: str,
-        payload: OrganizationInvitationAccept,
-        *,
-        actor_id: str,
-    ) -> OrganizationInvitation:
-        invitation = self.invitations[invitation_id]
-        if invitation.organization_id != organization_id:
-            raise KeyError(invitation_id)
-        now = utc_now()
-        if invitation.status == "accepted":
-            raise ValueError("Invitation has already been accepted.")
-        if invitation.status == "revoked":
-            raise ValueError("Invitation has been revoked.")
-        if invitation.expires_at <= now:
-            invitation.status = "expired"
-            self.add_audit(
-                "invitation.accept",
-                invitation.invitation_id,
-                "Organization invitation acceptance failed.",
-                actor_id=actor_id,
-                outcome="denied",
-            )
-            raise ValueError("Expired invitations require a newly issued invitation.")
-        for existing in self.invitations.values():
-            if existing.invitation_id == invitation.invitation_id:
-                continue
-            if existing.email != invitation.email:
-                continue
-            if existing.accepted_user_id and existing.accepted_user_id != payload.user_id:
-                self.add_audit(
-                    "invitation.accept",
-                    invitation.invitation_id,
-                    "Organization invitation acceptance failed.",
-                    actor_id=actor_id,
-                    outcome="denied",
-                )
-                raise ValueError("Identity email is already bound to a different user.")
-        invitation.status = "accepted"
-        invitation.accepted_user_id = payload.user_id
-        invitation.accepted_at = now
-        self.upsert_membership(
-            organization_id,
-            OrganizationMembershipCreate(
-                user_id=payload.user_id,
-                display_name=invitation.display_name,
-                role=invitation.role,
-                active=True,
-            ),
-            actor_id=actor_id,
-        )
-        self.add_audit(
-            "invitation.accept",
-            invitation.invitation_id,
-            "Organization invitation accepted.",
-            actor_id=actor_id,
-        )
-        return self.clone(invitation)
-
-    def audit_break_glass_case_access(self, organization_id: str, case_id: str, *, actor_id: str) -> None:
-        if case_id not in self.cases or self.cases[case_id].organization_id != organization_id:
-            raise KeyError(case_id)
-        self.add_audit(
-            "break_glass.case_access",
-            case_id,
-            "Scoped break-glass case access granted.",
-            actor_id=actor_id,
-        )
-
-    def assign_care_team_member(
-        self,
-        case_id: str,
-        payload: CareTeamAssignmentCreate,
-        *,
-        actor_id: str,
-    ) -> CareTeamAssignment:
-        case = self.cases[case_id]
-        if payload.is_primary and (not payload.active or payload.role != "therapist"):
-            raise ValueError("Primary therapist assignment must be an active therapist.")
-        existing = next(
-            (
-                assignment
-                for assignment in self.care_team_assignments.values()
-                if assignment.organization_id == case.organization_id
-                and assignment.case_id == case_id
-                and assignment.user_id == payload.user_id
-            ),
-            None,
-        )
-        if existing:
-            existing.role = payload.role
-            existing.active = payload.active
-            existing.is_primary = payload.is_primary
-            assignment = existing
-        else:
-            assignment = CareTeamAssignment(
-                assignment_id=new_id("team"),
-                organization_id=case.organization_id,
-                case_id=case_id,
-                user_id=payload.user_id,
-                role=payload.role,
-                active=payload.active,
-                is_primary=payload.is_primary,
-            )
-            self.care_team_assignments[assignment.assignment_id] = assignment
-        if payload.active and payload.user_id not in case.care_team_user_ids:
-            case.care_team_user_ids = [*case.care_team_user_ids, payload.user_id]
-        if not payload.active and payload.user_id in case.care_team_user_ids:
-            case.care_team_user_ids = [user_id for user_id in case.care_team_user_ids if user_id != payload.user_id]
-        if payload.is_primary:
-            for other in self.care_team_assignments.values():
-                if other.case_id == case_id and other.assignment_id != assignment.assignment_id:
-                    other.is_primary = False
-            case.primary_therapist_user_id = payload.user_id
-        elif case.primary_therapist_user_id == payload.user_id and (not payload.active or payload.role != "therapist"):
-            case.primary_therapist_user_id = None
-            assignment.is_primary = False
-        self.add_audit(
-            "care_team.assign",
-            assignment.assignment_id,
-            "Case care-team assignment updated.",
-            actor_id=actor_id,
-        )
-        return self.clone(assignment)
-
-    def list_care_team_assignments(self, case_id: str) -> list[CareTeamAssignment]:
-        case = self.cases[case_id]
-        assignments = [
-            item.model_copy(update={"is_primary": item.user_id == case.primary_therapist_user_id})
-            for item in self.care_team_assignments.values()
-            if item.case_id == case_id and item.active
-        ]
-        assignments.sort(key=lambda item: (not item.is_primary, item.created_at))
-        return [self.clone(item) for item in assignments]
 
     def create_session(self, case_id: str, payload: TherapySessionCreate, *, actor_id: str) -> TherapySession:
         case = self.cases[case_id]
@@ -846,11 +556,6 @@ class MockRepository:
             "ml_results": {key: value.model_dump(mode="json") for key, value in self.ml_results.items()},
             "ai_reviews": {key: value.model_dump(mode="json") for key, value in self.ai_reviews.items()},
             "reports": {key: value.model_dump(mode="json") for key, value in self.reports.items()},
-            "memberships": {key: value.model_dump(mode="json") for key, value in self.memberships.items()},
-            "invitations": {key: value.model_dump(mode="json") for key, value in self.invitations.items()},
-            "care_team_assignments": {
-                key: value.model_dump(mode="json") for key, value in self.care_team_assignments.items()
-            },
             "therapy_goals": {key: value.model_dump(mode="json") for key, value in self.therapy_goals.items()},
             "audio_files": {key: value.model_dump(mode="json") for key, value in self.audio_files.items()},
             "jobs": {key: value.model_dump(mode="json") for key, value in self.jobs.items()},
@@ -880,18 +585,6 @@ class JsonFileRepository(MockRepository):
         self.ml_results = {key: MLResult.model_validate(value) for key, value in data.get("ml_results", {}).items()}
         self.ai_reviews = {key: AiReview.model_validate(value) for key, value in data.get("ai_reviews", {}).items()}
         self.reports = {key: Report.model_validate(value) for key, value in data.get("reports", {}).items()}
-        self.memberships = {
-            key: OrganizationMembership.model_validate(value)
-            for key, value in data.get("memberships", {}).items()
-        }
-        self.invitations = {
-            key: OrganizationInvitation.model_validate(value)
-            for key, value in data.get("invitations", {}).items()
-        }
-        self.care_team_assignments = {
-            key: CareTeamAssignment.model_validate(value)
-            for key, value in data.get("care_team_assignments", {}).items()
-        }
         self.therapy_goals = {key: TherapyGoal.model_validate(value) for key, value in data.get("therapy_goals", {}).items()}
         self.audio_files = {key: AudioFileMetadata.model_validate(value) for key, value in data.get("audio_files", {}).items()}
         self.jobs = {key: ProcessingJob.model_validate(value) for key, value in data.get("jobs", {}).items()}

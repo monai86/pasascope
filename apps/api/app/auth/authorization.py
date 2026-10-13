@@ -10,9 +10,7 @@ from app.schemas.clinical import ChildCase, Report, TherapySession, Transcript
 
 PILOT_ORG_ID = "pilot_org_001"
 PILOT_THERAPIST_ID = "therapist-demo"
-ORG_MANAGEMENT_ROLES = {"org_admin"}
 CLINICAL_OVERSIGHT_ROLES = {"clinical_supervisor"}
-CARE_TEAM_ASSIGNMENT_ROLES = {*ORG_MANAGEMENT_ROLES, *CLINICAL_OVERSIGHT_ROLES}
 CLINICAL_ROLES = {"therapist", *CLINICAL_OVERSIGHT_ROLES}
 CASE_CREATION_ROLES = {"therapist", *CLINICAL_OVERSIGHT_ROLES}
 CLINICAL_MUTATION_ROLES = {"therapist", *CLINICAL_OVERSIGHT_ROLES}
@@ -44,15 +42,9 @@ def assert_sensitive_clinical_export_allowed(user: CurrentUser) -> None:
 
 
 def assert_case_access(case: ChildCase, user: CurrentUser) -> None:
-    if user.role == "platform_operator":
-        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Clinical content access denied.")
     if case.organization_id != user.organization_id:
         raise not_found("Case not found.")
     if user.role in CLINICAL_OVERSIGHT_ROLES:
-        return
-    if user.role == "org_admin":
-        if user.user_id not in case.care_team_user_ids:
-            raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Care-team assignment required.")
         return
     if user.role not in CLINICAL_ROLES:
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Clinical content access denied.")

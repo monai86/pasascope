@@ -7,7 +7,6 @@ from app.core.config import Settings, get_settings
 from app.db.models import Base
 from app.main import app
 from app.repositories.mock_repository import MockRepository
-from app.schemas.clinical import OrganizationMembershipCreate
 from tests.path_helpers import api_root
 
 
@@ -105,15 +104,6 @@ def test_clinical_audit_events_capture_target_organization():
 def test_phase1_clinical_endpoints_enforce_tenant_guard():
     repo = MockRepository()
     repo.set_ai_review_enabled("org_a", True)
-    repo.upsert_membership(
-        "org_b",
-        OrganizationMembershipCreate(
-            user_id="admin_b",
-            display_name="Admin B",
-            role="org_admin",
-        ),
-        actor_id="system",
-    )
     client = _client_with_repo(repo)
     owner = _headers("clinician_a", "org_a")
     cross_tenant = _headers("clinician_b", "org_b")
@@ -130,11 +120,6 @@ def test_phase1_clinical_endpoints_enforce_tenant_guard():
         ).json()
         feature_set = client.post(f"/api/v1/transcripts/{transcript_id}/extract-features", headers=owner, json={}).json()
         ai_review = client.post(f"/api/v1/sessions/{session_id}/ai-review", headers=owner).json()
-        privacy = client.post(
-            f"/api/v1/cases/{case_id}/privacy-requests",
-            headers=owner,
-            json={"operation_type": "case_export", "reason": "Pilot export request."},
-        ).json()
 
         blocked_goal = client.get(f"/api/v1/cases/{case_id}/goals", headers=cross_tenant)
         blocked_goal_patch = client.patch(
@@ -149,12 +134,6 @@ def test_phase1_clinical_endpoints_enforce_tenant_guard():
             headers=cross_tenant,
             json={"therapist_notes": "Blocked"},
         )
-        blocked_privacy_case = client.get(f"/api/v1/cases/{case_id}/privacy-requests", headers=cross_tenant)
-        blocked_privacy_admin = client.patch(
-            f"/api/v1/privacy/requests/{privacy['privacy_operation_id']}",
-            headers=_headers("admin_b", "org_b", "org_admin"),
-            json={"status": "in_review"},
-        )
     finally:
         _clear_overrides()
 
@@ -164,11 +143,9 @@ def test_phase1_clinical_endpoints_enforce_tenant_guard():
     assert blocked_features.status_code == 404
     assert blocked_ai.status_code == 404
     assert blocked_ai_patch.status_code == 404
-    assert blocked_privacy_case.status_code == 404
-    assert blocked_privacy_admin.status_code == 404
 
 
-def test_supervisor_org_admin_and_platform_operator_matrix():
+def test_supervisor_sees_the_case_and_retired_roles_are_refused():
     repo = MockRepository()
     client = _client_with_repo(repo)
     owner = _headers("clinician_a", "org_a")
@@ -194,44 +171,6 @@ def test_supervisor_org_admin_and_platform_operator_matrix():
     assert supervisor_unassigned.status_code == 200
     assert org_admin.status_code == 403
     assert platform_operator.status_code == 403
-
-
-def test_org_admin_clinical_access_activates_only_after_explicit_case_assignment():
-    repo = MockRepository()
-    repo.upsert_membership(
-        "org_a",
-        OrganizationMembershipCreate(
-            user_id="admin_a",
-            display_name="Admin A",
-            role="org_admin",
-        ),
-        actor_id="system",
-    )
-    client = _client_with_repo(repo)
-    owner = _headers("clinician_a", "org_a")
-    admin = _headers("admin_a", "org_a", "org_admin")
-    try:
-        built = _build_attested_transcript(client, owner)
-        case_id = built["case"]["case_id"]
-
-        before_assignment = client.get(f"/api/v1/cases/{case_id}", headers=admin)
-        client.post(
-            "/api/v1/organizations/current/memberships",
-            headers=admin,
-            json={"user_id": "admin_a", "display_name": "Admin A", "role": "org_admin"},
-        )
-        assignment = client.post(
-            f"/api/v1/cases/{case_id}/care-team",
-            headers=admin,
-            json={"user_id": "admin_a", "role": "org_admin"},
-        )
-        after_assignment = client.get(f"/api/v1/cases/{case_id}", headers=admin)
-    finally:
-        _clear_overrides()
-
-    assert before_assignment.status_code == 403
-    assert assignment.status_code == 200
-    assert after_assignment.status_code == 200
 
 
 def test_production_auth_path_rejects_mock_header_identity():
