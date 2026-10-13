@@ -81,6 +81,7 @@ PasaScope เป็นต้นแบบเพื่อการวิจัย�
    | `NEXT_PUBLIC_SUPABASE_ANON_KEY` | anon / publishable key |
    | `NEXT_PUBLIC_SITE_URL` | `https://<project>.vercel.app` |
    | `NEXT_PUBLIC_DEMO_MODE` | `false` |
+   | `NEXT_PUBLIC_CHAT_SHELL` | (ไม่บังคับ) `true` เพื่อใช้หน้าตาแบบสนทนา ค่าเริ่มต้นคือหน้าตาแบบเดิม ตั้งเฉพาะใน Preview ก่อนได้เพื่อลองโดยไม่กระทบ Production |
    | `NEXT_PUBLIC_CONTACT_EMAIL` | (ไม่บังคับ) อีเมลสำหรับคำถามและคำขอลบข้อมูล แสดงในหน้า `/privacy` |
 3. เลือก branch ที่จะ deploy เป็น production แล้วกด Redeploy
 

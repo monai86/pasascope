@@ -192,6 +192,10 @@ jobs:
         working-directory: apps/pasascope-app
         run: npx playwright test -c playwright.demo.config.ts
 
+      - name: Run chat shell e2e smoke (public-mode backend + flagged dev server)
+        working-directory: apps/pasascope-app
+        run: npx playwright test -c playwright.chat.config.ts
+
   therapist-benchmark:
     needs: test-backend
     runs-on: ubuntu-latest

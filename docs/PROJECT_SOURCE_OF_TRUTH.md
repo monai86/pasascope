@@ -47,6 +47,19 @@ Presentation-only `/demo/*` routes ต้อง fail closed เว้นแต�
 `NEXT_PUBLIC_DEMO_MODE=true` อย่างชัดเจน และเมื่อเปิดต้องแสดง sample-data notice
 ตลอด demo layout.
 
+Chat shell เป็น shell ทางเลือกที่ยังปิดเป็นค่าเริ่มต้น (ADR
+`docs/adr/0021-chat-first-guided-shell.md`): ทำงานเมื่อ build เว็บด้วย
+`NEXT_PUBLIC_CHAT_SHELL=true` **และ** API อยู่ในโหมด public (`public_signup` กับ
+`review_gates=open`) เท่านั้น กรณีอื่นทั้งหมดใช้ shell เดิมและกฎ navigation ข้างบน.
+เมื่อ chat shell ทำงาน: `/` เป็นหน้าหลัก (ไม่ redirect), navigation มี 4 ปลายทางคือ
+Home, Cases, Reports, Settings (ไม่มี bottom nav; ลำดับถูกตรวจใน
+`src/__tests__/chat-shell.test.tsx`), และ Session Workspace เพิ่ม route view
+`?view=chat` เป็นบทสนทนาของเซสชัน โดย `?view=intake` เปิดบทสนทนาเดียวกัน ส่วน
+`transcript|findings|report` ยังเป็นหน้าเต็มเดิม. ถ้า chat shell ไม่ทำงาน
+`?view=chat` ต้อง fallback เป็น `intake`. บทสนทนาเป็นภาพฉายของสถานะเซสชันใน
+backend ไม่ใช่ log ข้อความที่เก็บไว้ ไม่มี language model และห้ามตีความข้อความที่
+ผู้ใช้พิมพ์เป็นคำสั่ง; consent ต้องได้รับก่อนสร้างเซสชันเสมอ.
+
 Cases และ Settings ใช้ feature-owned components/hooks/services โดย compatibility
 components เดิมเป็น thin entry points เท่านั้น. Settings section matrix ต้อง
 fail closed: `profile`, `organization`, `credentials`, `accessibility`, `privacy`

@@ -165,6 +165,7 @@ cd apps/pasascope-app && PLAYWRIGHT_BACKEND_PORT=8001 PLAYWRIGHT_FRONTEND_PORT=3
 # Full browser, UI-audit, and benchmark candidate lanes (not run by check_project.sh)
 cd apps/pasascope-app && npx playwright test
 cd apps/pasascope-app && npx playwright test -c playwright.demo.config.ts
+cd apps/pasascope-app && npx playwright test -c playwright.chat.config.ts
 cd apps/pasascope-app && npm run audit:ui
 cd apps/pasascope-app && npm run bench:transcript && npm run bench:check
 ```

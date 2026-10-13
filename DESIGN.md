@@ -72,6 +72,24 @@ Rules:
 by hue, requires every `var()` to be defined, and checks WCAG AA for the allowed
 text and fill pairings.
 
+### Chat shell colours
+
+The chat shell (see Shell and navigation) keeps the same palette and moves the
+weight within it. It is in use only behind `NEXT_PUBLIC_CHAT_SHELL`; these rules
+replace the ones above when the workbench shell is removed.
+
+- **Canvas:** grey-blue warming to peach at the foot (`--color-chat-canvas-*`),
+  with the page inside one rounded pale frame (`--color-chat-frame*`). Hairlines
+  are neutral (`--color-chat-line*`), not blue.
+- **Primary action:** navy. Inside `[data-shell="chat"]` the action tokens
+  (`--color-action*`) point at navy, so `Button` and the quick replies are navy
+  there and azure in the workbench without a second component.
+- **Azure** remains for links, selection and the focus ring. **Coral** stays a
+  small mark: the logo and one icon per region.
+- Subtle text (`--color-text-subtle`) stops at the pale part of the frame. On
+  the warmest peach only muted or strong text meets AA; the contract test pins
+  these pairings.
+
 ## Typography
 
 Two faces, loaded through `next/font` and served from the app's own origin:
@@ -136,6 +154,37 @@ competes with the surface it hosts.
   group on the right.
 - Every surface uses the same shell; navigation placement never changes by
   page type.
+
+### Chat shell
+
+Behind `NEXT_PUBLIC_CHAT_SHELL`, and only when the API runs the public workflow
+(public sign-up, open review gates), `AppShell` renders the chat shell instead.
+Decision record: `docs/adr/0021-chat-first-guided-shell.md`.
+
+- **Frame:** navigation, the page and an optional side panel inside one rounded
+  frame on the canvas. From 1280px all three are columns; from 1024px the side
+  panel becomes a sheet opened from the header; below 1024px navigation is a
+  drawer. There is no bottom tab bar and no top bar.
+- **Navigation:** brand (links to Home), then Home, Cases, Reports, Settings.
+  A session belongs to its case, so Cases is current on a session. The signed-in
+  user, the language toggle and logout sit in one card at the foot.
+- **Side panel:** a page fills it through `ChatShellPanel`: recent sessions on
+  Home, the session's context in a conversation. A page that fills nothing has
+  no panel and no button for one. On a phone the button is an icon with the
+  panel's name as its accessible name.
+- **Conversation header:** on phone and tablet a conversation replaces the brand
+  with a back arrow and its own title through `ChatShellHeader`.
+- **Conversation:** the app's lines are plain text on the left, with cards for
+  results; what the therapist said or did is a white bubble on the right. A
+  message offers at most one primary reply; a choice between equals (which
+  speaker the remaining lines belong to) has none. Replies on earlier messages
+  disappear once their step is done.
+- **Composer:** docked at the foot. On Home, typing finds a case. In a session,
+  typing saves a session note. The app has no language model, so it never
+  implies that it understood a sentence, and no action is inferred from text.
+- **Clinical wording:** the conversation states what it did and what the session
+  needs next. It does not interpret a measure. A value the backend did not send
+  is shown as a dash. Safety lines come from `clinical-safety-copy`.
 
 ## Language
 
