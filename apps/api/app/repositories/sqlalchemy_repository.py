@@ -1,6 +1,9 @@
 from __future__ import annotations
 
 from datetime import datetime, timedelta, timezone
+import hashlib
+import json
+import threading
 
 from app.db.models import (
     AiReviewRecord,
@@ -86,6 +89,11 @@ class SqlAlchemyRepository(MockRepository):
         if create_schema:
             Base.metadata.create_all(self.engine)
         self.SessionLocal = sessionmaker(bind=self.engine)
+        # What this instance last read from or wrote to the database, so the
+        # snapshot save can skip records that have not changed.
+        self._saved_fingerprints: dict[tuple[str, str], bytes] = {}
+        self._saved_audit_ids: set[str] = set()
+        self._save_lock = threading.RLock()
         super().__init__(seed_demo=seed_demo)
         self.load()
 
@@ -1132,6 +1140,10 @@ class SqlAlchemyRepository(MockRepository):
         return self.clone(updated)
 
     def load(self) -> None:
+        with self._save_lock:
+            self._load_snapshot()
+
+    def _load_snapshot(self) -> None:
         with self.SessionLocal() as db:
             cases = db.query(ChildCaseRecord).all()
             if cases:
@@ -1178,29 +1190,83 @@ class SqlAlchemyRepository(MockRepository):
                     }
                     for row in db.query(AuditLogRecord).all()
                 ]
+                self._remember_saved_state()
             elif self.cases:
                 # Empty database in demo mode: store the seeded sample case.
                 self.save()
 
+    def _remember_saved_state(self) -> None:
+        """Record what the database holds right after a load, so `save` writes changes only."""
+        self._saved_fingerprints = {
+            (kind, key): _fingerprint(value)
+            for kind, values in self._snapshot_collections()
+            for key, value in values
+        }
+        self._saved_fingerprints.update(
+            (("organization_settings", organization_id), _settings_fingerprint(settings))
+            for organization_id, settings in list(self.organization_settings.items())
+        )
+        self._saved_audit_ids = {item["audit_id"] for item in self.audit_log}
+
+    def _snapshot_collections(self) -> list[tuple[str, list[tuple[str, object]]]]:
+        # Copied to lists: request threads and the job worker add records while a save runs.
+        return [
+            ("case", list(self.cases.items())),
+            ("session", list(self.sessions.items())),
+            ("transcript", list(self.transcripts.items())),
+            ("feature", list(self.features.items())),
+            ("ml_result", list(self.ml_results.items())),
+            ("audio_file", list(self.audio_files.items())),
+            ("ai_review", list(self.ai_reviews.items())),
+            ("report", list(self.reports.items())),
+            ("membership", list(self.memberships.items())),
+            ("invitation", list(self.invitations.items())),
+            ("care_team_assignment", list(self.care_team_assignments.items())),
+            ("therapy_goal", list(self.therapy_goals.items())),
+            ("job", list(self.jobs.items())),
+            ("privacy_operation", list(self.privacy_operations.items())),
+        ]
+
     def save(self) -> None:
-        """Persist the in-memory snapshot without deleting any row.
+        """Persist what changed in the in-memory snapshot, without deleting any row.
 
         Legacy service paths still mutate the repository dictionaries and rely
-        on this snapshot write. It upserts by primary key and appends only audit
-        events that are not stored yet, so it can never remove records written
-        by another repository instance. Row removal goes through the explicit
-        ``delete_*`` methods.
+        on this snapshot write. It upserts by primary key the records that
+        differ from what this instance last read or wrote, and appends only
+        audit events that are not stored yet, so it can never remove records
+        written by another repository instance, and its cost follows the size
+        of the change, not the size of the database. Row removal goes through
+        the explicit ``delete_*`` methods.
         """
+        with self._save_lock:
+            self._save_changes()
+
+    def _save_changes(self) -> None:
+        collections = dict(self._snapshot_collections())
+        settings_items = list(self.organization_settings.items())
+        pending: dict[tuple[str, str], bytes] = {}
+        present: set[tuple[str, str]] = set()
+
+        def changed(kind: str) -> list:
+            values = []
+            for key, value in collections[kind]:
+                present.add((kind, key))
+                fingerprint = _fingerprint(value)
+                if self._saved_fingerprints.get((kind, key)) != fingerprint:
+                    pending[(kind, key)] = fingerprint
+                    values.append(value)
+            return values
+
         with self.SessionLocal() as db:
-            for case in self.cases.values():
+            for case in changed("case"):
                 db.merge(self._case_to_record(case))
-            for session in self.sessions.values():
+            for session in changed("session"):
                 db.merge(self._session_to_record(session))
-            for transcript in self.transcripts.values():
+            for transcript in changed("transcript"):
                 db.merge(self._transcript_to_record(transcript))
-            for feature_set in self.features.values():
+            for feature_set in changed("feature"):
                 db.merge(self._feature_to_record(feature_set))
-            for result in self.ml_results.values():
+            for result in changed("ml_result"):
                 db.merge(MLResultRecord(
                     result_id=result.result_id,
                     session_id=result.session_id,
@@ -1208,9 +1274,9 @@ class SqlAlchemyRepository(MockRepository):
                     payload=result.model_dump(mode="json"),
                     created_at=result.generated_at,
                 ))
-            for audio_file in self.audio_files.values():
+            for audio_file in changed("audio_file"):
                 db.merge(self._audio_to_record(audio_file))
-            for review in self.ai_reviews.values():
+            for review in changed("ai_review"):
                 db.merge(AiReviewRecord(
                     ai_review_id=review.ai_review_id,
                     session_id=review.session_id,
@@ -1219,9 +1285,9 @@ class SqlAlchemyRepository(MockRepository):
                     therapist_review_status=review.therapist_review_status.value,
                     created_at=review.created_at,
                 ))
-            for report in self.reports.values():
+            for report in changed("report"):
                 db.merge(self._report_to_record(report))
-            for membership in self.memberships.values():
+            for membership in changed("membership"):
                 if db.get(OrganizationRecord, membership.organization_id) is None:
                     db.add(OrganizationRecord(
                         organization_id=membership.organization_id,
@@ -1236,7 +1302,7 @@ class SqlAlchemyRepository(MockRepository):
                         created_at=membership.created_at,
                     ))
                 db.merge(self._membership_to_record(membership))
-            for invitation in self.invitations.values():
+            for invitation in changed("invitation"):
                 if db.get(OrganizationRecord, invitation.organization_id) is None:
                     db.add(OrganizationRecord(
                         organization_id=invitation.organization_id,
@@ -1245,15 +1311,21 @@ class SqlAlchemyRepository(MockRepository):
                         created_at=invitation.created_at,
                     ))
                 db.merge(self._invitation_to_record(invitation))
-            for assignment in self.care_team_assignments.values():
+            for assignment in changed("care_team_assignment"):
                 db.merge(self._care_team_assignment_to_record(assignment))
-            for goal in self.therapy_goals.values():
+            for goal in changed("therapy_goal"):
                 db.merge(self._goal_to_record(goal))
-            for job in self.jobs.values():
+            for job in changed("job"):
                 db.merge(self._job_to_record(job))
-            for privacy_operation in self.privacy_operations.values():
+            for privacy_operation in changed("privacy_operation"):
                 db.merge(self._privacy_operation_to_record(privacy_operation))
-            for organization_id, settings in self.organization_settings.items():
+            for organization_id, settings in settings_items:
+                key = ("organization_settings", organization_id)
+                present.add(key)
+                fingerprint = _settings_fingerprint(settings)
+                if self._saved_fingerprints.get(key) == fingerprint:
+                    continue
+                pending[key] = fingerprint
                 if db.get(OrganizationRecord, organization_id) is None:
                     db.add(OrganizationRecord(
                         organization_id=organization_id,
@@ -1278,11 +1350,26 @@ class SqlAlchemyRepository(MockRepository):
                     )
                     existing_settings.settings = dict(settings)
                     existing_settings.updated_at = _utc_now()
-            stored_audit_ids = {audit_id for (audit_id,) in db.query(AuditLogRecord.audit_id).all()}
-            for item in self.audit_log:
+            # Record-scoped methods store their own audit event before adding it
+            # to the list, so ask the database about the unseen ones only.
+            unseen = [item for item in list(self.audit_log) if item["audit_id"] not in self._saved_audit_ids]
+            unseen_ids = [item["audit_id"] for item in unseen]
+            stored_audit_ids = {
+                audit_id
+                for start in range(0, len(unseen_ids), 500)
+                for (audit_id,) in db.query(AuditLogRecord.audit_id).filter(
+                    AuditLogRecord.audit_id.in_(unseen_ids[start:start + 500])
+                )
+            }
+            for item in unseen:
                 if item["audit_id"] not in stored_audit_ids:
                     db.add(self._audit_to_record(item))
             db.commit()
+
+        self._saved_fingerprints.update(pending)
+        for key in [key for key in self._saved_fingerprints if key not in present]:
+            del self._saved_fingerprints[key]
+        self._saved_audit_ids.update(unseen_ids)
 
     def delete_feature_set(self, feature_set_id: str) -> None:
         super().delete_feature_set(feature_set_id)
@@ -1790,6 +1877,15 @@ class SqlAlchemyRepository(MockRepository):
             message=item["message"],
             timestamp=_parse_datetime(item["timestamp"]),
         )
+
+
+def _fingerprint(value) -> bytes:
+    return hashlib.blake2b(value.model_dump_json().encode("utf-8"), digest_size=16).digest()
+
+
+def _settings_fingerprint(settings: dict) -> bytes:
+    encoded = json.dumps(settings, sort_keys=True, default=str).encode("utf-8")
+    return hashlib.blake2b(encoded, digest_size=16).digest()
 
 
 def _parse_datetime(value: str) -> datetime:

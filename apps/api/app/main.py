@@ -73,6 +73,25 @@ def _run_inline_job_worker(stop: threading.Event) -> None:
             stop.wait(0.25)
 
 
+def _recover_jobs_from_previous_run() -> None:
+    """The memory queue died with the last process; its jobs are still in the repository."""
+    from app.api.v1.dependencies import get_repository
+    from app.services.audio_job_service import recover_interrupted_jobs
+    from app.tasks.job_queue import get_job_queue
+
+    try:
+        outcome = recover_interrupted_jobs(get_repository(), get_job_queue())
+    except Exception:
+        logger.exception("Could not recover audio jobs left by the previous run.")
+        return
+    if outcome["requeued"] or outcome["failed"]:
+        logger.info(
+            "Recovered audio jobs from the previous run: %d queued again, %d marked failed.",
+            outcome["requeued"],
+            outcome["failed"],
+        )
+
+
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     apply_startup_migrations()
@@ -81,6 +100,7 @@ async def lifespan(app: FastAPI):
     stop_worker = threading.Event()
     worker = None
     if settings_obj.job_queue_mode == "memory" and settings_obj.inline_job_worker_enabled:
+        _recover_jobs_from_previous_run()
         worker = threading.Thread(target=_run_inline_job_worker, args=(stop_worker,), daemon=True)
         worker.start()
     try:

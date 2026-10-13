@@ -21,6 +21,9 @@ Public app mode on `feat/public-app`: opt-in settings that turn PasaScope into a
 
 ### Fixed
 - The page behind an open navigation drawer or dialog is dimmed. The class that was meant to do it produced no colour.
+- **The SQL repository's snapshot save writes only what changed.** It used to upsert every case, session, transcript, report and job of every workspace, and read every audit identifier, each time an audit event was recorded, so one transcription rewrote the database several times. It now writes the records that differ from what the API last read or wrote, and asks the database only about audit events it has not stored itself. Saves and loads no longer overlap between request threads and the job worker.
+- **A transcription interrupted by a restart no longer stays "in progress" for good.** With the in-process job queue, the API at startup queues again the transcription jobs that were still waiting and marks the ones that had started as failed (`error_code` `interrupted`), so the recording can be transcribed again.
+- A recording is copied to the backup bucket in chunks instead of being read into memory whole.
 
 ### Changed
 - `/` shows the home screen instead of redirecting to `/today`: the chat home in the chat shell, the Today queue in the workbench. `/today` shows the same screen. A build with `NEXT_PUBLIC_CHAT_SHELL=false` keeps the redirect.

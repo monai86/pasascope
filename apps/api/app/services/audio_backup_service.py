@@ -44,8 +44,10 @@ def backup_recording(object_key: str, path: Path, content_type: str) -> None:
     if not backup_enabled(settings):
         return
     headers = {**_headers(settings), "Content-Type": content_type or "application/octet-stream", "x-upsert": "true"}
+    # The open file is sent in chunks; a whole recording in memory is too much
+    # for a small host.
     with _client() as client, path.open("rb") as handle:
-        response = client.post(_object_url(settings, object_key), headers=headers, content=handle.read())
+        response = client.post(_object_url(settings, object_key), headers=headers, content=handle)
     response.raise_for_status()
 
 

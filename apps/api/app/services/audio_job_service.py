@@ -599,6 +599,38 @@ def analyze_audio_quality(
 
 
 
+def recover_interrupted_jobs(repo: MockRepository, queue) -> dict[str, int]:
+    """Settle transcription jobs left over by a process that kept its queue in memory.
+
+    A job that was still waiting is queued again. A job that had started is
+    marked failed: its work stopped with the process, it would otherwise block
+    a new job for the same recording for good, and running it again unasked
+    could transcribe a recording twice. The therapist can start it again.
+    """
+    requeued = 0
+    failed = 0
+    for job in list(repo.jobs.values()):
+        if "queued_payload" not in job.details:
+            continue  # an upload record, not a transcription job
+        if job.status == JobStatus.queued:
+            queue.enqueue(job.job_id)
+            requeued += 1
+        elif job.status in {JobStatus.processing, JobStatus.transcription_completed}:
+            job.status = JobStatus.failed
+            job.message = "Transcription was interrupted by a restart. Start it again."
+            job.error_code = "interrupted"
+            append_job_status(job, JobStatus.failed)
+            repo.add_audit(
+                "audio.process_failed",
+                job.job_id,
+                "Audio processing was interrupted by a restart.",
+                actor_id="worker",
+                outcome="failure",
+            )
+            failed += 1
+    return {"requeued": requeued, "failed": failed}
+
+
 def append_job_status(job: ProcessingJob, status: JobStatus) -> None:
     history = list(job.details.get("status_history", []))
     if not history or history[-1] != status.value:

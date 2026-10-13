@@ -1884,3 +1884,59 @@ def test_consent_withdrawal_removes_feature_rows_from_sql_storage(tmp_path):
     assert feature_set.feature_set_id not in reloaded.features
     assert reloaded.cases["case_demo_001"].consent_status == "withdrawn"
     assert reloaded.transcripts[transcript.transcript_id].utterances == []
+
+
+def test_snapshot_save_writes_only_records_that_changed(tmp_path):
+    pytest.importorskip("sqlalchemy")
+    from sqlalchemy import event
+
+    from app.repositories.sqlalchemy_repository import SqlAlchemyRepository
+
+    url = f"sqlite:///{tmp_path / 'changed-only.db'}"
+    repo = SqlAlchemyRepository(url)
+    for day in range(1, 6):
+        repo.create_session(
+            "case_demo_001",
+            TherapySessionCreate(session_date=f"2026-10-{day:02d}", session_type="language_sample"),
+            actor_id="user_a",
+        )
+    repo.add_audit("job.cancel", "case_demo_001", "Settles what the record-scoped writes left.", actor_id="user_a")
+    statements: list[str] = []
+    event.listen(repo.engine, "before_cursor_execute", lambda conn, cur, statement, *rest: statements.append(statement))
+
+    repo.add_audit("job.cancel", "case_demo_001", "Nothing but this event changed.", actor_id="user_a")
+
+    writes = [statement for statement in statements if statement.lstrip().upper().startswith(("INSERT", "UPDATE"))]
+    assert len(writes) == 1 and "audit_log" in writes[0]
+    assert not [statement for statement in statements if "sessions" in statement or "child_cases" in statement]
+
+    # A legacy path mutates a record in place and relies on the snapshot save.
+    statements.clear()
+    session_id = next(iter(repo.sessions))
+    repo.sessions[session_id].notes = "Changed in place."
+    repo.add_audit("job.cancel", session_id, "One session changed.", actor_id="user_a")
+
+    assert SqlAlchemyRepository(url).sessions[session_id].notes == "Changed in place."
+    updates = [statement for statement in statements if statement.lstrip().upper().startswith("UPDATE")]
+    assert len(updates) == 1 and "sessions" in updates[0]
+
+
+def test_snapshot_save_stores_each_audit_event_once(tmp_path):
+    pytest.importorskip("sqlalchemy")
+
+    from app.repositories.sqlalchemy_repository import SqlAlchemyRepository
+
+    url = f"sqlite:///{tmp_path / 'audit-once.db'}"
+    repo = SqlAlchemyRepository(url)
+    # Record-scoped: stores its own audit event, then adds it to the list.
+    repo.create_session(
+        "case_demo_001",
+        TherapySessionCreate(session_date="2026-10-11", session_type="language_sample"),
+        actor_id="user_a",
+    )
+    repo.add_audit("job.cancel", "case_demo_001", "First snapshot save.", actor_id="user_a")
+    repo.add_audit("job.cancel", "case_demo_001", "Second snapshot save.", actor_id="user_a")
+
+    actions = [item["action"] for item in SqlAlchemyRepository(url).audit_log]
+    assert actions.count("session.create") == 1
+    assert actions.count("job.cancel") == 2
