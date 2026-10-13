@@ -1,8 +1,6 @@
 import { defineMessages } from "@/i18n/messages";
 
 type SupabaseLoginCopy = {
-  eyebrow: string;
-  eyebrowDetail: string;
   title: string;
   subtitle: string;
   /** Wording for a deployment anyone can sign up to, where there is no clinic or organization. */
@@ -68,8 +66,6 @@ type SupabaseLoginCopy = {
 
 export const supabaseLoginMessages = defineMessages<SupabaseLoginCopy>({
   en: {
-    eyebrow: "Secure sign in",
-    eyebrowDetail: "Clinic workspace",
     title: "Sign in to the clinic workspace",
     subtitle: "Sign in to open cases, session transcripts and reports.",
     open: {
@@ -145,8 +141,6 @@ export const supabaseLoginMessages = defineMessages<SupabaseLoginCopy>({
     },
   },
   th: {
-    eyebrow: "ลงชื่อเข้าใช้อย่างปลอดภัย",
-    eyebrowDetail: "พื้นที่ทำงานของคลินิก",
     title: "ลงชื่อเข้าใช้พื้นที่ทำงานของคลินิก",
     subtitle: "ลงชื่อเข้าใช้เพื่อเปิดเคส บทถอดเสียงของเซสชัน และรายงาน",
     open: {

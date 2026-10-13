@@ -347,6 +347,120 @@
     transform: translateY(-1px);
   }
 
+  /*
+   * The parts of the page the browser draws: the caret, selected text, form
+   * controls and autofilled fields take the chat shell's colours too.
+   */
+  [data-shell="chat"] {
+    caret-color: var(--color-navy);
+    accent-color: var(--color-navy);
+  }
+
+  [data-shell="chat"] ::selection {
+    background: var(--color-sky-soft);
+    color: var(--color-navy);
+  }
+
+  [data-shell="chat"] input:-webkit-autofill,
+  [data-shell="chat"] input:-webkit-autofill:focus {
+    -webkit-text-fill-color: var(--color-text-strong);
+    box-shadow: 0 0 0 1000px var(--color-sky-soft) inset;
+    caret-color: var(--color-navy);
+  }
+
+  /* The sign-in page's heading: tight, and balanced across its lines. */
+  .login-title {
+    line-height: 1.14;
+    letter-spacing: -0.012em;
+    text-wrap: balance;
+  }
+
+  /*
+   * The workflow on the sign-in page as one thread from recording to report.
+   * The line draws itself down once and each step settles as it is reached;
+   * this is the page's one authored motion.
+   */
+  .login-thread {
+    display: grid;
+    gap: 22px;
+  }
+
+  .login-thread-step {
+    position: relative;
+    display: flex;
+    gap: 16px;
+    animation: login-thread-step 520ms cubic-bezier(0.16, 1, 0.3, 1) both;
+  }
+
+  /* The stretch of thread from this step's node to the next one's. */
+  .login-thread-step:not(:last-child)::after {
+    content: "";
+    position: absolute;
+    top: 44px;
+    bottom: -22px;
+    left: 21px;
+    width: 2px;
+    border-radius: 2px;
+    background: var(--color-sky);
+    transform-origin: top;
+    animation: login-thread-draw 420ms cubic-bezier(0.16, 1, 0.3, 1) both;
+  }
+
+  .login-thread-step:nth-child(1) {
+    animation-delay: 200ms;
+  }
+
+  .login-thread-step:nth-child(1)::after {
+    background: linear-gradient(180deg, var(--color-highlight-border), var(--color-sky));
+    animation-delay: 380ms;
+  }
+
+  .login-thread-step:nth-child(2) {
+    animation-delay: 430ms;
+  }
+
+  .login-thread-step:nth-child(2)::after {
+    background: linear-gradient(180deg, var(--color-sky), var(--color-chat-line-strong));
+    animation-delay: 610ms;
+  }
+
+  .login-thread-step:nth-child(3) {
+    animation-delay: 660ms;
+  }
+
+  .login-thread-node {
+    display: grid;
+    width: 44px;
+    height: 44px;
+    flex: none;
+    place-items: center;
+    border-radius: 9999px;
+    background: var(--color-surface-strong);
+    box-shadow: var(--shadow-chat-card);
+  }
+
+  @keyframes login-thread-draw {
+    from {
+      transform: scaleY(0);
+    }
+    to {
+      transform: scaleY(1);
+    }
+  }
+
+  @keyframes login-thread-step {
+    from {
+      opacity: 0;
+      filter: blur(4px);
+      transform: translateY(8px);
+    }
+    to {
+      opacity: 1;
+      filter: none;
+      transform: none;
+    }
+  }
+
   /* Buttons in the chat shell give under a press. */
   [data-shell="chat"] button:not(:disabled):active {
     scale: 0.97;

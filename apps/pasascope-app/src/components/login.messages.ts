@@ -3,10 +3,9 @@ import { defineMessages } from "@/i18n/messages";
 export const loginMessages = defineMessages({
   en: {
     productLine: "Clinical transcript workbench",
-    prototypeChip: "Research and education prototype",
     hero: {
-      eyebrow: "PasaScope · ภาษา-สโคป",
-      title: "From a child’s recording to a report draft, one step at a time",
+      // Broken by phrase, as the Thai title is.
+      title: "From a child’s voice\nto a report draft,\nstep by step",
       body: "Send a session’s audio and PasaScope takes you through the rest. You decide at every step.",
       steps: [
         { title: "Send the audio", body: "Record the session here, or upload a file you already have." },
@@ -53,10 +52,9 @@ export const loginMessages = defineMessages({
   },
   th: {
     productLine: "พื้นที่ทำงานสำหรับทบทวนบทถอดเสียงทางคลินิก",
-    prototypeChip: "ต้นแบบเพื่อการวิจัยและการศึกษา",
     hero: {
-      eyebrow: "PasaScope · ภาษา-สโคป",
-      title: "จากเสียงของเด็ก ถึงร่างรายงาน ทีละขั้น",
+      // The break keeps each phrase whole; Thai has no spaces for the browser to balance on.
+      title: "จากเสียงของเด็ก\nถึงร่างรายงาน ทีละขั้น",
       body: "ส่งเสียงของเซสชันมา แล้ว PasaScope จะพาทำขั้นที่เหลือ โดยคุณเป็นผู้ตัดสินใจทุกขั้น",
       steps: [
         { title: "ส่งเสียง", body: "อัดเสียงเซสชันที่นี่ หรืออัปโหลดไฟล์ที่มีอยู่" },

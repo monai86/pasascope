@@ -304,14 +304,10 @@ export function SupabaseLoginFormClient({
 
   return (
     <div className="rounded-panel bg-surface p-6 shadow-chat-card sm:p-8">
-      <p className="text-[13px] font-medium text-ink-subtle">
-        {t.eyebrow}
-        {publicSignup ? null : <span className="hidden sm:inline"> · {t.eyebrowDetail}</span>}
-      </p>
-      <h2 className="mt-1.5 font-display text-2xl font-semibold leading-snug text-ink sm:text-[1.7rem]">
+      <h2 className="font-display text-2xl font-semibold leading-snug text-ink sm:text-[1.7rem]">
         {publicSignup ? t.open.title : t.title}
       </h2>
-      <p className="mb-5 mt-1.5 text-sm leading-relaxed text-ink-muted">
+      <p className="mb-6 mt-2 leading-relaxed text-ink-muted">
         {publicSignup ? t.open.subtitle : t.subtitle}
       </p>
 
@@ -431,14 +427,17 @@ export function SupabaseLoginFormClient({
             <label htmlFor="clinical-password-input" className="block text-sm font-medium text-ink">
               {t.password}
             </label>
-            <button
-              type="button"
-              onClick={handlePasswordRecovery}
-              disabled={!browserClient || isSendingRecovery}
-              className="text-xs font-medium text-brand underline-offset-4 transition hover:underline disabled:opacity-50"
-            >
-              {isSendingRecovery ? t.sendingRecovery : t.sendRecovery}
-            </button>
+            {/* Recovery belongs to an account that exists, so it is not offered while creating one. */}
+            {mode === "signin" ? (
+              <button
+                type="button"
+                onClick={handlePasswordRecovery}
+                disabled={!browserClient || isSendingRecovery}
+                className={`-my-3.5 rounded-control py-3.5 text-xs font-medium text-brand underline-offset-4 transition hover:underline disabled:opacity-50 ${FOCUS_RING}`}
+              >
+                {isSendingRecovery ? t.sendingRecovery : t.sendRecovery}
+              </button>
+            ) : null}
           </div>
           <div className="relative">
             <LockKeyhole className="pointer-events-none absolute left-4 top-1/2 h-4 w-4 -translate-y-1/2 text-ink-subtle" />
@@ -447,7 +446,6 @@ export function SupabaseLoginFormClient({
               className={`${FIELD} pl-11 pr-12`}
               type={showPassword ? "text" : "password"}
               autoComplete={mode === "signup" ? "new-password" : "current-password"}
-              placeholder="••••••••••••••••"
               value={password}
               onChange={(event) => setPassword(event.target.value)}
             />
@@ -567,7 +565,7 @@ export function SupabaseLoginFormClient({
         <div className="mt-5 space-y-2 border-t border-chat-line pt-4 text-[13px] leading-5 text-ink-subtle">
           <p>{t.publicNote.stored}</p>
           <p>{t.publicNote.boundary}</p>
-          <p><Link href="/privacy" className="font-semibold text-brand underline">{t.publicNote.privacy}</Link></p>
+          <p><Link href="/privacy" className="font-semibold text-brand underline underline-offset-4">{t.publicNote.privacy}</Link></p>
         </div>
       ) : (
       <div className="mt-4 pt-3 border-t border-line">
