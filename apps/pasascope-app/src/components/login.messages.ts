@@ -15,9 +15,11 @@ export const loginMessages = defineMessages({
     },
     footer: "PasaScope is a research and education prototype without Thai clinical validation.",
     panel: {
-      loading: "Loading runtime settings…",
+      loading: "Getting sign-in ready…",
+      waking: "The service is starting up. This can take about a minute.",
       unavailableTitle: "Runtime settings unavailable",
-      unavailableBody: "Login is blocked until the application can confirm its authentication and access requirements.",
+      unavailableBody: "Sign-in could not be prepared. Try again in a moment.",
+      retry: "Try again",
     },
     mock: {
       formLabel: "Mock login form",
@@ -64,9 +66,11 @@ export const loginMessages = defineMessages({
     },
     footer: "PasaScope เป็นต้นแบบเพื่อการวิจัยและการศึกษา ยังไม่ผ่านการตรวจสอบความตรงทางคลินิกในประเทศไทย",
     panel: {
-      loading: "กำลังโหลดการตั้งค่าระบบ…",
-      unavailableTitle: "ไม่สามารถอ่านการตั้งค่าระบบได้",
-      unavailableBody: "ยังลงชื่อเข้าใช้ไม่ได้จนกว่าระบบจะยืนยันวิธีลงชื่อเข้าใช้และสิทธิ์การเข้าถึงได้",
+      loading: "กำลังเตรียมหน้าลงชื่อเข้าใช้…",
+      waking: "ระบบกำลังเริ่มทำงาน อาจใช้เวลาประมาณหนึ่งนาที",
+      unavailableTitle: "ยังเตรียมหน้าลงชื่อเข้าใช้ไม่ได้",
+      unavailableBody: "เตรียมหน้าลงชื่อเข้าใช้ไม่สำเร็จ ลองใหม่อีกครั้งในอีกสักครู่",
+      retry: "ลองอีกครั้ง",
     },
     mock: {
       formLabel: "แบบฟอร์มลงชื่อเข้าใช้จำลอง",

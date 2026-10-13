@@ -1,37 +1,55 @@
 "use client";
 
+import { useEffect, useState } from "react";
+
 import { loginMessages } from "@/components/login.messages";
 import { MockLoginFormClient } from "@/components/mock-login-form-client";
-import { SkeletonLine } from "@/components/skeleton";
+import { Skeleton } from "@/components/skeleton";
 import { SupabaseAuthRuntimeBridge } from "@/components/supabase-auth-runtime-bridge";
 import { SupabaseLoginFormClient } from "@/components/supabase-login-form-client";
-import { Card } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
 import { useMessages } from "@/i18n/locale-provider";
 import { useRuntimeSettings } from "@/lib/use-runtime-settings";
+
+const PANEL = "w-full rounded-panel bg-surface p-6 shadow-chat-card sm:p-8";
+const SLOW_START_HINT_MS = 4000;
 
 export function RuntimeLoginPanelClient() {
   const t = useMessages(loginMessages).panel;
   const runtimeSettings = useRuntimeSettings();
+  // A host that sleeps when idle takes about a minute to answer its first request.
+  const [slowStart, setSlowStart] = useState(false);
+  const loading = runtimeSettings.status === "loading";
 
-  if (runtimeSettings.status === "loading") {
+  useEffect(() => {
+    if (!loading) return;
+    const timer = window.setTimeout(() => setSlowStart(true), SLOW_START_HINT_MS);
+    return () => window.clearTimeout(timer);
+  }, [loading]);
+
+  if (loading) {
+    // The form's own outline, so the panel does not change size when the form arrives.
     return (
-      <Card className="self-start p-5 sm:p-6" aria-live="polite">
-        <span className="sr-only">{t.loading}</span>
-        <SkeletonLine className="w-2/5" />
-        <div className="mt-3 space-y-2" aria-hidden="true">
-          <SkeletonLine className="w-3/5" />
-          <SkeletonLine className="w-2/5" />
+      <div className={PANEL} role="status">
+        <p className="font-display text-2xl font-semibold leading-snug text-ink sm:text-[1.7rem]">{t.loading}</p>
+        <p className={`mt-2 leading-relaxed text-ink-muted ${slowStart ? "" : "invisible"}`}>{t.waking}</p>
+        <div className="mt-6 space-y-4" aria-hidden="true">
+          <Skeleton className="h-12 w-52 rounded-full" />
+          <Skeleton className="h-12 w-full rounded-control" />
+          <Skeleton className="h-12 w-full rounded-control" />
+          <Skeleton className="h-[52px] w-full rounded-full" />
         </div>
-      </Card>
+      </div>
     );
   }
 
   if (runtimeSettings.status !== "success") {
     return (
-      <Card className="self-start p-5 sm:p-6" role="alert">
-        <h2 className="text-lg font-semibold text-ink">{t.unavailableTitle}</h2>
-        <p className="mt-2 text-sm leading-6 text-ink-muted">{t.unavailableBody}</p>
-      </Card>
+      <div className={PANEL} role="alert">
+        <h2 className="font-display text-2xl font-semibold leading-snug text-ink">{t.unavailableTitle}</h2>
+        <p className="mt-2 leading-relaxed text-ink-muted">{t.unavailableBody}</p>
+        <Button className="mt-5" onClick={() => window.location.reload()}>{t.retry}</Button>
+      </div>
     );
   }
 
