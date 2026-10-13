@@ -86,23 +86,3 @@ describe("signed report print view", () => {
     expect(fetchMock.mock.calls.some(([url]) => String(url).includes("/export"))).toBe(false);
   });
 });
-
-describe("sample report preview route", () => {
-  it("does not exist outside demo mode", async () => {
-    vi.stubEnv("NEXT_PUBLIC_DEMO_MODE", "");
-    const { default: ReportPreviewPage } = await import("@/app/reports/preview/page");
-
-    expect(() => ReportPreviewPage()).toThrow("NEXT_NOT_FOUND");
-    expect(notFoundMock).toHaveBeenCalledOnce();
-  });
-
-  it("labels the sample as invented data when demo mode is on", async () => {
-    vi.stubEnv("NEXT_PUBLIC_DEMO_MODE", "true");
-    const { default: ReportPreviewPage } = await import("@/app/reports/preview/page");
-
-    render(ReportPreviewPage());
-
-    expect(screen.getByRole("status")).toHaveTextContent("Sample layout with invented data");
-    expect(notFoundMock).not.toHaveBeenCalled();
-  });
-});

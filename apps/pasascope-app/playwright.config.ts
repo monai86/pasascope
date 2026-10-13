@@ -12,10 +12,6 @@ const backendPort = resolvePort(process.env.PLAYWRIGHT_BACKEND_PORT, 8000);
 // Benchmarks need a production build (see webServer below), so they only run
 // when explicitly requested: `npx playwright test benchmarks/...`.
 const benchmarkRun = process.argv.some((argument) => argument.includes("benchmarks/"));
-// Demo-mode specs need a server started with NEXT_PUBLIC_DEMO_MODE=true, which
-// cannot coexist with the main dev server under Next's single-dev-server lock.
-// Run them with the dedicated demo config:
-//   npx playwright test -c playwright.demo.config.ts
 const allowedOrigins = [
   `http://127.0.0.1:${frontendPort}`,
   `http://localhost:${frontendPort}`,
@@ -28,8 +24,8 @@ export default defineConfig({
     "e2e/**/*.spec.ts",
     ...(benchmarkRun ? ["benchmarks/**/*.spec.ts"] : []),
   ],
-  // The demo and chat-shell specs need servers started differently; each has its own config.
-  testIgnore: ["e2e/demo-mode.smoke.spec.ts", "e2e/chat-*.spec.ts"],
+  // The chat-shell specs need servers started differently and have their own config.
+  testIgnore: ["e2e/chat-*.spec.ts"],
   timeout: 120_000,
   // The suite runs against a dev server, which can reload a page while it
   // compiles; a test caught by that is tried again in CI and reported as

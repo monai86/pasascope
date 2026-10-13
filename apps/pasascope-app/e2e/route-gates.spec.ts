@@ -5,7 +5,7 @@ import { expect, test } from "@playwright/test";
 // can call notFound() or redirect(), which turns a real 404 into a soft one
 // and a redirect into in-page navigation. The gates below must stay hard.
 
-test.describe("routes that must not exist outside demo mode", () => {
+test.describe("the removed demo routes stay gone", () => {
   for (const route of ["/demo", "/demo/dashboard", "/demo/report", "/demo/design-system", "/reports/preview"]) {
     test(`${route} answers 404`, async ({ request }) => {
       const response = await request.get(route, { maxRedirects: 0 });

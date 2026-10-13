@@ -29,6 +29,7 @@ Public app mode on `feat/public-app`: opt-in settings that turn PasaScope into a
 - **A transcription is picked up again after a reload** in the chat shell. `GET /sessions/{session_id}/status` now also returns `transcription_job`: the identifier and state of the session's most recent transcription job, or `null`. It carries nothing about the recording or the transcript.
 
 ### Removed
+- **The demo pages** (`/demo` and its dashboard, report, transcript, upload, features, parent and design-system pages), the sample report preview at `/reports/preview`, the `NEXT_PUBLIC_DEMO_MODE` switch that enabled them, and their e2e suite and CI step. Those addresses answer 404, which the route-gate e2e spec still checks.
 - **The assessment v2 screens in the web app** (`/assessments` and its transcript, evidence, review, report and history pages), their API client and their tests. Nothing in the public app led to them except one button on the Cases page, which is gone too. The API side is removed separately.
 
 ### Fixed

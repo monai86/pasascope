@@ -201,9 +201,8 @@ must update the canonical route-set assertion in
 `src/__tests__/navigation-routes.test.tsx` at the same time. `/` shows the home
 screen, the same one as `/today`. Without a safe active session identifier, the Session item opens
 `/cases?intent=start-session` rather than constructing an identifier-less
-workspace URL. Presentation-only `/demo/*` routes are disabled by default;
-local presentation builds must set `NEXT_PUBLIC_DEMO_MODE=true`, and enabled
-demo pages retain a visible sample-data notice.
+workspace URL. The presentation-only `/demo/*` routes and the sample report
+preview have been removed; those addresses answer 404.
 
 When the API runs the public workflow (public sign-up, open review gates) the
 app uses a chat-first shell instead: a home screen that asks what to do, and

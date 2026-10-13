@@ -43,9 +43,9 @@ overview ของ desktop sidebar เท่านั้น และต้อ�
 assertion ใน `apps/pasascope-app/src/__tests__/navigation-routes.test.tsx`
 พร้อมกันเสมอ. ถ้ายังไม่มี safe active session identifier, Session navigation
 ต้องไป `/cases?intent=start-session`.
-Presentation-only `/demo/*` routes ต้อง fail closed เว้นแต่ build/runtime ตั้ง
-`NEXT_PUBLIC_DEMO_MODE=true` อย่างชัดเจน และเมื่อเปิดต้องแสดง sample-data notice
-ตลอด demo layout.
+Presentation-only `/demo/*` routes และ `/reports/preview` ถูกถอดออกแล้ว ที่อยู่
+เหล่านั้นต้องตอบ 404 (ตรวจใน `e2e/route-gates.spec.ts`) และห้ามเพิ่มหน้าที่แสดง
+ข้อมูลตัวอย่างกลับเข้ามาใน app หลัก.
 
 Chat shell เป็น shell ของ workflow แบบ public (ADR
 `docs/adr/0021-chat-first-guided-shell.md`): ทำงานเมื่อ API อยู่ในโหมด public

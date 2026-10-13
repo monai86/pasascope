@@ -80,7 +80,6 @@ PasaScope เป็นต้นแบบเพื่อการวิจัย�
    | `NEXT_PUBLIC_SUPABASE_URL` | `https://<ref>.supabase.co` |
    | `NEXT_PUBLIC_SUPABASE_ANON_KEY` | anon / publishable key |
    | `NEXT_PUBLIC_SITE_URL` | `https://<project>.vercel.app` |
-   | `NEXT_PUBLIC_DEMO_MODE` | `false` |
    | `NEXT_PUBLIC_CHAT_SHELL` | (ไม่บังคับ) ไม่ต้องตั้ง: เว็บใช้หน้าตาแบบสนทนาเมื่อ API อยู่ในโหมด public ตั้งเป็น `false` แล้ว Redeploy เมื่อต้องการถอยกลับไปหน้าตาแบบเดิม |
    | `NEXT_PUBLIC_CONTACT_EMAIL` | (ไม่บังคับ) อีเมลสำหรับคำถามและคำขอลบข้อมูล แสดงในหน้า `/privacy` |
 3. เลือก branch ที่จะ deploy เป็น production แล้วกด Redeploy

@@ -188,10 +188,6 @@ jobs:
         working-directory: apps/pasascope-app
         run: npx playwright test
 
-      - name: Run gated demo workspace e2e smoke (dedicated demo server)
-        working-directory: apps/pasascope-app
-        run: npx playwright test -c playwright.demo.config.ts
-
       - name: Run chat shell e2e smoke (public-mode backend + flagged dev server)
         working-directory: apps/pasascope-app
         run: npx playwright test -c playwright.chat.config.ts

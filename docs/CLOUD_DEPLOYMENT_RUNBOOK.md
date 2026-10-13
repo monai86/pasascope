@@ -100,7 +100,6 @@
    NEXT_PUBLIC_API_BASE_URL=https://lingualens-api.onrender.com/api/v1
    NEXT_PUBLIC_SUPABASE_URL=https://lliodfzujsmapwmpqmjb.supabase.co
    NEXT_PUBLIC_SUPABASE_ANON_KEY=sb_publishable_zC7wscUPHNtoqQb4amCEEQ_K2dCC5si
-   NEXT_PUBLIC_DEMO_MODE=false
    ```
    *(หมายเหตุ: แทนที่ `https://lingualens-api.onrender.com` ด้วย URL จริงที่ได้จาก Render ในขั้นตอนที่ 2)*
 6. กด **Deploy**
