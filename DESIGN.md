@@ -75,8 +75,9 @@ text and fill pairings.
 ### Chat shell colours
 
 The chat shell (see Shell and navigation) keeps the same palette and moves the
-weight within it. It is in use only behind `NEXT_PUBLIC_CHAT_SHELL`; these rules
-replace the ones above when the workbench shell is removed.
+weight within it. It is the shell of the public workflow; the rules above still
+govern the workbench shell, which remains for an API that enforces review
+gates, and these replace them when the workbench is removed.
 
 - **Canvas:** grey-blue warming to peach at the foot (`--color-chat-canvas-*`),
   with the page inside one rounded pale frame (`--color-chat-frame*`). Hairlines
@@ -157,9 +158,10 @@ competes with the surface it hosts.
 
 ### Chat shell
 
-Behind `NEXT_PUBLIC_CHAT_SHELL`, and only when the API runs the public workflow
-(public sign-up, open review gates), `AppShell` renders the chat shell instead.
-Decision record: `docs/adr/0021-chat-first-guided-shell.md`.
+When the API runs the public workflow (public sign-up, open review gates),
+`AppShell` renders the chat shell instead of the one above. A build with
+`NEXT_PUBLIC_CHAT_SHELL=false` opts out. Decision record:
+`docs/adr/0021-chat-first-guided-shell.md`.
 
 - **Frame:** navigation, the page and an optional side panel inside one rounded
   frame on the canvas. From 1280px all three are columns; from 1024px the side

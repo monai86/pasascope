@@ -12,7 +12,7 @@ vi.mock("next/navigation", () => ({
 }));
 
 vi.mock("@/components/work-queue-dashboard", () => ({
-  WorkQueueDashboard: () => <div>Legacy home dashboard</div>,
+  WorkQueueDashboard: () => <div>Home screen entry</div>,
 }));
 
 vi.mock("@/lib/use-runtime-settings", () => ({
@@ -162,8 +162,20 @@ describe("canonical workbench navigation", () => {
     );
   });
 
-  test("the identifier-less root route redirects to the today workbench", () => {
-    HomePage();
+  test("the root route is the home screen of whichever shell is running", () => {
+    render(<>{HomePage()}</>);
+
+    expect(redirectMock).not.toHaveBeenCalled();
+    expect(screen.getByText("Home screen entry")).toBeInTheDocument();
+  });
+
+  test("the root route redirects to Today in a build that opted out of the chat shell", () => {
+    vi.stubEnv("NEXT_PUBLIC_CHAT_SHELL", "false");
+    try {
+      HomePage();
+    } finally {
+      vi.unstubAllEnvs();
+    }
 
     expect(redirectMock).toHaveBeenCalledOnce();
     expect(redirectMock).toHaveBeenCalledWith("/today");

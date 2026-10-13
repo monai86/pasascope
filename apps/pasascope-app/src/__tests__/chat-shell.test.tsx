@@ -22,7 +22,6 @@ function renderShell(children: React.ReactNode = <div>Content</div>, active: "To
 
 /** The chat frame is a lazily loaded chunk; this waits until it has rendered. */
 async function renderChatShell(children?: React.ReactNode, active?: "Today" | "Session") {
-  vi.stubEnv("NEXT_PUBLIC_CHAT_SHELL", "true");
   const view = renderShell(children, active);
   await screen.findByRole("navigation", { name: "Primary navigation" });
   return view;
@@ -34,7 +33,7 @@ afterEach(() => {
 });
 
 describe("chat shell", () => {
-  it("replaces the workbench frame when the flag is on and the API runs the public workflow", async () => {
+  it("is the frame whenever the API runs the public workflow", async () => {
     const { container } = await renderChatShell();
 
     expect(container.querySelector('[data-shell="chat"]')).not.toBeNull();
@@ -58,7 +57,8 @@ describe("chat shell", () => {
     expect(within(navigation).getByRole("link", { name: "Cases" })).toHaveAttribute("aria-current", "page");
   });
 
-  it("keeps the workbench when the flag is off", () => {
+  it("keeps the workbench in a build that opted out", () => {
+    vi.stubEnv("NEXT_PUBLIC_CHAT_SHELL", "false");
     const { container } = renderShell();
 
     expect(container.querySelector('[data-shell="chat"]')).toBeNull();
@@ -66,7 +66,6 @@ describe("chat shell", () => {
   });
 
   it("keeps the workbench when the API still enforces review gates", () => {
-    vi.stubEnv("NEXT_PUBLIC_CHAT_SHELL", "true");
     settings.data = STRICT;
     const { container } = renderShell();
 

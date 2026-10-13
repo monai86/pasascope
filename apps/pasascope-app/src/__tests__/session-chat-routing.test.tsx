@@ -34,8 +34,6 @@ describe("session route in the chat shell", () => {
   });
 
   it("opens the conversation, which also answers links that still point at Intake", () => {
-    vi.stubEnv("NEXT_PUBLIC_CHAT_SHELL", "true");
-
     const { rerender } = render(<SessionWorkspace sessionId="s1" view="chat" />);
     expect(screen.getByText("conversation")).toBeInTheDocument();
 
@@ -44,8 +42,6 @@ describe("session route in the chat shell", () => {
   });
 
   it("keeps the transcript and findings as full pages in the chat shell", () => {
-    vi.stubEnv("NEXT_PUBLIC_CHAT_SHELL", "true");
-
     const { rerender } = render(<SessionWorkspace sessionId="s1" view="transcript" />);
     expect(screen.getByText("workbench transcript")).toBeInTheDocument();
 
@@ -53,13 +49,14 @@ describe("session route in the chat shell", () => {
     expect(screen.getByText("workbench findings")).toBeInTheDocument();
   });
 
-  it("shows Intake for a chat link when the chat shell is off", () => {
+  it("shows Intake for a chat link in a build that opted out of the chat shell", () => {
+    vi.stubEnv("NEXT_PUBLIC_CHAT_SHELL", "false");
+
     render(<SessionWorkspace sessionId="s1" view="chat" />);
     expect(screen.getByText("workbench intake")).toBeInTheDocument();
   });
 
   it("shows Intake for a chat link while the API still enforces review gates", () => {
-    vi.stubEnv("NEXT_PUBLIC_CHAT_SHELL", "true");
     settings.reviewGates = "strict";
 
     render(<SessionWorkspace sessionId="s1" view="chat" />);

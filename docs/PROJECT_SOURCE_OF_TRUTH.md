@@ -37,7 +37,7 @@ validated `?view=intake|transcript|findings|report`; ค่า query ที่�
 Workspace ไม่สร้าง report editor route แยกอีกชุด.
 
 Shell navigation ใช้ canonical routes ชุดเดียวคือ Today, Dashboard, Cases,
-Session, Reports และ Settings; `/` redirect ไป `/today`. Dashboard เป็น clinic
+Session, Reports และ Settings; `/` แสดงหน้าหลักเดียวกับ `/today`. Dashboard เป็น clinic
 overview ของ desktop sidebar เท่านั้น และต้องไม่ปรากฏใน mobile bottom nav ซึ่งคง
 5 รายการ; ถ้าจะเพิ่ม ถอด หรือสลับลำดับ destination ต้องแก้ canonical route-set
 assertion ใน `apps/pasascope-app/src/__tests__/navigation-routes.test.tsx`
@@ -47,11 +47,14 @@ Presentation-only `/demo/*` routes ต้อง fail closed เว้นแต�
 `NEXT_PUBLIC_DEMO_MODE=true` อย่างชัดเจน และเมื่อเปิดต้องแสดง sample-data notice
 ตลอด demo layout.
 
-Chat shell เป็น shell ทางเลือกที่ยังปิดเป็นค่าเริ่มต้น (ADR
-`docs/adr/0021-chat-first-guided-shell.md`): ทำงานเมื่อ build เว็บด้วย
-`NEXT_PUBLIC_CHAT_SHELL=true` **และ** API อยู่ในโหมด public (`public_signup` กับ
-`review_gates=open`) เท่านั้น กรณีอื่นทั้งหมดใช้ shell เดิมและกฎ navigation ข้างบน.
-เมื่อ chat shell ทำงาน: `/` เป็นหน้าหลัก (ไม่ redirect), navigation มี 4 ปลายทางคือ
+Chat shell เป็น shell ของ workflow แบบ public (ADR
+`docs/adr/0021-chat-first-guided-shell.md`): ทำงานเมื่อ API อยู่ในโหมด public
+(`public_signup` กับ `review_gates=open`) ส่วน API ที่ยังบังคับ review gates ใช้
+shell เดิมและกฎ navigation ข้างบนต่อไป เพราะบทสนทนาไม่มีขั้น attestation และ
+sign-off. Build ที่ตั้ง `NEXT_PUBLIC_CHAT_SHELL=false` ใช้ shell เดิมทุกกรณี.
+`/` เป็นหน้าหลักของ shell ที่กำลังทำงาน (chat home หรือ Today) และไม่ redirect
+ยกเว้น build ที่ opt out ซึ่งยัง redirect ไป `/today`.
+เมื่อ chat shell ทำงาน: navigation มี 4 ปลายทางคือ
 Home, Cases, Reports, Settings (ไม่มี bottom nav; ลำดับถูกตรวจใน
 `src/__tests__/chat-shell.test.tsx`), และ Session Workspace เพิ่ม route view
 `?view=chat` เป็นบทสนทนาของเซสชัน โดย `?view=intake` เปิดบทสนทนาเดียวกัน ส่วน

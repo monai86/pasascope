@@ -35,9 +35,9 @@ This stack is mandatory for the product shell, controls, forms, tables, reports,
 - Reports is a calm library: a status metric row, then grouped sections (Needs review, Needs regeneration, Signed reports) rendered as a compact `DataTable` on desktop and a compact list on mobile, with one action per row into the canonical Report workspace.
 - Shared states: `Skeleton`/`SkeletonPanel` for loading (space-reserving, reduced-motion aware, `role="status"`), `EmptyState` with a next action, backend-unavailable banners with recovery copy, and inline blocked-reasons on disabled workflow actions wired with `aria-describedby` (the workflow-gates pattern).
 
-### Chat shell (behind `NEXT_PUBLIC_CHAT_SHELL`)
+### Chat shell (the public workflow's shell)
 
-`AppShell` still owns the frame and the gates; it renders `ChatShellFrame` (`src/components/chat-shell/`) when `isChatShellFlagOn()` and the confirmed runtime settings report public sign-up with open review gates. Every other configuration renders the workbench shell above, so the two never mix on one deployment.
+`AppShell` still owns the frame and the gates; it renders `ChatShellFrame` (`src/components/chat-shell/`) when the confirmed runtime settings report public sign-up with open review gates, unless the build opted out with `NEXT_PUBLIC_CHAT_SHELL=false` (`isChatShellAllowed()`). Every other configuration renders the workbench shell above, so the two never mix on one deployment. The frame is loaded with `React.lazy`, not `next/dynamic`, so workbench routes do not carry it or the loader.
 
 - `ChatShellFrame` lays out `ChatNav`, the page and the side panel, and owns the drawer and sheet (focus trap, Escape, focus return). `ChatShellPanel` and `ChatShellHeader` are how a page fills the side panel and the phone/tablet header; outside the chat shell they render nothing.
 - Destinations come from `CHAT_NAVIGATION` in `src/services/navigation/workbench-navigation.ts`; `src/__tests__/chat-shell.test.tsx` asserts the ordered list.

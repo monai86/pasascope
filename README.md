@@ -198,18 +198,18 @@ Cases, Session, Reports, and Settings route model. The desktop rail additionally
 exposes Dashboard as the desktop-only clinic overview, so the mobile bottom nav
 stays at five destinations. Adding, removing, or reordering a shell destination
 must update the canonical route-set assertion in
-`src/__tests__/navigation-routes.test.tsx` at the same time. `/` redirects to
-`/today`. Without a safe active session identifier, the Session item opens
+`src/__tests__/navigation-routes.test.tsx` at the same time. `/` shows the home
+screen, the same one as `/today`. Without a safe active session identifier, the Session item opens
 `/cases?intent=start-session` rather than constructing an identifier-less
 workspace URL. Presentation-only `/demo/*` routes are disabled by default;
 local presentation builds must set `NEXT_PUBLIC_DEMO_MODE=true`, and enabled
 demo pages retain a visible sample-data notice.
 
-A chat-first shell is built in and off by default. It presents the same
-workflow as a guided conversation: a home screen that asks what to do, and one
-conversation per session at `/sessions/{sessionId}?view=chat`. It has no
-language model; what the app says comes from saved session state. To try it,
-run the API in public mode and build the web app with the flag:
+When the API runs the public workflow (public sign-up, open review gates) the
+app uses a chat-first shell instead: a home screen that asks what to do, and
+one conversation per session at `/sessions/{sessionId}?view=chat`. It has no
+language model; what the app says comes from saved session state. To run it
+locally, start the API in public mode:
 
 ```bash
 cd apps/api
@@ -218,12 +218,12 @@ PASASCOPE_SUPABASE_REQUIRE_MFA=false PASASCOPE_SUPABASE_REQUIRE_INVITATION=false
 PYTHONPATH=.:../..:../../src uvicorn app.main:app --reload --port 8000
 
 cd ../../apps/pasascope-app
-NEXT_PUBLIC_CHAT_SHELL=true NEXT_PUBLIC_API_BASE_URL=http://localhost:8000/api/v1 npm run dev
+NEXT_PUBLIC_API_BASE_URL=http://localhost:8000/api/v1 npm run dev
 ```
 
-With the flag off, or with an API that still enforces review gates, the
-workbench shell above is used. See `DESIGN.md` and
-`docs/adr/0021-chat-first-guided-shell.md`.
+An API that still enforces review gates gets the workbench shell above, and
+building the web app with `NEXT_PUBLIC_CHAT_SHELL=false` keeps the workbench
+everywhere. See `DESIGN.md` and `docs/adr/0021-chat-first-guided-shell.md`.
 
 Today uses the focused-workbench layout: one prominent Start session action,
 one prioritized queue, and a quiet contextual safety/actions surface. The

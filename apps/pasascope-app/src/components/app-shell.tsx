@@ -21,7 +21,7 @@ import { WorkspaceAccessGate } from "@/components/workspace-access-gate";
 import { ConfirmedRuntimeSettingsProvider } from "@/lib/confirmed-runtime-settings";
 import { loadMockAccessSession } from "@/lib/mock-access-session";
 import { loadOrRestoreSupabaseAccessSession, useSupabaseAccessSession } from "@/lib/use-supabase-access-session";
-import { isChatShellFlagOn } from "@/lib/ui-shell";
+import { isChatShellAllowed } from "@/lib/ui-shell";
 import { useRuntimeSettings } from "@/lib/use-runtime-settings";
 
 export type { ShellActive };
@@ -123,10 +123,11 @@ export function AppShell({
     );
   }
 
-  // The chat shell follows the public workflow, so it replaces the workbench
-  // frame only when the flag is on and the API runs in that mode.
+  // The chat shell is the interface of the public workflow, so it is the frame
+  // whenever the API runs in that mode. Any other configuration, or a build
+  // that opted out, keeps the workbench frame.
   const access = runtimeSettings.data.access_model;
-  if (isChatShellFlagOn() && access?.public_signup === true && access?.review_gates === "open") {
+  if (isChatShellAllowed() && access?.public_signup === true && access?.review_gates === "open") {
     return (
       <ConfirmedRuntimeSettingsProvider value={runtimeSettings.data}>
         <SupabaseAuthRuntimeBridge />

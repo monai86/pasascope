@@ -2,17 +2,22 @@
 
 import { useAppMode } from "@/lib/app-mode";
 
-/** Build-time switch for the chat-first shell; off unless explicitly enabled. */
-export function isChatShellFlagOn(): boolean {
-  return process.env.NEXT_PUBLIC_CHAT_SHELL === "true";
+/**
+ * Whether this build may use the chat shell. It may unless it was built with
+ * NEXT_PUBLIC_CHAT_SHELL=false, which keeps the workbench shell everywhere:
+ * the way back if the chat shell has to be withdrawn from a deployment.
+ */
+export function isChatShellAllowed(): boolean {
+  return process.env.NEXT_PUBLIC_CHAT_SHELL !== "false";
 }
 
 /**
- * The chat shell follows the public workflow (sign up, no review gates), so it
- * is used only when the flag is on and the running API is in that mode. Every
- * other configuration keeps the workbench shell.
+ * The chat shell is the interface of the public workflow (sign up, no review
+ * gates), so it is used when the running API is in that mode. An API that
+ * still enforces review gates keeps the workbench shell, whose screens carry
+ * the attestation and sign-off steps the conversation does not have.
  */
 export function useChatShellEnabled(): boolean {
   const mode = useAppMode();
-  return isChatShellFlagOn() && mode.publicSignup && mode.openGates;
+  return isChatShellAllowed() && mode.publicSignup && mode.openGates;
 }

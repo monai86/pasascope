@@ -15,18 +15,18 @@ const allowedOrigins = [
 ].join(",");
 
 /**
- * Dedicated config for the chat shell. The shell renders only when the web
- * app is built with NEXT_PUBLIC_CHAT_SHELL=true and the API runs the public
- * workflow (public sign-up, open review gates), which the default suite's
- * servers do not, and a second dev server cannot run beside the main one under
- * Next 16's single-dev-server lock. So these specs have their own servers.
+ * Dedicated config for the chat shell. The shell renders when the API runs the
+ * public workflow (public sign-up, open review gates), which the default
+ * suite's backend does not, and a second dev server cannot run beside the main
+ * one under Next 16's single-dev-server lock. So these specs have their own
+ * servers.
  *
  * Run with:
  *   npx playwright test -c playwright.chat.config.ts
  */
 export default defineConfig({
   testDir: ".",
-  testMatch: ["e2e/chat-workflow.smoke.spec.ts"],
+  testMatch: ["e2e/chat-workflow.smoke.spec.ts", "e2e/chat-ui-audit.spec.ts"],
   timeout: 120_000,
   expect: {
     timeout: 10_000,
@@ -46,7 +46,7 @@ export default defineConfig({
       timeout: 120_000,
     },
     {
-      command: `NEXT_PUBLIC_CHAT_SHELL=true NEXT_PUBLIC_API_BASE_URL=http://127.0.0.1:${backendPort}/api/v1 npm run dev -- --webpack --hostname 127.0.0.1 --port ${frontendPort}`,
+      command: `NEXT_PUBLIC_API_BASE_URL=http://127.0.0.1:${backendPort}/api/v1 npm run dev -- --webpack --hostname 127.0.0.1 --port ${frontendPort}`,
       cwd: ".",
       url: `http://127.0.0.1:${frontendPort}`,
       reuseExistingServer: true,
