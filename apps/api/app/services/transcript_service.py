@@ -174,7 +174,7 @@ def export_cha(repo: MockRepository, transcript_id: str) -> TranscriptExport:
 
 
 def linked_media_name(repo: MockRepository, session_id: str) -> str | None:
-    linked_audio = [audio_file for audio_file in repo.audio_files.values() if audio_file.session_id == session_id and audio_file.retained]
+    linked_audio = [audio_file for audio_file in repo.find("audio_files", session_id=session_id) if audio_file.retained]
     if not linked_audio:
         return None
     audio_file = sorted(linked_audio, key=lambda item: item.created_at)[-1]
@@ -202,7 +202,7 @@ def chat_build_options(raw_text: str) -> dict:
 def run_qa(repo: MockRepository, transcript_id: str, *, actor_id: str = "system") -> QaReport:
     transcript = repo.transcripts[transcript_id]
     expected_version = transcript.version
-    linked_audio = [audio_file for audio_file in repo.audio_files.values() if audio_file.session_id == transcript.session_id and audio_file.retained]
+    linked_audio = [audio_file for audio_file in repo.find("audio_files", session_id=transcript.session_id) if audio_file.retained]
     issues = qa_issues(transcript, linked_audio)
     has_error = any(issue.severity == "error" for issue in issues)
     has_warning = any(issue.severity == "warning" for issue in issues)

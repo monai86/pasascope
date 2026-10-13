@@ -645,12 +645,12 @@ def test_evidence_result_round_trips_through_json_repository(tmp_path):
     source, result = _created_reference_result(tmp_path)
     path = tmp_path / "repo.json"
     repo = JsonFileRepository(path)
-    repo.cases = source.cases
-    repo.sessions = source.sessions
-    repo.transcripts = source.transcripts
-    repo.features = source.features
-    repo.ml_results = source.ml_results
-    repo.audit_log = source.audit_log
+    repo.cases.update(source.cases)
+    repo.sessions.update(source.sessions)
+    repo.transcripts.update(source.transcripts)
+    repo.features.update(source.features)
+    repo.ml_results.update(source.ml_results)
+    repo.audit_log.extend(source.audit_log)
     repo.save()
 
     loaded = JsonFileRepository(path)
@@ -666,12 +666,12 @@ def test_evidence_result_round_trips_through_sqlite_repository(tmp_path):
     source, result = _created_reference_result(tmp_path)
     database_url = f"sqlite:///{tmp_path / 'reference-evidence.db'}"
     repo = SqlAlchemyRepository(database_url)
-    repo.cases = source.cases
-    repo.sessions = source.sessions
-    repo.transcripts = source.transcripts
-    repo.features = source.features
-    repo.ml_results = source.ml_results
-    repo.audit_log = source.audit_log
+    repo.cases.update(source.cases)
+    repo.sessions.update(source.sessions)
+    repo.transcripts.update(source.transcripts)
+    repo.features.update(source.features)
+    repo.ml_results.update(source.ml_results)
+    repo.audit_log.extend(source.audit_log)
     repo.save()
 
     loaded = SqlAlchemyRepository(database_url)

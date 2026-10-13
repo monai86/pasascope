@@ -23,13 +23,14 @@ from app.db.models import (
     TherapyGoalRecord,
     TranscriptRecord,
 )
+from app.repositories.lazy_table import LazyTable
 from app.repositories.base import (
     CaseVersionConflictError,
     ReportVersionConflictError,
     SessionVersionConflictError,
     TranscriptVersionConflictError,
 )
-from app.repositories.mock_repository import MockRepository, new_id
+from app.repositories.mock_repository import MockRepository, _plain, new_id, record_matches
 from app.schemas.clinical import (
     AiReview,
     AudioFileMetadata,
@@ -53,12 +54,13 @@ from app.services.audit_safety import validate_audit_event
 
 
 class SqlAlchemyRepository(MockRepository):
-    """SQLAlchemy-backed local/pilot scaffold using the v2 service contract.
+    """The repository over a SQL database.
 
-    Services currently mutate repository dictionaries. This adapter loads SQL
-    rows into those dictionaries and persists the current snapshot after audit
-    events, allowing the API contract to move toward a real SQL repository
-    without changing every route at once.
+    Services look records up by id in the collections below, change the
+    objects they get, and call ``save``. Each collection reads a record from
+    the database when it is first asked for and keeps the recently used ones;
+    nothing is read at start-up. A subset is asked for with ``find``, which
+    queries on the given columns.
     """
 
     def __init__(
@@ -79,13 +81,24 @@ class SqlAlchemyRepository(MockRepository):
         if create_schema:
             Base.metadata.create_all(self.engine)
         self.SessionLocal = sessionmaker(bind=self.engine)
-        # What this instance last read from or wrote to the database, so the
-        # snapshot save can skip records that have not changed.
-        self._saved_fingerprints: dict[tuple[str, str], bytes] = {}
         self._saved_audit_ids: set[str] = set()
         self._save_lock = threading.RLock()
         super().__init__(seed_demo=seed_demo)
-        self.load()
+        seeded = {name: dict(getattr(self, name)) for name in self._RECORD_TABLES}
+        seeded_settings = dict(self.organization_settings)
+        self._sources = self._record_sources()
+        for name in self._RECORD_TABLES:
+            setattr(self, name, self._lazy_table(name))
+        self.organization_settings = LazyTable(
+            "organization_settings",
+            load_one=self._load_organization_settings,
+            load_all=self._load_all_organization_settings,
+            fingerprint=_settings_fingerprint,
+            max_cached=None,
+        )
+        # Audit events are written as they happen; only the recent ones stay here.
+        self.audit_log = []
+        self.load(seeded, seeded_settings)
 
     def get_case(self, case_id: str) -> ChildCase | None:
         with self.SessionLocal() as db:
@@ -188,7 +201,7 @@ class SqlAlchemyRepository(MockRepository):
         return self.clone(updated)
 
     def list_cases_for_user(self, user_id: str, organization_id: str) -> list[ChildCase]:
-        return [self.clone(case) for case in self.cases.values()]
+        return [self.clone(case) for case in self.find("cases", organization_id=organization_id)]
 
     def create_session(self, case_id: str, payload: TherapySessionCreate, *, actor_id: str) -> TherapySession:
         now = _utc_now()
@@ -842,151 +855,184 @@ class SqlAlchemyRepository(MockRepository):
         self.audit_log.append(audit.as_dict())
         return self.clone(updated)
 
-    def load(self) -> None:
-        with self._save_lock:
-            self._load_snapshot()
+    # In the order rows have to be written: a record after the ones it refers to.
+    _RECORD_TABLES = (
+        "cases",
+        "sessions",
+        "transcripts",
+        "features",
+        "ml_results",
+        "audio_files",
+        "ai_reviews",
+        "reports",
+        "therapy_goals",
+        "jobs",
+        "privacy_operations",
+    )
+    # How many audit events stay in memory after they are stored.
+    _AUDIT_TAIL = 200
 
-    def _load_snapshot(self) -> None:
-        with self.SessionLocal() as db:
-            cases = db.query(ChildCaseRecord).all()
-            if cases:
-                self.cases = {row.case_id: self._case_from_record(row) for row in cases}
-                self.sessions = {row.session_id: self._session_from_record(row) for row in db.query(SessionRecord).all()}
-                self.transcripts = {row.transcript_id: self._transcript_from_record(row) for row in db.query(TranscriptRecord).all()}
-                self.features = {row.feature_set_id: self._feature_from_record(row) for row in db.query(FeatureSetRecord).all()}
-                self.ml_results = {row.result_id: MLResult.model_validate(row.payload) for row in db.query(MLResultRecord).all()}
-                self.audio_files = {row.audio_file_id: self._audio_from_record(row) for row in db.query(AudioFileRecord).all()}
-                self.ai_reviews = {row.ai_review_id: AiReview.model_validate(row.payload) for row in db.query(AiReviewRecord).all()}
-                self.reports = {row.report_id: self._report_from_record(row) for row in db.query(ReportRecord).all()}
-                self.therapy_goals = {row.goal_id: self._goal_from_record(row) for row in db.query(TherapyGoalRecord).all()}
-                self.jobs = {row.job_id: self._job_from_record(row) for row in db.query(ProcessingJobRecord).all()}
-                self.privacy_operations = {row.privacy_operation_id: self._privacy_operation_from_record(row) for row in db.query(PrivacyOperationRecord).all()}
-                self.organization_settings = {
-                    row.organization_id: dict(row.settings or {})
-                    for row in db.query(OrganizationSettingsRecord).all()
-                }
-                self.organization_settings.setdefault("pilot_org_001", {"ai_review_enabled": True})
-                self.audit_log = [
-                    {
-                        "audit_id": row.audit_id,
-                        "organization_id": row.organization_id,
-                        "actor_id": row.actor_id,
-                        "action": row.action,
-                        "target_id": row.target_id,
-                        "outcome": row.outcome,
-                        "correlation_id": row.correlation_id,
-                        "message": row.message,
-                        "timestamp": row.timestamp.isoformat() if hasattr(row.timestamp, "isoformat") else str(row.timestamp),
-                    }
-                    for row in db.query(AuditLogRecord).all()
-                ]
-                self._remember_saved_state()
-            elif self.cases:
-                # Empty database in demo mode: store the seeded sample case.
-                self.save()
-
-    def _remember_saved_state(self) -> None:
-        """Record what the database holds right after a load, so `save` writes changes only."""
-        self._saved_fingerprints = {
-            (kind, key): _fingerprint(value)
-            for kind, values in self._snapshot_collections()
-            for key, value in values
-        }
-        self._saved_fingerprints.update(
-            (("organization_settings", organization_id), _settings_fingerprint(settings))
-            for organization_id, settings in list(self.organization_settings.items())
-        )
-        self._saved_audit_ids = {item["audit_id"] for item in self.audit_log}
-
-    def _snapshot_collections(self) -> list[tuple[str, list[tuple[str, object]]]]:
-        # Copied to lists: request threads and the job worker add records while a save runs.
-        return [
-            ("case", list(self.cases.items())),
-            ("session", list(self.sessions.items())),
-            ("transcript", list(self.transcripts.items())),
-            ("feature", list(self.features.items())),
-            ("ml_result", list(self.ml_results.items())),
-            ("audio_file", list(self.audio_files.items())),
-            ("ai_review", list(self.ai_reviews.items())),
-            ("report", list(self.reports.items())),
-            ("therapy_goal", list(self.therapy_goals.items())),
-            ("job", list(self.jobs.items())),
-            ("privacy_operation", list(self.privacy_operations.items())),
-        ]
-
-    def save(self) -> None:
-        """Persist what changed in the in-memory snapshot, without deleting any row.
-
-        Legacy service paths still mutate the repository dictionaries and rely
-        on this snapshot write. It upserts by primary key the records that
-        differ from what this instance last read or wrote, and appends only
-        audit events that are not stored yet, so it can never remove records
-        written by another repository instance, and its cost follows the size
-        of the change, not the size of the database. Row removal goes through
-        the explicit ``delete_*`` methods.
-        """
-        with self._save_lock:
-            self._save_changes()
-
-    def _save_changes(self) -> None:
-        collections = dict(self._snapshot_collections())
-        settings_items = list(self.organization_settings.items())
-        pending: dict[tuple[str, str], bytes] = {}
-        present: set[tuple[str, str]] = set()
-
-        def changed(kind: str) -> list:
-            values = []
-            for key, value in collections[kind]:
-                present.add((kind, key))
-                fingerprint = _fingerprint(value)
-                if self._saved_fingerprints.get((kind, key)) != fingerprint:
-                    pending[(kind, key)] = fingerprint
-                    values.append(value)
-            return values
-
-        with self.SessionLocal() as db:
-            for case in changed("case"):
-                db.merge(self._case_to_record(case))
-            for session in changed("session"):
-                db.merge(self._session_to_record(session))
-            for transcript in changed("transcript"):
-                db.merge(self._transcript_to_record(transcript))
-            for feature_set in changed("feature"):
-                db.merge(self._feature_to_record(feature_set))
-            for result in changed("ml_result"):
-                db.merge(MLResultRecord(
+    def _record_sources(self) -> dict:
+        """For each collection: its table, its key column, and how a row becomes a record and back."""
+        return {
+            "cases": (ChildCaseRecord, "case_id", self._case_from_record, self._case_to_record),
+            "sessions": (SessionRecord, "session_id", self._session_from_record, self._session_to_record),
+            "transcripts": (TranscriptRecord, "transcript_id", self._transcript_from_record, self._transcript_to_record),
+            "features": (FeatureSetRecord, "feature_set_id", self._feature_from_record, self._feature_to_record),
+            "ml_results": (
+                MLResultRecord,
+                "result_id",
+                lambda row: MLResult.model_validate(row.payload),
+                lambda result: MLResultRecord(
                     result_id=result.result_id,
                     session_id=result.session_id,
                     transcript_id=result.transcript_id,
                     payload=result.model_dump(mode="json"),
                     created_at=result.generated_at,
-                ))
-            for audio_file in changed("audio_file"):
-                db.merge(self._audio_to_record(audio_file))
-            for review in changed("ai_review"):
-                db.merge(AiReviewRecord(
+                ),
+            ),
+            "audio_files": (AudioFileRecord, "audio_file_id", self._audio_from_record, self._audio_to_record),
+            "ai_reviews": (
+                AiReviewRecord,
+                "ai_review_id",
+                lambda row: AiReview.model_validate(row.payload),
+                lambda review: AiReviewRecord(
                     ai_review_id=review.ai_review_id,
                     session_id=review.session_id,
                     payload=review.model_dump(mode="json"),
                     review_priority=review.review_priority,
                     therapist_review_status=review.therapist_review_status.value,
                     created_at=review.created_at,
-                ))
-            for report in changed("report"):
-                db.merge(self._report_to_record(report))
-            for goal in changed("therapy_goal"):
-                db.merge(self._goal_to_record(goal))
-            for job in changed("job"):
-                db.merge(self._job_to_record(job))
-            for privacy_operation in changed("privacy_operation"):
-                db.merge(self._privacy_operation_to_record(privacy_operation))
-            for organization_id, settings in settings_items:
-                key = ("organization_settings", organization_id)
-                present.add(key)
-                fingerprint = _settings_fingerprint(settings)
-                if self._saved_fingerprints.get(key) == fingerprint:
-                    continue
-                pending[key] = fingerprint
+                ),
+            ),
+            "reports": (ReportRecord, "report_id", self._report_from_record, self._report_to_record),
+            "therapy_goals": (TherapyGoalRecord, "goal_id", self._goal_from_record, self._goal_to_record),
+            "jobs": (ProcessingJobRecord, "job_id", self._job_from_record, self._job_to_record),
+            "privacy_operations": (
+                PrivacyOperationRecord,
+                "privacy_operation_id",
+                self._privacy_operation_from_record,
+                self._privacy_operation_to_record,
+            ),
+        }
+
+    def _lazy_table(self, name: str) -> LazyTable:
+        record, key_column, from_record, _ = self._sources[name]
+
+        def load_one(key: str):
+            with self.SessionLocal() as db:
+                row = db.get(record, key)
+                return from_record(row) if row is not None else None
+
+        def load_all():
+            with self.SessionLocal() as db:
+                return [(getattr(row, key_column), from_record(row)) for row in db.query(record)]
+
+        return LazyTable(name, load_one=load_one, load_all=load_all, fingerprint=_fingerprint)
+
+    def _load_organization_settings(self, organization_id: str) -> dict | None:
+        with self.SessionLocal() as db:
+            row = db.get(OrganizationSettingsRecord, organization_id)
+            return dict(row.settings or {}) if row is not None else None
+
+    def _load_all_organization_settings(self) -> list[tuple[str, dict]]:
+        with self.SessionLocal() as db:
+            return [(row.organization_id, dict(row.settings or {})) for row in db.query(OrganizationSettingsRecord)]
+
+    def find(self, collection: str, **where) -> list:
+        """Records whose fields equal the given values, read with one query on those columns.
+
+        Records already held are returned as the objects everyone else has,
+        and what is in memory decides the answer: a record changed or created
+        here and not saved yet is judged by its current fields.
+        """
+        record, key_column, from_record, _ = self._sources[collection]
+        table: LazyTable = getattr(self, collection)
+        with self.SessionLocal() as db:
+            query = db.query(record)
+            for field, wanted in where.items():
+                column = getattr(record, field)
+                if isinstance(wanted, (set, frozenset, list, tuple)):
+                    query = query.filter(column.in_([_plain(item) for item in wanted]))
+                else:
+                    query = query.filter(column == _plain(wanted))
+            rows = [(getattr(row, key_column), from_record(row)) for row in query]
+        table.admit(rows)
+        matches = [(key, value) for key, value in table.loaded() if record_matches(value, where)]
+        matches.sort(key=lambda item: (_created_order(item[1]), item[0]))
+        return [value for _, value in matches]
+
+    def audit_events(self, **where) -> list[dict]:
+        """Stored audit events whose fields equal the given values, oldest first.
+
+        The list in memory holds recent events only; this reads the table.
+        """
+        self.save()
+        with self.SessionLocal() as db:
+            query = db.query(AuditLogRecord)
+            for field, wanted in where.items():
+                query = query.filter(getattr(AuditLogRecord, field) == wanted)
+            return [
+                {
+                    "audit_id": row.audit_id,
+                    "organization_id": row.organization_id,
+                    "actor_id": row.actor_id,
+                    "action": row.action,
+                    "target_id": row.target_id,
+                    "outcome": row.outcome,
+                    "correlation_id": row.correlation_id,
+                    "message": row.message,
+                    "timestamp": row.timestamp.isoformat() if hasattr(row.timestamp, "isoformat") else str(row.timestamp),
+                }
+                for row in query.order_by(AuditLogRecord.timestamp)
+            ]
+
+    def load(self, seeded: dict | None = None, seeded_settings: dict | None = None) -> None:
+        """Prepare an empty cache. Nothing is read until a record is asked for.
+
+        In demo mode an empty database receives the sample records.
+        """
+        with self._save_lock:
+            self.organization_settings.setdefault("pilot_org_001", {"ai_review_enabled": True})
+            if not seeded or not seeded.get("cases"):
+                return
+            with self.SessionLocal() as db:
+                has_cases = db.query(ChildCaseRecord.case_id).first() is not None
+            if has_cases:
+                return
+            for name, records in seeded.items():
+                table = getattr(self, name)
+                for key, value in records.items():
+                    table[key] = value
+            for organization_id, settings in (seeded_settings or {}).items():
+                self.organization_settings.setdefault(organization_id, settings)
+            self._save_changes()
+
+    def save(self) -> None:
+        """Persist the records held in memory that changed, without deleting any row.
+
+        Service paths change the objects the repository hands out and rely on
+        this write. It upserts by primary key the held records that differ
+        from what was last read or written, and appends only audit events that
+        are not stored yet, so it can never remove records written by another
+        repository instance, and its cost follows the size of the change, not
+        the size of the database. Row removal goes through the explicit
+        ``delete_*`` methods.
+        """
+        with self._save_lock:
+            self._save_changes()
+
+    def _save_changes(self) -> None:
+        written: list[tuple[LazyTable, str, bytes]] = []
+        with self.SessionLocal() as db:
+            for name in self._RECORD_TABLES:
+                table: LazyTable = getattr(self, name)
+                to_record = self._sources[name][3]
+                for key, value, fingerprint in table.changed():
+                    db.merge(to_record(value))
+                    written.append((table, key, fingerprint))
+            for organization_id, settings, fingerprint in self.organization_settings.changed():
+                written.append((self.organization_settings, organization_id, fingerprint))
                 if db.get(OrganizationRecord, organization_id) is None:
                     db.add(OrganizationRecord(
                         organization_id=organization_id,
@@ -1027,10 +1073,19 @@ class SqlAlchemyRepository(MockRepository):
                     db.add(self._audit_to_record(item))
             db.commit()
 
-        self._saved_fingerprints.update(pending)
-        for key in [key for key in self._saved_fingerprints if key not in present]:
-            del self._saved_fingerprints[key]
+        for table, key, fingerprint in written:
+            table.mark_stored(key, fingerprint)
+        for name in self._RECORD_TABLES:
+            getattr(self, name).forget_unheld()
         self._saved_audit_ids.update(unseen_ids)
+        # Everything in the list is stored now. Removed in place, so an event
+        # another thread appends meanwhile is not lost.
+        excess = len(self.audit_log) - self._AUDIT_TAIL
+        if excess > 0:
+            dropped = self.audit_log[:excess]
+            if all(item["audit_id"] in self._saved_audit_ids for item in dropped):
+                del self.audit_log[:excess]
+                self._saved_audit_ids.difference_update(item["audit_id"] for item in dropped)
 
     def delete_feature_set(self, feature_set_id: str) -> None:
         super().delete_feature_set(feature_set_id)
@@ -1419,6 +1474,11 @@ class SqlAlchemyRepository(MockRepository):
 
 def _fingerprint(value) -> bytes:
     return hashlib.blake2b(value.model_dump_json().encode("utf-8"), digest_size=16).digest()
+
+
+def _created_order(record) -> str:
+    """Oldest first, as a plain collection kept them."""
+    return str(getattr(record, "created_at", None) or getattr(record, "generated_at", None) or "")
 
 
 def _settings_fingerprint(settings: dict) -> bytes:

@@ -1880,7 +1880,7 @@ def test_sqlalchemy_repository_round_trip_when_available(tmp_path):
 
     restored = SqlAlchemyRepository(database_url)
     assert restored.cases["case_sql"].child_code == "C-SQL"
-    assert any(item["action"] == "test.sql_persist" for item in restored.audit_log)
+    assert any(item["action"] == "test.sql_persist" for item in restored.audit_events())
 
 
 def test_repository_mode_selection_supports_sql_when_available(tmp_path, monkeypatch):

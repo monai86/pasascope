@@ -58,7 +58,7 @@ def _resolve_case_creation_payload(payload: ChildCaseCreate, user: CurrentUser) 
 
 @router.get("", response_model=list[ChildCase])
 def list_cases(user: CurrentUser = Depends(get_current_user), repo: MockRepository = Depends(get_repository)):
-    return [repo.clone(item) for item in filter_cases_for_user(list(repo.cases.values()), user)]
+    return [repo.clone(item) for item in filter_cases_for_user(repo.find("cases", organization_id=user.organization_id), user)]
 
 
 @router.post("", response_model=ChildCase)
@@ -159,7 +159,7 @@ def grant_case_consent(
 def case_timeline(case_id: str, user: CurrentUser = Depends(get_current_user), repo: MockRepository = Depends(get_repository)):
     require_case(repo, case_id, user)
     events = []
-    for session in repo.sessions.values():
+    for session in repo.find("sessions", case_id=case_id):
         if session.case_id == case_id:
             events.append(TimelineEvent(event_id=new_id("evt"), label=f"Session {session.session_date}", status=session.status, occurred_at=session.created_at, target_id=session.session_id))
     return events

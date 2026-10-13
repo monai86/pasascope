@@ -220,9 +220,8 @@ def _review_priority(concerns: list[str], feature_set: FeatureSet | None) -> tup
 
 def _previous_reviewed_feature_set(repo: MockRepository, session: TherapySession) -> FeatureSet | None:
     previous_sessions = [
-        candidate for candidate in repo.sessions.values()
-        if candidate.case_id == session.case_id
-        and candidate.session_id != session.session_id
+        candidate for candidate in repo.find("sessions", case_id=session.case_id)
+        if candidate.session_id != session.session_id
         and candidate.session_date < session.session_date
         and candidate.feature_set_id
     ]

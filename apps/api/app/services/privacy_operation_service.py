@@ -30,7 +30,7 @@ def create_privacy_operation(
 
 
 def list_case_privacy_operations(repo: MockRepository, case_id: str) -> list[PrivacyOperation]:
-    operations = [operation for operation in repo.privacy_operations.values() if operation.case_id == case_id]
+    operations = repo.find("privacy_operations", case_id=case_id)
     operations.sort(key=lambda item: item.created_at, reverse=True)
     return [repo.clone(operation) for operation in operations]
 
@@ -67,8 +67,8 @@ def patch_privacy_operation(repo: MockRepository, privacy_operation_id: str, pay
 def _deletion_review_evidence(repo: MockRepository, case_id: str) -> dict[str, int]:
     signed_reports = sum(
         1
-        for report in repo.reports.values()
-        if report.case_id == case_id and report.signed_snapshot_hash
+        for report in repo.find("reports", case_id=case_id)
+        if report.signed_snapshot_hash
     )
     return {
         "audit_events": len(repo.audit_log),

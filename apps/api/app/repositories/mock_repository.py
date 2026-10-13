@@ -37,6 +37,22 @@ def new_id(prefix: str) -> str:
     return f"{prefix}_{uuid4().hex[:10]}"
 
 
+def _plain(value):
+    return getattr(value, "value", value)
+
+
+def record_matches(record, where: dict) -> bool:
+    """Whether a record's fields equal the wanted values; enums compare by value."""
+    for field, wanted in where.items():
+        actual = _plain(getattr(record, field))
+        if isinstance(wanted, (set, frozenset, list, tuple)):
+            if actual not in {_plain(item) for item in wanted}:
+                return False
+        elif actual != _plain(wanted):
+            return False
+    return True
+
+
 class MockRepository:
     """In-memory repository for local demo and contract tests."""
 
@@ -151,6 +167,23 @@ class MockRepository:
             return self.privacy_operations[target_id].organization_id
         return "pilot_org_001"
 
+    def find(self, collection: str, **where) -> list:
+        """Records of one collection whose fields equal the given values.
+
+        A set, list or tuple matches any of its members. This is how callers
+        ask for a subset, so a database-backed repository can answer with a
+        query on those fields instead of reading the whole collection.
+        """
+        return [
+            record
+            for record in getattr(self, collection).values()
+            if record_matches(record, where)
+        ]
+
+    def audit_events(self, **where) -> list[dict]:
+        """Recorded audit events whose fields equal the given values, oldest first."""
+        return [dict(event) for event in self.audit_log if all(event.get(k) == v for k, v in where.items())]
+
     def case_deletion_blocker(self, case_id: str) -> str | None:
         """Why a case may not be deleted, or ``None`` when nothing has been recorded for it.
 
@@ -161,11 +194,11 @@ class MockRepository:
         case = self.cases[case_id]
         if case.consent_status == "withdrawn":
             return "consent_withdrawn"
-        if any(session.case_id == case_id for session in self.sessions.values()):
+        if self.find("sessions", case_id=case_id):
             return "has_sessions"
-        if any(goal.case_id == case_id for goal in self.therapy_goals.values()):
+        if self.find("therapy_goals", case_id=case_id):
             return "has_goals"
-        if any(operation.case_id == case_id for operation in self.privacy_operations.values()):
+        if self.find("privacy_operations", case_id=case_id):
             return "has_privacy_operations"
         return None
 

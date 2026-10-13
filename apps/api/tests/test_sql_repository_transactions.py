@@ -1495,7 +1495,7 @@ def test_snapshot_save_from_one_instance_never_deletes_rows_written_by_another(t
 
     url = f"sqlite:///{tmp_path / 'two-instances.db'}"
     first = SqlAlchemyRepository(url)
-    second = SqlAlchemyRepository(url)  # loads its snapshot before the write below
+    second = SqlAlchemyRepository(url)  # opened before the write below
     created = first.create_session(
         "case_demo_001",
         TherapySessionCreate(session_date="2026-10-11", session_type="language_sample"),
@@ -1509,7 +1509,7 @@ def test_snapshot_save_from_one_instance_never_deletes_rows_written_by_another(t
     reloaded = SqlAlchemyRepository(url)
     assert created.session_id in reloaded.sessions
     assert not [statement for statement in statements if statement.lstrip().upper().startswith("DELETE")]
-    actions = [item["action"] for item in reloaded.audit_log]
+    actions = [item["action"] for item in reloaded.audit_events()]
     assert actions.count("session.create") == 1
     assert actions.count("job.cancel") == 1
 
@@ -1613,6 +1613,6 @@ def test_snapshot_save_stores_each_audit_event_once(tmp_path):
     repo.add_audit("job.cancel", "case_demo_001", "First snapshot save.", actor_id="user_a")
     repo.add_audit("job.cancel", "case_demo_001", "Second snapshot save.", actor_id="user_a")
 
-    actions = [item["action"] for item in SqlAlchemyRepository(url).audit_log]
+    actions = [item["action"] for item in SqlAlchemyRepository(url).audit_events()]
     assert actions.count("session.create") == 1
     assert actions.count("job.cancel") == 2

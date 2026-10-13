@@ -10,7 +10,7 @@ ALLOWED_GOAL_STATUSES = {"active", "paused", "completed", "withdrawn"}
 
 
 def list_goals(repo: MockRepository, case_id: str) -> list[TherapyGoal]:
-    return [repo.clone(goal) for goal in repo.therapy_goals.values() if goal.case_id == case_id]
+    return [repo.clone(goal) for goal in repo.find("therapy_goals", case_id=case_id)]
 
 
 def create_goal(repo: MockRepository, case_id: str, payload: TherapyGoalCreate, *, actor_id: str = "system") -> TherapyGoal:

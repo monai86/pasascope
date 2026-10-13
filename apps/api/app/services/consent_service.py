@@ -89,27 +89,27 @@ def withdraw_consent(
     case.consent_status = "withdrawn"
     if redact_notes:
         case.notes = ""
-    for session in repo.sessions.values():
-        if session.case_id != case_id:
-            continue
+    case_sessions = repo.find("sessions", case_id=case_id)
+    case_session_ids = {session.session_id for session in case_sessions}
+    for session in case_sessions:
         affected["sessions"] += 1
         session.status = ReviewStatus.withdrawn
         if session.notes and redact_notes:
             session.notes = ""
-    for goal in repo.therapy_goals.values():
+    for goal in repo.find("therapy_goals", case_id=case_id):
         if goal.case_id == case_id:
             affected["therapy_goals"] += 1
             goal.status = "withdrawn"
             goal.retained = False
             if redact_notes:
                 goal.notes = ""
-    for transcript in repo.transcripts.values():
+    for transcript in repo.find("transcripts", case_id=case_id):
         if transcript.case_id == case_id:
             affected["transcripts"] += 1
             transcript.raw_text = ""
             transcript.utterances = []
             transcript.review_status = ReviewStatus.withdrawn
-    for audio_file in repo.audio_files.values():
+    for audio_file in repo.find("audio_files", case_id=case_id):
         if audio_file.case_id == case_id:
             affected["audio_metadata"] += 1
             deletion = get_storage_adapter().delete_object(audio_file.object_key)
@@ -117,15 +117,14 @@ def withdraw_consent(
             audio_file.object_key = None
             audio_file.upload_status = "withdrawn"
             audio_file.retained = False
-    case_session_ids = {session.session_id for session in repo.sessions.values() if session.case_id == case_id}
-    for feature_id, feature_set in list(repo.features.items()):
+    for feature_set in repo.find("features", session_id=case_session_ids):
         if feature_set.session_id in case_session_ids:
             affected["features"] += 1
-            repo.delete_feature_set(feature_id)
+            repo.delete_feature_set(feature_set.feature_set_id)
             if feature_set.session_id in repo.sessions:
                 repo.sessions[feature_set.session_id].feature_set_id = None
-    for review_id, review in list(repo.ai_reviews.items()):
-        if review.session_id in {s.session_id for s in repo.sessions.values() if s.case_id == case_id}:
+    for review in repo.find("ai_reviews", session_id=case_session_ids):
+        if review.session_id in case_session_ids:
             affected["ai_reviews"] += 1
             review.summary = "Consent withdrawn. AI-assisted review content unlinked from clinical workflow."
             review.key_findings = []
@@ -135,18 +134,18 @@ def withdraw_consent(
             review.recommended_review_actions = []
             review.therapist_review_status = ReviewStatus.withdrawn
             review.rejected_reason = "Consent withdrawn."
-    for result_id, result in list(repo.ml_results.items()):
+    for result in repo.find("ml_results", session_id=case_session_ids):
         if result.session_id in case_session_ids:
             affected["ml_results"] += 1
-            repo.delete_ml_result(result_id)
+            repo.delete_ml_result(result.result_id)
             repo.sessions[result.session_id].ml_result_id = None
-    for report in repo.reports.values():
+    for report in repo.find("reports", case_id=case_id):
         if report.case_id == case_id:
             affected["reports"] += 1
             report.status = ReviewStatus.withdrawn
             report.markdown = "Consent withdrawn. Report content unlinked from clinical workflow."
             report.html = "<p>Consent withdrawn. Report content unlinked from clinical workflow.</p>"
-    for job in repo.jobs.values():
+    for job in repo.find("jobs", session_id=case_session_ids):
         if job.session_id in case_session_ids:
             affected["jobs"] += 1
             job.details["consent_withdrawn"] = True

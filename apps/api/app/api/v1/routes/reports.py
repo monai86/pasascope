@@ -44,8 +44,9 @@ def create_draft(
 
 @router.get("/reports", response_model=list[Report])
 def list_reports(user: CurrentUser = Depends(get_current_user), repo: MockRepository = Depends(get_repository)):
-    visible_case_ids = {case.case_id for case in filter_cases_for_user(list(repo.cases.values()), user)}
-    return [repo.clone(item) for item in repo.reports.values() if item.case_id in visible_case_ids]
+    visible_cases = filter_cases_for_user(repo.find("cases", organization_id=user.organization_id), user)
+    visible_case_ids = {case.case_id for case in visible_cases}
+    return [repo.clone(item) for item in repo.find("reports", case_id=visible_case_ids)]
 
 
 @router.get("/reports/providers", response_model=list[ReportProviderAvailability])

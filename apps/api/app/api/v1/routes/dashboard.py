@@ -199,12 +199,11 @@ def get_dashboard_summary(
     org_id = user.organization_id
     cases = [
         case
-        for case in repo.cases.values()
-        if case.organization_id == org_id
-        and (not case.primary_therapist_user_id or case.primary_therapist_user_id == user.user_id or user.user_id in case.care_team_user_ids)
+        for case in repo.find("cases", organization_id=org_id)
+        if (not case.primary_therapist_user_id or case.primary_therapist_user_id == user.user_id or user.user_id in case.care_team_user_ids)
     ]
-    sessions = [session for session in repo.sessions.values() if session.case_id in {case.case_id for case in cases}]
-    reports = [report for report in repo.reports.values() if report.session_id in {session.session_id for session in sessions}]
+    sessions = repo.find("sessions", case_id={case.case_id for case in cases})
+    reports = repo.find("reports", session_id={session.session_id for session in sessions})
 
     consent_counts = Counter(case.consent_status.lower() if case.consent_status else "unknown" for case in cases)
     session_status_counts = Counter(str(session.status.value) if isinstance(session.status, ReviewStatus) else str(session.status) for session in sessions)
@@ -289,7 +288,7 @@ def get_case_feature_trend(
         and user.user_id not in case.care_team_user_ids
     ):
         raise HTTPException(status_code=404, detail="Case not found")
-    sessions = [session for session in repo.sessions.values() if session.case_id == case_id]
+    sessions = repo.find("sessions", case_id=case_id)
     trends = _build_feature_trends(
         repo,
         [case],

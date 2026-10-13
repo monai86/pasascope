@@ -79,8 +79,8 @@ def get_waveform_peaks(
     ensure_session_consent_active(repo, session_id)
 
     audio_files = [
-        a for a in repo.audio_files.values()
-        if a.session_id == session_id and a.upload_status == "uploaded"
+        a for a in repo.find("audio_files", session_id=session_id)
+        if a.upload_status == "uploaded"
     ]
     if not audio_files:
         raise not_found("No verified audio file for this session.")
@@ -121,8 +121,8 @@ def get_playback_grant(
     assert_sensitive_clinical_export_allowed(user)
 
     audio_files = [
-        a for a in repo.audio_files.values()
-        if a.session_id == session_id and a.upload_status == "uploaded"
+        a for a in repo.find("audio_files", session_id=session_id)
+        if a.upload_status == "uploaded"
     ]
     if not audio_files:
         raise not_found("No verified audio file for this session.")

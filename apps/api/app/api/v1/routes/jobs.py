@@ -257,7 +257,7 @@ def list_session_audio_files(
     require_session(repo, session_id, user)
     assert_sensitive_clinical_export_allowed(user)
     files = [
-        f for f in repo.audio_files.values()
-        if f.session_id == session_id and f.retained and f.upload_status == "uploaded"
+        f for f in repo.find("audio_files", session_id=session_id)
+        if f.retained and f.upload_status == "uploaded"
     ]
     return [_public_audio_metadata(repo.clone(audio_file)) for audio_file in files]

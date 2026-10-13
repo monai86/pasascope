@@ -128,8 +128,8 @@ def _latest_transcription_job(repo: MockRepository, session_id: str) -> dict[str
     """
     jobs = [
         job
-        for job in repo.jobs.values()
-        if job.session_id == session_id and "requested_provider" in job.details
+        for job in repo.find("jobs", session_id=session_id)
+        if "requested_provider" in job.details
     ]
     if not jobs:
         return None

@@ -69,7 +69,7 @@ def draft_report(
     previous_feature_sets = previous_session_feature_sets(repo, session)
     previous_feature_set = previous_feature_sets[-1] if previous_feature_sets else None
     ai_review = repo.ai_reviews.get(session.ai_review_id or "")
-    therapy_goals = [goal for goal in repo.therapy_goals.values() if goal.case_id == session.case_id and goal.retained]
+    therapy_goals = [goal for goal in repo.find("therapy_goals", case_id=session.case_id) if goal.retained]
 
     # Readiness Gates Check
     if transcript is None:
@@ -655,9 +655,8 @@ def previous_session_feature_sets(repo: MockRepository, session: TherapySession)
     """
     candidates = [
         candidate
-        for candidate in repo.sessions.values()
-        if candidate.case_id == session.case_id
-        and candidate.session_id != session.session_id
+        for candidate in repo.find("sessions", case_id=session.case_id)
+        if candidate.session_id != session.session_id
         and candidate.feature_set_id
         and candidate.session_date <= session.session_date
     ]

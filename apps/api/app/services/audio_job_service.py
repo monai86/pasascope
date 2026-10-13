@@ -197,9 +197,8 @@ def _resolve_audio_file_id_for_job(
         return audio_file_id
     uploaded_files = [
         audio_file.audio_file_id
-        for audio_file in repo.audio_files.values()
-        if audio_file.session_id == session_id
-        and audio_file.retained
+        for audio_file in repo.find("audio_files", session_id=session_id)
+        if audio_file.retained
         and audio_file.upload_status == "uploaded"
     ]
     if len(uploaded_files) == 1:
@@ -220,9 +219,7 @@ def _ensure_no_active_job_for_audio_artifact(
         JobStatus.processing.value,
         JobStatus.transcription_completed.value,
     }
-    for job in repo.jobs.values():
-        if job.session_id != session_id:
-            continue
+    for job in repo.find("jobs", session_id=session_id):
         if job.details.get("audio_file_id") != audio_file_id:
             continue
         status_value = job.status.value if hasattr(job.status, "value") else str(job.status)
@@ -609,7 +606,8 @@ def recover_interrupted_jobs(repo: MockRepository, queue) -> dict[str, int]:
     """
     requeued = 0
     failed = 0
-    for job in list(repo.jobs.values()):
+    unfinished = {JobStatus.queued, JobStatus.processing, JobStatus.transcription_completed}
+    for job in repo.find("jobs", status=unfinished):
         if "queued_payload" not in job.details:
             continue  # an upload record, not a transcription job
         if job.status == JobStatus.queued:
