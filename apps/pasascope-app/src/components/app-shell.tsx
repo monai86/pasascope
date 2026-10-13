@@ -27,6 +27,7 @@ import { useRuntimeSettings } from "@/lib/use-runtime-settings";
 export type { ShellActive };
 
 const SIDEBAR_ID = "primary-sidebar";
+const SLOW_START_HINT_MS = 4000;
 
 // Loaded only where the chat shell runs, so workbench routes do not carry it.
 // React's own lazy is used because `next/dynamic` would add its loader to
@@ -58,6 +59,14 @@ export function AppShell({
   const confirmedRuntimeSettings = runtimeSettings.status === "success" ? runtimeSettings.data : null;
   const session = typeof window !== "undefined" ? loadMockAccessSession() : null;
   const supabaseSession = useSupabaseAccessSession();
+  // A host that sleeps when idle takes a while to answer its first request.
+  const [slowStart, setSlowStart] = useState(false);
+  const settingsLoading = runtimeSettings.status === "loading";
+  useEffect(() => {
+    if (!settingsLoading) return;
+    const timer = window.setTimeout(() => setSlowStart(true), SLOW_START_HINT_MS);
+    return () => window.clearTimeout(timer);
+  }, [settingsLoading]);
 
   useEffect(() => {
     // If returning from an OAuth callback (?code=... or #access_token=...), wait for Supabase to exchange token
@@ -90,15 +99,27 @@ export function AppShell({
       hasValidAal
     );
 
+  // Workspace content stays hidden until the API has said how access works.
+  // Waiting for that answer is not a refusal, so it is shown as loading.
+  if (runtimeSettings.status === "loading") {
+    return (
+      <main className="flex min-h-dvh flex-col items-center justify-center gap-4 px-4 text-center" role="status">
+        <span className="h-8 w-8 animate-spin rounded-full border-2 border-line border-t-action" aria-hidden="true" />
+        <p className="text-base font-semibold text-ink">{t.opening.title}</p>
+        <p className={`text-sm text-ink-muted ${slowStart ? "" : "invisible"}`}>{t.opening.waking}</p>
+      </main>
+    );
+  }
+
   if (runtimeSettings.status !== "success") {
     return (
-      <main className="mx-auto flex min-h-dvh w-full max-w-3xl items-center px-4 py-10 sm:px-6">
+      <main className="mx-auto flex min-h-dvh w-full max-w-xl items-center px-4 py-10 sm:px-6">
         <section className="w-full rounded-panel border border-line bg-surface p-6 text-ink shadow-lift" role="alert">
-          <p className="text-xs font-semibold uppercase tracking-wider text-ink-subtle">{t.blocked.eyebrow}</p>
-          <h1 className="mt-3 text-3xl font-semibold text-ink">{t.blocked.title}</h1>
-          <p className="mt-3 text-sm leading-6 text-ink-muted">{t.blocked.description}</p>
+          <h1 className="text-2xl font-semibold text-ink">{t.unreachable.title}</h1>
+          <p className="mt-3 text-sm leading-6 text-ink-muted">{t.unreachable.description}</p>
           <div className="mt-5 flex flex-wrap gap-3">
-            <Button href="/login">{t.blocked.goToLogin}</Button>
+            <Button onClick={() => window.location.reload()}>{t.unreachable.retry}</Button>
+            <Button href="/login" variant="secondary">{t.unreachable.goToLogin}</Button>
           </div>
         </section>
       </main>

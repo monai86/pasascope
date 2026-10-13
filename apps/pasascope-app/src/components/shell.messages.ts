@@ -40,10 +40,14 @@ export const shellMessages = defineMessages({
       personalWorkspace: "Personal workspace",
       localWorkspace: "Local clinician workspace",
     },
-    blocked: {
-      eyebrow: "Runtime verification required",
-      title: "Workspace access is blocked",
-      description: "Authentication mode and access requirements must be confirmed before workspace content can load.",
+    opening: {
+      title: "Opening your workspace",
+      waking: "The service is starting up. This can take about a minute.",
+    },
+    unreachable: {
+      title: "The workspace could not be opened",
+      description: "Your records are safe. Try again in a moment.",
+      retry: "Try again",
       goToLogin: "Go to login",
     },
   },
@@ -86,10 +90,14 @@ export const shellMessages = defineMessages({
       personalWorkspace: "พื้นที่ทำงานส่วนตัว",
       localWorkspace: "พื้นที่ทำงานบนเครื่องนี้",
     },
-    blocked: {
-      eyebrow: "ต้องยืนยันการตั้งค่าระบบก่อน",
-      title: "ยังเข้าพื้นที่ทำงานไม่ได้",
-      description: "ระบบต้องยืนยันวิธีลงชื่อเข้าใช้และสิทธิ์การเข้าถึงก่อน จึงจะแสดงข้อมูลในพื้นที่ทำงานได้",
+    opening: {
+      title: "กำลังเปิดพื้นที่ทำงาน",
+      waking: "ระบบกำลังเริ่มทำงาน อาจใช้เวลาประมาณหนึ่งนาที",
+    },
+    unreachable: {
+      title: "เปิดพื้นที่ทำงานไม่ได้ในตอนนี้",
+      description: "ข้อมูลของคุณยังอยู่ครบ ลองใหม่อีกครั้งในอีกสักครู่",
+      retry: "ลองอีกครั้ง",
       goToLogin: "ไปหน้าลงชื่อเข้าใช้",
     },
   },

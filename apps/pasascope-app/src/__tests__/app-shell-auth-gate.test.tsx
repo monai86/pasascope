@@ -251,7 +251,7 @@ describe("AppShell auth gating", () => {
       </AppShell>,
     );
 
-    expect(await screen.findByRole("heading", { name: "Workspace access is blocked" })).toBeInTheDocument();
+    expect(await screen.findByRole("heading", { name: "The workspace could not be opened" })).toBeInTheDocument();
     expect(screen.queryByText("Workspace payload")).not.toBeInTheDocument();
     expect(screen.queryByRole("navigation", { name: /primary navigation/i })).not.toBeInTheDocument();
   });
@@ -276,7 +276,7 @@ describe("AppShell auth gating", () => {
       </AppShell>,
     );
 
-    expect(await screen.findByRole("heading", { name: "Workspace access is blocked" })).toBeInTheDocument();
+    expect(await screen.findByRole("heading", { name: "The workspace could not be opened" })).toBeInTheDocument();
     expect(screen.queryByText("Workspace payload")).not.toBeInTheDocument();
     expect(screen.queryByRole("navigation", { name: /primary navigation/i })).not.toBeInTheDocument();
   });
