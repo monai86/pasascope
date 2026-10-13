@@ -188,23 +188,19 @@ describe("pasascope pages", () => {
 
     render(<LoginPage />);
     const enterWorkspace = screen.getByRole("link", { name: "Enter workspace" });
-    expect(enterWorkspace).toHaveAttribute("href", "/today?role=therapist");
+    expect(enterWorkspace).toHaveAttribute("href", "/");
     expect(screen.getByText("Clinical transcript workbench")).toBeInTheDocument();
     expect(screen.getByText("Production access stays invitation-only and requires AAL2 before app access.")).toBeInTheDocument();
     expect(screen.getByText("This mock role has a single organization membership, so the active organization is preselected.")).toBeInTheDocument();
 
     fireEvent.change(screen.getByLabelText("Role"), { target: { value: "clinical_supervisor" } });
-    expect(enterWorkspace).toHaveAttribute("href", "/today?role=clinical_supervisor");
+    expect(enterWorkspace).toHaveAttribute("href", "/");
     expect(screen.getByText("Clinical supervisor opens the work queue with org-wide oversight.")).toBeInTheDocument();
     expect(screen.getByText("This mock role simulates multiple memberships, so the active organization must be selected explicitly before workspace access.")).toBeInTheDocument();
     expect(screen.getByText("Organization session selection").parentElement).toHaveTextContent(
       "Selecting AAL1 will stop at the MFA gate until the session is promoted to AAL2.",
     );
 
-    fireEvent.change(screen.getByLabelText("Role"), { target: { value: "org_admin" } });
-
-    expect(enterWorkspace).toHaveAttribute("href", "/settings?scope=admin&role=org_admin");
-    expect(screen.getByText("Org admin opens assignment-safe runtime controls.")).toBeInTheDocument();
   });
 
   it("renders the Supabase login scaffold when runtime auth mode is supabase", async () => {
@@ -384,54 +380,6 @@ describe("pasascope pages", () => {
     expect(await screen.findByRole("heading", { name: "Additional verification required" })).toBeInTheDocument();
     expect(screen.getByText(/Complete the Supabase TOTP step below to elevate this session to/)).toBeInTheDocument();
     expect(screen.queryByRole("heading", { name: "Team" })).not.toBeInTheDocument();
-  });
-
-  it("keeps the org-admin settings route behind explicit organization selection when memberships are ambiguous", async () => {
-    runtimeSettingsState.current = { status: "success", mode: "backend", data: supabaseRuntimeSettings };
-    window.sessionStorage.setItem("pasascope.supabase-browser-auth.v1", JSON.stringify({
-      userId: "user_org_admin_001",
-      email: "admin@clinic.example",
-      aal: "aal2",
-      appMetadata: {
-        role: "org_admin",
-        membership_active: true,
-        invitation_status: "accepted",
-        organizations: [
-          { organizationId: "clinic_001", label: "PasaScope Clinic", role: "org_admin" },
-          { organizationId: "clinic_002", label: "North Review Clinic", role: "org_admin" },
-        ],
-      },
-    }));
-
-    vi.stubGlobal("fetch", vi.fn(async (input: RequestInfo | URL) => {
-      if (String(input).includes("/settings")) {
-        return jsonResponse({
-          mock_mode: false,
-          auth_mode: "supabase",
-          user_roles: ["therapist", "clinical_supervisor", "org_admin"],
-          access_model: {
-            invitation_only: true,
-            required_app_aal: "aal2",
-            active_organization_session: "explicit_selection_when_ambiguous",
-            production_mock_mode: "forbidden",
-          },
-        });
-      }
-      return jsonResponse({});
-    }));
-
-    await renderSettingsPage({ scope: "admin" });
-
-    expect(await screen.findByRole("heading", { name: "Choose an active organization" })).toBeInTheDocument();
-    expect(screen.queryByRole("heading", { name: "Team" })).not.toBeInTheDocument();
-
-    fireEvent.change(screen.getByLabelText("Select active organization"), {
-      target: { value: "clinic_002" },
-    });
-    fireEvent.click(screen.getByRole("button", { name: "Continue with selected organization" }));
-
-    expect(await screen.findByRole("heading", { name: "Team" })).toBeInTheDocument();
-    expect(window.sessionStorage.getItem("pasascope.supabase-access-session.v1")).toContain("\"organizationId\":\"clinic_002\"");
   });
 
   it("renders case cards with consent and session context", async () => {
@@ -635,7 +583,7 @@ describe("pasascope pages", () => {
     const careTeamCard = (await screen.findByRole("heading", { name: "Care team" })).closest("section");
     expect(careTeamCard).not.toBeNull();
     expect(within(careTeamCard as HTMLElement).getByText("Demo Therapist")).toBeInTheDocument();
-    expect(within(careTeamCard as HTMLElement).getByText(/read-only care-team summary/i)).toBeInTheDocument();
+    expect(within(careTeamCard as HTMLElement).getByText(/belongs to the person who created it/i)).toBeInTheDocument();
     expect(screen.queryByRole("button", { name: "Make primary therapist" })).not.toBeInTheDocument();
     expect(screen.queryByRole("button", { name: "Remove assignment" })).not.toBeInTheDocument();
     expect(fetchMock.mock.calls.some(([input]) => String(input).includes("/care-team"))).toBe(false);
@@ -1745,37 +1693,6 @@ describe("pasascope pages", () => {
     expect(exported.value).toContain("@Languages:\teng");
     expect(exported.value).toContain("*GRM:\tBlue car.");
     expect(URL.createObjectURL).toHaveBeenCalled();
-  });
-
-  it("keeps admin runtime controls role-scoped in settings", async () => {
-    window.sessionStorage.setItem("pasascope.mock-access-session.v1", JSON.stringify({
-      role: "org_admin",
-      organizationId: "pilot_org_001",
-      aal: "aal2",
-    }));
-    await renderSettingsPage({});
-    expect(await screen.findByRole("heading", { name: "Settings" })).toBeInTheDocument();
-    expect(await screen.findByRole("heading", { name: "Account" })).toBeInTheDocument();
-    expect(screen.queryByRole("heading", { name: "Team" })).not.toBeInTheDocument();
-
-    fireEvent.click(screen.getByRole("link", { name: "Integration Status" }));
-
-    expect(await screen.findByText("Auth lifecycle")).toBeInTheDocument();
-    expect(await screen.findByText("Runtime diagnostics")).toBeInTheDocument();
-    expect(await screen.findByRole("heading", { name: "Integration Status" })).toBeInTheDocument();
-  });
-
-  it("opens settings in admin scope from mock org-admin login query", async () => {
-    window.sessionStorage.setItem("pasascope.mock-access-session.v1", JSON.stringify({
-      role: "org_admin",
-      organizationId: "pilot_org_001",
-      aal: "aal2",
-    }));
-    await renderSettingsPage({ scope: "admin" });
-
-    expect(await screen.findByRole("heading", { name: "Team" })).toBeInTheDocument();
-    expect(screen.getByRole("heading", { name: "Care-team administration" })).toBeInTheDocument();
-    expect(screen.queryByRole("heading", { name: "Account" })).not.toBeInTheDocument();
   });
 
   it("strictly overrides stale sessionStorage transcript if transcript_id is in URL", async () => {

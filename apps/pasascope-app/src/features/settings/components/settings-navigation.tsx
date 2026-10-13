@@ -6,14 +6,6 @@ import { settingsMessages } from "@/features/settings/settings.messages";
 import type { SettingsSection } from "@/features/settings/services/settings-access";
 import { useMessages } from "@/i18n/locale-provider";
 
-const ADMIN_SECTIONS = new Set<SettingsSection>([
-  "team",
-  "invitations",
-  "audit",
-  "privacy_operations",
-  "integration_status",
-]);
-
 type SettingsNavigationProps = {
   sections: readonly SettingsSection[];
   selected: SettingsSection;
@@ -30,8 +22,6 @@ export function SettingsNavigation({
   onOpenMobileIndex,
 }: SettingsNavigationProps) {
   const t = useMessages(settingsMessages).nav;
-  const sharedSections = sections.filter((section) => !ADMIN_SECTIONS.has(section));
-  const adminSections = sections.filter((section) => ADMIN_SECTIONS.has(section));
 
   return (
     <nav aria-label={t.label}>
@@ -49,12 +39,7 @@ export function SettingsNavigation({
         <div className="md:hidden">
           <p className="px-3 pb-3 pt-1 text-sm leading-6 text-ink-muted">{t.choose}</p>
         </div>
-          <SettingsNavGroup label={t.workspace} sections={sharedSections} selected={selected} onSelect={onSelect} />
-          {adminSections.length > 0 ? (
-            <div className="mt-3 border-t border-line pt-3">
-              <SettingsNavGroup label={t.administration} sections={adminSections} selected={selected} onSelect={onSelect} />
-            </div>
-          ) : null}
+        <SettingsNavGroup label={t.workspace} sections={sections} selected={selected} onSelect={onSelect} />
       </div>
     </nav>
   );

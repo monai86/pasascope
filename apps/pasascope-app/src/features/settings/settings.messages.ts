@@ -1,4 +1,4 @@
-import type { SettingsSection, SharedSettingsSection } from "@/features/settings/services/settings-access";
+import type { SettingsSection } from "@/features/settings/services/settings-access";
 import { defineMessages } from "@/i18n/messages";
 
 type Line = readonly [label: string, value: string];
@@ -6,9 +6,9 @@ type Line = readonly [label: string, value: string];
 type SettingsCopy = {
   page: { title: string; description: string };
   sections: Record<SettingsSection, string>;
-  nav: { label: string; allCategories: string; choose: string; workspace: string; administration: string };
+  nav: { label: string; allCategories: string; choose: string; workspace: string };
   /** One card per shared section; `lines` keep the order the screen renders them in. */
-  cards: Record<SharedSettingsSection, { description: string; lines: readonly Line[] }>;
+  cards: Record<SettingsSection, { description: string; lines: readonly Line[] }>;
   privacyRequests: { title: string; unavailable: string; body: string; noClaim: string };
   /** Values shown instead of the demo ones when the workspace uses real sign-in. */
   signedIn: { fallbackName: string; dataMode: string; authentication: string };
@@ -18,7 +18,7 @@ export const settingsMessages = defineMessages<SettingsCopy>({
   en: {
     page: {
       title: "Settings",
-      description: "Choose one workspace category. Organization administration appears only for authorized admins.",
+      description: "Choose a category to see its settings.",
     },
     sections: {
       account: "Account",
@@ -28,18 +28,12 @@ export const settingsMessages = defineMessages<SettingsCopy>({
       privacy: "Privacy & Security",
       export: "Export",
       help: "Help",
-      team: "Team",
-      invitations: "Invitations",
-      audit: "Audit",
-      privacy_operations: "Privacy Operations",
-      integration_status: "Integration Status",
     },
     nav: {
       label: "Settings categories mobile",
       allCategories: "All settings categories",
       choose: "Choose one category to open its settings page.",
       workspace: "Workspace settings",
-      administration: "Organization administration",
     },
     cards: {
       account: {
@@ -117,7 +111,7 @@ export const settingsMessages = defineMessages<SettingsCopy>({
   th: {
     page: {
       title: "ตั้งค่า",
-      description: "เลือกหมวดการตั้งค่าของพื้นที่ทำงาน ส่วนการดูแลองค์กรจะแสดงเฉพาะผู้ดูแลที่ได้รับสิทธิ์",
+      description: "เลือกหมวดเพื่อดูการตั้งค่า",
     },
     sections: {
       account: "บัญชี",
@@ -127,18 +121,12 @@ export const settingsMessages = defineMessages<SettingsCopy>({
       privacy: "ความเป็นส่วนตัวและความปลอดภัย",
       export: "การส่งออก",
       help: "ช่วยเหลือ",
-      team: "ทีม",
-      invitations: "คำเชิญ",
-      audit: "บันทึกการตรวจสอบ",
-      privacy_operations: "งานด้านความเป็นส่วนตัว",
-      integration_status: "สถานะการเชื่อมต่อระบบ",
     },
     nav: {
       label: "หมวดการตั้งค่า",
       allCategories: "หมวดการตั้งค่าทั้งหมด",
       choose: "เลือกหมวดเพื่อเปิดหน้าการตั้งค่าของหมวดนั้น",
       workspace: "การตั้งค่าพื้นที่ทำงาน",
-      administration: "การดูแลองค์กร",
     },
     cards: {
       account: {

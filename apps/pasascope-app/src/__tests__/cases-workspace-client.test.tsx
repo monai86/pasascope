@@ -27,7 +27,7 @@ afterEach(() => {
 describe("cases workspace", () => {
   it("renders a table-style case workspace with search, filters, right rail, and pagination footer", async () => {
     window.sessionStorage.setItem("pasascope.mock-access-session.v1", JSON.stringify({
-      role: "org_admin",
+      role: "clinical_supervisor",
       organizationId: "pilot_org_001",
       aal: "aal2",
     }));
@@ -373,12 +373,12 @@ describe("cases workspace", () => {
     await renderAsyncPage(CaseDetailPage, { params: { caseId: "case_demo_001" } });
 
     expect(await screen.findByRole("heading", { name: "Care team" })).toBeInTheDocument();
-    expect(screen.getByText("This is a read-only care-team summary. Organization administrators manage assignments in the role-gated Team section of Settings.")).toBeInTheDocument();
+    expect(screen.getByText("A case belongs to the person who created it. It cannot be shared with another account yet.")).toBeInTheDocument();
     expect(getRequestedOrganizationIds(vi.mocked(fetch), "/cases/case_demo_001/care-team")).toEqual([]);
     expect(getRequestedOrganizationIds(vi.mocked(fetch), "/organizations/current/memberships")).toEqual([]);
 
     window.sessionStorage.setItem("pasascope.mock-access-session.v1", JSON.stringify({
-      role: "org_admin",
+      role: "clinical_supervisor",
       organizationId: "pilot_org_ops",
       aal: "aal2",
     }));

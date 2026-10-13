@@ -8,7 +8,7 @@ const viewports = [
   { name: "desktop-compact", width: 1280, height: 800 },
   { name: "desktop", width: 1440, height: 900 },
 ];
-async function setMockRole(page: Page, role: "therapist" | "org_admin") {
+async function setMockRole(page: Page, role: "therapist" | "clinical_supervisor") {
   await page.addInitScript((requestedRole) => {
     window.sessionStorage.setItem("pasascope.mock-access-session.v1", JSON.stringify({
       role: requestedRole,
@@ -68,9 +68,9 @@ for (const viewport of viewports) {
   });
 }
 
-test("authorized organization admins receive the clinician filter", async ({ page }) => {
+test("a clinical supervisor receives the clinician filter", async ({ page }) => {
   await page.setViewportSize({ width: 1440, height: 900 });
-  await setMockRole(page, "org_admin");
+  await setMockRole(page, "clinical_supervisor");
   await page.goto("/cases");
 
   await expect(page.getByRole("combobox", { name: "Clinician filter" })).toBeVisible();

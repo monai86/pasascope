@@ -13,14 +13,14 @@ import {
   UserRound,
 } from "lucide-react";
 
-import type { SharedSettingsSection } from "@/features/settings/services/settings-access";
+import type { SettingsSection } from "@/features/settings/services/settings-access";
 import { settingsMessages } from "@/features/settings/settings.messages";
 import { useMessages } from "@/i18n/locale-provider";
 import { useConfirmedRuntimeSettings } from "@/lib/confirmed-runtime-settings";
 import { useSupabaseAccessSession } from "@/lib/use-supabase-access-session";
 import { useSafetyCopy } from "@/lib/safety-copy";
 
-const SECTION_ICONS: Record<SharedSettingsSection, LucideIcon> = {
+const SECTION_ICONS: Record<SettingsSection, LucideIcon> = {
   account: UserRound,
   organization: Building2,
   accessibility: Eye,
@@ -33,7 +33,7 @@ const SECTION_ICONS: Record<SharedSettingsSection, LucideIcon> = {
 type LineTone = "default" | "muted" | "warning";
 
 // Tone of each line, by position, where it is not the default.
-const LINE_TONES: Partial<Record<SharedSettingsSection, Record<number, LineTone>>> = {
+const LINE_TONES: Partial<Record<SettingsSection, Record<number, LineTone>>> = {
   organization: { 3: "muted" },
   accessibility: { 1: "muted" },
   notifications: { 1: "muted", 2: "muted", 3: "warning" },
@@ -41,7 +41,7 @@ const LINE_TONES: Partial<Record<SharedSettingsSection, Record<number, LineTone>
   export: { 2: "muted" },
 };
 
-export function TherapistSettings({ section }: { section: SharedSettingsSection }) {
+export function TherapistSettings({ section }: { section: SettingsSection }) {
   const t = useMessages(settingsMessages);
   const safety = useSafetyCopy();
   const card = t.cards[section];
@@ -49,7 +49,7 @@ export function TherapistSettings({ section }: { section: SharedSettingsSection 
   const supabaseSession = useSupabaseAccessSession();
   // With real sign-in, show who is signed in rather than the demo values.
   const signedIn = runtimeSettings?.auth_mode === "supabase";
-  const signedInValues: Partial<Record<SharedSettingsSection, Record<number, string>>> = signedIn
+  const signedInValues: Partial<Record<SettingsSection, Record<number, string>>> = signedIn
     ? {
         account: {
           0: supabaseSession?.displayName ?? supabaseSession?.email ?? t.signedIn.fallbackName,

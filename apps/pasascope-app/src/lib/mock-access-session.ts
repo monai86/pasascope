@@ -5,7 +5,7 @@ import "@/lib/storage-key-migration";
 export const MOCK_ACCESS_SESSION_KEY = "pasascope.mock-access-session.v1";
 export const MOCK_ACCESS_SESSION_EVENT = "pasascope:mock-access-session-changed";
 
-export type MockRole = "therapist" | "clinical_supervisor" | "org_admin";
+export type MockRole = "therapist" | "clinical_supervisor";
 
 export type MockAccessSession = {
   role: MockRole;
@@ -26,10 +26,6 @@ export const MOCK_ORGANIZATION_OPTIONS: Record<MockRole, MockOrganizationOption[
   clinical_supervisor: [
     { organizationId: "pilot_org_001", label: "Pilot Speech Clinic", membershipMode: "multi" },
     { organizationId: "pilot_org_002", label: "North Review Clinic", membershipMode: "multi" },
-  ],
-  org_admin: [
-    { organizationId: "pilot_org_001", label: "Pilot Speech Clinic", membershipMode: "multi" },
-    { organizationId: "pilot_org_ops", label: "Operations Training Clinic", membershipMode: "multi" },
   ],
 };
 

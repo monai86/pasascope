@@ -32,7 +32,7 @@ export function CasesWorkspaceClient({ caseId, intent, preselectedCaseId, initia
       && supabaseSession?.stage === "authenticated"
       ? supabaseSession.role
       : undefined;
-  const canFilterByClinician = confirmedRole === "org_admin" || confirmedRole === "clinical_supervisor";
+  const canFilterByClinician = confirmedRole === "clinical_supervisor";
   const canCreateCase = confirmedRole === "therapist";
 
   if (model.status === "loading") {

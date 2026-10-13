@@ -27,13 +27,12 @@ export const loginMessages = defineMessages({
       description: "Therapist, supervisor, and org-admin demo roles are available for local exploration.",
       email: "Email",
       role: "Role",
-      roles: { therapist: "Therapist", clinical_supervisor: "Clinical supervisor", org_admin: "Org admin" },
+      roles: { therapist: "Therapist", clinical_supervisor: "Clinical supervisor" },
       organization: "Active organization session",
       assurance: "Session assurance",
       destination: {
         therapist: "Therapist opens Today.",
         clinical_supervisor: "Clinical supervisor opens the work queue with org-wide oversight.",
-        org_admin: "Org admin opens assignment-safe runtime controls.",
       },
       organizationNote: {
         title: "Organization session selection",
@@ -78,13 +77,12 @@ export const loginMessages = defineMessages({
       description: "มีบทบาทนักบำบัด ผู้นิเทศ และผู้ดูแลองค์กรให้ทดลองใช้บนเครื่องนี้",
       email: "อีเมล",
       role: "บทบาท",
-      roles: { therapist: "นักบำบัด", clinical_supervisor: "ผู้นิเทศทางคลินิก", org_admin: "ผู้ดูแลองค์กร" },
+      roles: { therapist: "นักบำบัด", clinical_supervisor: "ผู้นิเทศทางคลินิก" },
       organization: "องค์กรที่ใช้งานในเซสชันนี้",
       assurance: "ระดับการยืนยันตัวตน",
       destination: {
         therapist: "นักบำบัดจะเข้าสู่หน้าวันนี้",
         clinical_supervisor: "ผู้นิเทศทางคลินิกจะเข้าสู่คิวงานที่เห็นภาพรวมทั้งองค์กร",
-        org_admin: "ผู้ดูแลองค์กรจะเข้าสู่หน้าตั้งค่าการมอบหมายงาน",
       },
       organizationNote: {
         title: "การเลือกองค์กรของเซสชัน",

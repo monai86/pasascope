@@ -16,11 +16,9 @@ import {
   saveMockAccessSession,
 } from "@/lib/mock-access-session";
 
-// Today is the single home; organisation admins start in the admin settings.
 const roleDestinations: Record<MockRole, string> = {
-  therapist: "/today?role=therapist",
-  clinical_supervisor: "/today?role=clinical_supervisor",
-  org_admin: "/settings?scope=admin&role=org_admin"
+  therapist: "/",
+  clinical_supervisor: "/",
 };
 
 export function MockLoginFormClient({
@@ -61,7 +59,6 @@ export function MockLoginFormClient({
             <Select {...control} value={role} onChange={(event) => setRole(event.target.value as MockRole)}>
               <option value="therapist">{t.roles.therapist}</option>
               <option value="clinical_supervisor">{t.roles.clinical_supervisor}</option>
-              <option value="org_admin">{t.roles.org_admin}</option>
             </Select>
           )}
         </Field>

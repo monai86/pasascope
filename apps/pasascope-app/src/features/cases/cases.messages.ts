@@ -266,7 +266,7 @@ export const casesMessages = defineMessages<CasesCopy>({
       primaryClinician: "Primary clinician",
       assignedClinicians: "Assigned clinicians",
       careTeamNote:
-        "This is a read-only care-team summary. Organization administrators manage assignments in the role-gated Team section of Settings.",
+        "A case belongs to the person who created it. It cannot be shared with another account yet.",
       goals: "Goals",
       goalTargetEmpty: "Target not yet documented.",
       goalsEmpty: "No communication goals recorded yet.",
@@ -441,7 +441,7 @@ export const casesMessages = defineMessages<CasesCopy>({
       careTeam: "ทีมดูแล",
       primaryClinician: "นักบำบัดหลัก",
       assignedClinicians: "นักบำบัดที่ได้รับมอบหมาย",
-      careTeamNote: "ส่วนนี้ดูได้อย่างเดียว ผู้ดูแลองค์กรจัดการการมอบหมายได้ที่ส่วนทีมในหน้าตั้งค่า",
+      careTeamNote: "เคสนี้เป็นของผู้ที่สร้างเคส ยังแชร์ให้บัญชีอื่นไม่ได้",
       goals: "เป้าหมาย",
       goalTargetEmpty: "ยังไม่ได้บันทึกเป้าที่ต้องการ",
       goalsEmpty: "ยังไม่มีเป้าหมายด้านการสื่อสารที่บันทึกไว้",

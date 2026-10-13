@@ -73,7 +73,7 @@ export const DEFAULT_PRODUCTION_RUNTIME_SETTINGS: RuntimeSettings = {
   model_version: "v2-mock",
   feature_schema: "pasascope-app.1",
   guideline_mapping: "review-support-only",
-  user_roles: ["therapist", "clinical_supervisor", "org_admin"],
+  user_roles: ["therapist"],
   // Used only when the backend cannot be reached. Assume the strictest access
   // model so the client never shows a weaker gate than the server enforces.
   access_model: {
@@ -212,8 +212,8 @@ export function getMockAccessHeaders(overrides: Record<string, string> = {}): Re
 
   const session = loadMockAccessSession();
   return {
-    "X-Mock-Role": session?.role ?? "org_admin",
-    "X-Mock-Display-Name": "Pilot Org Admin",
+    "X-Mock-Role": session?.role ?? "therapist",
+    "X-Mock-Display-Name": "Demo Therapist",
     "X-Organization-Id": session?.organizationId ?? "pilot_org_001",
     ...overrides,
   };
