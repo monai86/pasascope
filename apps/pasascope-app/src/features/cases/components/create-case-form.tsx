@@ -107,7 +107,7 @@ function Field({
   children: React.ReactNode;
 }) {
   return (
-    <label className="grid gap-1 text-sm font-medium text-ink">
+    <label className="grid content-start gap-1 text-sm font-medium text-ink">
       <span>{label}</span>
       {children}
       {error ? (
