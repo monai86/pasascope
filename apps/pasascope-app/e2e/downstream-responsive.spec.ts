@@ -110,10 +110,12 @@ for (const viewport of viewports) {
       { waitUntil: "networkidle" },
     );
     await expect(page.getByRole("region", { name: "Session context" }).getByRole("heading", { name: "Findings", level: 1, exact: true })).toBeVisible();
-    for (const group of ["Language sample", "Lexical use", "Interaction", "Speech / intelligibility", "Data quality"]) {
+    // Only groups with values are shown; this sample has no data-quality values.
+    for (const group of ["Language sample", "Lexical use", "Interaction", "Speech / intelligibility"]) {
       await expect(page.getByText(group, { exact: true })).toBeVisible();
     }
-    const provenanceToggle = page.getByText("Technical provenance", { exact: true });
+    // Provenance sits with the other background details, folded under one heading.
+    const provenanceToggle = page.getByRole("heading", { name: "Safety & limitations" });
     await expect(page.getByRole("region", { name: "Findings provenance" })).not.toBeVisible();
     await provenanceToggle.click();
     await expect(page.getByRole("region", { name: "Findings provenance" })).toBeVisible();

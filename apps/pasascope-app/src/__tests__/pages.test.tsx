@@ -584,7 +584,7 @@ describe("pasascope pages", () => {
 
     cleanup();
     await renderResultsPage();
-    await waitFor(() => expect(screen.getByRole("heading", { name: "Linguistic Signals" })).toBeInTheDocument());
+    await waitFor(() => expect(screen.getByRole("heading", { name: "Language sample at a glance" })).toBeInTheDocument());
     expect(screen.getByRole("heading", { name: "Workflow summary" })).toBeInTheDocument();
     expect(screen.getByText("Transcript quality")).toBeInTheDocument();
     expect(screen.getByText("Features extracted")).toBeInTheDocument();
@@ -728,7 +728,7 @@ describe("pasascope pages", () => {
 
     await renderResultsPage({ case_id: "CASE-EVIDENCE", session_id: "SESSION-EVIDENCE", transcript_id: "TRANSCRIPT-EVIDENCE" });
 
-    expect(await screen.findByRole("heading", { name: "Linguistic Signals" })).toBeInTheDocument();
+    expect(await screen.findByRole("heading", { name: "Language sample at a glance" })).toBeInTheDocument();
     // Feature names appear both in the at-a-glance decision grid and in the
     // clinical review groups (glance layer + detail layer).
     expect(screen.getAllByText("MLU (Words)").length).toBeGreaterThan(0);
@@ -997,7 +997,6 @@ describe("pasascope pages", () => {
       featuresExtracted: false
     });
     await renderResultsPage();
-    expect(screen.getByText("Transcript attestation required")).toBeInTheDocument();
     expect(screen.queryByTestId("evidence-review-panel")).not.toBeInTheDocument();
   });
 

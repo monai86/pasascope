@@ -15,6 +15,7 @@ type FindingsPartsCopy = {
     limitations: string;
     caution: string;
     emptyGroup: string;
+    notComputed: string;
     footer: string;
   };
   evidence: {
@@ -76,6 +77,7 @@ export const findingsPartsMessages = defineMessages<FindingsPartsCopy>({
         "data-quality": { label: "Data quality", caution: "Resolve material data-quality concerns before report use." },
       },
       hide: "Hide evidence and limitations",
+      notComputed: "Not computed for this sample",
       show: "Evidence and limitations",
       method: "Method",
       limitations: "Limitations",
@@ -144,6 +146,7 @@ export const findingsPartsMessages = defineMessages<FindingsPartsCopy>({
         "data-quality": { label: "คุณภาพข้อมูล", caution: "แก้ปัญหาคุณภาพข้อมูลที่สำคัญก่อนนำไปใช้ในรายงาน" },
       },
       hide: "ซ่อนหลักฐานและข้อจำกัด",
+      notComputed: "คำนวณไม่ได้จากตัวอย่างนี้",
       show: "หลักฐานและข้อจำกัด",
       method: "วิธีคำนวณ",
       limitations: "ข้อจำกัด",

@@ -5,7 +5,6 @@ import { FileSearch, FileText, ShieldCheck, Wand2 } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import { PrimaryActionButton, WorkspacePanel } from "@/components/workbench-ui";
-import { RightRail } from "@/components/right-rail";
 import { SessionContextHeader, type SessionContext } from "@/features/sessions/components/session-context-header";
 import { SessionGuide, type SessionGuideAction } from "@/features/sessions/components/session-guide";
 import { resolveSessionHref } from "@/features/sessions/state/session-view";
@@ -170,7 +169,6 @@ export function SessionFindingsView({
               ]
         }
       />
-      <div className="grid gap-6 xl:grid-cols-[minmax(0,1fr)_22rem]">
       <div className="space-y-6">
         {findingsStale ? (
           <p role="alert" className="text-sm leading-6 text-[color:var(--color-warning-text)]">
@@ -178,205 +176,150 @@ export function SessionFindingsView({
           </p>
         ) : null}
 
-        <section className="space-y-4">
-          <div className="flex flex-wrap items-center justify-between gap-3">
-            <div>
-              <h2 className="text-base font-semibold text-ink">{t.signals.title}</h2>
-              <p className="mt-2 text-sm leading-6 text-ink-muted">
-                {findingsStale
-                  ? t.signals.staleNote
-                  : t.signals.note}
-              </p>
-            </div>
+        {/* The values first: everything that was extracted, in one place. */}
+        {currentFindingsState.featuresExtracted ? (
+          <FeatureDecisionGrid signals={signalCards} />
+        ) : (
+          <p className="rounded-panel border border-line bg-surface px-5 py-6 text-sm leading-6 text-ink-muted">
+            {findingsStale ? t.signals.staleNote : t.signals.note}
+          </p>
+        )}
+
+        {/* What to do with them, right under them. */}
+        <section aria-labelledby="findings-actions-title" className="rounded-panel border border-line bg-surface px-5 py-5 sm:px-7">
+          <h2 id="findings-actions-title" className="sr-only">{t.actions.title}</h2>
+          <div className="flex flex-wrap items-center gap-3">
+            <Button
+              onClick={onGenerateReport}
+              disabled={busy || !reportReady}
+              data-testid="generate-report-button"
+            >
+              {busy ? t.actions.generating : t.actions.generateReport}
+            </Button>
+            <Button
+              variant="secondary"
+              onClick={() => onApproveReviewedCues()}
+              disabled={busy || findingsStale || (!currentFindingsState.mlDecisionSupport && signalCards.length === 0)}
+              aria-describedby={approveCuesReason ? "approve-reviewed-cues-reason" : undefined}
+            >
+              {t.actions.approveCues}
+            </Button>
             {currentFindingsState.featuresExtracted && !currentFindingsState.mlDecisionSupport ? (
-              <div className="space-y-2">
-                <PrimaryActionButton
-                  icon={Wand2}
-                  onClick={onGenerateMlDecisionSupport}
-                  disabled={busy || backendUnavailable || currentFindingsState.mlReadiness?.ready === false}
-                  data-testid="generate-evidence-review-button"
-                  aria-describedby={evidenceReviewReason ? "generate-evidence-review-reason" : undefined}
-                >
-                  {busy ? t.signals.generating : t.signals.generateEvidenceReview}
-                </PrimaryActionButton>
-                {evidenceReviewReason ? (
-                  <p id="generate-evidence-review-reason" role="status" className="rounded-card border border-[color:var(--color-attention-border)] bg-[color:var(--color-warning-bg)] px-3 py-2 text-sm font-semibold text-[color:var(--color-warning-text)]">
-                    {evidenceReviewReason}
-                  </p>
-                ) : null}
-              </div>
+              <Button
+                variant="secondary"
+                icon={Wand2}
+                onClick={onGenerateMlDecisionSupport}
+                disabled={busy || backendUnavailable || currentFindingsState.mlReadiness?.ready === false}
+                data-testid="generate-evidence-review-button"
+                aria-describedby={evidenceReviewReason ? "generate-evidence-review-reason" : undefined}
+              >
+                {busy ? t.signals.generating : t.signals.generateEvidenceReview}
+              </Button>
             ) : null}
           </div>
-          {currentFindingsState.featuresExtracted ? (
-            <FeatureDecisionGrid signals={signalCards} />
-          ) : null}
+          <div className="mt-3 space-y-1 text-sm leading-6">
+            {!reportReady ? <p className="text-[color:var(--color-warning-text)]">{t.actions.notReady}</p> : null}
+            {approveCuesReason ? (
+              <p id="approve-reviewed-cues-reason" role="status" className="text-[color:var(--color-warning-text)]">{approveCuesReason}</p>
+            ) : null}
+            {evidenceReviewReason ? (
+              <p id="generate-evidence-review-reason" role="status" className="text-[color:var(--color-warning-text)]">{evidenceReviewReason}</p>
+            ) : null}
+            {state.cuesAcknowledgedAt ? (
+              <p className="text-[color:var(--color-success-text)]">
+                {t.actions.acknowledged(state.cuesAcknowledgedBy, formatDate(state.cuesAcknowledgedAt, locale))}
+              </p>
+            ) : null}
+          </div>
         </section>
 
-        <section aria-labelledby="findings-workflow-summary-title" className="overflow-hidden rounded-panel border border-line bg-line">
-          <div className="bg-surface px-4 py-3">
-            <h2 id="findings-workflow-summary-title" className="text-sm font-semibold text-ink">{t.summary.title}</h2>
-          </div>
-          <dl className="grid gap-px sm:grid-cols-2 xl:grid-cols-4">
-            <div className="bg-surface px-4 py-3">
-              <dt className="text-xs font-medium uppercase tracking-[0.08em] text-ink-subtle">{t.summary.transcriptQuality}</dt>
-              <dd className="mt-1 font-semibold text-ink">{label(transcriptQualityLabel(state))}</dd>
-              <p className="mt-1 text-xs leading-5 text-ink-muted">{state.qaSummary ?? safety.THERAPIST_REVIEW_REMAINS_REQUIRED}</p>
-            </div>
-            <div className="bg-surface px-4 py-3">
-              <dt className="text-xs font-medium uppercase tracking-[0.08em] text-ink-subtle">{t.summary.featuresExtracted}</dt>
-              <dd className="mt-1 font-semibold text-ink">{currentFindingsState.featuresExtracted ? t.summary.signalCount(signalCards.length) : t.summary.pending}</dd>
-              <p className="mt-1 text-xs leading-5 text-ink-muted">{currentFindingsState.featuresExtracted ? t.summary.featuresAvailable : t.summary.featuresMissing}</p>
-            </div>
-            <div className="bg-surface px-4 py-3">
-              <dt className="text-xs font-medium uppercase tracking-[0.08em] text-ink-subtle">{t.summary.reviewFlags}</dt>
-              <dd className="mt-1 font-semibold text-ink">{totalReviewFlags(currentFindingsState)}</dd>
-              <p className="mt-1 text-xs leading-5 text-ink-muted">{totalReviewFlags(currentFindingsState) > 0 ? t.summary.flagsOpen : t.summary.flagsNone}</p>
-            </div>
-            <div className="bg-surface px-4 py-3">
-              <dt className="text-xs font-medium uppercase tracking-[0.08em] text-ink-subtle">{t.summary.reportReadiness}</dt>
-              <dd className="mt-1 font-semibold text-ink">{reportReady ? t.summary.ready : t.summary.blocked}</dd>
-              <p className="mt-1 text-xs leading-5 text-ink-muted">{reportReady ? t.summary.gatesPassed : t.summary.gatesMissing}</p>
-            </div>
-          </dl>
+        <section aria-labelledby="findings-draft-title" className="rounded-panel border border-line bg-surface px-5 py-6 sm:px-7">
+          <h2 id="findings-draft-title" className="text-lg font-semibold text-ink">{t.draft.title}</h2>
+          <p className="mt-1 max-w-[62ch] text-sm leading-6 text-ink-muted">{t.draft.note}</p>
+          <textarea
+            aria-label={t.draft.title}
+            className="mt-4 min-h-40 w-full rounded-control border border-line bg-surface p-4 text-[15px] leading-7 text-ink"
+            value={interpretationDraft}
+            readOnly={findingsStale}
+            onChange={(event) => setInterpretationDraft(event.target.value)}
+          />
         </section>
+
+        <EvidenceReviewSection
+          mlDecisionSupport={currentFindingsState.mlDecisionSupport}
+          recommendedReviewPoints={recommendedReviewPoints}
+          busy={busy}
+          onProfileEvidenceReview={onProfileEvidenceReview}
+          onCueReview={onCueReview}
+          transcriptLines={currentFindingsState.transcriptLines}
+          transcriptHref={resolveSessionHref("transcript", sessionContext.sessionId)}
+        />
 
         <ProgressSummaryCard state={state} aiReview={state.aiReview} busy={busy} onGenerateAiReview={onGenerateAiReview} />
 
-        <details className="responsive-details rounded-shell border border-line bg-surface">
-          <summary className="flex min-h-14 cursor-pointer items-center justify-between gap-3 px-5 py-3">
-            <span>
-              <span className="block font-semibold text-ink">{t.provenance.title}</span>
-              <span className="mt-0.5 block text-sm text-ink-muted">{t.provenance.subtitle}</span>
-            </span>
+        {/* Everything that explains the values rather than being them, folded together. */}
+        <details className="responsive-details rounded-panel border border-line bg-surface">
+          <summary className="flex min-h-14 cursor-pointer items-center justify-between gap-3 px-5 py-3 sm:px-7">
+            <h2 className="text-base font-semibold text-ink">{t.rail.title}</h2>
             <span className={`rounded-full px-3 py-1 text-xs font-semibold ${findingsCurrent ? "bg-[color:var(--color-success-bg)] text-[color:var(--color-success-text)]" : "bg-[color:var(--color-warning-bg)] text-[color:var(--color-warning-text)]"}`}>
               {label(analysisDispositionLabel(state.analysisStatus))}
             </span>
           </summary>
-          <section aria-label={t.provenance.regionLabel} className="border-t border-line p-5">
-            <p className="text-sm leading-6 text-ink-muted">
-              {t.provenance.note}
-            </p>
-            <dl className="mt-4 grid gap-3 sm:grid-cols-2 xl:grid-cols-5">
-              <ProvenanceItem label={t.provenance.reviewedTranscript} value={label(versionLabel(state.backendTranscriptVersion))} />
-              <ProvenanceItem label={t.provenance.findingsTranscript} value={label(versionLabel(state.featureTranscriptVersion))} />
-              <ProvenanceItem label={t.provenance.featureResultId} value={state.featureSetId ?? t.provenance.unavailable} />
-              <ProvenanceItem
-                label={t.provenance.schemaVersion}
-                value={state.featureSchemaVersion ?? currentFindingsState.mlDecisionSupport?.featureSchemaVersion ?? t.provenance.unavailable}
-              />
-              <ProvenanceItem
-                label={t.provenance.aiDisposition}
-                value={label(findingsCurrent ? evidenceDisposition(currentFindingsState.mlDecisionSupport) : analysisDispositionLabel(state.analysisStatus))}
-              />
-            </dl>
-          </section>
-        </details>
-
-        <section className="grid gap-6 lg:grid-cols-[minmax(0,1.1fr)_minmax(0,0.9fr)]">
-          <EvidenceReviewSection
-            mlDecisionSupport={currentFindingsState.mlDecisionSupport}
-            recommendedReviewPoints={recommendedReviewPoints}
-            busy={busy}
-            onProfileEvidenceReview={onProfileEvidenceReview}
-            onCueReview={onCueReview}
-            transcriptLines={currentFindingsState.transcriptLines}
-            transcriptHref={resolveSessionHref("transcript", sessionContext.sessionId)}
-          />
-
-          <div className="space-y-6">
-            <section className="rounded-shell border border-line bg-surface p-6">
-              <h2 className="text-xl font-semibold text-ink">{t.actions.title}</h2>
-              <div className="mt-4 space-y-3">
-                <button
-                  type="button"
-                  className="flex min-h-11 w-full items-center justify-center rounded-card border border-line bg-surface px-4 py-3 text-sm font-semibold text-ink disabled:cursor-not-allowed disabled:opacity-50"
-                  onClick={() => onApproveReviewedCues()}
-                  disabled={busy || findingsStale || (!currentFindingsState.mlDecisionSupport && signalCards.length === 0)}
-                  aria-describedby={approveCuesReason ? "approve-reviewed-cues-reason" : undefined}
-                >
-                  {t.actions.approveCues}
-                </button>
-                {approveCuesReason ? (
-                  <p id="approve-reviewed-cues-reason" role="status" className="rounded-card border border-[color:var(--color-attention-border)] bg-[color:var(--color-warning-bg)] px-3 py-2 text-sm font-semibold text-[color:var(--color-warning-text)]">
-                    {approveCuesReason}
-                  </p>
-                ) : null}
-                {/* Generating the report is the next step here; going back to the transcript is secondary. */}
-                <Button href={workflowSessionHref("transcript", state)} icon={FileText} variant="secondary" className="w-full">
-                  {t.actions.reviseTranscript}
-                </Button>
-                <button
-                  type="button"
-                  className="flex min-h-11 w-full items-center justify-center rounded-full bg-brand px-4 py-3 text-sm font-semibold text-white disabled:cursor-not-allowed disabled:opacity-50"
-                  onClick={onGenerateReport}
-                  disabled={busy || !reportReady}
-                  data-testid="generate-report-button"
-                >
-                  {busy ? t.actions.generating : t.actions.generateReport}
-                </button>
-              </div>
-              {!reportReady ? (
-                <p className="mt-4 text-sm text-[color:var(--color-warning-text)]">
-                  {t.actions.notReady}
-                </p>
-              ) : null}
-              {state.cuesAcknowledgedAt ? (
-                <p className="mt-3 text-sm text-[color:var(--color-success-text)]">
-                  {t.actions.acknowledged(state.cuesAcknowledgedBy, formatDate(state.cuesAcknowledgedAt, locale))}
-                </p>
-              ) : null}
+          <div className="space-y-6 border-t border-line px-5 py-5 sm:px-7">
+            <p className="text-sm leading-6 text-ink-muted">{t.rail.description}</p>
+            <section aria-labelledby="findings-workflow-summary-title">
+              <h3 id="findings-workflow-summary-title" className="text-sm font-semibold text-ink">{t.summary.title}</h3>
+              <dl className="mt-2 divide-y divide-line border-y border-line text-sm">
+                <SummaryRow label={t.summary.transcriptQuality} value={label(transcriptQualityLabel(state))} note={state.qaSummary ?? safety.THERAPIST_REVIEW_REMAINS_REQUIRED} />
+                <SummaryRow label={t.summary.featuresExtracted} value={currentFindingsState.featuresExtracted ? t.summary.signalCount(signalCards.length) : t.summary.pending} note={currentFindingsState.featuresExtracted ? t.summary.featuresAvailable : t.summary.featuresMissing} />
+                <SummaryRow label={t.summary.reviewFlags} value={String(totalReviewFlags(currentFindingsState))} note={totalReviewFlags(currentFindingsState) > 0 ? t.summary.flagsOpen : t.summary.flagsNone} />
+                <SummaryRow label={t.summary.reportReadiness} value={reportReady ? t.summary.ready : t.summary.blocked} note={reportReady ? t.summary.gatesPassed : t.summary.gatesMissing} />
+              </dl>
             </section>
-
-            <section className="rounded-shell border border-line bg-surface p-6">
-              <h2 className="text-xl font-semibold text-ink">{t.draft.title}</h2>
-              <p className="mt-2 text-sm leading-6 text-ink-muted">
-                {t.draft.note}
-              </p>
-              <textarea
-                aria-label={t.draft.title}
-                className="mt-4 min-h-48 w-full rounded-panel border border-line bg-surface p-4 text-sm leading-6 text-ink"
-                value={interpretationDraft}
-                readOnly={findingsStale}
-                onChange={(event) => setInterpretationDraft(event.target.value)}
-              />
+            <section>
+              <h3 className="text-sm font-semibold text-ink">{t.rail.referenceStatus}</h3>
+              <p className="mt-1 text-sm leading-6 text-ink-muted">{missingReferenceData ? t.rail.referenceUnavailable : t.rail.referenceNote}</p>
+            </section>
+            <section>
+              <h3 className="text-sm font-semibold text-ink">{t.rail.limitations}</h3>
+              <ul className="mt-1 list-disc space-y-1 pl-5 text-sm leading-6 text-ink-muted">
+                {(currentFindingsState.mlDecisionSupport?.limitations.length
+                  ? currentFindingsState.mlDecisionSupport.limitations
+                  : t.rail.defaultLimitations).map((limitation) => <li key={limitation}>{limitation}</li>)}
+              </ul>
+            </section>
+            <section aria-label={t.provenance.regionLabel}>
+              <h3 className="text-sm font-semibold text-ink">{t.provenance.title}</h3>
+              <p className="mt-1 text-sm leading-6 text-ink-muted">{t.provenance.note}</p>
+              <dl className="mt-3 grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
+                <ProvenanceItem label={t.provenance.reviewedTranscript} value={label(versionLabel(state.backendTranscriptVersion))} />
+                <ProvenanceItem label={t.provenance.findingsTranscript} value={label(versionLabel(state.featureTranscriptVersion))} />
+                <ProvenanceItem label={t.provenance.featureResultId} value={state.featureSetId ?? t.provenance.unavailable} />
+                <ProvenanceItem
+                  label={t.provenance.schemaVersion}
+                  value={state.featureSchemaVersion ?? currentFindingsState.mlDecisionSupport?.featureSchemaVersion ?? t.provenance.unavailable}
+                />
+                <ProvenanceItem
+                  label={t.provenance.aiDisposition}
+                  value={label(findingsCurrent ? evidenceDisposition(currentFindingsState.mlDecisionSupport) : analysisDispositionLabel(state.analysisStatus))}
+                />
+              </dl>
             </section>
           </div>
-        </section>
+        </details>
 
         <WorkflowStatus state={state} backendUnavailable={backendUnavailable} />
       </div>
+    </div>
+  );
+}
 
-      <RightRail
-        title={t.rail.title}
-        description={t.rail.description}
-      >
-        <div className="rounded-panel border border-line bg-surface p-4">
-          <h3 className="text-sm font-semibold text-ink">{t.rail.readiness}</h3>
-          <ul className="mt-3 space-y-2 text-sm text-ink-muted">
-            <li>{state.transcriptAttested ? t.rail.attested : t.rail.attestationRequired}</li>
-            <li>{currentFindingsState.featuresExtracted ? t.rail.extractionComplete : t.rail.extractionPending}</li>
-            <li>{currentFindingsState.mlReadiness?.ready === false ? t.rail.evidenceBlocked : t.rail.evidenceCanProceed}</li>
-          </ul>
-        </div>
-        <div className="rounded-panel border border-line bg-surface p-4">
-          <h3 className="text-sm font-semibold text-ink">{t.rail.referenceStatus}</h3>
-          <p className="mt-2 text-sm leading-6 text-ink-muted">
-            {missingReferenceData ? t.rail.referenceUnavailable : t.rail.referenceNote}
-          </p>
-        </div>
-        <details className="responsive-details rounded-panel border border-line bg-surface">
-          <summary className="flex min-h-11 cursor-pointer items-center justify-between gap-3 px-4 text-sm font-semibold text-ink">
-            <span>{t.rail.limitations}</span>
-            <span aria-hidden="true">›</span>
-          </summary>
-          <ul className="border-t border-line px-4 py-3 pl-9 text-sm text-ink-muted">
-            {(currentFindingsState.mlDecisionSupport?.limitations.length
-              ? currentFindingsState.mlDecisionSupport.limitations
-              : t.rail.defaultLimitations).map((limitation) => <li className="list-disc" key={limitation}>{limitation}</li>)}
-          </ul>
-        </details>
-      </RightRail>
-      </div>
+function SummaryRow({ label, value, note }: { label: string; value: string; note: string }) {
+  return (
+    <div className="grid gap-1 py-2.5 sm:grid-cols-[minmax(0,12rem)_minmax(0,10rem)_minmax(0,1fr)] sm:gap-4">
+      <dt className="font-medium text-ink-muted">{label}</dt>
+      <dd className="font-semibold text-ink">{value}</dd>
+      <dd className="text-ink-muted">{note}</dd>
     </div>
   );
 }
