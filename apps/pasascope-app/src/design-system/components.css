@@ -192,8 +192,12 @@
     transition: transform 90ms linear, background-color 200ms ease-out;
   }
 
+  /* The resting height is set here, not only in the animation, so bars that
+     are not animating (reduced motion, or before their turn in the wave) sit
+     level instead of jumping to full height. */
   .recorder-bar-waiting {
-    animation: recorder-breathe 2.4s ease-in-out infinite;
+    transform: scaleY(0.14);
+    animation: recorder-breathe 2.4s ease-in-out infinite both;
     animation-delay: calc(var(--i, 0) * 70ms);
   }
 
