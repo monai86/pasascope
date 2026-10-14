@@ -473,10 +473,10 @@ function ThreadItemView({
 
     case "ask-audio":
       return (
-        <AssistantMessage testId="chat-ask-audio">
+        <AssistantMessage testId="chat-ask-audio" wide>
           <p>{source === "recording" ? t.askAudio.recording : t.askAudio.audio}</p>
           {source === "recording" ? (
-            <ChatCard className="px-5 py-6 sm:px-8">
+            <ChatCard className="p-4 sm:p-5">
               <BrowserAudioRecorder
                 initialDurationSeconds={view.state.recordingSeconds}
                 hadUnsavedRecording={view.state.hasUnsavedRecording}

@@ -70,9 +70,13 @@ export function UserBubble({ children, testId }: { children: ReactNode; testId?:
 }
 
 /** What the app says, on the left: plain lines, cards and replies, no bubble. */
-export function AssistantMessage({ children, testId }: { children: ReactNode; testId?: string }) {
+/**
+ * What the app says. A message is as narrow as a chat bubble; one that holds a
+ * tool to work with, such as the recorder, is `wide` and spans the thread.
+ */
+export function AssistantMessage({ children, testId, wide = false }: { children: ReactNode; testId?: string; wide?: boolean }) {
   return (
-    <div data-testid={testId} data-chat-role="assistant" className="chat-rise flex w-full max-w-[520px] flex-col gap-3">
+    <div data-testid={testId} data-chat-role="assistant" className={cn("chat-rise flex w-full flex-col gap-3", !wide && "max-w-[520px]")}>
       {children}
     </div>
   );

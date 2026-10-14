@@ -38,7 +38,7 @@ export function BrowserAudioRecorder({
   const t = useMessages(audioCaptureMessages).recorder;
   const { externalTranscription } = useAppMode();
   const [privacyNotice, setPrivacyNotice] = useState(hadUnsavedRecording);
-  const [amplitudes, setAmplitudes] = useState<number[]>(() => Array.from({ length: 24 }, () => 8));
+  const [amplitudes, setAmplitudes] = useState<number[]>(() => Array.from({ length: BAR_COUNT }, () => 8));
   const recorderRef = useRef<MediaRecorder | null>(null);
   const streamRef = useRef<MediaStream | null>(null);
   const audioBlobRef = useRef<Blob | null>(null);
@@ -285,7 +285,7 @@ export function BrowserAudioRecorder({
 
   function startVisualization(stream: MediaStream) {
     if (typeof window.AudioContext === "undefined") {
-      setAmplitudes(Array.from({ length: 24 }, (_, index) => 12 + ((index * 17) % 42)));
+      setAmplitudes(Array.from({ length: BAR_COUNT }, (_, index) => 12 + ((index * 17) % 42)));
       return;
     }
     const context = new window.AudioContext();
@@ -296,7 +296,7 @@ export function BrowserAudioRecorder({
     audioContextRef.current = context;
     const draw = () => {
       analyser.getByteFrequencyData(values);
-      setAmplitudes(Array.from({ length: 24 }, (_, index) => Math.max(8, Math.round((values[index] / 255) * 76))));
+      setAmplitudes(Array.from({ length: BAR_COUNT }, (_, index) => Math.max(8, Math.round((values[index] / 255) * 76))));
       animationRef.current = window.requestAnimationFrame(draw);
     };
     draw();
@@ -307,7 +307,7 @@ export function BrowserAudioRecorder({
     animationRef.current = undefined;
     void audioContextRef.current?.close();
     audioContextRef.current = null;
-    setAmplitudes(Array.from({ length: 24 }, () => 8));
+    setAmplitudes(Array.from({ length: BAR_COUNT }, () => 8));
   }
 
   function revokeAudioUrl() {
@@ -334,39 +334,14 @@ export function BrowserAudioRecorder({
   const waiting = !live && !held && !audioUrl;
   const roundButton =
     "relative grid place-items-center rounded-full transition motion-reduce:transition-none focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-[color:var(--color-focus-ring)]";
-  const mainButton = `${roundButton} z-10 h-[72px] w-[72px] bg-action text-white shadow-chat-action hover:bg-action-hover active:scale-[0.96]`;
+  const mainButton = `${roundButton} z-10 h-14 w-14 bg-action text-white shadow-chat-action hover:bg-action-hover active:scale-[0.96]`;
 
   return (
-    <div className="flex flex-col items-center text-center" data-recorder-state={status}>
-      <p
-        className={`inline-flex min-h-8 items-center gap-2 rounded-full px-3 text-[13px] font-semibold ${
-          live ? "bg-highlight-soft text-highlight-text" : "bg-surface-muted text-ink-muted"
-        }`}
-      >
-        <span aria-hidden="true" className={`h-2 w-2 rounded-full ${live ? "recorder-dot bg-highlight" : held ? "bg-ink-subtle" : "bg-brand"}`} />
-        {statusText}
-      </p>
-
-      <p className="mt-3 font-display text-[2.75rem] font-semibold leading-none tracking-[-0.01em] text-ink tabular-nums">
-        {formatDuration(durationSeconds)}
-      </p>
-
-      <div className="mt-6 flex h-16 w-full max-w-[22rem] items-center justify-center gap-[5px]" role="img" aria-label={t.amplitude}>
-        {amplitudes.map((height, index) => (
-          <span
-            key={index}
-            aria-hidden="true"
-            className={`recorder-bar h-16 w-[5px] rounded-full ${waiting ? "recorder-bar-waiting bg-tint-strong" : live ? "bg-brand" : "bg-line-strong"}`}
-            style={{ "--i": index, transform: waiting ? undefined : `scaleY(${Math.max(0.12, height / 76)})` } as CSSProperties}
-          />
-        ))}
-      </div>
-
-      {/* Three columns, so the main button sits on the centre line and stop sits beside it. */}
-      <div className="mt-7 grid grid-cols-[3.5rem_4.5rem_3.5rem] items-center justify-center gap-4">
-        <span aria-hidden="true" />
+    <div data-recorder-state={status}>
+      {/* A voice message being made: the button, the sound as it comes in, and the time. */}
+      <div className="flex items-center gap-3 sm:gap-4">
         {/* Rings spread from the button while the microphone is on, as they do from the mark. */}
-        <span className="relative grid h-[72px] w-[72px] place-items-center">
+        <span className="relative grid h-14 w-14 shrink-0 place-items-center sm:h-16 sm:w-16">
           {live ? (
             <>
               <span aria-hidden="true" className="recorder-ring" />
@@ -375,40 +350,62 @@ export function BrowserAudioRecorder({
           ) : null}
           {status === "idle" || status === "error" || status === "interrupted" ? (
             <button type="button" className={mainButton} aria-label={t.start} onClick={startRecording}>
-              <Mic size={28} aria-hidden="true" />
+              <Mic size={26} aria-hidden="true" />
             </button>
           ) : null}
           {live ? (
             <button type="button" className={mainButton} aria-label={t.pause} onClick={pauseRecording}>
-              <Pause size={26} fill="currentColor" aria-hidden="true" />
+              <Pause size={24} fill="currentColor" aria-hidden="true" />
             </button>
           ) : null}
           {held ? (
             <button type="button" className={mainButton} aria-label={t.resume} onClick={resumeRecording}>
-              <Play size={26} fill="currentColor" aria-hidden="true" />
+              <Play size={24} fill="currentColor" aria-hidden="true" />
             </button>
           ) : null}
           {status === "stopped" ? (
-            <span aria-hidden="true" className="grid h-[72px] w-[72px] place-items-center rounded-full bg-brand-soft text-brand">
-              <Check size={28} />
+            <span aria-hidden="true" className="grid h-14 w-14 place-items-center rounded-full bg-brand-soft text-brand sm:h-16 sm:w-16">
+              <Check size={26} />
             </span>
           ) : null}
         </span>
-        <button
-          type="button"
-          className={`${roundButton} h-14 w-14 border border-action-quiet-border bg-surface text-action-quiet-text hover:bg-action-quiet-hover disabled:pointer-events-none disabled:opacity-35`}
-          aria-label={t.stop}
-          onClick={stopRecording}
-          disabled={status !== "recording" && status !== "paused"}
-        >
-          <Square size={18} fill="currentColor" aria-hidden="true" />
-        </button>
+
+        <div className="min-w-0 flex-1">
+          <div className="flex items-center justify-between gap-3">
+            <p className={`inline-flex min-w-0 items-center gap-2 whitespace-nowrap text-[13px] font-semibold sm:text-sm ${live ? "text-highlight-text" : "text-ink-muted"}`}>
+              <span aria-hidden="true" className={`h-2 w-2 shrink-0 rounded-full ${live ? "recorder-dot bg-highlight" : held ? "bg-ink-subtle" : "bg-brand"}`} />
+              {statusText}
+            </p>
+            <p className="shrink-0 font-display text-lg font-semibold text-ink tabular-nums sm:text-xl">{formatDuration(durationSeconds)}</p>
+          </div>
+          <div className="mt-2 flex h-10 items-center justify-between gap-[2px]" role="img" aria-label={t.amplitude}>
+            {amplitudes.map((height, index) => (
+              <span
+                key={index}
+                aria-hidden="true"
+                className={`recorder-bar h-10 max-w-[5px] flex-1 rounded-full ${waiting ? "recorder-bar-waiting bg-tint-strong" : live ? "bg-brand" : "bg-line-strong"}`}
+                style={{ "--i": index, transform: waiting ? undefined : `scaleY(${Math.max(0.12, height / 76)})` } as CSSProperties}
+              />
+            ))}
+          </div>
+        </div>
+
+        {live || held ? (
+          <button
+            type="button"
+            className={`${roundButton} h-11 w-11 shrink-0 border sm:h-12 sm:w-12 border-action-quiet-border bg-surface text-action-quiet-text hover:bg-action-quiet-hover`}
+            aria-label={t.stop}
+            onClick={stopRecording}
+          >
+            <Square size={16} fill="currentColor" aria-hidden="true" />
+          </button>
+        ) : null}
       </div>
 
       {audioUrl ? (
-        <div className="recorder-playback mt-6 w-full rounded-control border border-line bg-surface-muted p-3">
+        <div className="recorder-playback mt-4 rounded-control border border-line bg-surface-muted p-3">
           <audio className="w-full" controls src={audioUrl} aria-label={t.playback} />
-          <div className="mt-3 flex flex-wrap justify-center gap-2">
+          <div className="mt-3 flex flex-wrap gap-2">
             <button type="button" className="inline-flex min-h-11 items-center gap-2 rounded-full border border-action-quiet-border bg-surface px-4 text-sm font-semibold text-action-quiet-text transition hover:bg-action-quiet-hover motion-reduce:transition-none" onClick={rerecord}>
               <RotateCcw size={16} aria-hidden="true" />
               {t.rerecord}
@@ -421,16 +418,19 @@ export function BrowserAudioRecorder({
         </div>
       ) : null}
 
-      {privacyNotice && waiting ? <p className="mt-5 w-full rounded-control border border-[color:var(--color-attention-border)] bg-[color:var(--color-warning-bg)] px-4 py-3 text-left text-sm font-medium text-[color:var(--color-warning-text)]">{t.clearedForPrivacy}</p> : null}
-      {error ? <p className="mt-5 w-full rounded-control border border-[color:var(--color-danger-border)] bg-[color:var(--color-danger-bg)] px-4 py-3 text-left text-sm font-medium text-[color:var(--color-danger-text)]" role="alert">{error}</p> : null}
+      {privacyNotice && waiting ? <p className="mt-4 rounded-control border border-[color:var(--color-attention-border)] bg-[color:var(--color-warning-bg)] px-4 py-3 text-sm font-medium text-[color:var(--color-warning-text)]">{t.clearedForPrivacy}</p> : null}
+      {error ? <p className="mt-4 rounded-control border border-[color:var(--color-danger-border)] bg-[color:var(--color-danger-bg)] px-4 py-3 text-sm font-medium text-[color:var(--color-danger-text)]" role="alert">{error}</p> : null}
 
-      <div className="mt-6 w-full border-t border-line pt-4 text-left">
+      <div className="mt-4 border-t border-line pt-3">
         <p className="text-[13px] leading-5 text-ink-muted">{externalTranscription ? t.experimentalExternal : t.experimental}</p>
         <p className="mt-1 text-[13px] leading-5 text-ink-subtle">{t.memoryOnly}</p>
       </div>
     </div>
   );
 }
+
+// One bar per frequency bin the analyser returns (fftSize 64).
+const BAR_COUNT = 32;
 
 function selectMimeType() {
   const candidates = ["audio/webm;codecs=opus", "audio/webm", "audio/mp4"];
