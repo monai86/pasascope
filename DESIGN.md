@@ -322,11 +322,10 @@ linked from a real report.
 ### Settings
 
 Use category navigation and drill-down rather than an all-in-one card feed.
-Therapist categories are Account, Organization, Accessibility & Display,
-Notifications, Privacy & Security, Export, and Help. Authorized administrators
-add Team, Invitations, Audit, Privacy Operations, and Integration Status.
-Ordinary therapists do not see admin navigation, disabled admin controls, or
-admin placeholders. Backend and server-boundary authorization remain mandatory.
+The categories are Account, Display, Workflow, Privacy & Security and Help.
+Each section is one panel of hairline-separated rows: the setting's name and
+explanation on the left, its value or control on the right. No icon tiles,
+no boxed tables inside the panel, no label above a heading.
 
 ## Motion
 

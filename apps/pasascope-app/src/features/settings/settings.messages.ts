@@ -8,8 +8,6 @@ type SettingsCopy = {
   sections: Record<SettingsSection, string>;
   nav: { label: string; allCategories: string; choose: string; workspace: string };
   descriptions: Record<SettingsSection, string>;
-  /** Under a choice that is kept in this browser only. */
-  savedHere: string;
   account: {
     name: string;
     nameHint: string;
@@ -51,6 +49,7 @@ type SettingsCopy = {
   };
   privacy: {
     passwordTitle: string;
+    passwordBody: string;
     newPassword: string;
     confirmPassword: string;
     passwordHint: (min: number) => string;
@@ -98,12 +97,11 @@ export const settingsMessages = defineMessages<SettingsCopy>({
     },
     descriptions: {
       account: "Who you are signed in as, and the name the app shows.",
-      display: "Language, text size and motion on this device.",
-      workflow: "How a new case starts, and how the work is processed.",
+      display: "Language, text size and motion. Text size and motion are saved in this browser.",
+      workflow: "How a new case starts, and how the work is processed. Your choice is saved in this browser.",
       privacy: "Your password, where you are signed in, and what the app keeps.",
       help: "How the app is meant to be used.",
     },
-    savedHere: "Saved in this browser.",
     account: {
       name: "Display name",
       nameHint: "Shown in the app's menu. Not shown on reports.",
@@ -131,7 +129,7 @@ export const settingsMessages = defineMessages<SettingsCopy>({
     },
     workflow: {
       caseLanguage: "Language of a new case",
-      caseLanguageHint: "Used when you create a case; you can still change it on the form.",
+      caseLanguageHint: "Filled in when you create a case; you can change it on the form.",
       thai: "Thai",
       english: "English",
       facts: "How the work is processed",
@@ -144,7 +142,8 @@ export const settingsMessages = defineMessages<SettingsCopy>({
       sharingValue: "A case belongs to you; it cannot be shared yet",
     },
     privacy: {
-      passwordTitle: "Change password",
+      passwordTitle: "Password",
+      passwordBody: "Choose a new password for this account.",
       newPassword: "New password",
       confirmPassword: "Repeat the new password",
       passwordHint: (min) => `At least ${min} characters.`,
@@ -189,7 +188,7 @@ export const settingsMessages = defineMessages<SettingsCopy>({
       account: "บัญชี",
       display: "การแสดงผล",
       workflow: "การทำงาน",
-      privacy: "ความเป็นส่วนตัวและความปลอดภัย",
+      privacy: "ความปลอดภัยและข้อมูล",
       help: "ช่วยเหลือ",
     },
     nav: {
@@ -200,12 +199,11 @@ export const settingsMessages = defineMessages<SettingsCopy>({
     },
     descriptions: {
       account: "บัญชีที่ใช้อยู่ และชื่อที่แอปแสดง",
-      display: "ภาษา ขนาดตัวอักษร และการเคลื่อนไหวบนเครื่องนี้",
-      workflow: "ค่าเริ่มต้นของเคสใหม่ และวิธีประมวลผลงาน",
+      display: "ภาษา ขนาดตัวอักษร และการเคลื่อนไหว ขนาดตัวอักษรและการเคลื่อนไหวบันทึกไว้ในเบราว์เซอร์นี้",
+      workflow: "ค่าเริ่มต้นของเคสใหม่ และวิธีประมวลผลงาน ตัวเลือกบันทึกไว้ในเบราว์เซอร์นี้",
       privacy: "รหัสผ่าน อุปกรณ์ที่ลงชื่อเข้าใช้ และข้อมูลที่แอปเก็บ",
       help: "วิธีใช้แอปตามที่ออกแบบไว้",
     },
-    savedHere: "บันทึกไว้ในเบราว์เซอร์นี้",
     account: {
       name: "ชื่อที่แสดง",
       nameHint: "แสดงในเมนูของแอป ไม่แสดงในรายงาน",
@@ -233,7 +231,7 @@ export const settingsMessages = defineMessages<SettingsCopy>({
     },
     workflow: {
       caseLanguage: "ภาษาของเคสใหม่",
-      caseLanguageHint: "ใช้ตอนสร้างเคส ยังเปลี่ยนในแบบฟอร์มได้",
+      caseLanguageHint: "ใส่ให้ตอนสร้างเคส เปลี่ยนในแบบฟอร์มได้",
       thai: "ไทย",
       english: "อังกฤษ",
       facts: "วิธีประมวลผลงาน",
@@ -246,7 +244,8 @@ export const settingsMessages = defineMessages<SettingsCopy>({
       sharingValue: "เคสเป็นของคุณ ยังแชร์ให้บัญชีอื่นไม่ได้",
     },
     privacy: {
-      passwordTitle: "เปลี่ยนรหัสผ่าน",
+      passwordTitle: "รหัสผ่าน",
+      passwordBody: "ตั้งรหัสผ่านใหม่ของบัญชีนี้",
       newPassword: "รหัสผ่านใหม่",
       confirmPassword: "พิมพ์รหัสผ่านใหม่อีกครั้ง",
       passwordHint: (min) => `อย่างน้อย ${min} ตัวอักษร`,

@@ -47,7 +47,9 @@ describe("Settings: Account", () => {
     expect(screen.getByText("aom@example.test")).toBeInTheDocument();
     const name = screen.getByLabelText("Display name");
     expect(name).toHaveValue("Khun Aom");
-    expect(screen.getByRole("button", { name: "Save name" })).toBeDisabled();
+    // Saving the name it already has sends nothing.
+    fireEvent.click(screen.getByRole("button", { name: "Save name" }));
+    expect(auth.updateUser).not.toHaveBeenCalled();
 
     fireEvent.change(name, { target: { value: "  Khun Aom S.  " } });
     fireEvent.click(screen.getByRole("button", { name: "Save name" }));

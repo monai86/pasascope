@@ -35,51 +35,47 @@ export function SettingsNavigation({
           {t.allCategories}
         </button>
       ) : null}
-      <div className={`${mobileIndexOpen ? "block" : "hidden md:block"} sticky top-24 rounded-card border border-line bg-surface p-2`}>
-        <div className="md:hidden">
-          <p className="px-3 pb-3 pt-1 text-sm leading-6 text-ink-muted">{t.choose}</p>
-        </div>
-        <SettingsNavGroup label={t.workspace} sections={sections} selected={selected} onSelect={onSelect} />
+      <div className={`${mobileIndexOpen ? "block" : "hidden md:block"} md:sticky md:top-6`}>
+        <p className="px-1 pb-3 text-sm leading-6 text-ink-muted md:hidden">{t.choose}</p>
+        <SettingsNavList sections={sections} selected={selected} onSelect={onSelect} />
       </div>
     </nav>
   );
 }
 
-function SettingsNavGroup({
-  label,
+function SettingsNavList({
   onSelect,
   sections,
   selected,
-}: Pick<SettingsNavigationProps, "sections" | "selected" | "onSelect"> & { label: string }) {
+}: Pick<SettingsNavigationProps, "sections" | "selected" | "onSelect">) {
   const sectionLabels = useMessages(settingsMessages).sections;
   return (
-    <div>
-      <p className="px-3 pb-2 text-xs font-semibold uppercase tracking-[0.12em] text-ink-muted">{label}</p>
-      <ul className="grid gap-1">
-        {sections.map((section) => {
-          const isSelected = section === selected;
-          return (
-            <li key={section}>
-              <a
-                href={`/settings?section=${section}`}
-                aria-current={isSelected ? "page" : undefined}
-                className={`flex min-h-11 items-center rounded-xl border-l-3 px-3.5 py-2 text-sm font-semibold transition ${
-                  isSelected
-                    ? "border-brand bg-brand-soft text-brand"
-                    : "border-transparent text-ink hover:bg-surface-soft hover:text-ink"
-                }`}
-                onClick={(event) => {
-                  event.preventDefault();
-                  onSelect(section);
-                }}
-              >
-                <span className="flex-1">{sectionLabels[section]}</span>
-                <ChevronRight size={16} aria-hidden="true" className="text-ink-subtle md:hidden" />
-              </a>
-            </li>
-          );
-        })}
-      </ul>
-    </div>
+    // On a phone each category is a row to tap; on a wider screen the list is
+    // a quiet rail beside the page, like the app's own navigation.
+    <ul className="grid gap-2 md:gap-0.5">
+      {sections.map((section) => {
+        const isSelected = section === selected;
+        return (
+          <li key={section}>
+            <a
+              href={`/settings?section=${section}`}
+              aria-current={isSelected ? "page" : undefined}
+              className={`flex min-h-12 items-center gap-3 rounded-full border px-5 text-[15px] transition-colors motion-reduce:transition-none md:min-h-11 md:px-4 ${
+                isSelected
+                  ? "border-transparent bg-surface font-semibold text-ink shadow-chat-card"
+                  : "border-line bg-surface text-ink md:border-transparent md:bg-transparent md:text-ink-muted md:hover:bg-surface md:hover:text-ink"
+              }`}
+              onClick={(event) => {
+                event.preventDefault();
+                onSelect(section);
+              }}
+            >
+              <span className="flex-1">{sectionLabels[section]}</span>
+              <ChevronRight size={16} aria-hidden="true" className="text-ink-subtle md:hidden" />
+            </a>
+          </li>
+        );
+      })}
+    </ul>
   );
 }
