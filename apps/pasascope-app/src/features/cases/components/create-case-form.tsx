@@ -12,6 +12,7 @@ import {
 import { casesMessages } from "@/features/cases/cases.messages";
 import { casesAdapter } from "@/features/cases/services/cases-adapter";
 import { useMessages } from "@/i18n/locale-provider";
+import { loadPreferences } from "@/lib/preferences";
 
 const fieldClassName =
   "min-h-11 w-full rounded-card border border-line bg-surface px-4 text-sm text-ink outline-none focus-visible:ring-4 focus-visible:ring-[color:var(--color-focus-ring)]";
@@ -26,7 +27,7 @@ export function CreateCaseForm({ onCancel }: { onCancel: () => void }) {
     setError,
   } = useForm<CreateCaseFormValues>({
     resolver: zodResolver(createCaseSchema),
-    defaultValues: { child_code: "", nickname: "", language: "Thai", notes: "" },
+    defaultValues: { child_code: "", nickname: "", language: loadPreferences().caseLanguage, notes: "" },
   });
 
   async function submit(values: CreateCaseFormValues) {

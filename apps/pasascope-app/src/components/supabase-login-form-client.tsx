@@ -29,6 +29,7 @@ import { publishSupabaseSessionPayload } from "@/lib/supabase-session-source";
 import { useSupabaseAccessSession } from "@/lib/use-supabase-access-session";
 import { supabaseLoginMessages } from "@/components/supabase-login.messages";
 import { useMessages } from "@/i18n/locale-provider";
+import { PASSWORD_MIN_LENGTH } from "@/lib/password-policy";
 
 function resolvePostLoginRoute(role: unknown): string {
   if (role === "org_admin" || role === "platform_operator") {
@@ -47,7 +48,7 @@ const PRIMARY = `group inline-flex min-h-[52px] w-full items-center justify-cent
 // The owner's choice (2026-10-13). NIST SP 800-63B-4 asks for 15 where the password
 // is the only factor and 8 beside a second one, with no composition rules either way.
 // It applies to a new password; an existing one still signs in.
-export const PASSWORD_MIN_LENGTH = 8;
+export { PASSWORD_MIN_LENGTH };
 
 export const ACCOUNT_NOT_PROVISIONED_MESSAGE =
   "บัญชีนี้ยังไม่ได้รับสิทธิ์เข้าองค์กรใด กรุณาติดต่อผู้ดูแลองค์กรเพื่อรับคำเชิญ · This account has not been added to an organization yet. Ask your organization admin for an invitation.";

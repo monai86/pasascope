@@ -107,7 +107,7 @@ describe("final UI remediation contracts", () => {
   it("renders mobile Settings as a role-safe category list", () => {
     render(
       <SettingsNavigation
-        sections={["account", "organization", "accessibility", "notifications", "privacy", "export", "help"]}
+        sections={["account", "display", "workflow", "privacy", "help"]}
         selected="account"
         onSelect={vi.fn()}
       />,

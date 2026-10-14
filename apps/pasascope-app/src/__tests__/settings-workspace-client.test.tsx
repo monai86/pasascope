@@ -39,20 +39,18 @@ describe("Settings", () => {
     // The full ordered list: adding, removing or reordering a category fails here.
     expect(within(navigation).getAllByRole("link").map((link) => link.textContent)).toEqual([
       "Account",
-      "Organization",
-      "Accessibility & Display",
-      "Notifications",
+      "Display",
+      "Workflow",
       "Privacy & Security",
-      "Export",
       "Help",
     ]);
     expect(screen.getByRole("heading", { name: "Account" })).toBeInTheDocument();
     expect(screen.getByRole("link", { name: "Account" })).toHaveAttribute("aria-current", "page");
 
-    fireEvent.click(screen.getByRole("link", { name: "Accessibility & Display" }));
-    expect(screen.getByRole("heading", { name: "Accessibility & Display" })).toBeInTheDocument();
+    fireEvent.click(screen.getByRole("link", { name: "Display" }));
+    expect(screen.getByRole("heading", { name: "Display" })).toBeInTheDocument();
     expect(screen.queryByRole("heading", { name: "Account" })).not.toBeInTheDocument();
-    expect(window.location.search).toBe("?section=accessibility");
+    expect(window.location.search).toBe("?section=display");
   });
 
   it("opens the requested category as a detail page", () => {
@@ -67,11 +65,16 @@ describe("Settings", () => {
       expect(resolveSettingsSection(requested)).toBe("account");
     }
     expect(parseSettingsSection("team")).toBeNull();
-    expect(resolveSettingsSection("export")).toBe("export");
+    expect(resolveSettingsSection("help")).toBe("help");
   });
 
-  it("still answers to the two older section names", () => {
+  it("still answers to the older section names", () => {
     expect(parseSettingsSection("profile")).toBe("account");
+    expect(parseSettingsSection("notifications")).toBe("account");
     expect(parseSettingsSection("credentials")).toBe("privacy");
+    expect(parseSettingsSection("accessibility")).toBe("display");
+    expect(parseSettingsSection("organization")).toBe("workflow");
+    expect(parseSettingsSection("export")).toBe("workflow");
+    expect(parseSettingsSection("toString")).toBeNull();
   });
 });

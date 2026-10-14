@@ -26,6 +26,7 @@ import {
   grantBackendCaseConsent,
   type BackendCase,
 } from "@/lib/workflow";
+import { loadPreferences } from "@/lib/preferences";
 
 /** How the audio will arrive once the session is open. */
 export type StartIntent = "recording" | "audio";
@@ -306,7 +307,7 @@ function NewCaseMessage({
         child_code: childCode,
         nickname: nickname.trim() || undefined,
         age_months: ageMonths,
-        language: "Thai",
+        language: loadPreferences().caseLanguage,
         notes: "",
         // Consent is asked for next, in the conversation, before any session exists.
         consent_status: "pending",
