@@ -213,18 +213,18 @@ describe("cases workspace", () => {
     await renderAsyncPage(CaseDetailPage, { params: { caseId: "case_demo_001" } });
 
     expect(await screen.findByRole("heading", { name: "Demo child" })).toBeInTheDocument();
-    expect(screen.getByText("Primary therapist")).toBeInTheDocument();
     expect(screen.getByText("Consent status")).toBeInTheDocument();
-    expect(screen.getByRole("heading", { name: "Overview" })).toBeInTheDocument();
-    expect(screen.getByRole("heading", { name: "Goals" })).toBeInTheDocument();
-    expect(screen.getByRole("heading", { name: "Sessions" })).toBeInTheDocument();
-    expect(screen.getByRole("heading", { name: "Progress" })).toBeInTheDocument();
-    expect(screen.getByRole("heading", { name: "Reports" })).toBeInTheDocument();
-    expect(screen.getByRole("heading", { name: "Upcoming tasks" })).toBeInTheDocument();
-    expect(screen.getByRole("heading", { name: "Recent notes" })).toBeInTheDocument();
+    // In the order the page reads: sessions first, the record's details last.
+    expect(screen.getAllByRole("heading", { level: 2 }).map((heading) => heading.textContent)).toEqual([
+      "Sessions",
+      "Progress",
+      "Goals",
+      "Details",
+    ]);
+    expect(screen.getByRole("link", { name: "Start a session" })).toHaveAttribute("href", "/cases?intent=start-session&case_id=case_demo_001");
     expect(await screen.findByText("Expand spontaneous utterances")).toBeInTheDocument();
     expect(await screen.findByText("Session 2026-06-12")).toBeInTheDocument();
-    expect(await screen.findByRole("link", { name: "Open session workspace" })).toHaveAttribute("href", "/sessions/session_demo_001?view=intake");
+    expect(await screen.findByRole("link", { name: "Open session" })).toHaveAttribute("href", "/sessions/session_demo_001?view=intake");
     // A case with a session keeps its record: deleting is not offered.
     expect(screen.queryByRole("button", { name: "Delete case" })).not.toBeInTheDocument();
   });
@@ -372,7 +372,7 @@ describe("cases workspace", () => {
 
     await renderAsyncPage(CaseDetailPage, { params: { caseId: "case_demo_001" } });
 
-    expect(await screen.findByRole("heading", { name: "Care team" })).toBeInTheDocument();
+    expect(await screen.findByRole("heading", { name: "Details" })).toBeInTheDocument();
     expect(screen.getByText("A case belongs to the person who created it. It cannot be shared with another account yet.")).toBeInTheDocument();
     expect(getRequestedOrganizationIds(vi.mocked(fetch), "/cases/case_demo_001/care-team")).toEqual([]);
     expect(getRequestedOrganizationIds(vi.mocked(fetch), "/organizations/current/memberships")).toEqual([]);
@@ -441,9 +441,8 @@ describe("cases workspace", () => {
 
     expect(await screen.findByRole("heading", { name: "New intake" })).toBeInTheDocument();
     expect(screen.getByText("No communication goals recorded yet.")).toBeInTheDocument();
-    expect(screen.getByText("No sessions recorded yet for this case.")).toBeInTheDocument();
-    expect(screen.getByText("No recent therapist notes recorded yet.")).toBeInTheDocument();
-    expect(screen.getByText("Referral or intake context has not been added yet.")).toBeInTheDocument();
+    expect(screen.getByText("No sessions yet.")).toBeInTheDocument();
+    expect(screen.getByText("No notes yet.")).toBeInTheDocument();
   });
 
   describe("deleting a case with nothing recorded for it", () => {
@@ -558,12 +557,11 @@ describe("cases workspace", () => {
 
     await renderAsyncPage(CaseDetailPage, { params: { caseId: "case_demo_pending" } });
 
-    expect(await screen.findByText("Caregiver Consent Verification Required")).toBeInTheDocument();
-    
-    const createButton = screen.getByRole("link", { name: "Create new session" });
-    expect(createButton).toHaveClass("opacity-60");
-    expect(createButton).toHaveClass("cursor-not-allowed");
-    expect(createButton).toHaveAttribute("href", "#");
+    expect(await screen.findByRole("heading", { name: "Record the caregiver's consent" })).toBeInTheDocument();
+
+    // No session can start, so the consent form comes first instead of a disabled button.
+    expect(screen.queryByRole("link", { name: "Start a session" })).not.toBeInTheDocument();
+    expect(screen.getAllByRole("heading", { level: 2 })[0]).toHaveTextContent("Record the caregiver's consent");
   });
 
   it("submitting the consent verification form calls update API and unlocks session creation", async () => {
@@ -655,12 +653,8 @@ describe("cases workspace", () => {
       expect(patchPayload.confirmation_checked).toBe(true);
     });
 
-    const createButton = screen.getByRole("link", { name: "Create new session" });
-    expect(createButton).not.toHaveClass("opacity-60");
-    expect(createButton).not.toHaveClass("cursor-not-allowed");
-    expect(createButton).toHaveAttribute("href", "/cases?intent=start-session&case_id=case_demo_pending");
-
-    expect(screen.getByText("Consent Active")).toBeInTheDocument();
+    expect(screen.getByRole("link", { name: "Start a session" })).toHaveAttribute("href", "/cases?intent=start-session&case_id=case_demo_pending");
+    expect(screen.queryByRole("heading", { name: "Record the caregiver's consent" })).not.toBeInTheDocument();
   });
 
   it("clicking withdraw consent calls the withdraw API and marks consent as withdrawn", async () => {
@@ -719,7 +713,7 @@ describe("cases workspace", () => {
 
     expect(await screen.findByRole("heading", { name: "Granted child" })).toBeInTheDocument();
 
-    const withdrawButton = await screen.findByRole("button", { name: "Withdraw Consent" });
+    const withdrawButton = await screen.findByRole("button", { name: "Withdraw consent" });
     expect(withdrawButton).toBeInTheDocument();
 
     await act(async () => {
@@ -741,11 +735,8 @@ describe("cases workspace", () => {
       expect(withdrawPayload.redact_notes).toBe(true);
     });
 
-    expect(screen.getByText("Caregiver Consent Verification Required")).toBeInTheDocument();
-
-    const createButton = screen.getByRole("link", { name: "Create new session" });
-    expect(createButton).toHaveClass("opacity-60");
-    expect(createButton).toHaveAttribute("href", "#");
+    expect(screen.getByRole("heading", { name: "Record the caregiver's consent" })).toBeInTheDocument();
+    expect(screen.queryByRole("link", { name: "Start a session" })).not.toBeInTheDocument();
   });
 });
 

@@ -69,20 +69,14 @@ type CasesCopy = {
     withdrawCancel: string;
     /** Offered on a case with nothing recorded for it, such as one created by mistake. */
     remove: { hint: string; action: string; title: string; body: string; confirm: string; cancel: string; failed: string };
-    description: string;
     caseCode: (code: string) => string;
     createSession: string;
-    profile: string;
-    caseStatus: string;
-    primaryTherapist: string;
+    consentNeeded: string;
+    owner: string;
+    reportLatest: string;
     consentStatus: string;
-    latestSession: string;
-    consentRequiredTitle: string;
-    consentRequiredBody: string;
     consentFormTitle: string;
     consentFormBody: string;
-    consentActive: string;
-    consentActiveBody: string;
     withdraw: string;
     overview: string;
     childLabel: string;
@@ -90,27 +84,15 @@ type CasesCopy = {
     language: string;
     referral: string;
     referralEmpty: string;
-    careTeam: string;
-    primaryClinician: string;
-    assignedClinicians: string;
     careTeamNote: string;
     goals: string;
     goalTargetEmpty: string;
     goalsEmpty: string;
     sessions: string;
     sessionsEmpty: string;
-    languageProgress: string;
-    reports: string;
-    reportNote: (signOffClause: string) => string;
     openReports: string;
-    upcomingTasks: string;
-    tasks: { consent: string; review: string; fallback: string };
-    recentNotes: string;
-    notesEmpty: string;
     safetyNote: string;
     progress: string;
-    workflowStage: string;
-    reportStatus: string;
     historyCaption: string;
     historyColumns: { session: string; date: string; status: string; nextAction: string };
     openSession: string;
@@ -240,57 +222,34 @@ export const casesMessages = defineMessages<CasesCopy>({
         cancel: "Keep case",
         failed: "The case could not be deleted. It may have records now; reload the page and check.",
       },
-      description: "Use the persisted case record to review workflow progress, referral context, and therapist-owned next steps.",
       caseCode: (code) => `Case ${code}`,
-      createSession: "Create new session",
-      profile: "Case profile",
-      caseStatus: "Case status",
-      primaryTherapist: "Primary therapist",
+      createSession: "Start a session",
+      consentNeeded: "Record consent before the first session.",
+      owner: "Owner",
+      reportLatest: "Latest report",
       consentStatus: "Consent status",
-      latestSession: "Latest session",
-      consentRequiredTitle: "Caregiver Consent Verification Required",
-      consentRequiredBody:
-        "This case requires verified caregiver consent. Session recording, audio processing, and clinical observation workflows are locked until consent is obtained and verified.",
-      consentFormTitle: "Consent Verification Form",
-      consentFormBody: "Please verify consent credentials below to unlock the clinical intake and session workflows.",
-      consentActive: "Consent Active",
-      consentActiveBody: "Caregiver consent has been verified and clinical workflows are unlocked.",
-      withdraw: "Withdraw Consent",
-      overview: "Overview",
+      consentFormTitle: "Record the caregiver's consent",
+      consentFormBody: "Sessions can start once the caregiver has agreed. Record who agreed and when.",
+      withdraw: "Withdraw consent",
+      overview: "Details",
       childLabel: "Child label",
       age: "Age",
       language: "Language",
-      referral: "Referral/context",
-      referralEmpty: "Referral or intake context has not been added yet.",
-      careTeam: "Care team",
-      primaryClinician: "Primary clinician",
-      assignedClinicians: "Assigned clinicians",
+      referral: "Notes",
+      referralEmpty: "No notes yet.",
       careTeamNote:
         "A case belongs to the person who created it. It cannot be shared with another account yet.",
       goals: "Goals",
       goalTargetEmpty: "Target not yet documented.",
       goalsEmpty: "No communication goals recorded yet.",
       sessions: "Sessions",
-      sessionsEmpty: "No sessions recorded yet for this case.",
-      languageProgress: "Language progress",
-      reports: "Reports",
-      reportNote: (signOffClause) => `Report status reflects backend workflow state. ${signOffClause} before export.`,
-      openReports: "Open Reports",
-      upcomingTasks: "Upcoming tasks",
-      tasks: {
-        consent: "Confirm consent status before creating or reopening sessions.",
-        review: "Review the latest session transcript before downstream workflow steps.",
-        fallback: "Open the latest session workspace and confirm the next therapist-reviewed step.",
-      },
-      recentNotes: "Recent notes",
-      notesEmpty: "No recent therapist notes recorded yet.",
+      sessionsEmpty: "No sessions yet.",
+      openReports: "Open reports",
       safetyNote: "Case detail is a workflow summary and referral/context record. It does not display diagnostic conclusions.",
       progress: "Progress",
-      workflowStage: "Workflow stage",
-      reportStatus: "Report status",
       historyCaption: "Case session history",
       historyColumns: { session: "Session", date: "Date", status: "Status", nextAction: "Next action" },
-      openSession: "Open session workspace",
+      openSession: "Open session",
       showFewer: "Show fewer sessions",
       showAll: (count) => `Show all sessions (${count})`,
     },
@@ -416,53 +375,30 @@ export const casesMessages = defineMessages<CasesCopy>({
         cancel: "เก็บเคสไว้",
         failed: "ลบเคสไม่สำเร็จ เคสอาจมีข้อมูลแล้ว ลองโหลดหน้าใหม่แล้วตรวจอีกครั้ง",
       },
-      description: "ดูความคืบหน้าของงาน บริบทการส่งต่อ และขั้นถัดไปของนักบำบัด จากข้อมูลเคสที่บันทึกไว้",
       caseCode: (code) => `เคส ${code}`,
-      createSession: "สร้างเซสชันใหม่",
-      profile: "ข้อมูลเคส",
-      caseStatus: "สถานะเคส",
-      primaryTherapist: "นักบำบัดหลัก",
+      createSession: "เริ่มเซสชัน",
+      consentNeeded: "บันทึกความยินยอมก่อนเริ่มเซสชันแรก",
+      owner: "เจ้าของเคส",
+      reportLatest: "รายงานล่าสุด",
       consentStatus: "สถานะความยินยอม",
-      latestSession: "เซสชันล่าสุด",
-      consentRequiredTitle: "ต้องยืนยันความยินยอมของผู้ดูแลก่อน",
-      consentRequiredBody:
-        "เคสนี้ต้องมีความยินยอมของผู้ดูแลที่ยืนยันแล้ว การบันทึกเซสชัน การประมวลผลเสียง และขั้นตอนข้อสังเกตทางคลินิกจะล็อกอยู่จนกว่าจะได้รับและยืนยันความยินยอม",
-      consentFormTitle: "แบบฟอร์มยืนยันความยินยอม",
-      consentFormBody: "ยืนยันข้อมูลความยินยอมด้านล่าง เพื่อปลดล็อกการรับข้อมูลและขั้นตอนของเซสชัน",
-      consentActive: "ให้ความยินยอมแล้ว",
-      consentActiveBody: "ยืนยันความยินยอมของผู้ดูแลแล้ว ขั้นตอนทางคลินิกใช้งานได้",
+      consentFormTitle: "บันทึกความยินยอมของผู้ดูแล",
+      consentFormBody: "เริ่มเซสชันได้เมื่อผู้ดูแลยินยอมแล้ว บันทึกว่าใครยินยอมและเมื่อไร",
       withdraw: "ถอนความยินยอม",
-      overview: "ภาพรวม",
+      overview: "รายละเอียด",
       childLabel: "ชื่อเรียกเด็ก",
       age: "อายุ",
       language: "ภาษา",
-      referral: "การส่งต่อ/บริบท",
-      referralEmpty: "ยังไม่ได้เพิ่มข้อมูลการส่งต่อหรือบริบทการรับเข้า",
-      careTeam: "ทีมดูแล",
-      primaryClinician: "นักบำบัดหลัก",
-      assignedClinicians: "นักบำบัดที่ได้รับมอบหมาย",
+      referral: "บันทึก",
+      referralEmpty: "ยังไม่มีบันทึก",
       careTeamNote: "เคสนี้เป็นของผู้ที่สร้างเคส ยังแชร์ให้บัญชีอื่นไม่ได้",
       goals: "เป้าหมาย",
       goalTargetEmpty: "ยังไม่ได้บันทึกเป้าที่ต้องการ",
       goalsEmpty: "ยังไม่มีเป้าหมายด้านการสื่อสารที่บันทึกไว้",
       sessions: "เซสชัน",
-      sessionsEmpty: "เคสนี้ยังไม่มีเซสชันที่บันทึกไว้",
-      languageProgress: "ความก้าวหน้าทางภาษา",
-      reports: "รายงาน",
-      reportNote: (signOffClause) => `สถานะรายงานมาจากสถานะงานในระบบ ${signOffClause}ก่อนส่งออก`,
+      sessionsEmpty: "ยังไม่มีเซสชัน",
       openReports: "เปิดหน้ารายงาน",
-      upcomingTasks: "งานที่ต้องทำ",
-      tasks: {
-        consent: "ยืนยันสถานะความยินยอมก่อนสร้างหรือเปิดเซสชันอีกครั้ง",
-        review: "ทบทวนบทถอดเสียงของเซสชันล่าสุดก่อนทำขั้นถัดไป",
-        fallback: "เปิดเซสชันล่าสุด แล้วยืนยันขั้นถัดไปที่นักบำบัดต้องทบทวน",
-      },
-      recentNotes: "บันทึกล่าสุด",
-      notesEmpty: "ยังไม่มีบันทึกของนักบำบัด",
       safetyNote: "หน้ารายละเอียดเคสเป็นสรุปงานและบันทึกการส่งต่อ/บริบท ไม่แสดงข้อสรุปเชิงวินิจฉัย",
       progress: "ความคืบหน้า",
-      workflowStage: "ขั้นของงาน",
-      reportStatus: "สถานะรายงาน",
       historyCaption: "ประวัติเซสชันของเคส",
       historyColumns: { session: "เซสชัน", date: "วันที่", status: "สถานะ", nextAction: "งานถัดไป" },
       openSession: "เปิดเซสชัน",

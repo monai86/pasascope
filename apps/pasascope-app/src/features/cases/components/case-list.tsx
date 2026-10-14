@@ -286,7 +286,7 @@ export function CaseList({
                     <div>
                       <Link
                         href={`/cases/${caseItem.case_id}`}
-                        className={`inline-block rounded-control py-[11px] text-base font-semibold leading-snug text-ink underline-offset-4 hover:underline ${FOCUS}`}
+                        className={`inline-block min-w-11 rounded-control py-[11px] text-base font-semibold leading-snug text-ink underline-offset-4 hover:underline ${FOCUS}`}
                       >
                         {caseLabel(caseItem)}
                       </Link>
@@ -322,7 +322,7 @@ export function CaseList({
                     <div className="flex flex-wrap items-center gap-x-3">
                       <Link
                         href={`/cases/${caseItem.case_id}`}
-                        className={`inline-block rounded-control py-[11px] text-base font-semibold leading-snug text-ink underline-offset-4 hover:underline ${FOCUS}`}
+                        className={`inline-block min-w-11 rounded-control py-[11px] text-base font-semibold leading-snug text-ink underline-offset-4 hover:underline ${FOCUS}`}
                       >
                         {caseLabel(caseItem)}
                       </Link>

@@ -117,7 +117,7 @@ test("Case Detail exposes the approved sections and canonical session link", asy
   await setMockRole(page, "therapist");
   await page.goto("/cases/case_demo_001");
 
-  for (const section of ["Overview", "Sessions", "Goals", "Progress", "Reports"]) {
+  for (const section of ["Sessions", "Progress", "Goals", "Details"]) {
     await expect(page.getByRole("heading", { name: section, exact: true })).toBeVisible();
   }
   await expect(page.locator('a[href="/sessions/session_demo_001?view=intake"]')).toBeVisible();
@@ -135,7 +135,7 @@ for (const viewport of viewports) {
     await capturePairedEvidence(page, "cases-selector", viewport);
 
     await page.goto("/cases/case_demo_001");
-    await expect(page.getByRole("heading", { name: "Overview", exact: true })).toBeVisible();
+    await expect(page.getByRole("heading", { name: "Details", exact: true })).toBeVisible();
     await expectNoHorizontalOverflow(page);
     await capturePairedEvidence(page, "case-detail", viewport);
   });
