@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { AlertTriangle, AudioLines, Check, CheckCircle2, FileText } from "lucide-react";
+import { AlertTriangle, AudioLines, Check, CheckCircle2, FileCode, FileText } from "lucide-react";
 
 import { AudioReviewWorkbench } from "@/components/audio-review/audio-review-workbench";
 import { SafetyNotice } from "@/components/safety-notice";
@@ -16,6 +16,8 @@ import { useMessages } from "@/i18n/locale-provider";
 import type { TranscriptLine, WorkflowState } from "@/lib/workflow";
 import { useStatusText } from "@/features/sessions/state/use-status-text";
 import { useAppMode } from "@/lib/app-mode";
+import { useSafetyCopy } from "@/lib/safety-copy";
+import { DRAFT_ASR_TRANSCRIPT_LABEL } from "@/lib/clinical-safety-copy";
 
 export type SessionTranscriptViewProps = {
   sessionContext: SessionContext;
@@ -49,6 +51,7 @@ export function SessionTranscriptView({
   audioUrl,
 }: SessionTranscriptViewProps) {
   const t = useMessages(sessionMessages).transcript;
+  const safety = useSafetyCopy();
   const { openGates } = useAppMode();
   const reviewChecklist = [
     { label: t.readiness.checklist.saved, complete: state.transcriptSaveStatus === "saved" },
@@ -61,7 +64,8 @@ export function SessionTranscriptView({
     { label: t.readiness.checklist.extracted, complete: state.featuresExtracted },
   ];
   const reportBlockedReason = getReviewReportBlockedReason(state, t.readiness.blocked, openGates);
-  const [reviewMode, setReviewMode] = useState<"audio" | "classic">(audioUrl ? "audio" : "classic");
+  // One switch for the ways to work on the transcript: listening along, line by line, or as CHAT text.
+  const [workView, setWorkView] = useState<"audio" | "table" | "talkbank">(audioUrl ? "audio" : "table");
   const guide = getTranscriptGuide(state, t.guide, {
     busy,
     findingsHref: resolveSessionHref("findings", sessionContext.sessionId),
@@ -85,35 +89,47 @@ export function SessionTranscriptView({
         quickReplies={state.featuresExtracted ? [{ label: t.goToReport, href: resolveSessionHref("report", sessionContext.sessionId) }] : []}
       />
       <WorkflowStatus state={state} backendUnavailable={backendUnavailable} />
-      {state.transcriptDraftLabel ? (
-        <div className="rounded-card border border-[color:var(--color-warning-border)] bg-[color:var(--color-warning-bg)] p-4 text-[color:var(--color-warning-text)]">
-          <p className="font-bold">{state.transcriptDraftLabel}</p>
-          <p className="mt-1 text-sm">{t.asrCaution}</p>
-        </div>
-      ) : null}
-      {state.chatWarnings && state.chatWarnings.length > 0 ? (
-        <div className="rounded-card border border-[color:var(--color-warning-border)] bg-[color:var(--color-warning-bg)] p-4 text-[color:var(--color-warning-text)]" role="status">
-          <p className="font-bold">{t.importWarnings}</p>
-          <ul className="mt-1 list-disc space-y-1 pl-5 text-sm">
-            {state.chatWarnings.map((warning) => <li key={warning}>{warning}</li>)}
-          </ul>
+      {/* What to check, in one quiet line; import details stay folded until wanted. */}
+      {state.transcriptDraftLabel || (state.chatWarnings && state.chatWarnings.length > 0) ? (
+        <div className="grid gap-2 px-1 text-sm text-ink-muted">
+          {state.transcriptDraftLabel ? (
+            <p className="flex items-start gap-2">
+              <AlertTriangle size={16} aria-hidden="true" className="mt-0.5 shrink-0 text-[color:var(--color-warning-text)]" />
+              {/* The draft label is the registered safety wording, shown in the page's language. */}
+              <span>
+                <strong className="font-semibold text-ink">
+                  {state.transcriptDraftLabel === DRAFT_ASR_TRANSCRIPT_LABEL ? safety.DRAFT_ASR_TRANSCRIPT_LABEL : state.transcriptDraftLabel}
+                </strong>{" "}
+                {t.asrCaution}
+              </span>
+            </p>
+          ) : null}
+          {state.chatWarnings && state.chatWarnings.length > 0 ? (
+            <details className="group">
+              <summary className="inline-flex min-h-11 cursor-pointer items-center gap-2 font-semibold text-ink">
+                {t.importWarnings} ({state.chatWarnings.length})
+              </summary>
+              <ul className="mt-1 list-disc space-y-1 pl-5">
+                {state.chatWarnings.map((warning) => <li key={warning}>{warning}</li>)}
+              </ul>
+            </details>
+          ) : null}
         </div>
       ) : null}
       <div className="space-y-5">
         <section className="min-w-0 space-y-4">
-          {audioUrl && (
-            <SegmentedControl
-              label={t.mode.label}
-              value={reviewMode}
-              onChange={setReviewMode}
-              options={[
-                { value: "audio", label: t.mode.audio, icon: AudioLines },
-                { value: "classic", label: t.mode.classic, icon: FileText },
-              ]}
-            />
-          )}
+          <SegmentedControl<"audio" | "table" | "talkbank">
+            label={t.mode.label}
+            value={workView}
+            onChange={setWorkView}
+            options={[
+              ...(audioUrl ? [{ value: "audio" as const, label: t.mode.audio, icon: AudioLines }] : []),
+              { value: "table" as const, label: t.mode.classic, icon: FileText },
+              { value: "talkbank" as const, label: t.mode.chat, icon: FileCode },
+            ]}
+          />
 
-          {audioUrl && reviewMode === "audio" ? (
+          {audioUrl && workView === "audio" ? (
             <>
               <AudioReviewWorkbench
                 lines={lines}
@@ -134,7 +150,7 @@ export function SessionTranscriptView({
                     ? t.attestedNote
                     : t.notAttestedNote}
                 </p>
-                <Button variant="secondary" data-testid="continue-to-attestation-button" onClick={() => setReviewMode("classic")} className="shrink-0">
+                <Button variant="secondary" data-testid="continue-to-attestation-button" onClick={() => setWorkView("table")} className="shrink-0">
                   {t.continueToAttestation}
                 </Button>
               </div>
@@ -155,6 +171,7 @@ export function SessionTranscriptView({
               onAttest={onAttest}
               onExport={onExport}
               audioUrl={audioUrl}
+              view={workView === "talkbank" ? "talkbank" : "table"}
             />
           )}
         </section>
@@ -295,13 +312,19 @@ function WorkflowStatus({ state, backendUnavailable }: { state: WorkflowState; b
   );
   if (routineSaveAnnouncement) return null;
   if (state.statusMessage && !isError && backendUnavailable) return null;
-  const className = isError
-    ? "rounded-card border border-[color:var(--color-danger-border)] bg-[color:var(--color-danger-bg)] p-3 text-sm text-[color:var(--color-danger-text)] animate-fade-in sm:p-4"
-    : "rounded-card border border-[color:var(--color-info-border)] bg-[color:var(--color-info-bg)] p-3 text-sm text-[color:var(--color-info-text)] animate-fade-in sm:p-4";
+  // A problem gets a box; news that went well is one quiet line.
+  if (!isError) {
+    return (
+      <p role="status" aria-live="polite" className="flex items-center gap-2 px-1 text-sm text-ink-muted animate-fade-in">
+        <CheckCircle2 size={16} aria-hidden="true" className="shrink-0 text-brand" />
+        {text(state.statusMessage ?? "")}
+      </p>
+    );
+  }
   return (
-    <div className={className} role={isError ? "alert" : "status"} aria-live="polite">
+    <div className="rounded-card border border-[color:var(--color-danger-border)] bg-[color:var(--color-danger-bg)] p-3 text-sm text-[color:var(--color-danger-text)] animate-fade-in sm:p-4" role="alert" aria-live="polite">
       {state.statusMessage ? <p className="font-semibold">{text(state.statusMessage)}</p> : null}
-      {state.error ? <p className="mt-1 font-semibold">{text(state.error)}</p> : null}
+      <p className="mt-1 font-semibold">{text(state.error ?? "")}</p>
     </div>
   );
 }

@@ -56,13 +56,13 @@ describe("SessionTranscriptView with AudioReviewWorkbench", () => {
     expect(screen.getByDisplayValue("ทดสอบการพูด")).toBeDefined();
     expect(screen.getByTestId("dual-view-waveform")).toBeDefined();
 
-    // Toggle to Classic Text Editor
-    const classicBtn = screen.getByText("Classic Text Editor");
+    // Toggle to Edit line by line
+    const classicBtn = screen.getByText("Edit line by line");
     fireEvent.click(classicBtn);
     expect(screen.queryByTestId("dual-view-waveform")).toBeNull();
 
     // Toggle back to Audio Workbench
-    const audioBtn = screen.getByText("Audio & Diarization Workbench");
+    const audioBtn = screen.getByText("Listen and assign speakers");
     fireEvent.click(audioBtn);
     expect(screen.getByTestId("dual-view-waveform")).toBeDefined();
   });
@@ -93,7 +93,7 @@ describe("SessionTranscriptView with AudioReviewWorkbench", () => {
     );
 
     expect(screen.queryByTestId("dual-view-waveform")).toBeNull();
-    expect(screen.queryByText("Audio & Diarization Workbench")).toBeNull();
+    expect(screen.queryByText("Listen and assign speakers")).toBeNull();
     expect(screen.getByText(/ไม่มีไฟล์เสียง/)).toBeDefined();
   });
 });

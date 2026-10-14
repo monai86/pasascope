@@ -65,12 +65,11 @@ export function TranscriptLineList({
 }: TranscriptLineListProps) {
   return (
     <div className="mt-4 min-w-0 overflow-hidden rounded-panel border border-line bg-surface lg:col-start-1 lg:row-start-4">
-      <div className="hidden grid-cols-[7rem_6rem_minmax(16rem,1fr)_5.5rem_5.5rem] gap-3 border-b border-line bg-surface-muted px-4 py-3 text-xs font-semibold uppercase tracking-[0.12em] text-ink-muted min-[1380px]:grid">
-        <span>Time</span>
-        <span>Speaker</span>
-        <span>Utterance</span>
-        <span>QA</span>
-        <span>Confidence</span>
+      {/* One header for every line; each line names its fields only to assistive technology. */}
+      <div aria-hidden="true" className="hidden gap-3 border-b border-line bg-surface-muted px-4 py-2.5 text-[13px] font-semibold text-ink-muted md:grid md:grid-cols-[10rem_7.5rem_minmax(0,1fr)]">
+        <span>{copy.editor.columns.time}</span>
+        <span>{copy.editor.columns.speaker}</span>
+        <span>{copy.editor.columns.utterance}</span>
       </div>
       <div
         className="divide-y divide-line outline-none focus-visible:ring-4 focus-visible:ring-inset focus-visible:ring-[color:var(--color-focus-ring)]"
@@ -164,6 +163,10 @@ const TranscriptLineRow = memo(function TranscriptLineRow({
   const textRef = useRef<HTMLTextAreaElement>(null);
   const rowStatus = getRowStatus(line, qaStatus);
   const confidence = getLineConfidence(line);
+  // Missing times are normal for a typed transcript, so only a low-confidence line is marked beyond the review states.
+  const mark = rowStatus.label === "Unclear" || rowStatus.label === "Review"
+    ? rowStatus
+    : confidence.label === "Low" ? confidence : null;
   const hasTiming = line.startMs !== undefined && line.endMs !== undefined;
 
   return (
@@ -187,9 +190,9 @@ const TranscriptLineRow = memo(function TranscriptLineRow({
         className={`transcript-line-row px-3 py-3 transition motion-reduce:transition-none sm:px-4 ${active || selected ? "bg-brand-soft" : "bg-transparent"}`}
         onClick={() => selectLine(line.lineId)}
       >
-        <div className="grid min-w-0 grid-cols-2 gap-2 md:grid-cols-[7rem_6rem_minmax(0,1fr)] min-[1380px]:grid-cols-[7rem_6rem_minmax(16rem,1fr)_5.5rem_5.5rem] min-[1380px]:items-start">
-          <label className="col-span-2 grid gap-1 text-xs font-semibold uppercase tracking-wide text-ink-muted md:col-span-1">
-            <span className="min-[1380px]:sr-only">Time</span>
+        <div className="grid min-w-0 grid-cols-2 gap-x-3 gap-y-2 md:grid-cols-[10rem_7.5rem_minmax(0,1fr)] md:items-start">
+          <label className="col-span-2 grid gap-1 text-xs font-semibold text-ink-muted md:col-span-1">
+            <span className="md:sr-only">{copy.editor.columns.time}</span>
             <input
               value={formatTimestampRange(line)}
               onChange={(event) => {
@@ -199,25 +202,25 @@ const TranscriptLineRow = memo(function TranscriptLineRow({
               onFocus={() => selectLine(line.lineId)}
               aria-label={`Timestamp for line ${index + 1}`}
               placeholder="00:00.000 – 00:01.000"
-              className="min-h-11 rounded-card border border-line bg-surface px-3 text-sm font-normal normal-case tracking-normal text-ink"
+              className="min-h-11 w-full min-w-0 rounded-control border border-line bg-surface px-2.5 text-[13px] font-normal tabular-nums text-ink"
             />
           </label>
-          <label className="grid gap-1 text-xs font-semibold uppercase tracking-wide text-ink-muted">
-            <span className="min-[1380px]:sr-only">Speaker</span>
+          <label className="grid gap-1 text-xs font-semibold text-ink-muted">
+            <span className="md:sr-only">{copy.editor.columns.speaker}</span>
             <select
               value={line.speaker}
               onChange={(event) => updateLine(index, { speaker: event.target.value })}
               onFocus={() => selectLine(line.lineId)}
               aria-label={`Speaker for line ${index + 1}`}
-              className="min-h-11 rounded-card border border-line bg-surface px-3 text-sm font-semibold normal-case tracking-normal text-ink"
+              className="min-h-11 w-full rounded-control border border-line bg-surface px-3 text-sm font-semibold text-ink"
             >
               {[...new Set([...speakers, line.speaker])].map((speaker) => (
                 <option key={speaker} value={speaker}>{speaker}</option>
               ))}
             </select>
           </label>
-          <label className="grid gap-1 text-xs font-semibold uppercase tracking-wide text-ink-muted">
-            <span className="min-[1380px]:sr-only">Utterance</span>
+          <label className="col-span-2 grid gap-1 text-xs font-semibold text-ink-muted md:col-span-1">
+            <span className="md:sr-only">{copy.editor.columns.utterance}</span>
             <textarea
               ref={textRef}
               value={line.text}
@@ -230,20 +233,18 @@ const TranscriptLineRow = memo(function TranscriptLineRow({
                 }
               }}
               aria-label={`Utterance text ${index + 1}`}
-              className="min-h-14 w-full min-w-0 resize-y rounded-card border border-line bg-surface px-3 py-2 text-sm font-normal normal-case leading-6 tracking-normal text-ink outline-none focus:ring-2 focus:ring-brand"
+              className="min-h-11 w-full min-w-0 resize-y rounded-control border border-line bg-surface px-3 py-2 text-[15px] font-normal leading-6 text-ink outline-none focus:ring-2 focus:ring-brand"
             />
           </label>
-          <div className="flex items-start min-[1380px]:justify-center">
-            <span className={`rounded-full px-2.5 py-1 text-xs font-semibold ${rowStatus.className}`}>
-              {rowStatus.label}
-            </span>
+          {/* A line that needs a look says why, once; a line that is fine carries no mark. */}
+          <div className="col-span-2 flex items-center md:col-span-2 md:col-start-1">
+            {mark ? (
+              <span className={`rounded-full px-2.5 py-1 text-xs font-semibold ${mark.className}`}>
+                {copy.editor.marks[mark.label] ?? mark.label}
+              </span>
+            ) : null}
           </div>
-          <div className="flex items-start min-[1380px]:justify-center">
-            <span className={`rounded-full px-2.5 py-1 text-xs font-semibold ${confidence.className}`}>
-              {confidence.label}
-            </span>
-          </div>
-          <div className="col-span-2 flex flex-wrap gap-2 md:col-span-1 min-[1380px]:col-span-3 min-[1380px]:col-start-3 min-[1380px]:justify-start">
+          <div className="col-span-2 flex flex-wrap gap-2 md:col-span-1 md:col-start-3">
             {hasTiming && audioLinked ? (
               <button
                 type="button"

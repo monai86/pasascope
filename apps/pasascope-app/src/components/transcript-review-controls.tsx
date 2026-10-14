@@ -17,6 +17,8 @@ import { attestTranscriptBlockedReason, exportTranscriptBlockedReason } from "@/
 import type { PersistenceStatus, TranscriptQaStatus } from "@/lib/workflow";
 import { useGateReason } from "@/lib/gate-reason";
 import { useAppMode } from "@/lib/app-mode";
+import { speakerBulkMessages } from "@/components/transcript-speaker-bulk.messages";
+import { useMessages } from "@/i18n/locale-provider";
 
 type QaDetailsProps = {
   qaStatus: TranscriptQaStatus;
@@ -114,6 +116,7 @@ export function TranscriptReviewControls({
   onExport,
 }: ReviewControlsProps) {
   const { openGates } = useAppMode();
+  const editorCopy = useMessages(speakerBulkMessages).editor;
   const gate = useGateReason();
   const attestBlockedReason = gate(attestTranscriptBlockedReason({
     busy,
@@ -221,11 +224,11 @@ export function TranscriptReviewControls({
           type="button"
           onClick={onSaveDraft}
           disabled={busy}
-          className="inline-flex min-h-11 items-center justify-center gap-2 rounded-card border border-line bg-surface px-4 py-2 text-sm font-semibold text-ink disabled:opacity-50"
+          className="inline-flex min-h-11 items-center justify-center gap-2 rounded-full border border-action-quiet-border bg-surface px-4 py-2 text-sm font-semibold text-action-quiet-text disabled:opacity-50"
           data-testid="save-transcript-draft-button"
         >
           <Save size={17} aria-hidden="true" />
-          Save draft
+          {editorCopy.saveDraft}
         </button>
         <button
           type="button"
@@ -233,11 +236,11 @@ export function TranscriptReviewControls({
           disabled={busy || Boolean(qaBlockedReason)}
           title={qaBlockedReason}
           aria-describedby={qaBlockedReason ? "transcript-qa-blocked-reason" : undefined}
-          className="inline-flex min-h-11 items-center justify-center gap-2 rounded-card bg-brand px-4 py-2 text-sm font-semibold text-white disabled:bg-surface-muted disabled:text-ink-muted"
+          className="inline-flex min-h-11 items-center justify-center gap-2 rounded-full bg-action px-4 py-2 text-sm font-semibold text-white disabled:bg-surface-muted disabled:text-ink-muted"
           data-testid="run-transcript-qa-button"
         >
           <FileCheck2 size={17} aria-hidden="true" />
-          Run QA
+          {editorCopy.runQa}
         </button>
       </div>
     </div>

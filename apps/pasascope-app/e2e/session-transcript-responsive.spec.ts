@@ -106,10 +106,10 @@ for (const viewport of viewports) {
     if (viewport.width >= 768 && viewport.width < 1280) {
       await page.getByRole("button", { name: "QA", exact: true }).click();
       await expect(page.getByTestId("transcript-qa-panel")).toBeVisible();
-      await page.getByRole("button", { name: "Hide inspector" }).click();
+      await page.getByRole("button", { name: "Hide audio and QA" }).click();
       await expect(page.getByTestId("transcript-audio-inspector")).toBeHidden();
       await expect(line.getByLabel("Utterance text 1")).toBeVisible();
-      await page.getByRole("button", { name: "Show Audio and QA" }).click();
+      await page.getByRole("button", { name: "Show audio and QA" }).click();
     }
 
     if (viewport.width < 768) {

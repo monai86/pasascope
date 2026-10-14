@@ -19,7 +19,7 @@ type SessionCopy = {
     connection: { backend: string; local_draft: string; unavailable: string };
     consent: (status: string) => string;
   };
-  guide: { label: string; eyebrow: string };
+  guide: { label: string };
   progress: {
     title: string;
     steps: Record<SessionView, string>;
@@ -48,7 +48,7 @@ type SessionCopy = {
     };
     asrCaution: string;
     importWarnings: string;
-    mode: { label: string; audio: string; classic: string };
+    mode: { label: string; audio: string; classic: string; chat: string };
     attestedNote: string;
     notAttestedNote: string;
     continueToAttestation: string;
@@ -92,7 +92,7 @@ export const sessionMessages = defineMessages<SessionCopy>({
       connection: { backend: "Connected", local_draft: "Offline draft", unavailable: "Offline" },
       consent: (status) => `Consent ${status.toLowerCase()}`,
     },
-    guide: { label: "What to do next", eyebrow: "Next step" },
+    guide: { label: "What to do next" },
     progress: {
       title: "Session progress",
       steps: { intake: "Transcript added", transcript: "Transcript attested", findings: "Features extracted", report: "Report signed" },
@@ -119,9 +119,9 @@ export const sessionMessages = defineMessages<SessionCopy>({
         analyze: "Analyse this transcript",
         attesting: "Recording attestation...",
       },
-      asrCaution: "Experimental ASR can be inaccurate. Verify wording, timestamps, and speaker labels before attestation.",
-      importWarnings: "Import Warnings",
-      mode: { label: "Transcript review mode", audio: "Audio & Diarization Workbench", classic: "Classic Text Editor" },
+      asrCaution: "This transcript was made automatically and can be wrong. Check the words, the times and who is speaking before you use it.",
+      importWarnings: "Import notes",
+      mode: { label: "How to work on the transcript", audio: "Listen and assign speakers", classic: "Edit line by line", chat: "CHAT text" },
       attestedNote: "This transcript is attested.",
       notAttestedNote: "When the speakers and wording are correct, save the transcript, run QA and attest it.",
       continueToAttestation: "Continue to save, QA and attestation",
@@ -167,7 +167,7 @@ export const sessionMessages = defineMessages<SessionCopy>({
       connection: { backend: "เชื่อมต่อแล้ว", local_draft: "ร่างในเครื่อง", unavailable: "ออฟไลน์" },
       consent: (status) => consentTh[status.toLowerCase()] ?? `ความยินยอม: ${status}`,
     },
-    guide: { label: "สิ่งที่ต้องทำต่อไป", eyebrow: "ขั้นตอนถัดไป" },
+    guide: { label: "สิ่งที่ต้องทำต่อไป" },
     progress: {
       title: "ความคืบหน้าของเซสชัน",
       steps: { intake: "เพิ่มบทถอดเสียงแล้ว", transcript: "รับรองบทถอดเสียงแล้ว", findings: "สกัดค่าทางภาษาแล้ว", report: "ลงนามรายงานแล้ว" },
@@ -194,9 +194,9 @@ export const sessionMessages = defineMessages<SessionCopy>({
         analyze: "วิเคราะห์บทถอดเสียงนี้",
         attesting: "กำลังบันทึกการรับรอง...",
       },
-      asrCaution: "การถอดเสียงอัตโนมัติยังอยู่ในขั้นทดลองและอาจคลาดเคลื่อน ตรวจถ้อยคำ เวลา และรหัสผู้พูดก่อนรับรอง",
-      importWarnings: "คำเตือนจากการนำเข้า",
-      mode: { label: "โหมดทบทวนบทถอดเสียง", audio: "ทบทวนพร้อมเสียงและการแยกผู้พูด", classic: "แก้ไขแบบข้อความ" },
+      asrCaution: "บทถอดเสียงนี้ทำโดยอัตโนมัติและอาจผิดได้ ตรวจถ้อยคำ เวลา และผู้พูดก่อนนำไปใช้",
+      importWarnings: "หมายเหตุจากการนำเข้า",
+      mode: { label: "วิธีทำงานกับบทถอดเสียง", audio: "ฟังและระบุผู้พูด", classic: "แก้ทีละบรรทัด", chat: "ข้อความ CHAT" },
       attestedNote: "บทถอดเสียงนี้รับรองแล้ว",
       notAttestedNote: "เมื่อผู้พูดและถ้อยคำถูกต้องแล้ว ให้บันทึก ตรวจคุณภาพ แล้วรับรองบทถอดเสียง",
       continueToAttestation: "ไปบันทึก ตรวจคุณภาพ และรับรอง",

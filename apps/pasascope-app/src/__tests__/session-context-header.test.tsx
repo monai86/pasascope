@@ -84,7 +84,6 @@ describe("SessionContextHeader", () => {
     expect(screen.getByRole("heading", { level: 1, name: "Review Transcript" })).toBeInTheDocument();
     expect(screen.queryByText("Clinical decision-support prototype")).not.toBeInTheDocument();
     expect(screen.getByRole("link", { name: "Transcript" })).toHaveAttribute("aria-current", "page");
-    expect(screen.getByRole("link", { name: "Case C-18" })).toHaveAttribute("href", "/cases/case-compact");
   });
 });
 

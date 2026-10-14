@@ -1,6 +1,6 @@
 "use client";
 
-import { ArrowRight, MessageCircle } from "lucide-react";
+import { ArrowRight } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import { sessionMessages } from "@/features/sessions/session.messages";
@@ -54,16 +54,13 @@ export function SessionGuide({
     <section
       aria-label={t.label}
       data-testid={testId}
-      className="overflow-hidden rounded-panel border border-brand-border bg-brand-soft"
+      className="overflow-hidden rounded-panel border border-brand-border/70 bg-brand-soft"
     >
-      <div className="flex gap-3 p-3 sm:p-5">
-        <span aria-hidden="true" className="mt-0.5 grid h-10 w-10 shrink-0 place-items-center rounded-control bg-surface text-brand">
-          <MessageCircle size={18} />
-        </span>
-        <div className="min-w-0 flex-1">
-          <p className="text-xs font-semibold uppercase tracking-[0.08em] text-brand-strong">{t.eyebrow}</p>
-          <p className="mt-1 text-sm font-medium leading-5 text-ink sm:mt-1.5 sm:text-base sm:leading-6">{prompt}</p>
-          <div className={hasActions ? "mt-3 flex flex-wrap items-center gap-2" : "hidden"}>
+      {/* The next step in a sentence, with the button that takes it beside it. */}
+      <div className="px-4 py-3.5 sm:px-5">
+        <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between sm:gap-6">
+          <p className="min-w-0 text-[15px] font-medium leading-6 text-ink">{prompt}</p>
+          <div className={hasActions ? "flex shrink-0 flex-wrap items-center gap-2" : "hidden"}>
             {primaryAction && primaryAction.href ? (
               <Button
                 href={primaryAction.href}
@@ -72,8 +69,10 @@ export function SessionGuide({
                 disabled={primaryAction.disabled}
                 data-testid={primaryTestId}
               >
-                {primaryAction.label}
-                <ArrowRight size={16} aria-hidden="true" />
+                <span className="inline-flex items-center gap-2 whitespace-nowrap">
+                  {primaryAction.label}
+                  <ArrowRight size={16} aria-hidden="true" />
+                </span>
               </Button>
             ) : primaryAction ? (
               <Button
@@ -83,8 +82,10 @@ export function SessionGuide({
                 aria-describedby={primaryAction.disabled && primaryAction.reason ? reasonId : undefined}
                 data-testid={primaryTestId}
               >
-                {primaryAction.label}
-                <ArrowRight size={16} aria-hidden="true" />
+                <span className="inline-flex items-center gap-2 whitespace-nowrap">
+                  {primaryAction.label}
+                  <ArrowRight size={16} aria-hidden="true" />
+                </span>
               </Button>
             ) : null}
             {quickReplies.map((reply) =>
@@ -99,6 +100,7 @@ export function SessionGuide({
               ),
             )}
           </div>
+        </div>
           {primaryAction && primaryAction.disabled && primaryAction.reason ? (
             <p
               id={reasonId}
@@ -109,7 +111,6 @@ export function SessionGuide({
               {primaryAction.reason}
             </p>
           ) : null}
-        </div>
       </div>
     </section>
   );

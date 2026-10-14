@@ -130,16 +130,6 @@ export function getLineConfidence(line: TranscriptLine) {
   return { label: "High", className: "bg-[color:var(--color-success-bg)] text-[color:var(--color-success-text)]" };
 }
 
-export function buildWaveformHeights(lines: TranscriptLine[]) {
-  const base = Array.from({ length: 24 }, (_, index) => {
-    const line = lines[index % Math.max(lines.length, 1)];
-    const textSize = line?.text?.trim().length ?? 6;
-    const derived = 18 + ((textSize + index * 7) % 52);
-    return Math.max(14, Math.min(78, derived));
-  });
-  return base;
-}
-
 export function parseTimestampRange(value: string): Pick<TranscriptLine, "startMs" | "endMs"> | null {
   const parts = value.split(/\s*[–-]\s*/);
   if (parts.length !== 2) return null;

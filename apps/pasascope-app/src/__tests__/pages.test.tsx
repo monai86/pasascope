@@ -521,7 +521,7 @@ describe("pasascope pages", () => {
     await waitFor(() => {
       expect(screen.getByText("Draft transcript — therapist review required.")).toBeInTheDocument();
     });
-    expect(screen.getByText("Experimental ASR can be inaccurate. Verify wording, timestamps, and speaker labels before attestation.")).toBeInTheDocument();
+    expect(screen.getByText(/This transcript was made automatically and can be wrong/)).toBeInTheDocument();
     expect(screen.getByRole("button", { name: "Generate report draft" })).toBeDisabled();
   });
 

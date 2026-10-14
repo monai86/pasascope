@@ -72,43 +72,19 @@ export function SessionContextHeader({
   ];
 
   if (density === "compact") {
+    // A working page: the way back, what this page is, and which case it is for.
+    // The rest of the session's facts live on the conversation and the case.
+    const consent = context.consentStatus?.trim() ? h.consent(context.consentStatus.trim()) : null;
     return (
-      <section aria-label={h.contextLabel} data-density="compact">
-        <BackToConversation context={context} />
-        <Breadcrumbs items={breadcrumbs} />
-        <div className="grid gap-2 rounded-panel border border-line bg-surface px-3 py-2 sm:gap-3 sm:px-4 sm:py-3 xl:grid-cols-[minmax(14rem,0.7fr)_minmax(0,1.3fr)] xl:items-center">
-          <div className="min-w-0">
-            <h1 className="text-lg font-semibold leading-tight text-ink sm:text-xl">{title}</h1>
-            <p className="sr-only mt-1 text-sm leading-5 text-ink-muted sm:not-sr-only sm:block">{description}</p>
-          </div>
-          <dl className="hidden min-w-0 gap-x-4 gap-y-2 md:grid md:grid-cols-2 lg:grid-cols-3 xl:flex xl:flex-wrap xl:justify-end">
-            {details.map((detail) => (
-              <div key={detail.label} className="min-w-0 text-sm">
-                <dt className="inline text-xs font-semibold uppercase tracking-[0.08em] text-ink-subtle">
-                  {detail.label}
-                  <span aria-hidden="true"> · </span>
-                </dt>
-                <dd className="inline break-words font-medium text-ink">{detail.value}</dd>
-              </div>
-            ))}
-          </dl>
-          <details className="responsive-details min-w-0 rounded-card border border-line md:hidden">
-            <summary className="flex min-h-11 cursor-pointer items-center justify-between gap-3 px-3 py-2 marker:content-none">
-              <span className="flex min-w-0 items-baseline gap-1 overflow-hidden text-sm font-medium text-ink">
-                <span className="shrink-0 text-xs font-semibold uppercase tracking-[0.08em] text-ink-subtle">{h.fields.case}</span>
-                <span className="min-w-0 truncate">{displayValue(context.caseLabel)}</span>
-              </span>
-              <span className="shrink-0 text-xs font-semibold text-brand-strong">{h.details}</span>
-            </summary>
-            <dl className="grid grid-cols-2 gap-3 border-t border-line p-3">
-              {details.map((detail) => (
-                <div key={detail.label} className="min-w-0 text-sm">
-                  <dt className="text-xs font-semibold uppercase tracking-[0.08em] text-ink-subtle">{detail.label}</dt>
-                  <dd className="mt-0.5 break-words font-medium text-ink">{detail.value}</dd>
-                </div>
-              ))}
-            </dl>
-          </details>
+      <section aria-label={h.contextLabel} data-density="compact" className="space-y-3">
+        <div>
+          <BackToConversation context={context} />
+          <h1 className="font-display text-2xl font-semibold leading-tight text-ink sm:text-[1.75rem]">{title}</h1>
+          <p className="mt-1 text-sm leading-6 text-ink-muted">
+            <span>{displayValue(context.caseLabel)}</span>
+            {consent ? <span> · {consent}</span> : null}
+            <span className="sr-only"> {description}</span>
+          </p>
         </div>
         <SessionViewNavigation context={context} compact />
       </section>

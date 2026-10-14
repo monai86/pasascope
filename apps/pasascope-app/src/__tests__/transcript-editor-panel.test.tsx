@@ -358,20 +358,19 @@ describe("TranscriptEditorPanel", () => {
       />
     );
 
-    const filter = screen.getByRole("combobox", { name: "Transcript line filter" });
+    const filter = screen.getByRole("combobox", { name: "Show lines" });
     expect(filter).toHaveValue("all");
-    expect(within(filter).getByRole("option", { name: /All Lines/ })).toBeInTheDocument();
-    expect(within(filter).getByRole("option", { name: /Needs Review/ })).toBeInTheDocument();
-    expect(within(filter).getByRole("option", { name: /Low Confidence/ })).toBeInTheDocument();
-    expect(within(filter).getByRole("option", { name: /Missing Speaker/ })).toBeInTheDocument();
-    expect(within(filter).getByRole("option", { name: /Possible Error/ })).toBeInTheDocument();
+    expect(within(filter).getByRole("option", { name: /All lines/ })).toBeInTheDocument();
+    expect(within(filter).getByRole("option", { name: /Needs a look/ })).toBeInTheDocument();
+    expect(within(filter).getByRole("option", { name: /Low confidence/ })).toBeInTheDocument();
+    expect(within(filter).getByRole("option", { name: /No speaker/ })).toBeInTheDocument();
+    expect(within(filter).getByRole("option", { name: /Possible error/ })).toBeInTheDocument();
     expect(within(filter).getByRole("option", { name: /Notes/ })).toBeInTheDocument();
 
+    // One header names the columns; a line that needs a look carries one mark saying why.
     expect(screen.getAllByText("Time").length).toBeGreaterThan(0);
     expect(screen.getAllByText("Speaker").length).toBeGreaterThan(0);
-    expect(screen.getAllByText("Utterance").length).toBeGreaterThan(0);
-    expect(screen.getAllByText("QA").length).toBeGreaterThan(0);
-    expect(screen.getAllByText("Confidence").length).toBeGreaterThan(0);
+    expect(screen.getAllByText("What was said").length).toBeGreaterThan(0);
     expect(screen.queryByRole("button", { name: /Mark line/ })).not.toBeInTheDocument();
 
     fireEvent.change(filter, { target: { value: "missing_speaker" } });
@@ -604,10 +603,10 @@ describe("TranscriptEditorPanel", () => {
 
     fireEvent.click(screen.getByRole("button", { name: "QA" }));
     expect(screen.getByRole("button", { name: "QA" })).toHaveAttribute("aria-pressed", "true");
-    fireEvent.click(screen.getByRole("button", { name: "Hide inspector" }));
+    fireEvent.click(screen.getByRole("button", { name: "Hide audio and QA" }));
     expect(screen.getByTestId("transcript-audio-inspector")).toHaveClass("hidden");
-    fireEvent.click(screen.getByRole("button", { name: "Show Audio and QA" }));
-    expect(screen.getByRole("button", { name: "Hide inspector" })).toBeInTheDocument();
+    fireEvent.click(screen.getByRole("button", { name: "Show audio and QA" }));
+    expect(screen.getByRole("button", { name: "Hide audio and QA" })).toBeInTheDocument();
   });
 
   it("announces save state changes through a polite live region", () => {
