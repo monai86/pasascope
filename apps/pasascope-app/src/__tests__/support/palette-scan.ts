@@ -10,7 +10,8 @@ import { resolve } from "node:path";
 const TOKENS_FILE = "src/design-system/tokens.css";
 
 // Custom properties declared at runtime rather than in tokens.css.
-const RUNTIME_PROPERTIES = new Set(["--font-noto-thai", "--font-noto", "--font-prompt"]);
+// Fonts are set by next/font; --progress is set inline by the recording's position slider.
+const RUNTIME_PROPERTIES = new Set(["--font-noto-thai", "--font-noto", "--font-prompt", "--progress"]);
 
 // Another company's logo keeps its own colours. The "Continue with Google"
 // button draws Google's four-colour G, one segment of which is green; that is

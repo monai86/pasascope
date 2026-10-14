@@ -25,7 +25,7 @@ export type SpeakerSurface = "navy" | "light";
 export function speakerRole(speaker: string): SpeakerRole {
   const code = speaker.trim().replace(/^\*/, "").toUpperCase();
   if (code === "CHI") return "child";
-  if (code === "INV") return "clinician";
+  if (code === "INV" || code === "THER") return "clinician";
   return "other";
 }
 

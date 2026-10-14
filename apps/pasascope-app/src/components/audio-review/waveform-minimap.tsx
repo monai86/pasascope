@@ -1,6 +1,8 @@
 "use client";
 
-import React, { useRef, useEffect, useCallback } from "react";
+import React, { useCallback, useEffect, useRef } from "react";
+
+import { prepareCanvas, useElementSize } from "@/components/audio-review/use-element-size";
 import { withAlpha, WORKBENCH_CANVAS } from "@/design-system/dataviz";
 
 export interface WaveformMinimapProps {
@@ -11,9 +13,16 @@ export interface WaveformMinimapProps {
   peaks?: Int8Array | null;
   onViewportChange?: (startMs: number, endMs: number) => void;
   onSeek?: (timeMs: number) => void;
+  label?: string;
   className?: string;
 }
 
+const TAP_SLOP_PX = 8;
+
+/**
+ * The whole recording at a glance, with the close-up's window outlined. A tap
+ * jumps there; a sideways drag scrubs. A vertical swipe is left to the page.
+ */
 export function WaveformMinimap({
   durationMs,
   currentTimeMs,
@@ -22,49 +31,33 @@ export function WaveformMinimap({
   peaks,
   onViewportChange,
   onSeek,
+  label = "Whole recording",
   className = "",
 }: WaveformMinimapProps) {
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
   const containerRef = useRef<HTMLDivElement | null>(null);
-  const isDraggingRef = useRef(false);
+  const pressRef = useRef<{ pointerId: number; x: number; y: number; scrubbing: boolean } | null>(null);
+  const { width, height } = useElementSize(containerRef);
 
-  // Draw full-duration overview waveform
   const draw = useCallback(() => {
     const canvas = canvasRef.current;
-    if (!canvas) return;
-    let ctx: CanvasRenderingContext2D | null = null;
-    try {
-      ctx = canvas.getContext("2d");
-    } catch {
-      return;
-    }
+    if (!canvas || width === 0 || height === 0) return;
+    const ctx = prepareCanvas(canvas, width, height);
     if (!ctx) return;
-
-    const width = canvas.width;
-    const height = canvas.height;
     const midY = height / 2;
 
     ctx.clearRect(0, 0, width, height);
-
-    // Background
     ctx.fillStyle = WORKBENCH_CANVAS.background;
     ctx.fillRect(0, 0, width, height);
 
-    // Draw peaks if available, else synthetic fallback envelope
     if (peaks && peaks.length > 0) {
-      const numPoints = peaks.length;
-      const step = numPoints / width;
-
       ctx.fillStyle = WORKBENCH_CANVAS.peaks;
-      ctx.beginPath();
-      for (let x = 0; x < width; x++) {
-        const peakIdx = Math.floor(x * step);
-        const val = Math.abs(peaks[peakIdx] || 0) / 128.0;
-        const barHeight = Math.max(1, val * (height / 2 - 2));
-        ctx.fillRect(x, midY - barHeight, 1, barHeight * 2);
+      for (let x = 0; x < width; x += 2) {
+        const value = Math.abs(peaks[Math.floor((x / width) * peaks.length)] || 0) / 128;
+        const bar = Math.max(0.75, value * (height / 2 - 3));
+        ctx.fillRect(x, midY - bar, 1.25, bar * 2);
       }
     } else {
-      // Default placeholder baseline
       ctx.strokeStyle = WORKBENCH_CANVAS.grid;
       ctx.lineWidth = 1;
       ctx.beginPath();
@@ -74,24 +67,15 @@ export function WaveformMinimap({
     }
 
     if (durationMs > 0) {
-      // Viewport window overlay
       const startX = (viewportStartMs / durationMs) * width;
       const endX = (viewportEndMs / durationMs) * width;
-      const vpWidth = Math.max(8, endX - startX);
-
-      // Shaded non-active areas
-      ctx.fillStyle = withAlpha(WORKBENCH_CANVAS.background, 0.65);
+      ctx.fillStyle = withAlpha(WORKBENCH_CANVAS.background, 0.6);
       ctx.fillRect(0, 0, startX, height);
       ctx.fillRect(endX, 0, width - endX, height);
-
-      // Viewport highlight box
-      ctx.strokeStyle = WORKBENCH_CANVAS.viewport;
+      ctx.strokeStyle = withAlpha(WORKBENCH_CANVAS.viewport, 0.85);
       ctx.lineWidth = 1.5;
-      ctx.strokeRect(startX, 0.5, vpWidth, height - 1);
-      ctx.fillStyle = withAlpha(WORKBENCH_CANVAS.peaks, 0.12);
-      ctx.fillRect(startX, 1, vpWidth, height - 2);
+      ctx.strokeRect(startX + 0.75, 0.75, Math.max(6, endX - startX) - 1.5, height - 1.5);
 
-      // Playhead line
       const playheadX = (currentTimeMs / durationMs) * width;
       ctx.strokeStyle = WORKBENCH_CANVAS.playhead;
       ctx.lineWidth = 2;
@@ -100,57 +84,56 @@ export function WaveformMinimap({
       ctx.lineTo(playheadX, height);
       ctx.stroke();
     }
-  }, [durationMs, currentTimeMs, viewportStartMs, viewportEndMs, peaks]);
+  }, [durationMs, currentTimeMs, viewportStartMs, viewportEndMs, peaks, width, height]);
 
   useEffect(() => {
     draw();
   }, [draw]);
 
-  const handlePointerDown = (e: React.PointerEvent<HTMLDivElement>) => {
+  const msAt = (clientX: number) => {
+    const rect = containerRef.current!.getBoundingClientRect();
+    return Math.max(0, Math.min(1, (clientX - rect.left) / Math.max(1, rect.width))) * durationMs;
+  };
+
+  const jumpTo = (targetMs: number) => {
+    onSeek?.(targetMs);
+    if (!onViewportChange) return;
+    const windowMs = Math.max(1000, viewportEndMs - viewportStartMs);
+    let start = Math.max(0, targetMs - windowMs / 2);
+    let end = start + windowMs;
+    if (end > durationMs) {
+      end = durationMs;
+      start = Math.max(0, durationMs - windowMs);
+    }
+    onViewportChange(start, end);
+  };
+
+  const handlePointerDown = (event: React.PointerEvent<HTMLDivElement>) => {
     if (!containerRef.current || durationMs <= 0) return;
-    const rect = containerRef.current.getBoundingClientRect();
-    const clickX = e.clientX - rect.left;
-    const clickRatio = Math.max(0, Math.min(1, clickX / rect.width));
-    const targetMs = clickRatio * durationMs;
-
-    isDraggingRef.current = true;
-    (e.target as HTMLElement).setPointerCapture(e.pointerId);
-
-    if (onSeek) onSeek(targetMs);
-
-    // Center viewport on click
-    if (onViewportChange) {
-      const windowDuration = Math.max(10000, viewportEndMs - viewportStartMs);
-      const halfWindow = windowDuration / 2;
-      let newStart = targetMs - halfWindow;
-      let newEnd = targetMs + halfWindow;
-      if (newStart < 0) {
-        newStart = 0;
-        newEnd = Math.min(durationMs, windowDuration);
-      } else if (newEnd > durationMs) {
-        newEnd = durationMs;
-        newStart = Math.max(0, durationMs - windowDuration);
+    pressRef.current = { pointerId: event.pointerId, x: event.clientX, y: event.clientY, scrubbing: event.pointerType === "mouse" };
+    // A mouse press seeks at once; a touch waits to see whether it is a tap, a scrub or a scroll.
+    if (event.pointerType === "mouse") {
+      try {
+        event.currentTarget.setPointerCapture(event.pointerId);
+      } catch {
+        // Not needed for a click.
       }
-      onViewportChange(newStart, newEnd);
+      jumpTo(msAt(event.clientX));
     }
   };
 
-  const handlePointerMove = (e: React.PointerEvent<HTMLDivElement>) => {
-    if (!isDraggingRef.current || !containerRef.current || durationMs <= 0) return;
-    const rect = containerRef.current.getBoundingClientRect();
-    const clickX = e.clientX - rect.left;
-    const clickRatio = Math.max(0, Math.min(1, clickX / rect.width));
-    const targetMs = clickRatio * durationMs;
-    if (onSeek) onSeek(targetMs);
+  const handlePointerMove = (event: React.PointerEvent<HTMLDivElement>) => {
+    const press = pressRef.current;
+    if (!press || press.pointerId !== event.pointerId) return;
+    if (!press.scrubbing && Math.abs(event.clientX - press.x) > TAP_SLOP_PX) press.scrubbing = true;
+    if (press.scrubbing) onSeek?.(msAt(event.clientX));
   };
 
-  const handlePointerUp = (e: React.PointerEvent<HTMLDivElement>) => {
-    isDraggingRef.current = false;
-    try {
-      (e.target as HTMLElement).releasePointerCapture(e.pointerId);
-    } catch {
-      // Ignore pointer capture release error if already released
-    }
+  const handlePointerUp = (event: React.PointerEvent<HTMLDivElement>) => {
+    const press = pressRef.current;
+    pressRef.current = null;
+    if (!press || press.pointerId !== event.pointerId || event.pointerType === "mouse") return;
+    if (press.scrubbing || Math.hypot(event.clientX - press.x, event.clientY - press.y) < TAP_SLOP_PX) jumpTo(msAt(event.clientX));
   };
 
   return (
@@ -159,17 +142,15 @@ export function WaveformMinimap({
       onPointerDown={handlePointerDown}
       onPointerMove={handlePointerMove}
       onPointerUp={handlePointerUp}
-      className={`relative h-12 w-full cursor-crosshair overflow-hidden rounded-control border border-navy-line bg-navy select-none ${className}`}
+      onPointerCancel={() => {
+        pressRef.current = null;
+      }}
+      className={`relative h-11 w-full cursor-pointer touch-pan-y select-none overflow-hidden rounded-control bg-navy ${className}`}
       data-testid="waveform-minimap"
-      role="region"
-      aria-label="Overview waveform minimap"
+      role="img"
+      aria-label={label}
     >
-      <canvas
-        ref={canvasRef}
-        width={800}
-        height={48}
-        className="h-full w-full block"
-      />
+      <canvas ref={canvasRef} className="block h-full w-full" />
     </div>
   );
 }

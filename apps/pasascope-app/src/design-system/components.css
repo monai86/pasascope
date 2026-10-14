@@ -223,6 +223,65 @@
     animation: chat-rise 280ms cubic-bezier(0.16, 1, 0.3, 1) both;
   }
 
+  /* The recording's position slider on the navy player: a thin track that
+     fills to the playhead, in a box tall enough to grab with a thumb. */
+  .scrubber {
+    -webkit-appearance: none;
+    appearance: none;
+    height: 2.75rem;
+    width: 100%;
+    background: transparent;
+    cursor: pointer;
+    touch-action: pan-y;
+  }
+  .scrubber:focus-visible {
+    outline: none;
+  }
+  .scrubber::-webkit-slider-runnable-track {
+    height: 4px;
+    border-radius: 9999px;
+    background: linear-gradient(to right, var(--color-sky) var(--progress, 0%), var(--color-navy-line) var(--progress, 0%));
+  }
+  .scrubber::-moz-range-track {
+    height: 4px;
+    border-radius: 9999px;
+    background: var(--color-navy-line);
+  }
+  .scrubber::-moz-range-progress {
+    height: 4px;
+    border-radius: 9999px;
+    background: var(--color-sky);
+  }
+  .scrubber::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    appearance: none;
+    height: 16px;
+    width: 16px;
+    margin-top: -6px;
+    border-radius: 9999px;
+    background: #fff;
+    box-shadow: 0 1px 3px rgb(0 0 0 / 0.35);
+    transition: transform 120ms ease-out;
+  }
+  .scrubber::-moz-range-thumb {
+    height: 16px;
+    width: 16px;
+    border: 0;
+    border-radius: 9999px;
+    background: #fff;
+    box-shadow: 0 1px 3px rgb(0 0 0 / 0.35);
+  }
+  .scrubber:hover::-webkit-slider-thumb,
+  .scrubber:active::-webkit-slider-thumb {
+    transform: scale(1.2);
+  }
+  .scrubber:focus-visible::-webkit-slider-thumb {
+    box-shadow: 0 0 0 4px var(--color-sky);
+  }
+  .scrubber:focus-visible::-moz-range-thumb {
+    box-shadow: 0 0 0 4px var(--color-sky);
+  }
+
   @keyframes recorder-breathe {
     0%,
     100% {

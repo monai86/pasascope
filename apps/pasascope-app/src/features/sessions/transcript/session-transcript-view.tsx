@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { AlertTriangle, AudioLines, Check, CheckCircle2, FileCode, FileText } from "lucide-react";
 
 import { AudioReviewWorkbench } from "@/components/audio-review/audio-review-workbench";
@@ -66,6 +66,15 @@ export function SessionTranscriptView({
   const reportBlockedReason = getReviewReportBlockedReason(state, t.readiness.blocked, openGates);
   // One switch for the ways to work on the transcript: listening along, line by line, or as CHAT text.
   const [workView, setWorkView] = useState<"audio" | "table" | "talkbank">(audioUrl ? "audio" : "table");
+  // The recording often arrives after the transcript; open on it then, unless a view was already chosen.
+  const [viewChosen, setViewChosen] = useState(false);
+  useEffect(() => {
+    if (audioUrl && !viewChosen) setWorkView("audio");
+  }, [audioUrl, viewChosen]);
+  const chooseView = (view: "audio" | "table" | "talkbank") => {
+    setViewChosen(true);
+    setWorkView(view);
+  };
   const guide = getTranscriptGuide(state, t.guide, {
     busy,
     findingsHref: resolveSessionHref("findings", sessionContext.sessionId),
@@ -118,14 +127,16 @@ export function SessionTranscriptView({
       ) : null}
       <div className="space-y-5">
         <section className="min-w-0 space-y-4">
+          {/* Spans the width on a phone, with short names so each fits on one line. */}
           <SegmentedControl<"audio" | "table" | "talkbank">
             label={t.mode.label}
             value={workView}
-            onChange={setWorkView}
+            onChange={chooseView}
+            className={`grid w-full sm:inline-flex sm:w-auto ${audioUrl ? "grid-cols-3" : "grid-cols-2"}`}
             options={[
-              ...(audioUrl ? [{ value: "audio" as const, label: t.mode.audio, icon: AudioLines }] : []),
-              { value: "table" as const, label: t.mode.classic, icon: FileText },
-              { value: "talkbank" as const, label: t.mode.chat, icon: FileCode },
+              ...(audioUrl ? [{ value: "audio" as const, label: t.mode.audio, shortLabel: t.mode.audioShort, icon: AudioLines }] : []),
+              { value: "table" as const, label: t.mode.classic, shortLabel: t.mode.classicShort, icon: FileText },
+              { value: "talkbank" as const, label: t.mode.chat, shortLabel: t.mode.chatShort, icon: FileCode },
             ]}
           />
 
@@ -139,6 +150,7 @@ export function SessionTranscriptView({
                 isAttested={state.transcriptAttested}
                 onAttest={onAttest}
                 onSaveDraft={onSaveDraft}
+                saveStatus={state.transcriptSaveStatus}
                 isBusy={busy}
                 findingsStale={Boolean(state.featuresExtracted && state.transcriptSaveStatus === "unsaved")}
               />
@@ -150,7 +162,7 @@ export function SessionTranscriptView({
                     ? t.attestedNote
                     : t.notAttestedNote}
                 </p>
-                <Button variant="secondary" data-testid="continue-to-attestation-button" onClick={() => setWorkView("table")} className="shrink-0">
+                <Button variant="secondary" data-testid="continue-to-attestation-button" onClick={() => chooseView("table")} className="shrink-0">
                   {t.continueToAttestation}
                 </Button>
               </div>

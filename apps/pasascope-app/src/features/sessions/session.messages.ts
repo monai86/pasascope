@@ -48,7 +48,7 @@ type SessionCopy = {
     };
     asrCaution: string;
     importWarnings: string;
-    mode: { label: string; audio: string; classic: string; chat: string };
+    mode: { label: string; audio: string; classic: string; chat: string; audioShort: string; classicShort: string; chatShort: string };
     attestedNote: string;
     notAttestedNote: string;
     continueToAttestation: string;
@@ -121,7 +121,7 @@ export const sessionMessages = defineMessages<SessionCopy>({
       },
       asrCaution: "This transcript was made automatically and can be wrong. Check the words, the times and who is speaking before you use it.",
       importWarnings: "Import notes",
-      mode: { label: "How to work on the transcript", audio: "Listen and assign speakers", classic: "Edit line by line", chat: "CHAT text" },
+      mode: { label: "How to work on the transcript", audio: "Listen and assign speakers", classic: "Edit line by line", chat: "CHAT text", audioShort: "Listen", classicShort: "Edit lines", chatShort: "CHAT" },
       attestedNote: "This transcript is attested.",
       notAttestedNote: "When the speakers and wording are correct, save the transcript, run QA and attest it.",
       continueToAttestation: "Continue to save, QA and attestation",
@@ -196,7 +196,7 @@ export const sessionMessages = defineMessages<SessionCopy>({
       },
       asrCaution: "บทถอดเสียงนี้ทำโดยอัตโนมัติและอาจผิดได้ ตรวจถ้อยคำ เวลา และผู้พูดก่อนนำไปใช้",
       importWarnings: "หมายเหตุจากการนำเข้า",
-      mode: { label: "วิธีทำงานกับบทถอดเสียง", audio: "ฟังและระบุผู้พูด", classic: "แก้ทีละบรรทัด", chat: "ข้อความ CHAT" },
+      mode: { label: "วิธีทำงานกับบทถอดเสียง", audio: "ฟังและระบุผู้พูด", classic: "แก้ทีละบรรทัด", chat: "ข้อความ CHAT", audioShort: "ฟังเสียง", classicShort: "แก้ข้อความ", chatShort: "CHAT" },
       attestedNote: "บทถอดเสียงนี้รับรองแล้ว",
       notAttestedNote: "เมื่อผู้พูดและถ้อยคำถูกต้องแล้ว ให้บันทึก ตรวจคุณภาพ แล้วรับรองบทถอดเสียง",
       continueToAttestation: "ไปบันทึก ตรวจคุณภาพ และรับรอง",

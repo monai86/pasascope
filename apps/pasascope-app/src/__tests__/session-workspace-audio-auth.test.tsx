@@ -127,7 +127,7 @@ describe("SessionWorkspaceClient audio auth path", () => {
 
     render(<SessionWorkspaceClient sessionId="SESSION-123" view="transcript" />);
 
-    const audio = await screen.findByLabelText("Workspace audio playback") as HTMLAudioElement;
+    const audio = await screen.findByLabelText("Session recording") as HTMLAudioElement;
 
     await waitFor(() => {
       expect(audio).toHaveAttribute("src", "blob:protected-audio");

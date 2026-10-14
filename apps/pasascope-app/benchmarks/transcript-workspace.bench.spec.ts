@@ -107,7 +107,7 @@ test("transcript editor stays responsive at 100, 500, and 1,000 lines", async ({
       });
       await expect(secondLine).toHaveAttribute("aria-selected", "true");
 
-      const reviewFilter = page.getByRole("combobox", { name: "Transcript line filter" });
+      const reviewFilter = page.getByRole("combobox", { name: "Show lines" });
       await expect(reviewFilter).toBeVisible({ timeout: 10_000 });
       const filterMs = await reviewFilter.evaluate(async (element) => {
         const started = performance.now();

@@ -8,6 +8,8 @@ export type SegmentedOption<T extends string> = {
   icon?: LucideIcon;
   /** Overrides the visible label for assistive technology. */
   ariaLabel?: string;
+  /** Shown instead of the label below `sm`, where a long name would wrap. */
+  shortLabel?: string;
 };
 
 /**
@@ -48,8 +50,15 @@ export function SegmentedControl<T extends string>({
               selected ? "bg-surface text-action-quiet-text shadow-soft" : "text-ink-muted hover:text-ink",
             )}
           >
-            {Icon ? <Icon size={16} aria-hidden="true" /> : null}
-            {option.label}
+            {Icon ? <Icon size={16} aria-hidden="true" className="shrink-0" /> : null}
+            {option.shortLabel ? (
+              <>
+                <span aria-hidden="true" className="whitespace-nowrap sm:hidden">{option.shortLabel}</span>
+                <span className="max-sm:sr-only">{option.label}</span>
+              </>
+            ) : (
+              option.label
+            )}
           </button>
         );
       })}

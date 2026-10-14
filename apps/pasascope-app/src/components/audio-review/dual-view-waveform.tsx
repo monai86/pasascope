@@ -1,10 +1,14 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
-import { Gauge, Radio, Clock, ShieldCheck } from "lucide-react";
-import { WaveformMinimap } from "./waveform-minimap";
-import { WaveformDetailCanvas, type WaveformSegment } from "./waveform-detail-canvas";
-import { SPEAKER_COLOURS, SPEAKER_ROLE_LABELS, type SpeakerRole } from "@/design-system/dataviz";
+import React, { useEffect, useRef, useState } from "react";
+import { Clock, Radio, ShieldCheck } from "lucide-react";
+
+import { audioReviewMessages } from "@/components/audio-review/audio-review.messages";
+import { useElementSize } from "@/components/audio-review/use-element-size";
+import { WaveformDetailCanvas, type WaveformSegment } from "@/components/audio-review/waveform-detail-canvas";
+import { WaveformMinimap } from "@/components/audio-review/waveform-minimap";
+import { SPEAKER_COLOURS, type SpeakerRole } from "@/design-system/dataviz";
+import { useMessages } from "@/i18n/locale-provider";
 
 export interface DualViewWaveformProps {
   currentTimeMs: number;
@@ -19,6 +23,19 @@ export interface DualViewWaveformProps {
   className?: string;
 }
 
+const SPEAKER_ROLES: SpeakerRole[] = ["child", "clinician", "other"];
+
+/** How much of the recording the close-up shows: about 20 ms a pixel, 8 to 20 seconds. */
+function closeUpWindowMs(widthPx: number): number {
+  if (widthPx <= 0) return 20_000;
+  return Math.min(20_000, Math.max(8_000, Math.round((widthPx * 20) / 1000) * 1000));
+}
+
+/**
+ * The recording drawn twice in one panel: the whole file as an overview, and
+ * a close-up that follows the playhead. The close-up spans fewer seconds on a
+ * narrow screen, so a line is still wide enough to see and to grab.
+ */
 export function DualViewWaveform({
   currentTimeMs,
   durationMs,
@@ -31,108 +48,82 @@ export function DualViewWaveform({
   onSegmentBoundaryChange,
   className = "",
 }: DualViewWaveformProps) {
-  // Zoom window duration (e.g. 20 seconds = 20,000 ms)
-  const DETAIL_WINDOW_MS = 20000;
+  const t = useMessages(audioReviewMessages).waveform;
+  const panelRef = useRef<HTMLDivElement | null>(null);
+  const { width } = useElementSize(panelRef);
+  const windowMs = closeUpWindowMs(width);
 
-  // Viewport window state
   const [viewportStartMs, setViewportStartMs] = useState(0);
-  const [viewportEndMs, setViewportEndMs] = useState(Math.min(durationMs || DETAIL_WINDOW_MS, DETAIL_WINDOW_MS));
+  const viewportEndMs = Math.min(durationMs > 0 ? durationMs : windowMs, viewportStartMs + windowMs);
 
-  // Automatically keep viewport centered around currentTimeMs when playing outside window
+  // Keep the playhead inside the close-up while it plays.
   useEffect(() => {
-    if (currentTimeMs < viewportStartMs || currentTimeMs > viewportEndMs) {
-      const half = DETAIL_WINDOW_MS / 2;
-      let start = Math.max(0, currentTimeMs - half);
-      let end = start + DETAIL_WINDOW_MS;
-      if (durationMs > 0 && end > durationMs) {
-        end = durationMs;
-        start = Math.max(0, durationMs - DETAIL_WINDOW_MS);
-      }
-      setViewportStartMs(start);
-      setViewportEndMs(end);
-    }
-  }, [currentTimeMs, viewportStartMs, viewportEndMs, durationMs]);
+    if (currentTimeMs >= viewportStartMs && currentTimeMs <= viewportEndMs) return;
+    let start = Math.max(0, currentTimeMs - windowMs / 2);
+    if (durationMs > 0 && start + windowMs > durationMs) start = Math.max(0, durationMs - windowMs);
+    setViewportStartMs(start);
+  }, [currentTimeMs, viewportStartMs, viewportEndMs, durationMs, windowMs]);
 
-  const handleViewportChange = (newStart: number, newEnd: number) => {
-    setViewportStartMs(newStart);
-    setViewportEndMs(newEnd);
-  };
+  const measures = [
+    typeof snrDb === "number" ? { icon: Radio, text: `SNR: ${snrDb.toFixed(1)} dB` } : null,
+    typeof diarizationConfidence === "number" ? { icon: ShieldCheck, text: `Diarization: ${diarizationConfidence.toFixed(1)}%` } : null,
+    typeof responseLatencyMs === "number" ? { icon: Clock, text: `Latency: ${Math.round(responseLatencyMs)} ms` } : null,
+  ].filter((measure) => measure !== null);
 
   return (
     <div
-      className={`flex flex-col gap-2 rounded-card border border-navy-line bg-navy p-3 text-on-navy shadow-lift ${className}`}
+      ref={panelRef}
+      className={`grid gap-2.5 rounded-panel border border-navy-line bg-navy p-3 text-on-navy sm:p-4 ${className}`}
       data-testid="dual-view-waveform"
+      role="group"
+      aria-label={t.label}
     >
-      {/* Legend and measured indicators */}
-      <div className="flex flex-wrap items-center justify-between gap-2 border-b border-navy-line pb-2 text-xs">
-        {/* Speaker legend: the dot carries the colour, the label stays in text ink. */}
-        <ul className="flex flex-wrap items-center gap-3" aria-label="Speaker colours">
-          {(Object.keys(SPEAKER_ROLE_LABELS) as SpeakerRole[]).map((role) => (
+      <div className="flex flex-wrap items-center justify-between gap-x-4 gap-y-1.5 text-xs">
+        {/* The dot carries the colour; the name stays in text ink. */}
+        <ul className="flex flex-wrap items-center gap-x-4 gap-y-1">
+          {SPEAKER_ROLES.map((role) => (
             <li key={role} className="flex items-center gap-1.5 font-medium text-on-navy-muted">
               <span aria-hidden="true" className="h-2.5 w-2.5 rounded-full" style={{ backgroundColor: SPEAKER_COLOURS.navy[role] }} />
-              {SPEAKER_ROLE_LABELS[role]}
+              {t.speakers[role]}
             </li>
           ))}
         </ul>
-
-        <div className="flex items-center gap-3 font-mono">
-          {typeof snrDb === "number" && (
-            <div
-              className="flex items-center gap-1 rounded-full bg-navy-raised px-2 py-0.5 text-on-navy-muted"
-              title="Signal-to-Noise Ratio (Clean audio > 15 dB)"
-            >
-              <Radio size={12} aria-hidden="true" className="text-tint" />
-              <span>SNR: {snrDb.toFixed(1)} dB</span>
-            </div>
-          )}
-
-          {typeof diarizationConfidence === "number" && (
-            <div
-              className="flex items-center gap-1 rounded-full bg-navy-raised px-2 py-0.5 text-on-navy-muted"
-              title="Diarization Alignment Confidence"
-            >
-              <ShieldCheck size={12} aria-hidden="true" className="text-tint" />
-              <span>Diarization: {diarizationConfidence.toFixed(1)}%</span>
-            </div>
-          )}
-
-          {typeof responseLatencyMs === "number" && (
-            <div
-              className="flex items-center gap-1 rounded-full bg-navy-raised px-2 py-0.5 text-on-navy-muted"
-              title="Clinician-to-Child Turn-taking Latency"
-            >
-              <Clock size={12} aria-hidden="true" className="text-tint" />
-              <span>Latency: {Math.round(responseLatencyMs)} ms</span>
-            </div>
-          )}
-        </div>
+        {measures.length > 0 ? (
+          <ul className="flex flex-wrap items-center gap-2 font-mono text-on-navy-muted">
+            {measures.map(({ icon: Icon, text }) => (
+              <li key={text} className="flex items-center gap-1 rounded-full bg-navy-raised px-2 py-0.5">
+                <Icon size={12} aria-hidden="true" className="text-tint" />
+                {text}
+              </li>
+            ))}
+          </ul>
+        ) : null}
       </div>
 
-      {/* Mini-map Full Overview */}
-      <div className="relative">
-        <WaveformMinimap
-          durationMs={durationMs}
-          currentTimeMs={currentTimeMs}
-          viewportStartMs={viewportStartMs}
-          viewportEndMs={viewportEndMs}
-          peaks={peaks}
-          onViewportChange={handleViewportChange}
-          onSeek={onSeek}
-        />
-      </div>
+      <WaveformMinimap
+        durationMs={durationMs}
+        currentTimeMs={currentTimeMs}
+        viewportStartMs={viewportStartMs}
+        viewportEndMs={viewportEndMs}
+        peaks={peaks}
+        label={t.overview}
+        onViewportChange={(start) => setViewportStartMs(start)}
+        onSeek={onSeek}
+      />
 
-      {/* High-Resolution Detail Canvas */}
-      <div className="relative">
-        <WaveformDetailCanvas
-          currentTimeMs={currentTimeMs}
-          viewportStartMs={viewportStartMs}
-          viewportEndMs={viewportEndMs}
-          segments={segments}
-          peaks={peaks}
-          onSeek={onSeek}
-          onSegmentBoundaryChange={onSegmentBoundaryChange}
-        />
-      </div>
+      <WaveformDetailCanvas
+        currentTimeMs={currentTimeMs}
+        viewportStartMs={viewportStartMs}
+        viewportEndMs={viewportEndMs}
+        segments={segments}
+        peaks={peaks}
+        durationMs={durationMs}
+        label={t.detail}
+        onSeek={onSeek}
+        onSegmentBoundaryChange={onSegmentBoundaryChange}
+      />
+
+      <p className="text-xs text-on-navy-subtle">{peaks === null ? t.noWaveform : t.hint}</p>
     </div>
   );
 }

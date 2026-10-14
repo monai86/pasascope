@@ -41,8 +41,8 @@ describe("AudioScrubberBar", () => {
       />
     );
 
-    expect(screen.getByText(/01:24\.400/)).toBeDefined();
-    expect(screen.getByText(/05:00\.000/)).toBeDefined();
+    expect(screen.getByText("1:24.4")).toBeDefined();
+    expect(screen.getByText(/5:00\.0/)).toBeDefined();
 
     const speedBtn = screen.getByText("0.75x");
     fireEvent.click(speedBtn);

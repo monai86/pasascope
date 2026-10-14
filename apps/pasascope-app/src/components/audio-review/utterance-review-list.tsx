@@ -1,9 +1,12 @@
 "use client";
 
-import React, { useRef, useEffect } from "react";
-import { Play, Sparkles, CheckCircle2 } from "lucide-react";
-import { formatTimecode } from "./audio-scrubber-bar";
+import React, { memo, useCallback, useEffect, useLayoutEffect, useRef } from "react";
+import { CheckCircle2, Pause, Play } from "lucide-react";
+
+import { audioReviewMessages, SPEAKER_CHOICES } from "@/components/audio-review/audio-review.messages";
+import { formatClock } from "@/components/audio-review/audio-scrubber-bar";
 import { speakerColour } from "@/design-system/dataviz";
+import { useMessages } from "@/i18n/locale-provider";
 
 export interface ReviewLine {
   lineId: string;
@@ -17,158 +20,239 @@ export interface ReviewLine {
 
 export interface UtteranceReviewListProps {
   lines: ReviewLine[];
+  /** Lines to show, when a filter hides some; their numbers stay those of `lines`. */
+  visibleLineIds?: ReadonlySet<string>;
   activeLineId?: string;
+  /** The line whose own playback is running, shown with a pause button. */
+  playingLineId?: string | null;
   onSelectLine?: (lineId: string) => void;
   onLineChange: (index: number, updatedLine: ReviewLine) => void;
-  onPlayUtterance?: (startMs: number, endMs?: number) => void;
+  onPlayUtterance?: (startMs: number, endMs?: number, lineId?: string) => void;
   className?: string;
 }
 
+type Copy = (typeof audioReviewMessages)["en"];
+
+/**
+ * Every transcribed line with its time, speaker and words, in reading order.
+ * The list scrolls with the page rather than in a box of its own, so a phone
+ * has one scroll to manage. On a phone each line is two rows (play, time and
+ * speaker above, the words below); from `sm` it is one row with aligned
+ * columns, and the words wrap onto as many lines as they need.
+ */
 export function UtteranceReviewList({
   lines,
+  visibleLineIds,
   activeLineId,
+  playingLineId = null,
   onSelectLine,
   onLineChange,
   onPlayUtterance,
   className = "",
 }: UtteranceReviewListProps) {
-  const activeRowRef = useRef<HTMLDivElement | null>(null);
+  const copy = useMessages(audioReviewMessages);
+  const activeRowRef = useRef<HTMLLIElement | null>(null);
+  const linesRef = useRef(lines);
+  const onLineChangeRef = useRef(onLineChange);
+  linesRef.current = lines;
+  onLineChangeRef.current = onLineChange;
 
-  // Auto-scroll active row into view when activeLineId changes
+  // Bring the line being heard into view, unless the therapist is typing in another one.
   useEffect(() => {
-    if (activeRowRef.current && typeof activeRowRef.current.scrollIntoView === "function") {
-      activeRowRef.current.scrollIntoView({ behavior: "smooth", block: "nearest" });
-    }
+    const row = activeRowRef.current;
+    if (!row || typeof row.scrollIntoView !== "function") return;
+    const focused = document.activeElement;
+    if (focused instanceof HTMLElement && focused.closest("[data-review-line]") && !row.contains(focused)) return;
+    row.scrollIntoView({ behavior: "smooth", block: "nearest" });
   }, [activeLineId]);
 
-  const handleSpeakerChange = (index: number, newSpeaker: string) => {
-    const targetLine = lines[index];
-    if (!targetLine) return;
-    onLineChange(index, {
-      ...targetLine,
-      speaker: newSpeaker,
-    });
-  };
+  const change = useCallback((index: number, patch: Partial<ReviewLine>) => {
+    const line = linesRef.current[index];
+    if (line) onLineChangeRef.current(index, { ...line, ...patch });
+  }, []);
 
-  const handleTextChange = (index: number, newText: string) => {
-    const targetLine = lines[index];
-    if (!targetLine) return;
-    onLineChange(index, {
-      ...targetLine,
-      text: newText,
-    });
-  };
+  if (lines.length === 0) {
+    return <p className="rounded-panel border border-dashed border-line bg-surface-soft px-4 py-8 text-center text-sm text-ink-muted">{copy.lines.empty}</p>;
+  }
 
   return (
-    <div
-      className={`flex flex-col gap-2 divide-y divide-line overflow-y-auto rounded-lg border border-line bg-white p-2 shadow-sm    ${className}`}
-      data-testid="utterance-review-list"
-    >
-      {lines.length === 0 ? (
-        <div className="py-8 text-center text-sm text-ink-muted">
-          No utterances recorded for this session.
-        </div>
-      ) : (
-        lines.map((line, index) => {
-          const isActive = line.lineId === activeLineId;
-
-          return (
-            <div
-              key={line.lineId || index}
-              ref={isActive ? activeRowRef : null}
-              onClick={() => onSelectLine?.(line.lineId)}
-              className={`group flex flex-wrap items-center gap-2.5 rounded-md px-3 py-2 transition ${
-                isActive
-                  ? "bg-brand-soft ring-1 ring-[color:var(--color-focus-ring)]  "
-                  : "hover:bg-surface-soft "
-              }`}
-            >
-              {/* Play Utterance Button */}
-              <button
-                type="button"
-                onClick={(e) => {
-                  e.stopPropagation();
-                  if (typeof line.startMs === "number") {
-                    onPlayUtterance?.(line.startMs, line.endMs);
-                  }
-                }}
-                disabled={typeof line.startMs !== "number"}
-                aria-label={`Play line ${index + 1}`}
-                className="flex h-7 w-7 flex-shrink-0 items-center justify-center rounded-full bg-surface-muted text-ink-muted transition hover:bg-brand hover:text-white disabled:opacity-30  "
-              >
-                <Play size={13} className="translate-x-0.5" />
-              </button>
-
-              {/* Timecode Badge */}
-              <div className="w-24 flex-shrink-0 font-mono text-xs text-ink-subtle ">
-                {typeof line.startMs === "number" && typeof line.endMs === "number" ? (
-                  <span>
-                    {formatTimecode(line.startMs).slice(3)} - {formatTimecode(line.endMs).slice(3)}
-                  </span>
-                ) : (
-                  <span>--:--</span>
-                )}
-              </div>
-
-              {/* Speaker Selector */}
-              <div className="flex-shrink-0">
-                <select
-                  value={line.speaker.replace("*", "")}
-                  onChange={(e) => handleSpeakerChange(index, e.target.value)}
-                  // The left edge carries the speaker colour; the code stays in text ink.
-                  className="h-9 rounded-control border border-line-strong border-l-4 bg-surface px-2 py-0.5 text-xs font-semibold text-ink transition"
-                  style={{ borderLeftColor: speakerColour(line.speaker, "light") }}
-                  aria-label="Speaker Role"
-                >
-                  <option value="CHI">CHI (Child)</option>
-                  <option value="INV">INV (Clinician)</option>
-                  <option value="MOT">MOT (Mother)</option>
-                  <option value="FAT">FAT (Father)</option>
-                  <option value="OTH">OTH (Other)</option>
-                </select>
-              </div>
-
-              {/* Editable Thai Utterance Text Input */}
-              <div className="min-w-[180px] flex-1">
-                <input
-                  type="text"
-                  value={line.text}
-                  onChange={(e) => handleTextChange(index, e.target.value)}
-                  className="w-full rounded border border-transparent bg-transparent px-2 py-1 text-sm text-ink transition focus:border-line-strong focus:bg-white focus:outline-none focus:ring-1 focus:ring-[color:var(--color-focus-ring)]   "
-                  placeholder="Enter Thai speech transcription..."
-                />
-              </div>
-
-              {/* Clinical Cue Tag Badges */}
-              {line.clinicalTag && (
-                <div className="flex items-center gap-1.5 flex-shrink-0">
-                  {line.clinicalTag.toLowerCase().includes("echolalia") && (
-                    <span className="flex items-center gap-1 rounded-full bg-[color:var(--color-warning-bg)] px-2 py-0.5 text-xs font-medium text-[color:var(--color-warning-text)]  ">
-                      <Sparkles size={11} />
-                      Echolalia
-                    </span>
-                  )}
-                  {line.clinicalTag.toLowerCase().includes("pronoun") && (
-                    <span className="flex items-center gap-1 rounded-full bg-brand-soft px-2 py-0.5 text-xs font-medium text-brand-strong  ">
-                      Pronoun Reversal
-                    </span>
-                  )}
-                </div>
-              )}
-
-              {/* Verified Status Indicator */}
-              {line.verified && (
-                <div
-                  className="flex-shrink-0 text-[color:var(--color-success-text)] "
-                  title="Verified by clinician"
-                >
-                  <CheckCircle2 size={16} />
-                </div>
-              )}
-            </div>
-          );
-        })
+    <ol className={`divide-y divide-line ${className}`} data-testid="utterance-review-list">
+      {lines.map((line, index) =>
+        visibleLineIds && !visibleLineIds.has(line.lineId) ? null : (
+          <UtteranceRow
+            key={line.lineId || index}
+            line={line}
+            index={index}
+            active={line.lineId === activeLineId}
+            playing={line.lineId === playingLineId}
+            rowRef={line.lineId === activeLineId ? activeRowRef : undefined}
+            copy={copy}
+            onSelectLine={onSelectLine}
+            onChange={change}
+            onPlayUtterance={onPlayUtterance}
+          />
+        ),
       )}
-    </div>
+    </ol>
+  );
+}
+
+const UtteranceRow = memo(function UtteranceRow({
+  line,
+  index,
+  active,
+  playing,
+  rowRef,
+  copy,
+  onSelectLine,
+  onChange,
+  onPlayUtterance,
+}: {
+  line: ReviewLine;
+  index: number;
+  active: boolean;
+  playing: boolean;
+  rowRef?: React.Ref<HTMLLIElement>;
+  copy: Copy;
+  onSelectLine?: (lineId: string) => void;
+  onChange: (index: number, patch: Partial<ReviewLine>) => void;
+  onPlayUtterance?: (startMs: number, endMs?: number, lineId?: string) => void;
+}) {
+  const number = index + 1;
+  const code = line.speaker.replace("*", "").trim().toUpperCase();
+  const known = (SPEAKER_CHOICES as readonly string[]).includes(code);
+  const timed = typeof line.startMs === "number";
+  const echolalia = line.clinicalTag?.toLowerCase().includes("echolalia");
+  const pronoun = line.clinicalTag?.toLowerCase().includes("pronoun");
+
+  return (
+    <li
+      ref={rowRef}
+      data-review-line={line.lineId}
+      aria-current={active ? "true" : undefined}
+      onClick={() => onSelectLine?.(line.lineId)}
+      className={`grid scroll-mt-40 grid-cols-[2.75rem_minmax(0,1fr)_auto] items-center gap-x-3 gap-y-1 px-2 py-2.5 transition-colors motion-reduce:transition-none sm:grid-cols-[2.75rem_6.75rem_10.5rem_minmax(0,1fr)] sm:items-start sm:px-3 ${
+        active ? "bg-brand-soft" : "hover:bg-surface-soft"
+      }`}
+    >
+      <button
+        type="button"
+        onClick={(event) => {
+          event.stopPropagation();
+          if (timed) onPlayUtterance?.(line.startMs!, line.endMs, line.lineId);
+        }}
+        disabled={!timed}
+        aria-label={playing ? copy.lines.pauseLine(number) : copy.lines.playLine(number)}
+        className={`grid h-11 w-11 place-items-center rounded-full transition motion-reduce:transition-none disabled:opacity-30 ${
+          playing ? "bg-brand-strong text-white" : "bg-surface-muted text-ink-muted hover:bg-brand-strong hover:text-white"
+        }`}
+      >
+        {playing ? <Pause size={15} aria-hidden="true" /> : <Play size={15} aria-hidden="true" className="translate-x-px" />}
+      </button>
+
+      <p className="whitespace-nowrap font-mono text-xs tabular-nums text-ink-muted sm:pt-3.5">
+        {timed && typeof line.endMs === "number" ? `${formatClock(line.startMs!)}–${formatClock(line.endMs)}` : "–"}
+      </p>
+
+      {/* The dot carries the speaker's colour; the name stays in text ink. */}
+      <div className="relative justify-self-end sm:justify-self-stretch sm:pt-0.5">
+        <span
+          aria-hidden="true"
+          className="pointer-events-none absolute left-3 top-1/2 h-2.5 w-2.5 -translate-y-1/2 rounded-full sm:top-[calc(50%+1px)]"
+          style={{ backgroundColor: known ? speakerColour(code, "light") : "transparent", boxShadow: known ? undefined : "inset 0 0 0 1.5px var(--color-border-strong)" }}
+        />
+        <select
+          value={code}
+          onChange={(event) => onChange(index, { speaker: event.target.value })}
+          onClick={(event) => event.stopPropagation()}
+          onFocus={() => onSelectLine?.(line.lineId)}
+          aria-label={copy.lines.speaker(number)}
+          className={`h-11 w-full min-w-[8rem] rounded-control border bg-surface pl-8 pr-8 text-sm font-semibold outline-none transition focus-visible:ring-4 focus-visible:ring-[color:var(--color-focus-ring)] motion-reduce:transition-none ${
+            known ? "border-line text-ink" : "border-[color:var(--color-attention-border)] text-[color:var(--color-warning-text)]"
+          }`}
+        >
+          {/* A line the pipeline could not attribute says so, rather than showing the first speaker as if chosen. */}
+          {known ? null : <option value={code}>{code === "UNK" || code === "" ? copy.notSet : copy.speakers[code as keyof Copy["speakers"]] ?? code}</option>}
+          {SPEAKER_CHOICES.map((choice) => (
+            <option key={choice} value={choice}>
+              {copy.speakers[choice]}
+            </option>
+          ))}
+        </select>
+      </div>
+
+      <div className="col-span-3 col-start-1 min-w-0 sm:col-span-1 sm:col-start-4">
+        <AutoGrowText
+          value={line.text}
+          label={copy.lines.text(number)}
+          placeholder={copy.lines.placeholder}
+          onFocus={() => onSelectLine?.(line.lineId)}
+          onChange={(text) => onChange(index, { text })}
+        />
+        {echolalia || pronoun || line.verified ? (
+          <div className="mt-1 flex flex-wrap items-center gap-1.5 px-2.5">
+            {echolalia ? <span className="rounded-full bg-[color:var(--color-warning-bg)] px-2 py-0.5 text-xs font-medium text-[color:var(--color-warning-text)]">{copy.lines.echolalia}</span> : null}
+            {pronoun ? <span className="rounded-full bg-brand-soft px-2 py-0.5 text-xs font-medium text-brand-strong">{copy.lines.pronounReversal}</span> : null}
+            {line.verified ? (
+              <span className="inline-flex items-center gap-1 text-xs font-medium text-[color:var(--color-success-text)]">
+                <CheckCircle2 size={14} aria-hidden="true" />
+                {copy.lines.verified}
+              </span>
+            ) : null}
+          </div>
+        ) : null}
+      </div>
+    </li>
+  );
+});
+
+/** A text box as tall as its words, so a long line is read whole instead of scrolled sideways. */
+function AutoGrowText({
+  value,
+  label,
+  placeholder,
+  onFocus,
+  onChange,
+}: {
+  value: string;
+  label: string;
+  placeholder: string;
+  onFocus: () => void;
+  onChange: (value: string) => void;
+}) {
+  const ref = useRef<HTMLTextAreaElement | null>(null);
+  const fit = () => {
+    const element = ref.current;
+    if (!element) return;
+    element.style.height = "auto";
+    element.style.height = `${element.scrollHeight}px`;
+  };
+  useLayoutEffect(fit, [value]);
+  useEffect(() => {
+    if (typeof ResizeObserver === "undefined" || !ref.current) return;
+    // A narrower box wraps the words onto more lines.
+    let lastWidth = 0;
+    const observer = new ResizeObserver(([entry]) => {
+      if (entry.contentRect.width !== lastWidth) {
+        lastWidth = entry.contentRect.width;
+        fit();
+      }
+    });
+    observer.observe(ref.current);
+    return () => observer.disconnect();
+  }, []);
+
+  return (
+    <textarea
+      ref={ref}
+      rows={1}
+      value={value}
+      aria-label={label}
+      placeholder={placeholder}
+      onFocus={onFocus}
+      onClick={(event) => event.stopPropagation()}
+      onChange={(event) => onChange(event.target.value)}
+      className="block min-h-11 w-full resize-none overflow-hidden rounded-control border border-transparent bg-transparent px-2.5 py-2.5 text-[15px] leading-6 text-ink outline-none transition placeholder:text-ink-subtle hover:border-line focus:border-line-strong focus:bg-surface focus-visible:ring-4 focus-visible:ring-[color:var(--color-focus-ring)] motion-reduce:transition-none"
+    />
   );
 }
