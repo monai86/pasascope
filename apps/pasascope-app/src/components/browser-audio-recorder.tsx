@@ -1,7 +1,7 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
-import { Mic, Pause, Play, RotateCcw, Square, Trash2 } from "lucide-react";
+import { useEffect, useRef, useState, type CSSProperties } from "react";
+import { Check, Mic, Pause, Play, RotateCcw, Square, Trash2 } from "lucide-react";
 
 import { audioCaptureMessages } from "@/components/audio-capture.messages";
 import { useMessages } from "@/i18n/locale-provider";
@@ -328,61 +328,106 @@ export function BrowserAudioRecorder({
   }
 
   const statusText = t.status[status === "error" ? "idle" : status];
+  const live = status === "recording";
+  const held = status === "paused";
+  // Waiting to start: the bars breathe in a slow wave, so the card reads as ready.
+  const waiting = !live && !held && !audioUrl;
+  const roundButton =
+    "relative grid place-items-center rounded-full transition motion-reduce:transition-none focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-[color:var(--color-focus-ring)]";
+  const mainButton = `${roundButton} z-10 h-[72px] w-[72px] bg-action text-white shadow-chat-action hover:bg-action-hover active:scale-[0.96]`;
 
   return (
-    <div>
-      <div className={`mb-4 flex items-center justify-center gap-2 text-lg font-bold ${status === "recording" ? "text-[color:var(--color-danger-text)]" : "text-brand"}`}>
-        <span className={`h-3 w-3 rounded-full ${status === "recording" ? "animate-pulse bg-highlight" : "bg-brand"}`} />
+    <div className="flex flex-col items-center text-center" data-recorder-state={status}>
+      <p
+        className={`inline-flex min-h-8 items-center gap-2 rounded-full px-3 text-[13px] font-semibold ${
+          live ? "bg-highlight-soft text-highlight-text" : "bg-surface-muted text-ink-muted"
+        }`}
+      >
+        <span aria-hidden="true" className={`h-2 w-2 rounded-full ${live ? "recorder-dot bg-highlight" : held ? "bg-ink-subtle" : "bg-brand"}`} />
         {statusText}
-      </div>
-      <p className="text-5xl font-bold tracking-normal text-ink">{formatDuration(durationSeconds)}</p>
-      <div className="mx-auto mt-8 flex h-28 max-w-sm items-center justify-center gap-1.5" aria-label={t.amplitude}>
+      </p>
+
+      <p className="mt-3 font-display text-[2.75rem] font-semibold leading-none tracking-[-0.01em] text-ink tabular-nums">
+        {formatDuration(durationSeconds)}
+      </p>
+
+      <div className="mt-6 flex h-16 w-full max-w-[22rem] items-center justify-center gap-[5px]" role="img" aria-label={t.amplitude}>
         {amplitudes.map((height, index) => (
-          <span key={index} className={`w-1.5 rounded-full ${status === "recording" ? "bg-brand" : "bg-tint-strong"}`} style={{ height }} />
+          <span
+            key={index}
+            aria-hidden="true"
+            className={`recorder-bar h-16 w-[5px] rounded-full ${waiting ? "recorder-bar-waiting bg-tint-strong" : live ? "bg-brand" : "bg-line-strong"}`}
+            style={{ "--i": index, transform: waiting ? undefined : `scaleY(${Math.max(0.12, height / 76)})` } as CSSProperties}
+          />
         ))}
       </div>
 
-      <div className="mt-6 flex flex-wrap items-center justify-center gap-3">
-        {status === "idle" || status === "error" || status === "interrupted" ? (
-          <button type="button" className="grid h-20 w-20 place-items-center rounded-full bg-brand text-white" aria-label={t.start} onClick={startRecording}>
-            <Mic size={32} aria-hidden="true" />
-          </button>
-        ) : null}
-        {status === "recording" ? (
-          <button type="button" className="grid h-20 w-20 place-items-center rounded-full bg-brand text-white" aria-label={t.pause} onClick={pauseRecording}>
-            <Pause size={32} fill="currentColor" aria-hidden="true" />
-          </button>
-        ) : null}
-        {status === "paused" ? (
-          <button type="button" className="grid h-20 w-20 place-items-center rounded-full bg-brand text-white" aria-label={t.resume} onClick={resumeRecording}>
-            <Play size={32} fill="currentColor" aria-hidden="true" />
-          </button>
-        ) : null}
-        <button type="button" className="grid h-14 w-14 place-items-center rounded-full border border-line bg-surface text-ink-muted disabled:opacity-35" aria-label={t.stop} onClick={stopRecording} disabled={status !== "recording" && status !== "paused"}>
-          <Square size={20} fill="currentColor" aria-hidden="true" />
+      {/* Three columns, so the main button sits on the centre line and stop sits beside it. */}
+      <div className="mt-7 grid grid-cols-[3.5rem_4.5rem_3.5rem] items-center justify-center gap-4">
+        <span aria-hidden="true" />
+        {/* Rings spread from the button while the microphone is on, as they do from the mark. */}
+        <span className="relative grid h-[72px] w-[72px] place-items-center">
+          {live ? (
+            <>
+              <span aria-hidden="true" className="recorder-ring" />
+              <span aria-hidden="true" className="recorder-ring" />
+            </>
+          ) : null}
+          {status === "idle" || status === "error" || status === "interrupted" ? (
+            <button type="button" className={mainButton} aria-label={t.start} onClick={startRecording}>
+              <Mic size={28} aria-hidden="true" />
+            </button>
+          ) : null}
+          {live ? (
+            <button type="button" className={mainButton} aria-label={t.pause} onClick={pauseRecording}>
+              <Pause size={26} fill="currentColor" aria-hidden="true" />
+            </button>
+          ) : null}
+          {held ? (
+            <button type="button" className={mainButton} aria-label={t.resume} onClick={resumeRecording}>
+              <Play size={26} fill="currentColor" aria-hidden="true" />
+            </button>
+          ) : null}
+          {status === "stopped" ? (
+            <span aria-hidden="true" className="grid h-[72px] w-[72px] place-items-center rounded-full bg-brand-soft text-brand">
+              <Check size={28} />
+            </span>
+          ) : null}
+        </span>
+        <button
+          type="button"
+          className={`${roundButton} h-14 w-14 border border-action-quiet-border bg-surface text-action-quiet-text hover:bg-action-quiet-hover disabled:pointer-events-none disabled:opacity-35`}
+          aria-label={t.stop}
+          onClick={stopRecording}
+          disabled={status !== "recording" && status !== "paused"}
+        >
+          <Square size={18} fill="currentColor" aria-hidden="true" />
         </button>
       </div>
 
       {audioUrl ? (
-        <div className="mt-5 rounded-panel border border-line bg-surface p-4">
+        <div className="recorder-playback mt-6 w-full rounded-control border border-line bg-surface-muted p-3">
           <audio className="w-full" controls src={audioUrl} aria-label={t.playback} />
           <div className="mt-3 flex flex-wrap justify-center gap-2">
-            <button type="button" className="inline-flex min-h-11 items-center gap-2 rounded-xl border border-brand px-4 py-2 text-sm font-semibold text-brand" onClick={rerecord}>
-              <RotateCcw size={17} aria-hidden="true" />
+            <button type="button" className="inline-flex min-h-11 items-center gap-2 rounded-full border border-action-quiet-border bg-surface px-4 text-sm font-semibold text-action-quiet-text transition hover:bg-action-quiet-hover motion-reduce:transition-none" onClick={rerecord}>
+              <RotateCcw size={16} aria-hidden="true" />
               {t.rerecord}
             </button>
-            <button type="button" className="inline-flex min-h-11 items-center gap-2 rounded-xl border border-[color:var(--color-danger-border)] px-4 py-2 text-sm font-semibold text-[color:var(--color-danger-text)]" onClick={deleteRecording} aria-label={t.deleteLabel}>
-              <Trash2 size={17} aria-hidden="true" />
+            <button type="button" className="inline-flex min-h-11 items-center gap-2 rounded-full border border-[color:var(--color-danger-border)] bg-surface px-4 text-sm font-semibold text-[color:var(--color-danger-text)] transition hover:bg-[color:var(--color-danger-bg)] motion-reduce:transition-none" onClick={deleteRecording} aria-label={t.deleteLabel}>
+              <Trash2 size={16} aria-hidden="true" />
               {t.delete}
             </button>
           </div>
         </div>
       ) : null}
 
-      {privacyNotice ? <p className="mt-4 rounded-xl border border-[color:var(--color-attention-border)] bg-[color:var(--color-warning-bg)] p-3 text-sm font-semibold text-[color:var(--color-warning-text)]">{t.clearedForPrivacy}</p> : null}
-      {error ? <p className="mt-4 rounded-xl border border-[color:var(--color-danger-border)] bg-[color:var(--color-danger-bg)] p-3 text-sm font-semibold text-[color:var(--color-danger-text)]" role="alert">{error}</p> : null}
-      <p className="mt-3 text-sm font-semibold text-brand">{externalTranscription ? t.experimentalExternal : t.experimental}</p>
-      <p className="mt-1 text-xs text-ink-muted">{t.memoryOnly}</p>
+      {privacyNotice && waiting ? <p className="mt-5 w-full rounded-control border border-[color:var(--color-attention-border)] bg-[color:var(--color-warning-bg)] px-4 py-3 text-left text-sm font-medium text-[color:var(--color-warning-text)]">{t.clearedForPrivacy}</p> : null}
+      {error ? <p className="mt-5 w-full rounded-control border border-[color:var(--color-danger-border)] bg-[color:var(--color-danger-bg)] px-4 py-3 text-left text-sm font-medium text-[color:var(--color-danger-text)]" role="alert">{error}</p> : null}
+
+      <div className="mt-6 w-full border-t border-line pt-4 text-left">
+        <p className="text-[13px] leading-5 text-ink-muted">{externalTranscription ? t.experimentalExternal : t.experimental}</p>
+        <p className="mt-1 text-[13px] leading-5 text-ink-subtle">{t.memoryOnly}</p>
+      </div>
     </div>
   );
 }
@@ -393,7 +438,8 @@ function selectMimeType() {
 }
 
 function formatDuration(seconds: number) {
-  const minutes = Math.floor(seconds / 60);
+  const hours = Math.floor(seconds / 3600);
+  const minutes = Math.floor((seconds % 3600) / 60);
   const remainder = seconds % 60;
-  return `00:${String(minutes).padStart(2, "0")}:${String(remainder).padStart(2, "0")}`;
+  return [hours, minutes, remainder].map((part) => String(part).padStart(2, "0")).join(":");
 }

@@ -183,6 +183,58 @@
     }
   }
 
+  /* The recorder. Its bars are drawn at full height and scaled, so a level
+     change is a transform, not a layout; waiting, they breathe in a slow
+     wave from left to right. While recording, rings spread from the record
+     button the way they do from the mark. */
+  .recorder-bar {
+    transform-origin: center;
+    transition: transform 90ms linear, background-color 200ms ease-out;
+  }
+
+  .recorder-bar-waiting {
+    animation: recorder-breathe 2.4s ease-in-out infinite;
+    animation-delay: calc(var(--i, 0) * 70ms);
+  }
+
+  .recorder-ring {
+    position: absolute;
+    inset: 0;
+    border: 1.5px solid var(--color-highlight-border);
+    border-radius: 9999px;
+    opacity: 0;
+    animation: chat-ripple 2.4s cubic-bezier(0.2, 0.6, 0.3, 1) infinite;
+  }
+
+  .recorder-ring + .recorder-ring {
+    border-color: var(--color-sky);
+    animation-delay: 1.2s;
+  }
+
+  .recorder-dot {
+    animation: recorder-dot 1.2s ease-in-out infinite;
+  }
+
+  .recorder-playback {
+    animation: chat-rise 280ms cubic-bezier(0.16, 1, 0.3, 1) both;
+  }
+
+  @keyframes recorder-breathe {
+    0%,
+    100% {
+      transform: scaleY(0.14);
+    }
+    50% {
+      transform: scaleY(0.42);
+    }
+  }
+
+  @keyframes recorder-dot {
+    50% {
+      opacity: 0.35;
+    }
+  }
+
   /* The mark on its tile, the centrepiece of the chat home and sign-in screens. */
   .chat-mark-stage {
     position: relative;
