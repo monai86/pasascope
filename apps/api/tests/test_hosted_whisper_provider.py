@@ -90,6 +90,7 @@ def test_metadata_says_the_recording_leaves_the_deployment(hosted_enabled):
 
 
 def test_sends_the_recording_and_maps_timed_segments(hosted_enabled, monkeypatch, tmp_path):
+    hosted_enabled.asr_language_strategy = "thai"
     requests = _use_service(
         monkeypatch,
         lambda request: _segments_response(
@@ -119,6 +120,20 @@ def test_sends_the_recording_and_maps_timed_segments(hosted_enabled, monkeypatch
     assert b'filename="recording.webm"' in body
     assert b"whisper-large-v3" in body
     assert b'name="language"\r\n\r\nth' in body
+
+
+def test_by_default_the_service_detects_the_language(hosted_enabled, monkeypatch, tmp_path):
+    """English speech in a Thai case must come back in English, not transliterated."""
+    requests = _use_service(
+        monkeypatch,
+        lambda request: _segments_response({"start": 0.0, "end": 1.0, "text": "I want the red car", "avg_logprob": -0.1}),
+    )
+
+    result = HostedWhisperProvider().transcribe("aud_test", {"audio_path": str(_recording(tmp_path))})
+
+    assert result.status == "completed"
+    (request,) = requests
+    assert b'name="language"' not in request.content
 
 
 def test_the_stored_file_name_is_not_sent(hosted_enabled, monkeypatch, tmp_path):

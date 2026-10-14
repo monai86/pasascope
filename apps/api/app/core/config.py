@@ -183,7 +183,9 @@ class Settings(BaseModel):
     # Local Whisper runs on this machine only; recordings are never sent out.
     asr_local_whisper_enabled: bool = False
     asr_whisper_model_size: str = "medium"
-    asr_language_strategy: str = "thai"
+    # "auto" lets the model hear which language is spoken; "thai" or "english"
+    # forces one, which makes speech in the other language come out transliterated.
+    asr_language_strategy: str = "auto"
     # Hosted Whisper sends the recording to an external service. Off unless the
     # operator turns it on and discloses it to users.
     asr_hosted_enabled: bool = False
@@ -396,7 +398,7 @@ class Settings(BaseModel):
             asr_local_whisper_enabled=getenv_compat("PASASCOPE_ASR_LOCAL_WHISPER_ENABLED", default="false").lower()
             == "true",
             asr_whisper_model_size=getenv_compat("PASASCOPE_ASR_WHISPER_MODEL_SIZE", default="medium"),
-            asr_language_strategy=getenv_compat("PASASCOPE_ASR_LANGUAGE_STRATEGY", default="thai"),
+            asr_language_strategy=getenv_compat("PASASCOPE_ASR_LANGUAGE_STRATEGY", default="auto"),
             asr_hosted_enabled=getenv_compat("PASASCOPE_ASR_HOSTED_ENABLED", default="false").lower() == "true",
             asr_hosted_base_url=getenv_compat(
                 "PASASCOPE_ASR_HOSTED_BASE_URL", default="https://api.groq.com/openai/v1"

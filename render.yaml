@@ -57,7 +57,7 @@ services:
       - key: PASASCOPE_ASR_HOSTED_MODEL
         value: whisper-large-v3
       - key: PASASCOPE_ASR_LANGUAGE_STRATEGY
-        value: thai
+        value: auto
       - key: PASASCOPE_CORS_ALLOWED_ORIGINS
         sync: false
       - key: PASASCOPE_DATABASE_URL
