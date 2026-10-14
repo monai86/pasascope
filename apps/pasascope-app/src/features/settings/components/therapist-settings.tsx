@@ -246,7 +246,7 @@ function ChangePassword() {
     status.kind === "error" && status.field === field ? status.message : undefined;
 
   return (
-    <Row label={t.passwordTitle} hint={t.passwordBody}>
+    <Row label={t.passwordTitle} hint={t.passwordBody} align="top">
       <form onSubmit={submit} className="grid max-w-sm gap-4" noValidate aria-label={t.passwordTitle}>
         <Field label={t.newPassword} hint={t.passwordHint(PASSWORD_MIN_LENGTH)} error={fieldError("password")}>
           {(control) => (
@@ -330,11 +330,25 @@ function HelpSettings() {
 /**
  * One line of a section: what it is on the left, with a short explanation
  * under it, and the value or control on the right. Stacked on a phone.
+ * A single control sits level with its name; a form of several fields is
+ * read from the top, so its name stays at the top beside the first field.
  */
-function Row({ label, hint, labelFor, children }: { label: string; hint?: string; labelFor?: string; children: ReactNode }) {
+function Row({
+  label,
+  hint,
+  labelFor,
+  align = "center",
+  children,
+}: {
+  label: string;
+  hint?: string;
+  labelFor?: string;
+  align?: "center" | "top";
+  children: ReactNode;
+}) {
   const Name = labelFor ? "label" : "span";
   return (
-    <div className="grid gap-3 border-b border-line py-5 sm:grid-cols-[minmax(0,15rem)_minmax(0,1fr)] sm:items-center sm:gap-8">
+    <div className={`grid gap-3 border-b border-line py-5 sm:grid-cols-[minmax(0,15rem)_minmax(0,1fr)] sm:gap-8 ${align === "top" ? "sm:items-start" : "sm:items-center"}`}>
       <div className="min-w-0">
         {label ? <Name {...(labelFor ? { htmlFor: labelFor } : {})} className="block text-sm font-semibold text-ink">{label}</Name> : null}
         {hint ? <p className="mt-1 text-[13px] leading-5 text-ink-muted">{hint}</p> : null}
@@ -383,8 +397,9 @@ function FormStatus({
   if (status.kind === "error") {
     return <p id={errorId} role="alert" className="text-sm font-medium text-[color:var(--color-danger-text)]">{status.message}</p>;
   }
+  // Kept in the page at no height while empty, so the announcement is heard when it fills.
   return (
-    <p role="status" aria-live="polite" className="min-h-5 text-sm font-medium text-ink-muted">
+    <p role="status" aria-live="polite" className="text-sm font-medium text-ink-muted empty:h-0">
       {status.kind === "saved" ? status.message : ""}
     </p>
   );
