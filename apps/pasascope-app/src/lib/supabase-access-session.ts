@@ -8,7 +8,8 @@ export const SUPABASE_ACCESS_SESSION_EVENT = "pasascope:supabase-access-session-
 /** Every signed-in account is a therapist in a workspace of its own. */
 export type SupabaseSessionRole = "therapist";
 
-export type SupabaseAccessStage = "signed_out" | "authenticated";
+/** `mfa_required`: signed in with a password or Google, and the account has two-step verification. */
+export type SupabaseAccessStage = "signed_out" | "mfa_required" | "authenticated";
 
 export type SupabaseAccessSession = {
   stage: SupabaseAccessStage;
@@ -46,5 +47,5 @@ export function saveSupabaseAccessSession(session: SupabaseAccessSession): void 
 }
 
 function isValidStage(value: unknown): value is SupabaseAccessStage {
-  return value === "signed_out" || value === "authenticated";
+  return value === "signed_out" || value === "mfa_required" || value === "authenticated";
 }

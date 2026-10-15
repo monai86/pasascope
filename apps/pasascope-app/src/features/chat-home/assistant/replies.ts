@@ -60,7 +60,7 @@ const FIXED_ACTIONS: Record<FixedTopic, ReplyAction[]> = {
   formats: [{ kind: "start", start: "audio" }, { kind: "ask", topic: "privacy" }],
   privacy: [{ kind: "link", to: "privacy" }],
   consent: [{ kind: "link", to: "cases" }, { kind: "ask", topic: "privacy" }],
-  delete: [{ kind: "link", to: "cases" }, { kind: "ask", topic: "privacy" }],
+  delete: [{ kind: "link", to: "cases" }, { kind: "link", to: "settings" }, { kind: "ask", topic: "privacy" }],
   diagnosis: [{ kind: "ask", topic: "measures" }],
   language: [{ kind: "locale", locale: "th" }, { kind: "locale", locale: "en" }],
   settings: [{ kind: "link", to: "settings" }],

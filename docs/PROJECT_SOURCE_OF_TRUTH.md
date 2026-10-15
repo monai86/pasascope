@@ -182,7 +182,11 @@ persistence layer หลักของ pasascope.
     app. Every verified Supabase user has one personal workspace,
     `personal_<user id>`, derived from the token subject; the web sign-in has no
     organization selection, invitation step or mandatory MFA screen, and sends
-    no organization header.
+    no organization header. Two-step verification (TOTP) is opt-in per account
+    and enforced by the API for that account's `aal1` sessions, and an account
+    holder can delete their account with everything in it
+    (`DELETE /api/v1/account`); both need the Supabase service role key (ADR
+    `docs/adr/0023-opt-in-two-step-verification-and-self-service-deletion.md`).
 28. Current Phase 1 external blockers and exact next actions are tracked in
     `docs/PHASE1_EXTERNAL_BLOCKERS.md`.
 29. Research evaluation helpers under `apps/api/app/api/v1/routes/evaluation.py`

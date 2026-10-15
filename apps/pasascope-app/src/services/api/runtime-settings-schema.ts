@@ -18,6 +18,9 @@ export const runtimeSettingsSchema = z.object({
     public_signup: z.boolean().optional(),
     review_gates: z.enum(["strict", "open"]).optional(),
     required_app_aal: z.enum(["aal1", "aal2"]),
+    // Both need the API to manage accounts with the project's service role key.
+    two_step_verification: z.enum(["optional", "unavailable"]).optional(),
+    account_deletion: availability.optional(),
     active_organization_session: z.string(),
     production_mock_mode: z.string(),
   }).optional(),

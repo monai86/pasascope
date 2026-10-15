@@ -58,6 +58,26 @@ describe("SupabaseWorkspaceAccessGate", () => {
     expect(window.sessionStorage.getItem("pasascope.supabase-session-token.v1")).toBeTruthy();
   });
 
+  it("asks for the authenticator code before opening the workspace of an account with two-step verification", async () => {
+    window.sessionStorage.setItem("pasascope.supabase-access-session.v1", JSON.stringify({
+      stage: "mfa_required",
+      userId: "user_001",
+      email: "clinician@example.test",
+      role: "therapist",
+      aal: "aal1",
+    }));
+
+    render(
+      <SupabaseWorkspaceAccessGate>
+        <div>Unlocked workspace</div>
+      </SupabaseWorkspaceAccessGate>,
+    );
+
+    expect(await screen.findByRole("heading", { name: "Enter your verification code" })).toBeInTheDocument();
+    expect(screen.queryByText("Unlocked workspace")).not.toBeInTheDocument();
+    expect(routerReplace).not.toHaveBeenCalled();
+  });
+
   it("sends a session left by the organization-based app to sign in", async () => {
     window.sessionStorage.setItem("pasascope.supabase-access-session.v1", JSON.stringify({
       stage: "org_selection_required",

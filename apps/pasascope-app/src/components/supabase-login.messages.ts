@@ -34,6 +34,7 @@ type SupabaseLoginCopy = {
   publicNote: { stored: string; boundary: string; privacy: string };
   status: {
     verifying: string;
+    accountDeleted: string;
     signUpSignedIn: string;
     signUpConfirmEmail: string;
     signInAccepted: string;
@@ -102,6 +103,7 @@ export const supabaseLoginMessages = defineMessages<SupabaseLoginCopy>({
     },
     status: {
       verifying: "Confirming your sign-in…",
+      accountDeleted: "Your account and everything in it have been deleted.",
       signUpSignedIn: "Account created. Signing you in...",
       signUpConfirmEmail: "Check your inbox: open the message we sent to confirm your email, then sign in.",
       signInAccepted: "Signed in. Opening your workspace…",
@@ -169,6 +171,7 @@ export const supabaseLoginMessages = defineMessages<SupabaseLoginCopy>({
     },
     status: {
       verifying: "กำลังยืนยันข้อมูลการเข้าสู่ระบบ...",
+      accountDeleted: "ลบบัญชีและข้อมูลทั้งหมดในบัญชีแล้ว",
       signUpSignedIn: "สร้างบัญชีแล้ว กำลังลงชื่อเข้าใช้...",
       signUpConfirmEmail: "เปิดกล่องอีเมล แล้วกดลิงก์ในข้อความที่เราส่งไปเพื่อยืนยันอีเมล จากนั้นลงชื่อเข้าใช้",
       signInAccepted: "ลงชื่อเข้าใช้แล้ว กำลังเปิดพื้นที่ทำงาน…",

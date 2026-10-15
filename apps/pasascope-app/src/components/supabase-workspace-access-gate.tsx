@@ -1,5 +1,6 @@
 "use client";
 
+import dynamic from "next/dynamic";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 
@@ -11,7 +12,13 @@ import {
 } from "@/lib/supabase-access-session";
 import { loadOrRestoreSupabaseAccessSession } from "@/lib/use-supabase-access-session";
 
-/** Opens the workspace for a signed-in account and sends anyone else to sign in. */
+// Only accounts with two-step verification see it, so it stays out of every page's bundle.
+const MfaChallenge = dynamic(() => import("@/components/mfa-challenge").then((module) => module.MfaChallenge));
+
+/**
+ * Opens the workspace for a signed-in account, asks for the authenticator code
+ * when the account has two-step verification, and sends anyone else to sign in.
+ */
 export function SupabaseWorkspaceAccessGate({
   children,
 }: {
@@ -39,6 +46,10 @@ export function SupabaseWorkspaceAccessGate({
 
   if (session?.stage === "authenticated") {
     return <>{children}</>;
+  }
+
+  if (session?.stage === "mfa_required") {
+    return <MfaChallenge email={session.email} />;
   }
 
   return (

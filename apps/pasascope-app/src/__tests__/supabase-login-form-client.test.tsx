@@ -98,6 +98,14 @@ describe("SupabaseLoginFormClient", () => {
     expect(screen.getByRole("button", { name: "Supabase browser config invalid" })).toBeDisabled();
   });
 
+  it("confirms a deleted account when sign-in opens after it", () => {
+    window.history.replaceState({}, "", "/login?account=deleted");
+    render(<SupabaseLoginFormClient />);
+
+    expect(screen.getByText("Your account and everything in it have been deleted.")).toBeInTheDocument();
+    window.history.replaceState({}, "", "/");
+  });
+
   it("has no clinic or invitation wording", () => {
     render(<SupabaseLoginFormClient />);
 

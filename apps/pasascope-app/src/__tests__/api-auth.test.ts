@@ -10,6 +10,7 @@ import {
 import { exportBackendReport, exportReviewedCha } from "@/lib/workflow";
 
 const getSession = vi.fn();
+const refreshSession = vi.fn();
 
 const runtimeCapabilities = {
   cases: "available",
@@ -26,6 +27,7 @@ vi.mock("@/lib/supabase-browser-client", () => ({
   getSupabaseBrowserClient: () => ({
     auth: {
       getSession,
+      refreshSession,
     },
   }),
 }));
@@ -35,6 +37,7 @@ describe("api auth headers", () => {
     window.sessionStorage.clear();
     window.localStorage.clear();
     getSession.mockReset();
+    refreshSession.mockReset().mockResolvedValue({ data: {}, error: null });
     resetApiRuntimeSettingsCacheForTests();
   });
 
@@ -480,6 +483,33 @@ describe("api auth headers", () => {
     expect(report.filename).toBe("report.md");
     expect(transcript.filename).toBe("reviewed.cha");
     expect(getSession).not.toHaveBeenCalled();
+  });
+  it("fetches the session again when the API asks for the second step", async () => {
+    window.sessionStorage.setItem("pasascope.supabase-session-token.v1", "aal1-token");
+    getSession.mockResolvedValue({ data: { session: null } });
+    vi.stubGlobal("fetch", vi.fn(async (input: RequestInfo | URL) => {
+      if (String(input).endsWith("/settings")) {
+        return jsonResponse({
+          mock_mode: false,
+          auth_mode: "supabase",
+          model_version: "v",
+          feature_schema: "s",
+          guideline_mapping: "g",
+          user_roles: ["therapist"],
+          access_model: { invitation_only: false, required_app_aal: "aal1", active_organization_session: "x", production_mock_mode: "forbidden" },
+          data_retention: "d",
+          consent_policy: "c",
+          capabilities: runtimeCapabilities,
+          pipeline_settings: { audio_processing: "a", job_queue_mode: "q", repository_mode: "r", storage_mode: "s" },
+        });
+      }
+      return new Response(JSON.stringify({ detail: "Two-step verification is required for this account." }), { status: 403 });
+    }));
+
+    await getRuntimeSettings();
+    await expect(apiRequest("/cases")).rejects.toMatchObject({ status: 403 });
+
+    await vi.waitFor(() => expect(refreshSession).toHaveBeenCalledTimes(1));
   });
 });
 

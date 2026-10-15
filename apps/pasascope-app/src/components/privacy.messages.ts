@@ -30,6 +30,7 @@ export const privacyMessages = defineMessages<PrivacyCopy>({
         items: [
           "Each account has its own workspace. Other users cannot open your cases, recordings, transcripts or reports.",
           "The people who operate this site can reach the database and the stored recordings to maintain the service.",
+          "You can turn on two-step verification in Settings › Privacy & Security, so that signing in also needs a code from an authenticator app.",
         ],
       },
       {
@@ -50,13 +51,13 @@ export const privacyMessages = defineMessages<PrivacyCopy>({
         title: "Removing data",
         items: [
           "Withdrawing consent on a case removes its recordings from storage and stops that case's records from being used.",
-          "To have your account and everything in it deleted, contact the site operator.",
+          "You can delete your account and everything in it yourself, in Settings › Privacy & Security. Recordings are removed from storage first, then the records, then the account. A record that the account was deleted, with nothing from it, is kept.",
         ],
       },
     ],
     contactTitle: "Contact",
-    contactWithEmail: (email) => `Questions and deletion requests: ${email}`,
-    contactWithoutEmail: "For questions and deletion requests, contact the person who gave you access to this site.",
+    contactWithEmail: (email) => `Questions: ${email}`,
+    contactWithoutEmail: "For questions, contact the person who gave you access to this site.",
     backToSignIn: "Back to sign in",
   },
   th: {
@@ -77,6 +78,7 @@ export const privacyMessages = defineMessages<PrivacyCopy>({
         items: [
           "แต่ละบัญชีมีพื้นที่ทำงานของตัวเอง ผู้ใช้คนอื่นเปิดเคส ไฟล์เสียง บทถอดเสียง หรือรายงานของคุณไม่ได้",
           "ผู้ดูแลเว็บนี้เข้าถึงฐานข้อมูลและไฟล์เสียงที่เก็บไว้ได้ เพื่อดูแลระบบ",
+          "คุณเปิดการยืนยันสองขั้นตอนได้ที่ ตั้งค่า › ความปลอดภัยและข้อมูล เพื่อให้การลงชื่อเข้าใช้ต้องใช้รหัสจากแอปยืนยันตัวตนด้วย",
         ],
       },
       {
@@ -97,13 +99,13 @@ export const privacyMessages = defineMessages<PrivacyCopy>({
         title: "การลบข้อมูล",
         items: [
           "การถอนความยินยอมของเคส จะลบไฟล์เสียงของเคสนั้นออกจากที่เก็บ และหยุดการใช้ข้อมูลของเคสนั้น",
-          "ถ้าต้องการลบบัญชีและข้อมูลทั้งหมดในบัญชี ให้ติดต่อผู้ดูแลเว็บ",
+          "คุณลบบัญชีและข้อมูลทั้งหมดในบัญชีได้เองที่ ตั้งค่า › ความปลอดภัยและข้อมูล ระบบจะลบไฟล์เสียงออกจากที่เก็บก่อน แล้วจึงลบข้อมูล และลบบัญชี โดยเก็บไว้เพียงบันทึกว่ามีการลบบัญชี ซึ่งไม่มีข้อมูลใดจากบัญชีนั้น",
         ],
       },
     ],
     contactTitle: "ติดต่อ",
-    contactWithEmail: (email) => `สอบถามและขอลบข้อมูล: ${email}`,
-    contactWithoutEmail: "หากมีคำถามหรือต้องการขอลบข้อมูล ให้ติดต่อผู้ที่ให้สิทธิ์คุณเข้าใช้เว็บนี้",
+    contactWithEmail: (email) => `สอบถาม: ${email}`,
+    contactWithoutEmail: "หากมีคำถาม ให้ติดต่อผู้ที่ให้สิทธิ์คุณเข้าใช้เว็บนี้",
     backToSignIn: "กลับไปหน้าเข้าสู่ระบบ",
   },
 });

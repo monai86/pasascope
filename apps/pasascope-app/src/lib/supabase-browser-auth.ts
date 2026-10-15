@@ -20,6 +20,8 @@ export type SupabaseBrowserAuthSnapshot = {
   email: string;
   displayName?: string;
   aal: "aal1" | "aal2";
+  /** The account has a verified authenticator, so the session has to reach aal2. */
+  mfaEnrolled: boolean;
 };
 
 export type SupabaseSessionLike = {
@@ -28,6 +30,7 @@ export type SupabaseSessionLike = {
   user?: {
     id?: string | null;
     email?: string | null;
+    factors?: ReadonlyArray<{ status?: unknown } | null> | null;
     user_metadata?: {
       display_name?: unknown;
       full_name?: unknown;
@@ -48,6 +51,7 @@ export function loadSupabaseBrowserAuthSnapshot(): SupabaseBrowserAuthSnapshot |
       email: parsed.email,
       displayName: typeof parsed.displayName === "string" ? parsed.displayName : undefined,
       aal: parsed.aal,
+      mfaEnrolled: parsed.mfaEnrolled === true,
     };
   } catch {
     return null;
@@ -105,6 +109,8 @@ export function buildSupabaseBrowserAuthSnapshotFromSession(
     email: session.user.email,
     displayName: extractDisplayName(session.user.user_metadata),
     aal: resolveAalFromSession(session) ?? "aal1",
+    mfaEnrolled: Array.isArray(session.user.factors)
+      && session.user.factors.some((factor) => factor?.status === "verified"),
   };
 }
 
@@ -131,7 +137,8 @@ export function deriveSupabaseAccessSession(snapshot: SupabaseBrowserAuthSnapsho
     return { stage: "signed_out" };
   }
   return {
-    stage: "authenticated",
+    // The API refuses an aal1 session of an account with two-step verification.
+    stage: snapshot.mfaEnrolled && snapshot.aal !== "aal2" ? "mfa_required" : "authenticated",
     userId: snapshot.userId,
     email: snapshot.email,
     displayName: snapshot.displayName,

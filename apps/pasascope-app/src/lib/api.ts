@@ -45,6 +45,20 @@ function readableApiErrorMessage(body: string): string {
   return body;
 }
 
+// The API's answer when an account with two-step verification sends an aal1 session.
+const SECOND_STEP_REQUIRED = "Two-step verification is required for this account.";
+
+async function failedResponse(response: Response): Promise<ApiError> {
+  const error = new ApiError(response.status, await response.text());
+  // The session predates two-step verification being turned on, perhaps on
+  // another device. Fetching it again shows the account's factor, and the
+  // workspace gate then asks for the code.
+  if (response.status === 403 && error.message === SECOND_STEP_REQUIRED && isSupabaseRuntimeContext()) {
+    void import("@/lib/supabase-mfa").then((module) => module.refreshSessionFactors());
+  }
+  return error;
+}
+
 export async function apiRequest<T>(path: string, init: RequestInit = {}): Promise<T> {
   const headers = new Headers(init.headers);
   await applyRuntimeAuthHeaders(headers);
@@ -58,7 +72,7 @@ export async function apiRequest<T>(path: string, init: RequestInit = {}): Promi
     headers
   });
   if (!response.ok) {
-    throw new ApiError(response.status, await response.text());
+    throw await failedResponse(response);
   }
   return response.json() as Promise<T>;
 }
@@ -148,7 +162,7 @@ export async function apiText(path: string, init: RequestInit = {}): Promise<str
     headers
   });
   if (!response.ok) {
-    throw new ApiError(response.status, await response.text());
+    throw await failedResponse(response);
   }
   return response.text();
 }
@@ -162,7 +176,7 @@ export async function apiBlob(path: string, init: RequestInit = {}): Promise<Blo
     headers,
   });
   if (!response.ok) {
-    throw new ApiError(response.status, await response.text());
+    throw await failedResponse(response);
   }
   return response.blob();
 }

@@ -99,7 +99,7 @@ export const settingsMessages = defineMessages<SettingsCopy>({
       account: "Who you are signed in as, and the name the app shows.",
       display: "Language, text size and motion. Text size and motion are saved in this browser.",
       workflow: "How a new case starts, and how the work is processed. Your choice is saved in this browser.",
-      privacy: "Your password, where you are signed in, and what the app keeps.",
+      privacy: "Your password, two-step verification, where you are signed in, what the app keeps, and deleting the account.",
       help: "How the app is meant to be used.",
     },
     account: {
@@ -201,7 +201,7 @@ export const settingsMessages = defineMessages<SettingsCopy>({
       account: "บัญชีที่ใช้อยู่ และชื่อที่แอปแสดง",
       display: "ภาษา ขนาดตัวอักษร และการเคลื่อนไหว ขนาดตัวอักษรและการเคลื่อนไหวบันทึกไว้ในเบราว์เซอร์นี้",
       workflow: "ค่าเริ่มต้นของเคสใหม่ และวิธีประมวลผลงาน ตัวเลือกบันทึกไว้ในเบราว์เซอร์นี้",
-      privacy: "รหัสผ่าน อุปกรณ์ที่ลงชื่อเข้าใช้ และข้อมูลที่แอปเก็บ",
+      privacy: "รหัสผ่าน การยืนยันสองขั้นตอน อุปกรณ์ที่ลงชื่อเข้าใช้ ข้อมูลที่แอปเก็บ และการลบบัญชี",
       help: "วิธีใช้แอปตามที่ออกแบบไว้",
     },
     account: {

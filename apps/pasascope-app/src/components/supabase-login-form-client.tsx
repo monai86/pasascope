@@ -82,6 +82,11 @@ export function SupabaseLoginFormClient() {
       hashAccessToken = hashParams.get("access_token");
     }
 
+    if (searchParams.get("account") === "deleted") {
+      setStatusMessage(t.status.accountDeleted);
+      return;
+    }
+
     const detectedError = queryError || hashError;
     if (detectedError) {
       setErrorMessage(decodeURIComponent(detectedError.replace(/\+/g, " ")));

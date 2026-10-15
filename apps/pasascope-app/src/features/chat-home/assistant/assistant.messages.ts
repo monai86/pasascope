@@ -157,6 +157,7 @@ export const assistantMessages = defineMessages<AssistantCopy>({
         lines: [
           "Nothing can be deleted from this field, so that nothing is deleted by a mistyped line.",
           "To remove a case's recordings, withdraw its consent on the case's page.",
+          "To delete your whole account with everything in it, go to Settings › Privacy & Security.",
         ],
       },
       diagnosis: {
@@ -313,6 +314,7 @@ export const assistantMessages = defineMessages<AssistantCopy>({
         lines: [
           "ช่องนี้ลบข้อมูลไม่ได้ เพื่อไม่ให้มีอะไรถูกลบเพราะพิมพ์ผิด",
           "ถ้าต้องการลบไฟล์เสียงของเคส ให้ถอนความยินยอมที่หน้าของเคสนั้น",
+          "ถ้าต้องการลบทั้งบัญชีพร้อมข้อมูลทั้งหมด ไปที่ ตั้งค่า › ความปลอดภัยและข้อมูล",
         ],
       },
       diagnosis: {

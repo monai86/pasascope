@@ -29,6 +29,7 @@ describe("supabase browser auth bridge", () => {
       email: "clinician@example.test",
       displayName: "Clinician",
       aal: "aal1",
+      mfaEnrolled: false,
     })).toEqual({
       stage: "authenticated",
       userId: "user_001",
@@ -52,7 +53,20 @@ describe("supabase browser auth bridge", () => {
       email: "clinician@example.test",
       displayName: "Clinician",
       aal: "aal2",
+      mfaEnrolled: false,
     });
+  });
+
+  it("asks for the second step when the account has a verified authenticator and the session is aal1", () => {
+    const withFactor = (aal: "aal1" | "aal2", status: string) => buildSupabaseBrowserAuthSnapshotFromSession({
+      aal,
+      user: { id: "user_001", email: "clinician@example.test", factors: [{ status }] },
+    });
+
+    expect(deriveSupabaseAccessSession(withFactor("aal1", "verified")).stage).toBe("mfa_required");
+    expect(deriveSupabaseAccessSession(withFactor("aal2", "verified")).stage).toBe("authenticated");
+    // An enrollment that was started and never confirmed does not count.
+    expect(deriveSupabaseAccessSession(withFactor("aal1", "unverified")).stage).toBe("authenticated");
   });
 
   it("reads the assurance level from the access token when the session does not say", () => {
