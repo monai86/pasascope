@@ -1,5 +1,5 @@
 #!/bin/bash
-# PasaScope Desktop GUI Launcher shortcut
+# PasaScope desktop app launcher
 SOURCE="${BASH_SOURCE[0]}"
 while [ -h "$SOURCE" ]; do
     DIR="$(cd -P "$(dirname "$SOURCE")" && pwd)"
@@ -18,5 +18,11 @@ else
 fi
 
 export OBJC_DISABLE_INITIALIZE_FORK_SAFETY=YES
-"$PYTHON_BIN" scripts/pasascope_gui.py "$@" 2> >(grep -v -E 'libmpg123|id3\.c' >&2)
+# The PySide6 desktop app is the default; --legacy opens the old Tkinter GUI.
+if [ "$1" = "--legacy" ]; then
+    shift
+    "$PYTHON_BIN" scripts/pasascope_gui.py "$@" 2> >(grep -v -E 'libmpg123|id3\.c' >&2)
+else
+    "$PYTHON_BIN" -m packages.desktop.app "$@" 2> >(grep -v -E 'libmpg123|id3\.c|qt\.qpa\.fonts' >&2)
+fi
 
