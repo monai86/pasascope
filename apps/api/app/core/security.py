@@ -6,11 +6,14 @@ from starlette.middleware.base import BaseHTTPMiddleware
 from starlette.responses import JSONResponse
 from starlette.types import ASGIApp
 
-from app.auth.supabase_auth import authenticate_supabase_bearer
+from app.auth.supabase_admin import SupabaseAdminUnavailable, has_verified_factor
+from app.auth.supabase_auth import SupabasePrincipal, authenticate_supabase_bearer
 from app.core.config import Settings, get_settings
 
 
 UNSAFE_METHODS = {"POST", "PUT", "PATCH", "DELETE"}
+# The web app recognises this detail and asks for the authenticator code.
+MFA_REQUIRED_DETAIL = "Two-step verification is required for this account."
 # Local mock sign-in only: a signed-in Supabase user is always a therapist.
 ALLOWED_LAUNCH_ROLES = {"therapist", "clinical_supervisor"}
 
@@ -34,6 +37,7 @@ def get_current_user(
 ) -> CurrentUser:
     if settings.auth_mode != "mock":
         principal = authenticate_supabase_bearer(authorization, settings)
+        _require_second_factor_when_enrolled(principal, settings)
         return CurrentUser(
             user_id=principal.user_id,
             role=principal.role,
@@ -47,6 +51,27 @@ def get_current_user(
         display_name=x_mock_display_name or "Demo Therapist",
         organization_id=x_organization_id or "pilot_org_001",
     )
+
+
+def _require_second_factor_when_enrolled(principal: SupabasePrincipal, settings: Settings) -> None:
+    """Two-step verification is optional, but an account that has it cannot be used without it.
+
+    An aal2 session has passed the second step. An aal1 session is enough
+    only while the account has no verified authenticator, which Supabase is
+    asked about. An API without the project's service role key cannot ask and
+    lets the session through, as it did before two-step verification existed.
+    """
+    if principal.aal == "aal2":
+        return
+    try:
+        enrolled = has_verified_factor(principal.user_id, settings)
+    except SupabaseAdminUnavailable:
+        raise HTTPException(
+            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+            detail="Two-step verification could not be checked. Try again in a moment.",
+        ) from None
+    if enrolled:
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail=MFA_REQUIRED_DETAIL)
 
 
 def require_therapist(user: CurrentUser) -> CurrentUser:

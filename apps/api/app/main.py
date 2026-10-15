@@ -7,6 +7,7 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
 from app.api.v1.routes import (
+    account,
     ai_review,
     audio_review,
     cases,
@@ -130,6 +131,7 @@ app.include_router(reports.router, prefix=settings_obj.api_prefix)
 app.include_router(jobs.router, prefix=settings_obj.api_prefix)
 app.include_router(audio_review.router, prefix=settings_obj.api_prefix)
 app.include_router(settings.router, prefix=settings_obj.api_prefix)
+app.include_router(account.router, prefix=settings_obj.api_prefix)
 @app.get("/health")
 @app.get("/api/v1/health")
 def health():

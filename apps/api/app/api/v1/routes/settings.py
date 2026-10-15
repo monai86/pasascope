@@ -20,6 +20,7 @@ def settings():
     hosted_whisper = asr_provider_registry.get("hosted_whisper").check_availability().available
     # On-device transcription is preferred when both are switched on.
     transcription_provider = "local_whisper" if local_whisper else "hosted_whisper" if hosted_whisper else None
+    account_management = config.auth_mode == "supabase" and config.supabase_admin_target is not None
     transcription = (
         "experimental"
         if audio_upload == "experimental" and (transcription_provider or config.mock_mode)
@@ -38,6 +39,10 @@ def settings():
             # Kept for web builds that read it: there is one way of working now.
             "review_gates": "open",
             "required_app_aal": "aal1",
+            # Both need the project's service role key: the API checks every
+            # aal1 session against the account's factors, and deletes accounts.
+            "two_step_verification": "optional" if account_management else "unavailable",
+            "account_deletion": "available" if account_management else "unavailable",
             "active_organization_session": "explicit_selection_when_ambiguous",
             "production_mock_mode": "forbidden" if not config.mock_mode else "local_only",
         },

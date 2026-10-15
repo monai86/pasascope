@@ -34,6 +34,7 @@ PasaScope เป็นต้นแบบเพื่อการวิจัย�
    - *Site URL* = โดเมนของเว็บ เช่น `https://<project>.vercel.app`
    - *Redirect URLs* เพิ่ม `https://<project>.vercel.app/today` และ `https://<project>.vercel.app/login`
 3. **Authentication → Hooks**: ปิด *Custom Access Token* hook เดิม (`pasascope_access_token_hook`) โหมดสาธารณะไม่ใช้ claim ขององค์กร
+   **Authentication → Multi-Factor**: ตรวจว่า *TOTP (App Authenticator)* เปิดอยู่ (ค่าเริ่มต้นของ Supabase คือเปิด) ผู้ใช้เปิดการยืนยันสองขั้นตอนเองได้ที่ ตั้งค่า › ความปลอดภัยและข้อมูล
 4. **Storage**: สร้าง bucket ชื่อ `audio-recordings` แบบ **private**
 5. **Project Settings** จดค่าเหล่านี้ไว้ใช้ในขั้นถัดไป
    - Project URL (`https://<ref>.supabase.co`)
@@ -64,9 +65,11 @@ PasaScope เป็นต้นแบบเพื่อการวิจัย�
    | `PASASCOPE_ASR_HOSTED_API_KEY` | คีย์ Groq จากขั้น 2 |
 
 4. กด **Apply** แล้วรอ build ราว 5 นาที
-5. ตรวจว่า API ขึ้นแล้ว: เปิด `https://<service>.onrender.com/health` ต้องได้ `ok` และ `https://<service>.onrender.com/api/v1/settings` ต้องมี `"public_signup": true`, `"review_gates": "open"` และ `"transcription_provider": "hosted_whisper"`
+5. ตรวจว่า API ขึ้นแล้ว: เปิด `https://<service>.onrender.com/health` ต้องได้ `ok` และ `https://<service>.onrender.com/api/v1/settings` ต้องมี `"public_signup": true`, `"review_gates": "open"`, `"two_step_verification": "optional"`, `"account_deletion": "available"` และ `"transcription_provider": "hosted_whisper"`
 
 ค่า URL ของ Supabase ใน `render.yaml` ชี้โปรเจกต์ที่ใช้กับเว็บสาธารณะ ถ้าเปลี่ยนโปรเจกต์ต้องแก้ 3 บรรทัดในไฟล์นั้น (JWKS URL, issuer, storage URL)
+
+service role key ตัวเดียวกันนี้ API ยังใช้ถาม Supabase ว่าบัญชีใดเปิดการยืนยันสองขั้นตอนไว้ และใช้ลบบัญชีเมื่อผู้ใช้สั่งลบเอง ถ้าไม่ได้ใส่ key หรือ storage URL ไม่ถูกต้อง หน้าตั้งค่าจะไม่แสดงสองเรื่องนี้
 
 ไฟล์เสียงเขียนลงดิสก์ของ Render ก่อน แล้วสำรองขึ้น bucket ทันที เมื่อ service รีสตาร์ตและดิสก์ถูกล้าง API จะดึงไฟล์กลับจาก bucket เองตอนมีคนเปิดฟังหรือสั่งถอดเสียง
 
@@ -100,6 +103,8 @@ PasaScope เป็นต้นแบบเพื่อการวิจัย�
 | หน้าเว็บขึ้น "เชื่อมต่อเซิร์ฟเวอร์ไม่ได้" | API หลับอยู่ (รอราว 1 นาที); `PASASCOPE_CORS_ALLOWED_ORIGINS` ตรงกับโดเมนเว็บแบบไม่มี `/` ท้าย |
 | อัปโหลดเสียงแล้วขึ้น "The recording could not be stored" | bucket ชื่อถูกและเป็นของโปรเจกต์เดียวกับ `PASASCOPE_SUPABASE_STORAGE_URL`; service role key ถูก |
 | งานถอดเสียงล้มเหลว | ข้อความ "usage limit" = โควตา Groq เต็ม; "status 401" = คีย์ Groq ผิด; "larger than 25 MB" = ไฟล์ใหญ่เกิน |
+| ผู้ใช้ทำแอปยืนยันตัวตนหาย เข้าบัญชีไม่ได้ | ไม่มีรหัสกู้คืน ผู้ดูแลต้องลบ factor ของผู้ใช้คนนั้นใน Supabase (Authentication → Users → เลือกผู้ใช้ แล้วลบ MFA factor หรือเรียก admin API `DELETE /auth/v1/admin/users/{user_id}/factors/{factor_id}` ด้วย service role key) จากนั้นผู้ใช้ลงชื่อเข้าใช้ด้วยรหัสผ่านได้ตามปกติ |
+| เปิดหน้าใดก็ขึ้น "Two-step verification could not be checked" | API ติดต่อ Supabase Auth ไม่ได้ หรือ service role key ผิด (เกิดกับ session ที่ยังไม่ผ่านขั้นที่สองเท่านั้น) |
 | ข้อมูลหายหลังรีสตาร์ต | `PASASCOPE_REPOSITORY_MODE=sql` และ `PASASCOPE_DATABASE_URL` ชี้ฐานข้อมูล Supabase จริง |
 
 ## 5. ย้ายไปถอดเสียงบนเซิร์ฟเวอร์ของเราเอง

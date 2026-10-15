@@ -33,11 +33,14 @@ separate security review before any real child data or audio is entered.
 - Enable managed database backups and point-in-time recovery before real data.
   Restore drills must meet the RPO/RTO in `docs/BACKUP_RESTORE_RUNBOOK.md` and
   preserve audit/sign-off evidence.
-- Route case export, consent withdrawal, and deletion-review requests through
-  privacy operations. Deletion-review records must keep retention days,
-  eligible-for-deletion timestamps, legal-hold state, and retained-evidence
-  summaries. Legal hold blocks completion, and audit/sign-off evidence must not
-  be automatically deleted.
+- An account holder deletes their own account with `DELETE /api/v1/account`:
+  recordings first, then every record of the workspace including its audit
+  events and reports, then the Supabase Auth user; one content-free audit event
+  records the deletion (ADR 0023). Consent withdrawal on a case still removes
+  that case's recordings and unlinks its outputs.
+- Two-step verification is optional per account. Once an account has a
+  verified authenticator, the API refuses its `aal1` sessions; the check needs
+  the Supabase service role key (ADR 0023).
 - Stop rollout immediately for cross-tenant exposure, consent bypass, audit
   loss, or fabricated ASR output. Follow `docs/INCIDENT_RESPONSE_RUNBOOK.md` and
   keep child identifiers, transcript text, audio content, storage keys, and
@@ -82,11 +85,9 @@ filenames, report excerpts, or clinical content to error/metrics providers.
 
 ## Log Retention
 
-Use `LOG_RETENTION_DAYS` for application logs and a clinic-approved retention
-period for audit logs. Privacy deletion requests must be reviewed against
-retention obligations before any destructive action. A completed deletion review
-records evidence retained for audit and signed reports; it does not erase those
-records automatically.
+Use `LOG_RETENTION_DAYS` for application logs. Audit events are kept for the
+life of the workspace; deleting an account removes its audit events with the
+rest of its records and keeps one event that the deletion happened.
 
 ## Incident Response
 

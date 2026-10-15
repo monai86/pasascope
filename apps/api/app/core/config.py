@@ -266,6 +266,20 @@ class Settings(BaseModel):
             and _is_valid_supabase_bucket_name(self.supabase_storage_bucket)
         )
 
+    @property
+    def supabase_admin_target(self) -> tuple[str, str] | None:
+        """Project URL and service role key for managing accounts, or ``None``.
+
+        Used to check whether an account has two-step verification and to
+        delete an account. The recording backup's settings already name this
+        project and key, so they are reused rather than set twice.
+        """
+        if _is_valid_supabase_project_url(self.supabase_storage_url) and _is_valid_supabase_service_role_key(
+            self.supabase_storage_service_role_key
+        ):
+            return self.supabase_storage_url.rstrip("/"), self.supabase_storage_service_role_key
+        return None
+
     def validate_runtime_security(self) -> "Settings":
         origins = self.parsed_cors_allowed_origins
         if self.audio_backup_mode not in {"none", "supabase"}:

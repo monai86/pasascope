@@ -53,6 +53,44 @@ def record_matches(record, where: dict) -> bool:
     return True
 
 
+_RECORD_KEYS = {
+    "cases": "case_id",
+    "sessions": "session_id",
+    "transcripts": "transcript_id",
+    "features": "feature_set_id",
+    "ml_results": "result_id",
+    "ai_reviews": "ai_review_id",
+    "reports": "report_id",
+    "therapy_goals": "goal_id",
+    "audio_files": "audio_file_id",
+    "jobs": "job_id",
+    "privacy_operations": "privacy_operation_id",
+}
+
+
+def _record_key(collection: str, record) -> str:
+    return getattr(record, _RECORD_KEYS[collection])
+
+
+_RECORD_TYPES = {
+    "cases": ChildCase,
+    "sessions": TherapySession,
+    "transcripts": Transcript,
+    "features": FeatureSet,
+    "ml_results": MLResult,
+    "ai_reviews": AiReview,
+    "reports": Report,
+    "therapy_goals": TherapyGoal,
+    "audio_files": AudioFileMetadata,
+    "jobs": ProcessingJob,
+    "privacy_operations": PrivacyOperation,
+}
+
+
+def _fields(collection: str) -> set[str]:
+    return set(_RECORD_TYPES[collection].model_fields)
+
+
 class MockRepository:
     """In-memory repository for local demo and contract tests."""
 
@@ -212,6 +250,71 @@ class MockRepository:
             actor_id=actor_id,
             organization_id=case.organization_id,
         )
+
+    # Every collection that holds a workspace's records, children before parents.
+    _WORKSPACE_COLLECTIONS = (
+        "ml_results",
+        "features",
+        "ai_reviews",
+        "reports",
+        "audio_files",
+        "transcripts",
+        "jobs",
+        "privacy_operations",
+        "therapy_goals",
+        "sessions",
+        "cases",
+    )
+
+    def workspace_records(self, organization_id: str) -> dict[str, list]:
+        """Every record of one workspace, by collection.
+
+        A record counts when it carries the workspace's id or hangs off one of
+        its cases or sessions, so a record written with a wrong organization
+        id is still found through what it belongs to.
+        """
+        cases = self.find("cases", organization_id=organization_id)
+        case_ids = {case.case_id for case in cases}
+        sessions = self.find("sessions", organization_id=organization_id)
+        if case_ids:
+            sessions += self.find("sessions", case_id=case_ids)
+        session_ids = {session.session_id for session in sessions}
+        records: dict[str, list] = {}
+        for collection in self._WORKSPACE_COLLECTIONS:
+            found = {}
+            for record in self.find(collection, organization_id=organization_id):
+                found[id(record)] = record
+            if collection != "cases" and case_ids and "case_id" in _fields(collection):
+                for record in self.find(collection, case_id=case_ids):
+                    found[id(record)] = record
+            if collection not in {"cases", "sessions"} and session_ids and "session_id" in _fields(collection):
+                for record in self.find(collection, session_id=session_ids):
+                    found[id(record)] = record
+            records[collection] = list(found.values())
+        return records
+
+    def delete_workspace(self, organization_id: str, *, user_id: str) -> dict[str, int]:
+        """Remove a workspace's records, settings and audit events.
+
+        Stored recordings are the caller's to remove first; this only drops
+        their metadata. One audit event, with no content, records the deletion.
+        """
+        removed = {}
+        for collection, records in self.workspace_records(organization_id).items():
+            table = getattr(self, collection)
+            for record in records:
+                table.pop(_record_key(collection, record), None)
+            removed[collection] = len(records)
+        self.organization_settings.pop(organization_id, None)
+        self.audit_log[:] = [event for event in self.audit_log if event.get("organization_id") != organization_id]
+        self.add_audit(
+            "account.delete",
+            organization_id,
+            "Account deleted with its records.",
+            actor_id=user_id,
+            organization_id=organization_id,
+        )
+        return removed
 
     def create_case(
         self,

@@ -108,6 +108,14 @@ class LazyTable(MutableMapping):
             if not known and self._load_one(key) is None:
                 raise KeyError(key)
 
+    def forget(self, key: str) -> None:
+        """Forget a record whose row is already gone, without asking the database."""
+        with self._lock:
+            self._recent.pop(key, None)
+            if self._alive is not None:
+                self._alive.pop(key, None)
+            self._stored.pop(key, None)
+
     # -- reading everything --------------------------------------------------
 
     def _everything(self) -> dict[str, Any]:
