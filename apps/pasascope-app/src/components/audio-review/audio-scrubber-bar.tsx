@@ -11,10 +11,11 @@ export interface AudioScrubberBarProps {
   currentTimeMs: number;
   durationMs: number;
   speed: number;
-  isLooping: boolean;
+  isLooping?: boolean;
   onPlayPause: () => void;
   onSpeedChange: (speed: number) => void;
-  onToggleLoop: () => void;
+  /** Without it the player has no loop button. */
+  onToggleLoop?: () => void;
   onSeek?: (timeMs: number) => void;
   className?: string;
 }
@@ -49,7 +50,7 @@ export function AudioScrubberBar({
   currentTimeMs,
   durationMs,
   speed,
-  isLooping,
+  isLooping = false,
   onPlayPause,
   onSpeedChange,
   onToggleLoop,
@@ -112,18 +113,20 @@ export function AudioScrubberBar({
             </button>
           ))}
         </div>
-        <button
-          type="button"
-          onClick={onToggleLoop}
-          aria-pressed={isLooping}
-          title={t.loopHint}
-          className={`inline-flex min-h-11 min-w-11 items-center justify-center gap-1.5 rounded-full px-2.5 text-xs font-semibold transition motion-reduce:transition-none lg:px-3.5 ${
-            isLooping ? "bg-surface text-brand-strong" : "bg-navy-raised text-on-navy-muted hover:text-on-navy"
-          }`}
-        >
-          <Repeat size={15} aria-hidden="true" />
-          <span className="sr-only lg:not-sr-only">{t.loop}</span>
-        </button>
+        {onToggleLoop ? (
+          <button
+            type="button"
+            onClick={onToggleLoop}
+            aria-pressed={isLooping}
+            title={t.loopHint}
+            className={`inline-flex min-h-11 min-w-11 items-center justify-center gap-1.5 rounded-full px-2.5 text-xs font-semibold transition motion-reduce:transition-none lg:px-3.5 ${
+              isLooping ? "bg-surface text-brand-strong" : "bg-navy-raised text-on-navy-muted hover:text-on-navy"
+            }`}
+          >
+            <Repeat size={15} aria-hidden="true" />
+            <span className="sr-only lg:not-sr-only">{t.loop}</span>
+          </button>
+        ) : null}
       </div>
     </div>
   );

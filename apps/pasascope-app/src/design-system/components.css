@@ -138,25 +138,6 @@
     --color-mark-bubble-to: var(--color-navy);
   }
 
-  /*
-   * The chat shell has no bottom tab bar, so a page's fixed action bar sits
-   * on the screen's own edge, and the page keeps room for it at the foot.
-   */
-  @media (max-width: 767px) {
-    [data-shell="chat"] .mobile-transcript-primary-actions {
-      bottom: 0;
-      padding-bottom: max(0.75rem, env(safe-area-inset-bottom));
-    }
-
-    [data-shell="chat"] main:has(.mobile-transcript-primary-actions) {
-      scroll-padding-bottom: 6.5rem;
-    }
-
-    [data-shell="chat"] main:has(.mobile-transcript-primary-actions) > div {
-      padding-bottom: 6.5rem;
-    }
-  }
-
   /* Dims the page behind an open drawer or sheet. */
   .shell-scrim {
     background: rgba(15, 27, 51, 0.45);
@@ -671,19 +652,6 @@
     }
   }
 
-  .mobile-transcript-primary-actions {
-    position: fixed;
-    inset-inline: 0;
-    bottom: calc(4.75rem + max(0.75rem, env(safe-area-inset-bottom)));
-    z-index: 45;
-    width: 100%;
-    max-width: 40rem;
-    margin-inline: auto;
-    border-top: 1px solid var(--color-border);
-    background: var(--color-surface-reading);
-    padding: 0.5rem 1rem 0.75rem;
-  }
-
   /*
    * Frosted chrome. Only navigation and sticky action surfaces use it; reading
    * surfaces stay opaque white. The fill falls back to opaque wherever a blur
@@ -797,24 +765,11 @@
     .mobile-bottom-nav {
       padding-inline: 1.5rem;
     }
-
-    .mobile-transcript-primary-actions {
-      padding-inline: 1.5rem;
-    }
   }
 
   @media (min-width: 768px) {
     .mobile-bottom-nav {
       display: none;
-    }
-
-    .mobile-transcript-primary-actions {
-      position: static;
-      width: auto;
-      max-width: none;
-      margin: 0;
-      border-top: 0;
-      padding: 0;
     }
 
     .transcript-line-row {

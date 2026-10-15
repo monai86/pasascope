@@ -1,11 +1,12 @@
 "use client";
 
-import React, { memo, useCallback, useEffect, useLayoutEffect, useRef } from "react";
+import React, { memo, useCallback, useEffect, useRef } from "react";
 import { CheckCircle2, Pause, Play } from "lucide-react";
 
-import { audioReviewMessages, SPEAKER_CHOICES } from "@/components/audio-review/audio-review.messages";
+import { audioReviewMessages } from "@/components/audio-review/audio-review.messages";
 import { formatClock } from "@/components/audio-review/audio-scrubber-bar";
-import { speakerColour } from "@/design-system/dataviz";
+import { AutoGrowTextarea } from "@/components/auto-grow-textarea";
+import { SpeakerSelect } from "@/components/speaker-select";
 import { useMessages } from "@/i18n/locale-provider";
 
 export interface ReviewLine {
@@ -119,8 +120,6 @@ const UtteranceRow = memo(function UtteranceRow({
   onPlayUtterance?: (startMs: number, endMs?: number, lineId?: string) => void;
 }) {
   const number = index + 1;
-  const code = line.speaker.replace("*", "").trim().toUpperCase();
-  const known = (SPEAKER_CHOICES as readonly string[]).includes(code);
   const timed = typeof line.startMs === "number";
   const echolalia = line.clinicalTag?.toLowerCase().includes("echolalia");
   const pronoun = line.clinicalTag?.toLowerCase().includes("pronoun");
@@ -154,40 +153,23 @@ const UtteranceRow = memo(function UtteranceRow({
         {timed && typeof line.endMs === "number" ? `${formatClock(line.startMs!)}–${formatClock(line.endMs)}` : "–"}
       </p>
 
-      {/* The dot carries the speaker's colour; the name stays in text ink. */}
-      <div className="relative justify-self-end sm:justify-self-stretch sm:pt-0.5">
-        <span
-          aria-hidden="true"
-          className="pointer-events-none absolute left-3 top-1/2 h-2.5 w-2.5 -translate-y-1/2 rounded-full sm:top-[calc(50%+1px)]"
-          style={{ backgroundColor: known ? speakerColour(code, "light") : "transparent", boxShadow: known ? undefined : "inset 0 0 0 1.5px var(--color-border-strong)" }}
-        />
-        <select
-          value={code}
-          onChange={(event) => onChange(index, { speaker: event.target.value })}
-          onClick={(event) => event.stopPropagation()}
-          onFocus={() => onSelectLine?.(line.lineId)}
-          aria-label={copy.lines.speaker(number)}
-          className={`h-11 w-full min-w-[8rem] rounded-control border bg-surface pl-8 pr-8 text-sm font-semibold outline-none transition focus-visible:ring-4 focus-visible:ring-[color:var(--color-focus-ring)] motion-reduce:transition-none ${
-            known ? "border-line text-ink" : "border-[color:var(--color-attention-border)] text-[color:var(--color-warning-text)]"
-          }`}
-        >
-          {/* A line the pipeline could not attribute says so, rather than showing the first speaker as if chosen. */}
-          {known ? null : <option value={code}>{code === "UNK" || code === "" ? copy.notSet : copy.speakers[code as keyof Copy["speakers"]] ?? code}</option>}
-          {SPEAKER_CHOICES.map((choice) => (
-            <option key={choice} value={choice}>
-              {copy.speakers[choice]}
-            </option>
-          ))}
-        </select>
-      </div>
+      <SpeakerSelect
+        className="justify-self-end sm:justify-self-stretch sm:pt-0.5"
+        value={line.speaker}
+        label={copy.lines.speaker(number)}
+        onChange={(speaker) => onChange(index, { speaker })}
+        onClick={(event) => event.stopPropagation()}
+        onFocus={() => onSelectLine?.(line.lineId)}
+      />
 
       <div className="col-span-3 col-start-1 min-w-0 sm:col-span-1 sm:col-start-4">
-        <AutoGrowText
+        <AutoGrowTextarea
           value={line.text}
-          label={copy.lines.text(number)}
+          aria-label={copy.lines.text(number)}
           placeholder={copy.lines.placeholder}
           onFocus={() => onSelectLine?.(line.lineId)}
-          onChange={(text) => onChange(index, { text })}
+          onClick={(event) => event.stopPropagation()}
+          onChange={(event) => onChange(index, { text: event.target.value })}
         />
         {echolalia || pronoun || line.verified ? (
           <div className="mt-1 flex flex-wrap items-center gap-1.5 px-2.5">
@@ -205,54 +187,3 @@ const UtteranceRow = memo(function UtteranceRow({
     </li>
   );
 });
-
-/** A text box as tall as its words, so a long line is read whole instead of scrolled sideways. */
-function AutoGrowText({
-  value,
-  label,
-  placeholder,
-  onFocus,
-  onChange,
-}: {
-  value: string;
-  label: string;
-  placeholder: string;
-  onFocus: () => void;
-  onChange: (value: string) => void;
-}) {
-  const ref = useRef<HTMLTextAreaElement | null>(null);
-  const fit = () => {
-    const element = ref.current;
-    if (!element) return;
-    element.style.height = "auto";
-    element.style.height = `${element.scrollHeight}px`;
-  };
-  useLayoutEffect(fit, [value]);
-  useEffect(() => {
-    if (typeof ResizeObserver === "undefined" || !ref.current) return;
-    // A narrower box wraps the words onto more lines.
-    let lastWidth = 0;
-    const observer = new ResizeObserver(([entry]) => {
-      if (entry.contentRect.width !== lastWidth) {
-        lastWidth = entry.contentRect.width;
-        fit();
-      }
-    });
-    observer.observe(ref.current);
-    return () => observer.disconnect();
-  }, []);
-
-  return (
-    <textarea
-      ref={ref}
-      rows={1}
-      value={value}
-      aria-label={label}
-      placeholder={placeholder}
-      onFocus={onFocus}
-      onClick={(event) => event.stopPropagation()}
-      onChange={(event) => onChange(event.target.value)}
-      className="block min-h-11 w-full resize-none overflow-hidden rounded-control border border-transparent bg-transparent px-2.5 py-2.5 text-[15px] leading-6 text-ink outline-none transition placeholder:text-ink-subtle hover:border-line focus:border-line-strong focus:bg-surface focus-visible:ring-4 focus-visible:ring-[color:var(--color-focus-ring)] motion-reduce:transition-none"
-    />
-  );
-}

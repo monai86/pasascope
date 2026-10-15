@@ -48,8 +48,6 @@ type AudioReviewCopy = {
     echolalia: string;
     pronounReversal: string;
   };
-  speakers: Record<"CHI" | "INV" | "MOT" | "FAT" | "OTH" | "THER", string>;
-  notSet: string;
   save: {
     status: Record<"idle" | "unsaved" | "saving" | "saved" | "failed", string>;
     save: string;
@@ -72,7 +70,7 @@ export const audioReviewMessages = defineMessages<AudioReviewCopy>({
     waveform: {
       recording: "Session recording",
       label: "Recording waveform",
-      speakers: { child: "Child", clinician: "Clinician", other: "Other or not set" },
+      speakers: { child: "Child", clinician: "Therapist", other: "Other or not set" },
       overview: "Whole recording. Click or tap to jump there.",
       detail: "Close-up of the lines around the playhead. Click or tap to jump; drag a line's edge to change its timing.",
       hint: "Click or tap the waveform to jump there · drag a line's edge to change its timing",
@@ -88,7 +86,7 @@ export const audioReviewMessages = defineMessages<AudioReviewCopy>({
       label: "Keyboard",
       play: "play or pause",
       child: "child",
-      clinician: "clinician",
+      clinician: "therapist",
       loop: "loop",
       replay: "replay line",
     },
@@ -107,8 +105,6 @@ export const audioReviewMessages = defineMessages<AudioReviewCopy>({
       echolalia: "Echolalia",
       pronounReversal: "Pronoun reversal",
     },
-    speakers: { CHI: "Child", INV: "Clinician", MOT: "Mother", FAT: "Father", OTH: "Other", THER: "Therapist" },
-    notSet: "Not set",
     save: {
       status: {
         idle: "Not saved yet",
@@ -135,7 +131,7 @@ export const audioReviewMessages = defineMessages<AudioReviewCopy>({
     waveform: {
       recording: "ไฟล์เสียงของเซสชัน",
       label: "คลื่นเสียงของไฟล์",
-      speakers: { child: "เด็ก", clinician: "ผู้บำบัด", other: "อื่นๆ หรือยังไม่ระบุ" },
+      speakers: { child: "เด็ก", clinician: "นักบำบัด", other: "อื่นๆ หรือยังไม่ระบุ" },
       overview: "ทั้งไฟล์ กดเพื่อไปยังช่วงนั้น",
       detail: "ภาพขยายรอบตำแหน่งที่เล่นอยู่ กดเพื่อไปยังช่วงนั้น ลากขอบของบรรทัดเพื่อปรับเวลา",
       hint: "กดที่คลื่นเสียงเพื่อไปยังช่วงนั้น · ลากขอบของบรรทัดเพื่อปรับเวลา",
@@ -151,7 +147,7 @@ export const audioReviewMessages = defineMessages<AudioReviewCopy>({
       label: "แป้นพิมพ์",
       play: "เล่นหรือหยุด",
       child: "เด็ก",
-      clinician: "ผู้บำบัด",
+      clinician: "นักบำบัด",
       loop: "เล่นซ้ำ",
       replay: "เล่นบรรทัดนี้อีกครั้ง",
     },
@@ -170,8 +166,6 @@ export const audioReviewMessages = defineMessages<AudioReviewCopy>({
       echolalia: "พูดเลียนคำ",
       pronounReversal: "ใช้สรรพนามสลับ",
     },
-    speakers: { CHI: "เด็ก", INV: "ผู้บำบัด", MOT: "แม่", FAT: "พ่อ", OTH: "อื่นๆ", THER: "นักบำบัด" },
-    notSet: "ยังไม่ระบุ",
     save: {
       status: {
         idle: "ยังไม่ได้บันทึก",
@@ -187,6 +181,3 @@ export const audioReviewMessages = defineMessages<AudioReviewCopy>({
     stale: "คุณแก้บทถอดเสียงหลังจากวิเคราะห์ไปแล้ว ให้บันทึกแล้ววิเคราะห์ใหม่ เพื่อให้ผลตรงกับบทถอดเสียง",
   },
 });
-
-/** The speaker codes offered in the line list, in the order they are listed. */
-export const SPEAKER_CHOICES = ["CHI", "INV", "MOT", "FAT", "OTH"] as const;

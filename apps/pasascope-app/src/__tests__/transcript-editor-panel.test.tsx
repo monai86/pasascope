@@ -157,20 +157,19 @@ describe("TranscriptEditorPanel", () => {
     ]);
   });
 
-  it("sets the speaker of a line with one button and moves to the next line without a speaker", () => {
+  it("shows a line with no speaker as not set and assigns one from the speaker select", () => {
     const onChange = renderEditor(unknownLines);
 
-    const child = screen.getByRole("button", { name: "Set line 1 to Child" });
-    expect(child).toHaveAttribute("aria-pressed", "false");
-    expect(screen.getByRole("button", { name: "Set line 2 to Therapist" })).toHaveAttribute("aria-pressed", "true");
-    fireEvent.click(child);
+    const select = screen.getByLabelText("Speaker for line 1");
+    expect(select).toHaveValue("UNK");
+    expect(within(select).getByRole("option", { name: "Not set" })).toBeInTheDocument();
+    fireEvent.change(select, { target: { value: "CHI" } });
 
     expect(onChange).toHaveBeenLastCalledWith([
       { ...unknownLines[0], speaker: "CHI" },
       unknownLines[1],
       unknownLines[2]
     ]);
-    expect(screen.getByRole("option", { name: "Transcript line 3" })).toHaveAttribute("aria-selected", "true");
   });
 
   it("assigns speakers and moves between lines from the keyboard, but not while typing", () => {
@@ -202,7 +201,7 @@ describe("TranscriptEditorPanel", () => {
       expect(screen.queryByRole("button", { name: "Play line 2" })).not.toBeInTheDocument();
 
       fireEvent.click(screen.getByRole("button", { name: "Play line 1" }));
-      const audio = screen.getByLabelText("Workspace audio playback") as HTMLAudioElement;
+      const audio = screen.getByLabelText("Session recording") as HTMLAudioElement;
       expect(play).toHaveBeenCalledTimes(1);
 
       audio.currentTime = 1.5;
@@ -240,7 +239,6 @@ describe("TranscriptEditorPanel", () => {
 
     fireEvent.click(screen.getByRole("button", { name: "Save draft" }));
     fireEvent.click(screen.getByRole("button", { name: "Run QA" }));
-    fireEvent.click(screen.getByText("More review actions"));
     fireEvent.click(screen.getByRole("button", { name: "Export reviewed .cha" }));
     expect(onSaveDraft).toHaveBeenCalled();
     expect(onRunQa).toHaveBeenCalled();
@@ -285,7 +283,6 @@ describe("TranscriptEditorPanel", () => {
       />
     );
 
-    fireEvent.click(screen.getByText("More review actions"));
     const attestButton = screen.getByRole("button", { name: "Attest transcript" });
     expect(attestButton).toBeDisabled();
     expect(attestButton).toHaveAttribute("aria-describedby", "transcript-attest-reason");
@@ -336,7 +333,7 @@ describe("TranscriptEditorPanel", () => {
     expect(onAttest).toHaveBeenCalled();
   });
 
-  it("uses one compact filter control, keeps desktop review columns, and filters rows by review state", () => {
+  it("uses one compact filter control and filters rows by review state", () => {
     render(
       <TranscriptEditorPanel
         lines={[
@@ -367,10 +364,8 @@ describe("TranscriptEditorPanel", () => {
     expect(within(filter).getByRole("option", { name: /Possible error/ })).toBeInTheDocument();
     expect(within(filter).getByRole("option", { name: /Notes/ })).toBeInTheDocument();
 
-    // One header names the columns; a line that needs a look carries one mark saying why.
-    expect(screen.getAllByText("Time").length).toBeGreaterThan(0);
-    expect(screen.getAllByText("Speaker").length).toBeGreaterThan(0);
-    expect(screen.getAllByText("What was said").length).toBeGreaterThan(0);
+    // A line that needs a look carries one mark saying why.
+    expect(screen.getAllByText("Check").length).toBeGreaterThan(0);
     expect(screen.queryByRole("button", { name: /Mark line/ })).not.toBeInTheDocument();
 
     fireEvent.change(filter, { target: { value: "missing_speaker" } });
@@ -403,8 +398,6 @@ describe("TranscriptEditorPanel", () => {
       />
     );
 
-    fireEvent.click(screen.getByText("More review actions"));
-    expect(screen.getByRole("button", { name: "Speaker Tools" })).toBeInTheDocument();
     expect(screen.getByRole("button", { name: "Add Note" })).toBeInTheDocument();
     expect(screen.getByRole("button", { name: "Run QA" })).toBeDisabled();
     expect(screen.getByRole("button", { name: "Save draft" })).toBeInTheDocument();
@@ -415,7 +408,7 @@ describe("TranscriptEditorPanel", () => {
     expect(screen.getByText("Add transcript lines before exporting.")).toBeInTheDocument();
   });
 
-  it("keeps the mobile primary bar focused on save and QA while secondary review actions are collapsed", () => {
+  it("keeps the pinned bar to save and QA, with the remaining actions in their own section", () => {
     render(
       <TranscriptEditorPanel
         lines={lines}
@@ -441,8 +434,6 @@ describe("TranscriptEditorPanel", () => {
     const qaDetails = screen.getByTestId("mobile-transcript-qa-details");
     const secondaryActions = screen.getByTestId("mobile-transcript-secondary-actions");
     expect(qaDetails).not.toHaveAttribute("open");
-    expect(secondaryActions).not.toHaveAttribute("open");
-    fireEvent.click(within(secondaryActions).getByText("More review actions"));
     expect(within(secondaryActions).getByRole("button", { name: "Attest transcript" })).toBeInTheDocument();
     expect(within(secondaryActions).getByRole("button", { name: "Export reviewed .cha" })).toBeInTheDocument();
   });
@@ -582,31 +573,6 @@ describe("TranscriptEditorPanel", () => {
     fireEvent.keyDown(window, { key: "l", metaKey: true });
 
     expect(onSaveDraft).not.toHaveBeenCalled();
-  });
-
-  it("lets tablet and desktop users switch or collapse the Audio and QA inspector", () => {
-    render(
-      <TranscriptEditorPanel
-        lines={lines}
-        qaStatus="not_run"
-        qaIssues={[]}
-        attested={false}
-        busy={false}
-        saveStatus="saved"
-        onChange={vi.fn()}
-        onSaveDraft={vi.fn()}
-        onRunQa={vi.fn()}
-        onAttest={vi.fn()}
-        onExport={vi.fn()}
-      />
-    );
-
-    fireEvent.click(screen.getByRole("button", { name: "QA" }));
-    expect(screen.getByRole("button", { name: "QA" })).toHaveAttribute("aria-pressed", "true");
-    fireEvent.click(screen.getByRole("button", { name: "Hide audio and QA" }));
-    expect(screen.getByTestId("transcript-audio-inspector")).toHaveClass("hidden");
-    fireEvent.click(screen.getByRole("button", { name: "Show audio and QA" }));
-    expect(screen.getByRole("button", { name: "Hide audio and QA" })).toBeInTheDocument();
   });
 
   it("announces save state changes through a polite live region", () => {

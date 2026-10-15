@@ -6,7 +6,7 @@ export interface KeyboardReviewOptions {
   onPlayPause?: () => void;
   onReplayActive?: () => void;
   onToggleLoop?: () => void;
-  onAssignSpeaker?: (speaker: "CHI" | "INV" | "MOT" | "FAT") => void;
+  onAssignSpeaker?: (speaker: "CHI" | "THER" | "MOT" | "FAT") => void;
   onAdvanceLine?: () => void;
   onPreviousLine?: () => void;
   isEnabled?: boolean;
@@ -14,7 +14,7 @@ export interface KeyboardReviewOptions {
 
 const SPEAKER_BY_DIGIT = {
   Digit1: "CHI",
-  Digit2: "INV",
+  Digit2: "THER",
   Digit3: "MOT",
   Digit4: "FAT",
 } as const;
@@ -28,7 +28,7 @@ const SPEAKER_BY_DIGIT = {
  *   Space              play or pause (not while typing in a field)
  *   Alt+R              replay the active utterance
  *   Alt+L              toggle loop
- *   Alt+1 … Alt+4      assign CHI, INV, MOT, FAT to the active utterance
+ *   Alt+1 … Alt+4      assign CHI, THER, MOT, FAT to the active utterance
  *   Cmd/Ctrl+Enter     mark verified and advance
  *
  * Alt shortcuts are matched on the physical key (`code`), because Option

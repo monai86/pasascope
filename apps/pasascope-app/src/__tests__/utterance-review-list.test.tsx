@@ -20,8 +20,8 @@ describe("UtteranceReviewList", () => {
 
     expect(screen.getByDisplayValue("รถ สี แดง")).toBeDefined();
     const select = screen.getByRole("combobox");
-    fireEvent.change(select, { target: { value: "INV" } });
-    expect(onLineChange).toHaveBeenCalledWith(0, expect.objectContaining({ speaker: "INV" }));
+    fireEvent.change(select, { target: { value: "THER" } });
+    expect(onLineChange).toHaveBeenCalledWith(0, expect.objectContaining({ speaker: "THER" }));
   });
 
   it("handles line text edits and displays clinical cues", () => {
@@ -95,11 +95,11 @@ describe("useKeyboardReview", () => {
     });
     expect(onAssignSpeaker).toHaveBeenCalledWith("CHI");
 
-    // Alt + 2: Assign INV
+    // Alt + 2: Assign THER
     act(() => {
       window.dispatchEvent(new KeyboardEvent("keydown", { code: "Digit2", altKey: true }));
     });
-    expect(onAssignSpeaker).toHaveBeenCalledWith("INV");
+    expect(onAssignSpeaker).toHaveBeenCalledWith("THER");
 
     // Alt + L: Loop
     act(() => {

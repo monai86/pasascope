@@ -3,7 +3,8 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { AlertCircle, Check, Save } from "lucide-react";
 
-import { audioReviewMessages, SPEAKER_CHOICES } from "@/components/audio-review/audio-review.messages";
+import { audioReviewMessages } from "@/components/audio-review/audio-review.messages";
+import { speakerIsUnset } from "@/components/speaker-select";
 import { AudioScrubberBar } from "@/components/audio-review/audio-scrubber-bar";
 import { DualViewWaveform } from "@/components/audio-review/dual-view-waveform";
 import { useKeyboardReview } from "@/components/audio-review/use-keyboard-review";
@@ -29,8 +30,7 @@ export interface AudioReviewWorkbenchProps {
 // Speaker codes the transcription pipeline uses for adults.
 const ADULT_SPEAKERS = new Set(["INV", "MOT", "FAT", "THER"]);
 
-const hasNoSpeaker = (line: TranscriptLine) =>
-  !(SPEAKER_CHOICES as readonly string[]).includes(line.speaker.replace("*", "").trim().toUpperCase());
+const hasNoSpeaker = (line: TranscriptLine) => speakerIsUnset(line.speaker);
 
 /**
  * Listening to the recording and assigning who said each line.
@@ -175,7 +175,7 @@ export function AudioReviewWorkbench({
   }, [activeLineId, playLine]);
 
   const handleAssignSpeaker = useCallback(
-    (speaker: "CHI" | "INV" | "MOT" | "FAT") => {
+    (speaker: "CHI" | "THER" | "MOT" | "FAT") => {
       onLinesChange(linesRef.current.map((line) => (line.lineId === activeLineId ? { ...line, speaker } : line)));
     },
     [activeLineId, onLinesChange],
@@ -371,7 +371,7 @@ export function AudioReviewWorkbench({
       {onSaveDraft ? (
         <div
           data-testid="audio-review-save-bar"
-          className="sticky bottom-2 z-20 flex items-center justify-between gap-3 rounded-panel border border-line bg-surface/95 py-2 pl-4 pr-2 shadow-lift backdrop-blur-sm"
+          className="sticky bottom-2 z-20 flex items-center justify-between gap-3 rounded-panel border border-line bg-surface py-2 pl-4 pr-2 shadow-lift"
         >
           <p role="status" aria-live="polite" className="flex min-w-0 items-center gap-2 text-sm font-medium text-ink-muted">
             <span

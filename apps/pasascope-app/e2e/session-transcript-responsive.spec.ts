@@ -62,7 +62,7 @@ async function createResponsiveTranscript(request: APIRequestContext, viewportNa
 }
 
 for (const viewport of viewports) {
-  test(`Transcript workbench preserves editing and inspector behavior at ${viewport.name}`, async ({ page, request }) => {
+  test(`Transcript workbench keeps editing, QA and saving within reach at ${viewport.name}`, async ({ page, request }) => {
     let evidenceCaptured = false;
     await page.setViewportSize(viewport);
     await setTherapistSession(page);
@@ -87,66 +87,49 @@ for (const viewport of viewports) {
     }));
     expect(dimensions.document).toBeLessThanOrEqual(dimensions.viewport);
 
-    if (viewport.width >= 1280) {
-      const widths = await page.evaluate(() => {
-        const workspace = document.querySelector<HTMLElement>("[data-testid='transcript-workbench']")!;
-        const editor = document.querySelector<HTMLElement>("[role='listbox'][aria-label='Transcript lines']")!;
-        const inspector = document.querySelector<HTMLElement>("[data-testid='transcript-audio-inspector']")!;
-        return {
-          workspace: workspace.getBoundingClientRect().width,
-          editor: editor.getBoundingClientRect().width,
-          inspectorRight: inspector.getBoundingClientRect().right,
-          workspaceRight: workspace.getBoundingClientRect().right,
-        };
-      });
-      expect(widths.editor / widths.workspace).toBeGreaterThanOrEqual(0.6);
-      expect(widths.inspectorRight).toBeLessThanOrEqual(widths.workspaceRight + 1);
-    }
+    // One column at every width: the lines take the editor's full width.
+    const widths = await page.evaluate(() => {
+      const workspace = document.querySelector<HTMLElement>("[data-testid='transcript-workbench']")!;
+      const editor = document.querySelector<HTMLElement>("[role='listbox'][aria-label='Transcript lines']")!;
+      return { workspace: workspace.getBoundingClientRect().width, editor: editor.getBoundingClientRect().width };
+    });
+    expect(widths.editor / widths.workspace).toBeGreaterThanOrEqual(0.95);
 
-    if (viewport.width >= 768 && viewport.width < 1280) {
-      await page.getByRole("button", { name: "QA", exact: true }).click();
-      await expect(page.getByTestId("transcript-qa-panel")).toBeVisible();
-      await page.getByRole("button", { name: "Hide audio and QA" }).click();
-      await expect(page.getByTestId("transcript-audio-inspector")).toBeHidden();
-      await expect(line.getByLabel("Utterance text 1")).toBeVisible();
-      await page.getByRole("button", { name: "Show audio and QA" }).click();
-    }
+    // QA results open in place, below the lines.
+    await page.getByTestId("mobile-transcript-qa-details").locator("summary").click();
+    await expect(page.getByTestId("transcript-qa-panel")).toBeVisible();
+    await page.getByTestId("mobile-transcript-qa-details").locator("summary").click();
 
     if (viewport.width < 768) {
-      await page.evaluate(() => window.scrollTo(0, 0));
+      await page.locator("#main-content").evaluate((main) => main.scrollTo(0, 0));
+      await line.getByLabel("Utterance text 1").scrollIntoViewIfNeeded();
       const mobileContract = await page.evaluate(() => {
-        const workspace = document.querySelector<HTMLElement>("[data-testid='transcript-workbench']")!;
         const mobileHeader = document.querySelector<HTMLElement>("header")!;
-        const audio = document.querySelector<HTMLElement>("[data-testid='transcript-audio-inspector']")!;
-        const bar = document.querySelector<HTMLElement>("[data-testid='mobile-transcript-primary-actions']")!;
+        const actions = document.querySelector<HTMLElement>("[data-testid='mobile-transcript-primary-actions']")!;
+        const bar = actions.parentElement!;
         const firstUtterance = document.querySelector<HTMLElement>("textarea[aria-label='Utterance text 1']")!;
         const mobileBrand = mobileHeader.querySelector<HTMLElement>("span")!;
-        const actionRect = bar.getBoundingClientRect();
+        const barRect = bar.getBoundingClientRect();
         const utteranceRect = firstUtterance.getBoundingClientRect();
         return {
-          workspacePaddingBottom: Number.parseFloat(getComputedStyle(workspace).paddingBottom),
-          scrollY: window.scrollY,
           mobileHeaderTop: mobileHeader.getBoundingClientRect().top,
           mobileBrandTop: mobileBrand.getBoundingClientRect().top,
-          audioPosition: getComputedStyle(audio).position,
-          actionPosition: getComputedStyle(bar).position,
-          actionTop: actionRect.top,
-          actionBottom: actionRect.bottom,
+          barPosition: getComputedStyle(bar).position,
+          barTop: barRect.top,
+          barBottom: barRect.bottom,
           firstUtteranceTop: utteranceRect.top,
           firstUtteranceBottom: utteranceRect.bottom,
           viewportHeight: window.innerHeight,
         };
       });
-      expect(mobileContract.workspacePaddingBottom).toBeGreaterThanOrEqual(176);
-      expect(mobileContract.scrollY).toBe(0);
       expect(mobileContract.mobileHeaderTop).toBeGreaterThanOrEqual(0);
       expect(mobileContract.mobileBrandTop).toBeGreaterThanOrEqual(0);
-      expect(mobileContract.audioPosition).toBe("sticky");
-      expect(mobileContract.actionPosition).toBe("fixed");
-      expect(mobileContract.actionTop).toBeGreaterThanOrEqual(0);
-      expect(mobileContract.actionBottom).toBeLessThanOrEqual(mobileContract.viewportHeight + 1);
+      // Save and QA stay on screen while the lines are edited.
+      expect(mobileContract.barPosition).toBe("sticky");
+      expect(mobileContract.barTop).toBeGreaterThanOrEqual(0);
+      expect(mobileContract.barBottom).toBeLessThanOrEqual(mobileContract.viewportHeight + 1);
       expect(mobileContract.firstUtteranceTop).toBeGreaterThanOrEqual(0);
-      expect(mobileContract.firstUtteranceBottom).toBeLessThanOrEqual(mobileContract.actionTop);
+      expect(mobileContract.firstUtteranceBottom).toBeLessThanOrEqual(mobileContract.barTop);
 
       await capturePairedEvidence(page, "transcript", viewport);
       evidenceCaptured = true;
@@ -156,7 +139,7 @@ for (const viewport of viewports) {
       const overlap = await page.evaluate(() => {
         const rows = [...document.querySelectorAll<HTMLElement>("[role='option'][aria-label^='Transcript line']")];
         const lastRow = rows.at(-1)!;
-        const bar = document.querySelector<HTMLElement>("[data-testid='mobile-transcript-primary-actions']")!;
+        const bar = document.querySelector<HTMLElement>("[data-testid='mobile-transcript-primary-actions']")!.parentElement!;
         return lastRow.getBoundingClientRect().bottom - bar.getBoundingClientRect().top;
       });
       expect(overlap).toBeLessThanOrEqual(0);
