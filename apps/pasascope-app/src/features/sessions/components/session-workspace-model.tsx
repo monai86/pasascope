@@ -59,11 +59,9 @@ import { resolveSessionHref, resolveWorkspaceFeature, type SessionView } from "@
 import { sessionCompletion } from "@/features/sessions/state/session-completion";
 import { getSessionTranscriptionJob, updateBackendSessionNotes } from "@/features/sessions/chat/chat-api";
 import { assignUnknownSpeakers } from "@/features/sessions/chat/chat-thread-model";
-import type { SessionIntakeSource, SessionIntakeStepId } from "@/features/sessions/intake/session-intake-view";
 import type { SessionContext } from "@/features/sessions/components/session-context-header";
 import { SessionWorkflowView, type SessionWorkflowViewModel } from "@/features/sessions/components/session-workspace-view";
 import { useAppMode } from "@/lib/app-mode";
-
 
 export type SessionWorkspaceProps = {
   sessionId?: string;
@@ -75,7 +73,7 @@ export type SessionWorkspaceProps = {
 };
 
 type SessionWorkspaceIdentityProps = Omit<SessionWorkspaceProps, "view"> & {
-  view?: "intake" | "transcript" | "findings" | "chat";
+  view?: "transcript" | "findings" | "chat";
 };
 
 export function SessionWorkflowWorkspace(props: SessionWorkspaceProps) {
@@ -100,7 +98,7 @@ export function SessionChatWorkspace(props: Omit<SessionWorkspaceProps, "view">)
   return <SessionWorkspaceIdentityScope key={identityKey} {...props} view="chat" />;
 }
 
-function SessionWorkspaceIdentityScope({ sessionId, caseId, transcriptId, reportId, view = "intake", mode }: SessionWorkspaceIdentityProps) {
+function SessionWorkspaceIdentityScope({ sessionId, caseId, transcriptId, reportId, view = "chat", mode }: SessionWorkspaceIdentityProps) {
   const model = useSessionWorkspace({ sessionId, caseId, transcriptId, reportId, view, mode });
   return <SessionWorkflowView model={model} />;
 }
@@ -110,7 +108,7 @@ function SessionWorkspaceIdentityScope({ sessionId, caseId, transcriptId, report
  * and mutations; visual rendering stays in SessionWorkflowView and the feature
  * views so transport state cannot leak into layout components.
  */
-export function useSessionWorkspace({ sessionId, caseId, transcriptId, reportId, view = "intake", mode }: SessionWorkspaceIdentityProps): SessionWorkflowViewModel {
+export function useSessionWorkspace({ sessionId, caseId, transcriptId, reportId, view = "chat", mode }: SessionWorkspaceIdentityProps): SessionWorkflowViewModel {
   const { openGates } = useAppMode();
   const hasLocator = Boolean(sessionId || transcriptId || caseId || reportId);
   const [state, setState] = useState<WorkflowState>(() => hasLocator
@@ -148,8 +146,6 @@ export function useSessionWorkspace({ sessionId, caseId, transcriptId, reportId,
   const [editorLines, setEditorLines] = useState<TranscriptLine[]>([]);
   const [sourceFilename, setSourceFilename] = useState<string | undefined>();
   const [intakeError, setIntakeError] = useState("");
-  const [intakeWarnings, setIntakeWarnings] = useState<string[]>([]);
-  const [intakeValidationIssues, setIntakeValidationIssues] = useState<string[]>([]);
   const [recordedAudio, setRecordedAudio] = useState<{ blob: Blob; metadata: RecordingMetadata; extension?: string } | null>(null);
   const [audioFileError, setAudioFileError] = useState<"unsupported" | undefined>();
   const [sessionNotes, setSessionNotes] = useState("");
@@ -165,19 +161,7 @@ export function useSessionWorkspace({ sessionId, caseId, transcriptId, reportId,
   const [transJobId, setTransJobId] = useState<string | undefined>();
   const [transJobStatus, setTransJobStatus] = useState<string>("queued");
   const [transJobMessage, setTransJobMessage] = useState<string>("");
-  const [transJobRequestedProvider, setTransJobRequestedProvider] = useState<string | undefined>();
-  const [transJobActualProvider, setTransJobActualProvider] = useState<string | undefined>();
-  const [intakeStep, setIntakeStep] = useState<SessionIntakeStepId>(mode ? "source" : "details");
-  const [selectedSource, setSelectedSource] = useState<SessionIntakeSource>(sourceFromMode(mode));
-  const [sessionDetails, setSessionDetails] = useState(() => createSessionDetailsDraft(
-    hasLocator ? createIdentityScopedWorkflowState() : createInitialWorkflowState(),
-  ));
-  const [transcriptSetup, setTranscriptSetup] = useState(createTranscriptSetupDraft());
   const [caseConsent, setCaseConsent] = useState<string>("granted");
-  const [consentSigner, setConsentSigner] = useState("Parent");
-  const [consentChecked, setConsentChecked] = useState(false);
-  const [consentDate, setConsentDate] = useState(() => new Date().toISOString().slice(0, 10));
-  const [consentNotes, setConsentNotes] = useState("");
   const [isHydrated, setIsHydrated] = useState(false);
 
   const handleRecordingReady = (blob: Blob, metadata: RecordingMetadata) => {
@@ -201,8 +185,6 @@ export function useSessionWorkspace({ sessionId, caseId, transcriptId, reportId,
       setDraftTranscript(stored.transcriptText || (mode === "paste" || mode === "cha" ? "" : defaultTranscript));
       setEditorLines(stored.transcriptLines);
       setSourceFilename(stored.sourceFilename);
-      setIntakeWarnings(stored.chatWarnings);
-      setIntakeValidationIssues(stored.chatValidationIssues);
       setIsHydrated(true);
       return;
     }
@@ -217,8 +199,6 @@ export function useSessionWorkspace({ sessionId, caseId, transcriptId, reportId,
     setDraftTranscript("");
     setEditorLines([]);
     setSourceFilename(undefined);
-    setIntakeWarnings([]);
-    setIntakeValidationIssues([]);
     void Promise.resolve().then(async () => {
       // React Strict Mode replays effects in development. Deferring the request
       // one microtask lets the replay cleanup cancel the discarded run before
@@ -349,8 +329,6 @@ export function useSessionWorkspace({ sessionId, caseId, transcriptId, reportId,
         setState(sessionWorkflowReducer(loadingState, { type: "hydration-succeeded", state: hydrated }));
         setDraftTranscript(hydrated.transcriptText);
         setEditorLines(hydrated.transcriptLines);
-        setIntakeWarnings(hydrated.chatWarnings);
-        setIntakeValidationIssues(hydrated.chatValidationIssues);
         setIsHydrated(true);
         if (unfinishedJob && backendSession && UNFINISHED_JOB_STATUSES.has(unfinishedJob.status)) {
           resumeTranscriptionRef.current(unfinishedJob.jobId, backendSession.session_id);
@@ -368,8 +346,6 @@ export function useSessionWorkspace({ sessionId, caseId, transcriptId, reportId,
         setDraftTranscript("");
         setEditorLines([]);
         setSourceFilename(undefined);
-        setIntakeWarnings([]);
-        setIntakeValidationIssues([]);
         setIsHydrated(true);
       }
     });
@@ -396,40 +372,7 @@ export function useSessionWorkspace({ sessionId, caseId, transcriptId, reportId,
     return () => window.removeEventListener("beforeunload", warn);
   }, [state.transcriptSaveStatus]);
 
-  const transcriptLines = useMemo(() => previewLines(state.transcriptText), [state.transcriptText]);
   const activeMode = mode ?? (state.source === "paste-transcript" ? "paste" : state.source === "cha-upload" ? "cha" : state.source === "audio-upload" ? "audio" : undefined);
-  const selectedWorkflowSource = workflowSourceFromSelection(selectedSource);
-  const sessionDetailsComplete = Boolean(
-    sessionDetails.childClient.trim()
-      && sessionDetails.sessionDate
-      && sessionDetails.sessionTime
-      && sessionDetails.clinician.trim()
-  );
-  const transcriptSetupComplete = Boolean(
-    transcriptSetup.speakerLabels.trim()
-      && transcriptSetup.sessionMetadata.trim()
-      && transcriptSetup.language
-      && transcriptSetup.sampleType
-      && transcriptSetup.reviewSpeakerLabels
-      && transcriptSetup.reviewFeatureLock
-  );
-  const sourceReadyForReview = selectedSource === "paste" || selectedSource === "cha"
-    ? Boolean(draftTranscript.trim())
-    : Boolean(state.transcriptReady);
-  const canStartTranscriptReview = sessionDetailsComplete && transcriptSetupComplete && sourceReadyForReview;
-
-  useEffect(() => {
-    if (!activeMode) return;
-    setSelectedSource(sourceFromMode(activeMode));
-    setIntakeStep("source");
-  }, [activeMode]);
-
-  useEffect(() => {
-    setSessionDetails((current) => ({
-      ...current,
-      childClient: current.childClient || state.childName,
-    }));
-  }, [state.childName]);
 
   function persist(next: WorkflowState) {
     const saved = saveWorkflowState(next);
@@ -448,33 +391,12 @@ export function useSessionWorkspace({ sessionId, caseId, transcriptId, reportId,
     };
   }
 
-  function buildIntakeBackedState(base: WorkflowState, source: WorkflowSource): WorkflowState {
-    const childClient = sessionDetails.childClient.trim() || base.childName;
-    return {
-      ...base,
-      childName: childClient,
-      caseInfo: {
-        ...base.caseInfo,
-        clientLabel: childClient
-      },
-      therapyGoals: buildTherapyGoals(sessionDetails.sessionGoals),
-      therapistNotes: buildSessionIntakeNotes(sessionDetails, transcriptSetup, selectedSource)
-    };
-  }
-
-  function saveSessionIntakeDraft() {
-    return persist(ensureWorkflowSession(buildIntakeBackedState(state, selectedWorkflowSource), selectedWorkflowSource, {
-      statusMessage: "Session intake saved locally. Transcript review can start when source material is ready.",
-      error: undefined
-    }));
-  }
-
   function handleRecordingMetadata(metadata: RecordingMetadata) {
     setState((current) => {
       const startingNewRecording = metadata.recordingStatus === "recording"
         && current.recordingStatus !== "recording"
         && current.recordingStatus !== "paused";
-      return saveWorkflowState(ensureWorkflowSession(buildIntakeBackedState(current, "recording"), "recording", {
+      return saveWorkflowState(ensureWorkflowSession(current, "recording", {
         recordingStatus: metadata.recordingStatus,
         recordingSeconds: metadata.durationSeconds,
         audioMimeType: metadata.mimeType,
@@ -515,8 +437,6 @@ export function useSessionWorkspace({ sessionId, caseId, transcriptId, reportId,
     try {
       const provider = await findAvailableTranscriptionProvider();
       if (!provider) {
-        setTransJobRequestedProvider(undefined);
-        setTransJobActualProvider(undefined);
         setTransJobStatus("unavailable");
         setTransJobMessage(
           "Speech recognition is not enabled on this server, so the recording was not uploaded. Paste or import the transcript instead."
@@ -533,7 +453,6 @@ export function useSessionWorkspace({ sessionId, caseId, transcriptId, reportId,
       );
       const { jobId } = await startBackendTranscriptionJob(state.sessionId, audioFileId, provider);
       setTransJobId(jobId);
-      setTransJobRequestedProvider(provider);
       setUploadStep("polling");
       setTransJobStatus("queued");
       setTransJobMessage("Audio processing queued...");
@@ -542,24 +461,6 @@ export function useSessionWorkspace({ sessionId, caseId, transcriptId, reportId,
       setTransJobMessage(err instanceof Error ? err.message : "Upload failed.");
       setTransJobStatus("failed");
       setUploadStep("error");
-      setBusy(false);
-    }
-  }
-
-  async function handleGrantConsent() {
-    if (!consentChecked || !caseId) return;
-    setBusy(true);
-    setIntakeError("");
-    try {
-      await sessionWorkflowService.grantCaseConsent(caseId, {
-        signer: consentSigner,
-        date: consentDate,
-        notes: consentNotes,
-      });
-      setCaseConsent("granted");
-    } catch {
-      setIntakeError("Could not update case consent on the backend.");
-    } finally {
       setBusy(false);
     }
   }
@@ -574,8 +475,6 @@ export function useSessionWorkspace({ sessionId, caseId, transcriptId, reportId,
         const poll = await pollTranscriptionJob(jobId);
         setTransJobStatus(poll.status);
         setTransJobMessage(poll.message);
-        setTransJobRequestedProvider(poll.requestedProvider);
-        setTransJobActualProvider(poll.actualProvider);
         if (poll.status === "needs_review" || poll.status === "completed") {
           setUploadStep("done");
           if (poll.transcriptId) {
@@ -641,14 +540,12 @@ export function useSessionWorkspace({ sessionId, caseId, transcriptId, reportId,
     try {
       intake = prepareTranscriptIntake(source, sourceText);
       setIntakeError("");
-      setIntakeWarnings(intake.warnings);
-      setIntakeValidationIssues(intake.validationIssues);
     } catch (error) {
       setIntakeError(error instanceof Error ? error.message : "Transcript could not be read.");
       return;
     }
     setBusy(true);
-    const localSession = persist(ensureWorkflowSession(buildIntakeBackedState(state, source), source, {
+    const localSession = persist(ensureWorkflowSession(state, source, {
       sourceFilename: source === "cha-upload" ? submittedFilename : undefined,
       transcriptText: intake.transcriptText,
       transcriptLines: intake.transcriptLines,
@@ -1079,7 +976,7 @@ export function useSessionWorkspace({ sessionId, caseId, transcriptId, reportId,
         hydrated: isHydrated,
         busy,
         backendUnavailable,
-        source: selectedSource === "audio" ? "audio" : "recording",
+        source: activeMode === "audio" ? "audio" : "recording",
         lines: editorLines,
         audioUrl,
         notes: sessionNotes,
@@ -1141,97 +1038,32 @@ export function useSessionWorkspace({ sessionId, caseId, transcriptId, reportId,
     };
   }
 
-  if (view === "transcript") {
-    return {
-      view: "transcript",
-      backendUnavailable,
-      viewProps: {
-        sessionContext,
-        state,
-        lines: editorLines,
-        busy,
-        backendUnavailable,
-        audioUrl,
-        onLinesChange: (lines) => {
-          workflowRevisionRef.current += 1;
-          activeTranscriptSaveRevisionRef.current = null;
-          setBusy(false);
-          setEditorLines(lines);
-          persist({
-            ...sessionWorkflowReducer(state, { type: "transcript-edited", lines }),
-            statusMessage: "Unsaved transcript edits.",
-          });
-        },
-        onSaveDraft: () => handleSaveTranscriptDraft(editorLines),
-        onRunQa: () => handleRunTranscriptQa(editorLines),
-        onAttest: handleAttestTranscript,
-        onExtractFeatures: handleAnalyze,
-        onGenerateReport: handleGenerateReport,
-        onExport: handleExportCha,
-      },
-    };
-  }
-
   return {
-    view: "intake",
+    view: "transcript",
     backendUnavailable,
     viewProps: {
-      model: {
-          sessionContext,
-          pipelineStatusValue,
-          intakeStep,
-          setIntakeStep,
-          caseConsent,
-          intakeError,
-          setIntakeError,
-          consentChecked,
-          setConsentChecked,
-          consentSigner,
-          setConsentSigner,
-          consentDate,
-          setConsentDate,
-          consentNotes,
-          setConsentNotes,
-          busy,
-          handleGrantConsent,
-          sessionDetails,
-          setSessionDetails,
-          sessionDetailsComplete,
-          transcriptSetupComplete,
-          selectedSource,
-          setSelectedSource,
-          state,
-          setState,
-          recordedAudio,
-          setRecordedAudio,
-          uploadStep,
-          setUploadStep,
-          handleRecordingMetadata,
-          handleRecordingReady,
-          handleUploadForTranscription,
-          transJobStatus,
-          transJobMessage,
-          transJobRequestedProvider,
-          transJobActualProvider,
-          backendUnavailable,
-          draftTranscript,
-          setDraftTranscript,
-          setSourceFilename,
-          intakeWarnings,
-          setIntakeWarnings,
-          intakeValidationIssues,
-          setIntakeValidationIssues,
-          handleTranscriptSubmit,
-          transcriptLines,
-          transcriptSetup,
-          setTranscriptSetup,
-          sourceReadyForReview,
-          canStartTranscriptReview,
-          saveSessionIntakeDraft,
-          handleAnalyze,
-          handleGenerateReport,
-          router,
+      sessionContext,
+      state,
+      lines: editorLines,
+      busy,
+      backendUnavailable,
+      audioUrl,
+      onLinesChange: (lines) => {
+        workflowRevisionRef.current += 1;
+        activeTranscriptSaveRevisionRef.current = null;
+        setBusy(false);
+        setEditorLines(lines);
+        persist({
+          ...sessionWorkflowReducer(state, { type: "transcript-edited", lines }),
+          statusMessage: "Unsaved transcript edits.",
+        });
       },
+      onSaveDraft: () => handleSaveTranscriptDraft(editorLines),
+      onRunQa: () => handleRunTranscriptQa(editorLines),
+      onAttest: handleAttestTranscript,
+      onExtractFeatures: handleAnalyze,
+      onGenerateReport: handleGenerateReport,
+      onExport: handleExportCha,
     },
   };
 
@@ -1409,86 +1241,12 @@ export function useSessionWorkspace({ sessionId, caseId, transcriptId, reportId,
   }
 }
 
-function createSessionDetailsDraft(state: WorkflowState) {
-  const now = new Date();
-  const sessionDate = state.sessionCreatedAt?.slice(0, 10) ?? now.toISOString().slice(0, 10);
-  const sessionTime = state.sessionCreatedAt
-    ? state.sessionCreatedAt.slice(11, 16)
-    : `${String(now.getHours()).padStart(2, "0")}:${String(now.getMinutes()).padStart(2, "0")}`;
-  return {
-    childClient: state.childName,
-    sessionDate,
-    sessionTime,
-    setting: "clinic",
-    durationMinutes: "45",
-    clinician: "",
-    sessionGoals: state.therapyGoals.join("\n")
-  };
-}
-
-function createTranscriptSetupDraft() {
-  return {
-    speakerLabels: "THER = Therapist\nCHI = Child",
-    sessionMetadata: "",
-    language: "eng",
-    sampleType: "conversation",
-    reviewSpeakerLabels: false,
-    reviewFeatureLock: false
-  };
-}
-
-function sourceFromMode(mode?: string): SessionIntakeSource {
-  if (mode === "audio") return "audio";
-  if (mode === "cha") return "cha";
-  if (mode === "paste") return "paste";
-  return "recording";
-}
-
-function workflowSourceFromSelection(source: SessionIntakeSource): WorkflowSource {
-  if (source === "audio") return "audio-upload";
-  if (source === "cha") return "cha-upload";
-  if (source === "paste") return "paste-transcript";
-  return "recording";
-}
-
 function workflowSourceLabel(source?: WorkflowSource): string | undefined {
   if (source === "audio-upload") return "Uploaded audio (experimental)";
   if (source === "cha-upload") return ".cha transcript";
   if (source === "paste-transcript") return "Pasted transcript";
   if (source === "recording") return "Browser recording";
   return undefined;
-}
-
-function buildTherapyGoals(goals: string): string[] {
-  return goals
-    .split("\n")
-    .map((item) => item.trim())
-    .filter(Boolean);
-}
-
-function buildSessionIntakeNotes(
-  sessionDetails: ReturnType<typeof createSessionDetailsDraft>,
-  transcriptSetup: ReturnType<typeof createTranscriptSetupDraft>,
-  selectedSource: SessionIntakeSource
-): string {
-  return [
-    `Session intake summary`,
-    `Date: ${sessionDetails.sessionDate || "not set"} ${sessionDetails.sessionTime || ""}`.trim(),
-    `Setting: ${sessionDetails.setting}`,
-    `Duration: ${sessionDetails.durationMinutes} minutes`,
-    `Clinician: ${sessionDetails.clinician || "not set"}`,
-    `Source: ${sourceSummaryLabel(selectedSource)}`,
-    `Language: ${transcriptSetup.language}`,
-    `Sample type: ${transcriptSetup.sampleType}`,
-    `Session metadata: ${transcriptSetup.sessionMetadata || "not provided"}`
-  ].join("\n");
-}
-
-function sourceSummaryLabel(source: SessionIntakeSource): string {
-  if (source === "audio") return "Uploaded audio (experimental)";
-  if (source === "cha") return ".cha transcript";
-  if (source === "paste") return "Pasted transcript";
-  return "Browser recording";
 }
 
 function normalizeBackendQaStatus(status?: string): WorkflowState["qaStatus"] {
@@ -1566,14 +1324,6 @@ function downloadText(text: string, filename: string, contentType: string) {
 async function createBackendAudioObjectUrl(audioFileId: string): Promise<string> {
   const blob = await apiBlob(`/audio/${audioFileId}/file`);
   return URL.createObjectURL(blob);
-}
-
-function previewLines(transcriptText: string) {
-  return transcriptText
-    .split("\n")
-    .filter((line) => line.startsWith("*"))
-    .slice(0, 4)
-    .map((line) => line.replace(/^\*/, "").replace(":\t", ": "));
 }
 
 function estimateTranscriptCompleteness(lines: TranscriptLine[]) {

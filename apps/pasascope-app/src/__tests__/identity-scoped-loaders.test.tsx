@@ -2,7 +2,7 @@ import { act, cleanup, render, screen, waitFor } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, test, vi } from "vitest";
 
 import { ReportSummaryClient } from "@/components/report-summary-client";
-import { SessionWorkspaceClient } from "@/components/session-workspace-client";
+import { SessionWorkspace } from "@/features/sessions/components/session-workspace";
 import {
   createInitialWorkflowState,
   loadWorkflowState,
@@ -33,7 +33,7 @@ describe("identity-scoped workflow loaders", () => {
       throw new Error(`Unexpected request: ${url}`);
     }));
 
-    render(<SessionWorkspaceClient sessionId="REQUESTED-SESSION" view="results" />);
+    render(<SessionWorkspace sessionId="REQUESTED-SESSION" view="findings" />);
 
     expect(screen.queryByText("PRIOR CHILD")).not.toBeInTheDocument();
     expect(screen.queryByText("Prior private feature")).not.toBeInTheDocument();
@@ -74,13 +74,13 @@ describe("identity-scoped workflow loaders", () => {
     });
     vi.stubGlobal("fetch", fetchMock);
 
-    const { rerender } = render(<SessionWorkspaceClient sessionId="SESSION-A" view="results" />);
+    const { rerender } = render(<SessionWorkspace sessionId="SESSION-A" view="findings" />);
     await waitFor(() => expect(fetchMock).toHaveBeenCalledWith(
       expect.stringContaining("/sessions/SESSION-A"),
       expect.anything(),
     ));
 
-    rerender(<SessionWorkspaceClient sessionId="SESSION-B" view="results" />);
+    rerender(<SessionWorkspace sessionId="SESSION-B" view="findings" />);
     await waitFor(() => expect(fetchMock).toHaveBeenCalledWith(
       expect.stringContaining("/sessions/SESSION-B"),
       expect.anything(),
@@ -215,7 +215,7 @@ describe("identity-scoped workflow loaders", () => {
       reportStatus: "stale",
     });
 
-    render(<SessionWorkspaceClient view="results" />);
+    render(<SessionWorkspace view="findings" />);
 
     expect(await screen.findByRole("alert")).toHaveTextContent(/findings are stale.*transcript changed/i);
     expect(screen.getByRole("button", { name: /regenerate findings/i })).toBeEnabled();
@@ -279,7 +279,7 @@ describe("identity-scoped workflow loaders", () => {
         throw new Error(`Unexpected request: ${url}`);
       }));
 
-      render(<SessionWorkspaceClient sessionId="SESSION-REPORT-STATUS" view="results" />);
+      render(<SessionWorkspace sessionId="SESSION-REPORT-STATUS" view="findings" />);
 
       await waitFor(() => expect(loadWorkflowState()).toMatchObject({
         backendReportId: "REPORT-STATUS",
@@ -300,7 +300,7 @@ describe("identity-scoped workflow loaders", () => {
       seedPriorWorkflow();
       stubSessionFailure(status);
 
-      render(<SessionWorkspaceClient sessionId="REQUESTED-SESSION" view="transcript" />);
+      render(<SessionWorkspace sessionId="REQUESTED-SESSION" view="transcript" />);
 
       expect(await screen.findByText(errorMessage)).toBeInTheDocument();
       expect(screen.getByText(statusMessage)).toBeInTheDocument();

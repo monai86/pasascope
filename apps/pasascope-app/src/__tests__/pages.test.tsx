@@ -11,7 +11,7 @@ import TodayPage from "@/app/today/page";
 import LoginPage from "@/app/login/page";
 import { AppShell } from "@/components/app-shell";
 import { ReportSummaryClient } from "@/components/report-summary-client";
-import { SessionWorkspaceClient } from "@/components/session-workspace-client";
+import { SessionWorkspace } from "@/features/sessions/components/session-workspace";
 import { renderAsyncPage, routerPush } from "@/__tests__/setup";
 import {
   WORKFLOW_STORAGE_KEY,
@@ -129,12 +129,12 @@ const renderSessionWorkspace = (
   searchParams?: Record<string, string>,
 ) => render(
   <AppShell active="Session">
-    <SessionWorkspaceClient
+    <SessionWorkspace
       sessionId={searchParams?.session_id}
       caseId={searchParams?.case_id}
       transcriptId={searchParams?.transcript_id}
       reportId={searchParams?.report_id}
-      view={view}
+      view={view === "record" ? "chat" : view === "results" ? "findings" : "transcript"}
       mode={searchParams?.mode}
     />
   </AppShell>,

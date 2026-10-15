@@ -1,14 +1,14 @@
 import { act, fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
-import { SessionWorkspaceClient } from "@/components/session-workspace-client";
+import { SessionWorkspace } from "@/features/sessions/components/session-workspace";
 import {
   createInitialWorkflowState,
   loadWorkflowState,
   saveWorkflowState,
 } from "@/lib/workflow";
 
-describe("SessionWorkspaceClient audio auth path", () => {
+describe("SessionWorkspace audio auth path", () => {
   beforeEach(() => {
     window.sessionStorage.clear();
     vi.restoreAllMocks();
@@ -125,7 +125,7 @@ describe("SessionWorkspaceClient audio auth path", () => {
 
     vi.stubGlobal("fetch", fetchMock);
 
-    render(<SessionWorkspaceClient sessionId="SESSION-123" view="transcript" />);
+    render(<SessionWorkspace sessionId="SESSION-123" view="transcript" />);
 
     const audio = await screen.findByLabelText("Session recording") as HTMLAudioElement;
 
@@ -179,7 +179,7 @@ describe("SessionWorkspaceClient audio auth path", () => {
       throw new Error(`Unexpected request: ${url}`);
     }));
 
-    const workspace = render(<SessionWorkspaceClient sessionId="SESSION-SAVE" view="transcript" />);
+    const workspace = render(<SessionWorkspace sessionId="SESSION-SAVE" view="transcript" />);
     const editor = await screen.findByLabelText("Utterance text 1");
     fireEvent.change(editor, { target: { value: "Blue car changed." } });
 
@@ -254,7 +254,7 @@ describe("SessionWorkspaceClient audio auth path", () => {
       }));
 
       render(
-        <SessionWorkspaceClient
+        <SessionWorkspace
           sessionId="REQUESTED-SESSION"
           view="transcript"
         />,

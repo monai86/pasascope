@@ -7,7 +7,6 @@ import { BackendAvailabilityBanner } from "@/components/backend-availability-ban
 import { SkeletonLine } from "@/components/skeleton";
 import type { SessionChatView as SessionChatViewComponent } from "@/features/sessions/chat/session-chat-view";
 import type { SessionFindingsView as SessionFindingsViewComponent } from "@/features/sessions/findings/session-findings-view";
-import type { SessionIntakeView as SessionIntakeViewComponent } from "@/features/sessions/intake/session-intake-view";
 import type { SessionTranscriptView as SessionTranscriptViewComponent } from "@/features/sessions/transcript/session-transcript-view";
 
 const SessionChatView = dynamic(
@@ -18,10 +17,6 @@ const SessionFindingsView = dynamic(
   () => import("@/features/sessions/findings/session-findings-view").then((module) => module.SessionFindingsView),
   { loading: SessionFeatureLoading },
 );
-const SessionIntakeView = dynamic(
-  () => import("@/features/sessions/intake/session-intake-view").then((module) => module.SessionIntakeView),
-  { loading: SessionFeatureLoading },
-);
 const SessionTranscriptView = dynamic(
   () => import("@/features/sessions/transcript/session-transcript-view").then((module) => module.SessionTranscriptView),
   { loading: SessionFeatureLoading },
@@ -29,14 +24,12 @@ const SessionTranscriptView = dynamic(
 
 type ChatProps = ComponentProps<typeof SessionChatViewComponent>;
 type FindingsProps = ComponentProps<typeof SessionFindingsViewComponent>;
-type IntakeProps = ComponentProps<typeof SessionIntakeViewComponent>;
 type TranscriptProps = ComponentProps<typeof SessionTranscriptViewComponent>;
 
 export type SessionWorkflowViewModel =
   | { view: "chat"; backendUnavailable: boolean; viewProps: ChatProps }
   | { view: "findings"; backendUnavailable: boolean; viewProps: FindingsProps }
-  | { view: "transcript"; backendUnavailable: boolean; viewProps: TranscriptProps }
-  | { view: "intake"; backendUnavailable: boolean; viewProps: IntakeProps };
+  | { view: "transcript"; backendUnavailable: boolean; viewProps: TranscriptProps };
 
 /** Presentational dispatcher for the non-report Session views. */
 export function SessionWorkflowView({ model }: { model: SessionWorkflowViewModel }) {
@@ -46,7 +39,6 @@ export function SessionWorkflowView({ model }: { model: SessionWorkflowViewModel
       {model.view === "chat" ? <SessionChatView {...model.viewProps} /> : null}
       {model.view === "findings" ? <SessionFindingsView {...model.viewProps} /> : null}
       {model.view === "transcript" ? <SessionTranscriptView {...model.viewProps} /> : null}
-      {model.view === "intake" ? <SessionIntakeView {...model.viewProps} /> : null}
     </>
   );
 }

@@ -6,7 +6,7 @@ vi.mock("@/features/sessions/components/session-workspace-model", () => ({
     <section data-testid="workflow-view" data-view={props.view} />
   ),
   resolveWorkspaceFeature: (view?: string) => (
-    view === "transcript" ? "transcript" : view === "findings" ? "findings" : "intake"
+    view === "findings" ? "findings" : "transcript"
   ),
 }));
 

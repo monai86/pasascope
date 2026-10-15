@@ -26,8 +26,9 @@ export function resolveSessionRouteView(value?: unknown): SessionRouteView {
   return value === "chat" ? "chat" : resolveSessionView(value);
 }
 
-export function resolveWorkspaceFeature(view?: SessionView): "intake" | "transcript" | "findings" {
-  return view === "transcript" ? "transcript" : view === "findings" ? "findings" : "intake";
+/** The full-page step a workflow view opens. Intake has no page of its own: it is the conversation. */
+export function resolveWorkspaceFeature(view?: SessionView): "transcript" | "findings" {
+  return view === "findings" ? "findings" : "transcript";
 }
 
 export function resolveLegacySessionHref(

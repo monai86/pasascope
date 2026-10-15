@@ -4,7 +4,6 @@ import { resolve } from "node:path";
 import { describe, expect, it } from "vitest";
 
 const presentationalViews = [
-  "src/features/sessions/intake/session-intake-view.tsx",
   "src/features/sessions/report/session-report-view.tsx",
 ];
 
