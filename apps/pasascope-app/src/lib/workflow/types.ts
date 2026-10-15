@@ -553,25 +553,3 @@ export type BackendReport = {
   sections?: ReportSection[];
 };
 
-export type OrganizationMembership = {
-  membership_id: string;
-  organization_id: string;
-  user_id: string;
-  display_name: string;
-  role: string;
-  active: boolean;
-  created_at?: string;
-};
-
-export type OrganizationInvitation = {
-  invitation_id: string;
-  organization_id: string;
-  email: string;
-  display_name: string;
-  role: string;
-  status: "pending" | "accepted" | "expired" | "revoked";
-  created_at: string;
-  expires_at: string;
-  accepted_at?: string | null;
-  revoked_at?: string | null;
-};

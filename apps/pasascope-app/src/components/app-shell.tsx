@@ -60,7 +60,7 @@ export function AppShell({
 
   const supabaseGateRequired =
     confirmedRuntimeSettings?.auth_mode === "supabase" &&
-    !(supabaseSession?.stage === "authenticated" && supabaseSession.organizationId && supabaseSession.aal);
+    supabaseSession?.stage !== "authenticated";
 
   // Workspace content stays hidden until the API has said how access works.
   // Waiting for that answer is not a refusal, so it is shown as loading.

@@ -9,7 +9,6 @@ import { Field } from "@/components/ui/field";
 import { Input } from "@/components/ui/input";
 import { Select } from "@/components/ui/select";
 import { useMessages } from "@/i18n/locale-provider";
-import { type RuntimeSettings } from "@/lib/api";
 import {
   MOCK_ORGANIZATION_OPTIONS,
   type MockRole,
@@ -21,11 +20,7 @@ const roleDestinations: Record<MockRole, string> = {
   clinical_supervisor: "/",
 };
 
-export function MockLoginFormClient({
-  runtimeSettings,
-}: {
-  runtimeSettings: RuntimeSettings | null;
-}) {
+export function MockLoginFormClient() {
   const t = useMessages(loginMessages).mock;
   const [role, setRole] = useState<MockRole>("therapist");
   const [organizationId, setOrganizationId] = useState(MOCK_ORGANIZATION_OPTIONS.therapist[0].organizationId);
@@ -93,9 +88,6 @@ export function MockLoginFormClient({
             <p className="mt-1">
               {requiresExplicitOrganizationSelection ? t.organizationNote.multiple : t.organizationNote.single}
             </p>
-            <p className="mt-1">
-              {t.organizationNote.aalBefore}<strong>AAL1</strong>{t.organizationNote.aalMiddle}<strong>AAL2</strong>{t.organizationNote.aalAfter}
-            </p>
           </div>
         </div>
       </div>
@@ -106,7 +98,7 @@ export function MockLoginFormClient({
           <div>
             <p className="font-semibold">{t.boundary.title}</p>
             <p className="mt-1">
-              {runtimeSettings?.access_model?.invitation_only === false ? t.boundary.open : t.boundary.invitationOnly}
+              {t.boundary.live}
             </p>
             <p className="mt-1">{t.boundary.localOnly}</p>
           </div>

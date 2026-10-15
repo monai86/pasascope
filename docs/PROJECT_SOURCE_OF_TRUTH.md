@@ -177,15 +177,12 @@ persistence layer หลักของ pasascope.
     security/legal rollout evidence. Durable asynchronous execution is required
     only if measured workload cannot be handled synchronously or by the existing
     database-backed job model with one worker.
-27. Phase 2 backend auth lifecycle foundation now includes org-admin
-    invitation records, invitation acceptance into active organization
-    membership, membership revocation with care-team deactivation, production
-    MFA/invitation fail-closed guards, and scoped audited break-glass case
-    access for platform operators. pasascope Settings now exposes a local Pilot Access Lifecycle admin
-    UX for invitation records, active memberships, and revocation against these
-    backend endpoints. This remains pilot UX only; real Supabase invitation
-    delivery, MFA enrollment UI, managed custom claims, and external
-    security/legal rollout evidence are still required before production.
+27. The organization/invitation lifecycle (org-admin invitations, membership
+    revocation, break-glass access) has been removed from the API and the web
+    app. Every verified Supabase user has one personal workspace,
+    `personal_<user id>`, derived from the token subject; the web sign-in has no
+    organization selection, invitation step or mandatory MFA screen, and sends
+    no organization header.
 28. Current Phase 1 external blockers and exact next actions are tracked in
     `docs/PHASE1_EXTERNAL_BLOCKERS.md`.
 29. Research evaluation helpers under `apps/api/app/api/v1/routes/evaluation.py`

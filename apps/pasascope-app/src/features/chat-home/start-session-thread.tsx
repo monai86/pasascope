@@ -218,16 +218,9 @@ export function StartSessionThread({
           <p>{s.askConsent}</p>
           <ChatCard className="p-[18px]">
             <CaregiverConsentForm
-              idPrefix="chat-start"
               busy={busy}
               checked={consentChecked}
               onCheckedChange={setConsentChecked}
-              signer="Parent"
-              onSignerChange={() => {}}
-              consentDate={new Date().toISOString().slice(0, 10)}
-              onConsentDateChange={() => {}}
-              notes=""
-              onNotesChange={() => {}}
               onSubmit={(event) => void confirmConsent(event)}
               submitLabel={s.confirmConsent}
             />

@@ -633,11 +633,8 @@ describe("cases workspace", () => {
 
     fireEvent.click(checkbox);
 
-    const relationshipInput = screen.getByPlaceholderText("e.g. Parent, Guardian");
-    fireEvent.change(relationshipInput, { target: { value: "Mother" } });
-
-    const notesInput = screen.getByPlaceholderText(/Add any verification comments/i);
-    fireEvent.change(notesInput, { target: { value: "Verified on phone call." } });
+    // The tick is the whole form; the signer and date go with their defaults.
+    expect(screen.queryByPlaceholderText("e.g. Parent, Guardian")).not.toBeInTheDocument();
 
     const submitButton = screen.getByRole("button", { name: "Verify and Grant Consent" });
     await act(async () => {
@@ -647,8 +644,8 @@ describe("cases workspace", () => {
     await waitFor(() => {
       expect(patchPayload).not.toBeNull();
       expect(patchPayload).not.toHaveProperty("consent_status");
-      expect(patchPayload.signer).toBe("Mother");
-      expect(patchPayload.notes).toBe("Verified on phone call.");
+      expect(patchPayload.signer).toBe("Parent");
+      expect(patchPayload.notes).toBe("");
       expect(patchPayload.consent_date).toMatch(/^\d{4}-\d{2}-\d{2}$/);
       expect(patchPayload.confirmation_checked).toBe(true);
     });

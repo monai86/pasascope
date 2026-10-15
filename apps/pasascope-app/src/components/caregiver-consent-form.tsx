@@ -8,9 +8,10 @@ import { useLocale, useMessages } from "@/i18n/locale-provider";
 import { useAppMode } from "@/lib/app-mode";
 
 /**
- * Shared caregiver-consent verification form used by both the Case detail page
- * and the Session Intake consent gate, so the two surfaces never drift apart in
- * fields or wording.
+ * Shared caregiver-consent verification form used by the Case detail page and
+ * the conversation that starts a session, so the two never drift apart in
+ * wording. It asks for the confirmation only; the signer and date sent with it
+ * are the caller's defaults.
  *
  * Bilingual labeling policy: field labels follow the interface language. The
  * caregiver-consent confirmation statement is the one clinically sensitive
@@ -25,44 +26,26 @@ export type CaregiverConsentFormProps = {
   busy: boolean;
   checked: boolean;
   onCheckedChange: (checked: boolean) => void;
-  signer: string;
-  onSignerChange: (value: string) => void;
-  consentDate: string;
-  onConsentDateChange: (value: string) => void;
-  notes: string;
-  onNotesChange: (value: string) => void;
   onSubmit: (event: FormEvent<HTMLFormElement>) => void;
   submitLabel: string;
   /** Optional reason shown when the submit action is blocked (e.g. box unchecked). */
   submitBlockedReason?: string;
   /** id of the blocked-reason element; submit button points at it via aria-describedby. */
   reasonId?: string;
-  /** Prefix for field ids so multiple instances never collide. */
-  idPrefix: string;
 };
 
 export function CaregiverConsentForm({
   busy,
   checked,
   onCheckedChange,
-  signer,
-  onSignerChange,
-  consentDate,
-  onConsentDateChange,
-  notes,
-  onNotesChange,
   onSubmit,
   submitLabel,
   submitBlockedReason,
   reasonId,
-  idPrefix,
 }: CaregiverConsentFormProps) {
-  const signerId = `${idPrefix}-consent-signer`;
-  const dateId = `${idPrefix}-consent-date`;
-  const notesId = `${idPrefix}-consent-notes`;
   const t = useMessages(consentMessages);
   const thaiFirst = useLocale().locale === "th";
-  const { publicSignup: confirmationOnly, externalTranscription } = useAppMode();
+  const { externalTranscription } = useAppMode();
   return (
     <form onSubmit={onSubmit} className="space-y-4">
       <label className="flex cursor-pointer items-start gap-3 text-sm font-medium text-ink">
@@ -84,52 +67,6 @@ export function CaregiverConsentForm({
           {t.externalTranscription}
         </p>
       ) : null}
-
-      {/* The public app asks only for the confirmation; signer and date take their defaults. */}
-      {confirmationOnly ? null : (
-        <>
-      <div className="grid gap-4 sm:grid-cols-2">
-        <label htmlFor={signerId} className="grid gap-1 text-sm font-medium text-ink">
-          {t.signer}
-          <input
-            id={signerId}
-            type="text"
-            className="min-h-11 w-full rounded-card border border-line bg-surface px-4 text-sm text-ink outline-none focus-visible:ring-4 focus-visible:ring-[color:var(--color-focus-ring)]"
-            value={signer}
-            onChange={(event) => onSignerChange(event.target.value)}
-            disabled={busy}
-            placeholder={t.signerPlaceholder}
-            required
-          />
-        </label>
-
-        <label htmlFor={dateId} className="grid gap-1 text-sm font-medium text-ink">
-          {t.date}
-          <input
-            id={dateId}
-            type="date"
-            className="min-h-11 w-full rounded-card border border-line bg-surface px-4 text-sm text-ink outline-none focus-visible:ring-4 focus-visible:ring-[color:var(--color-focus-ring)]"
-            value={consentDate}
-            onChange={(event) => onConsentDateChange(event.target.value)}
-            disabled={busy}
-            required
-          />
-        </label>
-      </div>
-
-      <label htmlFor={notesId} className="grid gap-1 text-sm font-medium text-ink">
-        {t.notes}
-        <textarea
-          id={notesId}
-          className="min-h-24 w-full resize-y rounded-card border border-line bg-surface p-4 text-sm text-ink outline-none focus-visible:ring-4 focus-visible:ring-[color:var(--color-focus-ring)]"
-          value={notes}
-          onChange={(event) => onNotesChange(event.target.value)}
-          disabled={busy}
-          placeholder={t.notesPlaceholder}
-        />
-      </label>
-        </>
-      )}
 
       <div className="flex flex-wrap gap-3">
         <ActionButton

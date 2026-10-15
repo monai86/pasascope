@@ -4,7 +4,6 @@ import { sessionCompletion } from "@/features/sessions/state/session-completion"
 import {
   buildSupabaseBrowserAuthSnapshotFromSession,
   deriveSupabaseAccessSession,
-  PUBLIC_SIGNUP_FLAG,
   type SupabaseSessionLike,
 } from "@/lib/supabase-browser-auth";
 import { createInitialWorkflowState, type WorkflowState } from "@/lib/workflow";
@@ -26,43 +25,27 @@ afterEach(() => {
   window.sessionStorage.clear();
 });
 
-describe("public sign-up", () => {
-  it("treats a new user as signed out while the app is invitation-only", () => {
-    expect(buildSupabaseBrowserAuthSnapshotFromSession(newUser)).toBeNull();
-  });
-
-  it("gives a new user a personal workspace when public sign-up is on", () => {
-    window.sessionStorage.setItem(PUBLIC_SIGNUP_FLAG, "true");
-
-    const snapshot = buildSupabaseBrowserAuthSnapshotFromSession(newUser);
-
-    expect(snapshot).toMatchObject({
-      userId: "user-a",
-      displayName: "User A",
-      appMetadata: { role: "therapist", membership_active: true, organization_id: "personal_user-a" },
-    });
-  });
-
-  it("lets that user into the app without MFA when the API does not require it", () => {
-    window.sessionStorage.setItem(PUBLIC_SIGNUP_FLAG, "true");
-    window.sessionStorage.setItem("pasascope.mfa_optional", "true");
-
+describe("personal accounts", () => {
+  it("gives a new user a personal workspace as a therapist", () => {
     const access = deriveSupabaseAccessSession(buildSupabaseBrowserAuthSnapshotFromSession(newUser));
 
-    expect(access).toMatchObject({ stage: "authenticated", organizationId: "personal_user-a", role: "therapist" });
+    expect(access).toMatchObject({ stage: "authenticated", userId: "user-a", displayName: "User A", role: "therapist", aal: "aal1" });
   });
 
-  it("ignores organization claims in the token, as the API does", () => {
-    window.sessionStorage.setItem(PUBLIC_SIGNUP_FLAG, "true");
+  it("ignores organization and role claims in the token, as the API does", () => {
     const withClaims = {
       ...newUser,
       user: { ...newUser!.user, app_metadata: { organization_id: "someone_elses_org", role: "org_admin" } },
     } as unknown as SupabaseSessionLike;
 
-    expect(buildSupabaseBrowserAuthSnapshotFromSession(withClaims)?.appMetadata).toMatchObject({
-      organization_id: "personal_user-a",
-      role: "therapist",
-    });
+    const access = deriveSupabaseAccessSession(buildSupabaseBrowserAuthSnapshotFromSession(withClaims));
+
+    expect(access).toMatchObject({ stage: "authenticated", role: "therapist" });
+    expect(access).not.toHaveProperty("organizationId");
+  });
+
+  it("treats a session without a user as signed out", () => {
+    expect(deriveSupabaseAccessSession(buildSupabaseBrowserAuthSnapshotFromSession(null))).toEqual({ stage: "signed_out" });
   });
 });
 

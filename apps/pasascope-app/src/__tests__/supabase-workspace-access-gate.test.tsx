@@ -1,224 +1,27 @@
-import { fireEvent, render, screen, waitFor } from "@testing-library/react";
+import { render, screen, waitFor } from "@testing-library/react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 import { routerReplace } from "@/__tests__/setup";
 import { SupabaseWorkspaceAccessGate } from "@/components/supabase-workspace-access-gate";
 
-const listFactors = vi.fn();
-const enroll = vi.fn();
-const challengeAndVerify = vi.fn();
-const getSession = vi.fn();
-
 vi.mock("@/lib/supabase-browser-client", () => ({
-  getSupabaseBrowserClient: () => ({
-    auth: {
-      getSession,
-      mfa: {
-        listFactors,
-        enroll,
-        challengeAndVerify,
-      },
-    },
-  }),
+  getSupabaseBrowserClient: () => null,
 }));
 
 describe("SupabaseWorkspaceAccessGate", () => {
   beforeEach(() => {
     window.sessionStorage.clear();
     window.localStorage.clear();
-    listFactors.mockReset();
-    enroll.mockReset();
-    challengeAndVerify.mockReset();
-    getSession.mockReset();
+    routerReplace.mockClear();
   });
 
-  it("enrolls and verifies TOTP to unlock workspace access from an aal1 session", async () => {
+  it("opens the workspace for a signed-in account", () => {
     window.sessionStorage.setItem("pasascope.supabase-access-session.v1", JSON.stringify({
-      stage: "mfa_required",
-      userId: "user_therapist_001",
-      email: "clinician@clinic.example",
+      stage: "authenticated",
+      userId: "user_001",
+      email: "clinician@example.test",
       role: "therapist",
       aal: "aal1",
-      organizationId: "clinic_001",
-      availableOrganizations: [
-        { organizationId: "clinic_001", label: "PasaScope Clinic" },
-      ],
-    }));
-
-    listFactors
-      .mockResolvedValueOnce({
-        data: {
-          all: [],
-          totp: [],
-          phone: [],
-          webauthn: [],
-        },
-        error: null,
-      })
-      .mockResolvedValueOnce({
-        data: {
-          all: [{
-            id: "factor_totp_001",
-            factor_type: "totp",
-            status: "unverified",
-            friendly_name: "PasaScope Authenticator",
-          }],
-          totp: [],
-          phone: [],
-          webauthn: [],
-        },
-        error: null,
-      })
-      .mockResolvedValueOnce({
-        data: {
-          all: [{
-            id: "factor_totp_001",
-            factor_type: "totp",
-            status: "verified",
-            friendly_name: "PasaScope Authenticator",
-          }],
-          totp: [{
-            id: "factor_totp_001",
-            factor_type: "totp",
-            status: "verified",
-            friendly_name: "PasaScope Authenticator",
-          }],
-          phone: [],
-          webauthn: [],
-        },
-        error: null,
-      });
-
-    enroll.mockResolvedValue({
-      data: {
-        id: "factor_totp_001",
-        type: "totp",
-        friendly_name: "PasaScope Authenticator",
-        totp: {
-          qr_code: "<svg xmlns=\"http://www.w3.org/2000/svg\"></svg>",
-          secret: "SECRET-CODE",
-          uri: "otpauth://totp/PasaScope",
-        },
-      },
-      error: null,
-    });
-
-    challengeAndVerify.mockResolvedValue({
-      data: {
-        access_token: "access-token",
-        token_type: "bearer",
-        expires_in: 3600,
-        refresh_token: "refresh-token",
-        user: {
-          id: "user_therapist_001",
-          email: "clinician@clinic.example",
-          app_metadata: {
-            role: "therapist",
-            membership_active: true,
-            invitation_status: "accepted",
-            organization_id: "clinic_001",
-            organizations: [
-              { organizationId: "clinic_001", label: "PasaScope Clinic" },
-            ],
-          },
-          user_metadata: {
-            display_name: "Pilot Clinician",
-          },
-        },
-      },
-      error: null,
-    });
-
-    getSession.mockResolvedValue({
-      data: {
-        session: {
-          aal: "aal2",
-          user: {
-            id: "user_therapist_001",
-            email: "clinician@clinic.example",
-            app_metadata: {
-              role: "therapist",
-              membership_active: true,
-              invitation_status: "accepted",
-              organization_id: "clinic_001",
-              organizations: [
-                { organizationId: "clinic_001", label: "PasaScope Clinic" },
-              ],
-            },
-            user_metadata: {
-              display_name: "Pilot Clinician",
-            },
-          },
-        },
-      },
-    });
-
-    render(
-      <SupabaseWorkspaceAccessGate>
-        <div>Unlocked workspace</div>
-      </SupabaseWorkspaceAccessGate>,
-    );
-
-    expect(await screen.findByRole("heading", { name: "Additional verification required" })).toBeInTheDocument();
-
-    fireEvent.click(screen.getByRole("button", { name: "Start TOTP enrollment" }));
-
-    // The enrollment chain awaits several mocked calls; under a loaded test
-    // run the default 1s wait is not always enough.
-    expect(
-      await screen.findByText(
-        "TOTP enrollment started. Scan the QR code or enter the secret, then verify with a current code.",
-        {},
-        { timeout: 5000 },
-      ),
-    ).toBeInTheDocument();
-    expect(screen.getByDisplayValue("SECRET-CODE")).toBeInTheDocument();
-
-    fireEvent.change(screen.getByLabelText("Authenticator code"), { target: { value: "123456" } });
-    fireEvent.click(screen.getByRole("button", { name: "Complete TOTP enrollment" }));
-
-    await waitFor(() => {
-      expect(challengeAndVerify).toHaveBeenCalledWith({
-        factorId: "factor_totp_001",
-        code: "123456",
-      });
-    });
-
-    expect(await screen.findByText("Unlocked workspace")).toBeInTheDocument();
-    expect(window.sessionStorage.getItem("pasascope.supabase-access-session.v1")).toContain("\"aal\":\"aal2\"");
-  });
-
-  it("treats the last active organization as a hint only until the user confirms it", async () => {
-    window.localStorage.setItem("pasascope.supabase-organization-hint.v1", JSON.stringify({
-      userId: "user_supervisor_001",
-      email: "supervisor@clinic.example",
-      organizationId: "clinic_002",
-    }));
-    window.sessionStorage.setItem("pasascope.supabase-browser-auth.v1", JSON.stringify({
-      userId: "user_supervisor_001",
-      email: "supervisor@clinic.example",
-      aal: "aal2",
-      appMetadata: {
-        role: "clinical_supervisor",
-        membership_active: true,
-        invitation_status: "accepted",
-        organizations: [
-          { organizationId: "clinic_001", label: "PasaScope Clinic", role: "clinical_supervisor" },
-          { organizationId: "clinic_002", label: "North Review Clinic", role: "org_admin" },
-        ],
-      },
-    }));
-    window.sessionStorage.setItem("pasascope.supabase-access-session.v1", JSON.stringify({
-      stage: "org_selection_required",
-      userId: "user_supervisor_001",
-      email: "supervisor@clinic.example",
-      role: "clinical_supervisor",
-      aal: "aal2",
-      availableOrganizations: [
-        { organizationId: "clinic_001", label: "PasaScope Clinic", role: "clinical_supervisor" },
-        { organizationId: "clinic_002", label: "North Review Clinic", role: "org_admin" },
-      ],
-      suggestedOrganizationId: "clinic_002",
     }));
 
     render(
@@ -227,15 +30,8 @@ describe("SupabaseWorkspaceAccessGate", () => {
       </SupabaseWorkspaceAccessGate>,
     );
 
-    expect(await screen.findByRole("heading", { name: "Choose an active organization" })).toBeInTheDocument();
-    expect(screen.getByText(/The previous session used/)).toBeInTheDocument();
-    expect(screen.queryByText("Unlocked workspace")).not.toBeInTheDocument();
-
-    fireEvent.click(screen.getByRole("button", { name: "Continue with selected organization" }));
-
-    expect(await screen.findByText("Unlocked workspace")).toBeInTheDocument();
-    expect(window.sessionStorage.getItem("pasascope.supabase-access-session.v1")).toContain("\"stage\":\"authenticated\"");
-    expect(window.sessionStorage.getItem("pasascope.supabase-access-session.v1")).toContain("\"organizationId\":\"clinic_002\"");
+    expect(screen.getByText("Unlocked workspace")).toBeInTheDocument();
+    expect(routerReplace).not.toHaveBeenCalled();
   });
 
   it("restores workspace access from Supabase localStorage when the access-session cache is stale signed_out", async () => {
@@ -243,20 +39,11 @@ describe("SupabaseWorkspaceAccessGate", () => {
       stage: "signed_out",
     }));
     window.localStorage.setItem("sb-cbhwxklvcpgizeqriqxi-auth-token", JSON.stringify({
-      access_token: createUnsignedJwt({ aal: "aal2" }),
-      aal: "aal2",
+      access_token: createUnsignedJwt({ aal: "aal1" }),
+      aal: "aal1",
       user: {
-        id: "user_admin_001",
-        email: "org.admin@clinic.example",
-        app_metadata: {
-          role: "org_admin",
-          membership_active: true,
-          invitation_status: "accepted",
-          organization_id: "clinic_001",
-          organizations: [
-            { organizationId: "clinic_001", label: "PasaScope Clinic", role: "org_admin" },
-          ],
-        },
+        id: "user_001",
+        email: "clinician@example.test",
       },
     }));
 
@@ -271,6 +58,22 @@ describe("SupabaseWorkspaceAccessGate", () => {
     expect(window.sessionStorage.getItem("pasascope.supabase-session-token.v1")).toBeTruthy();
   });
 
+  it("sends a session left by the organization-based app to sign in", async () => {
+    window.sessionStorage.setItem("pasascope.supabase-access-session.v1", JSON.stringify({
+      stage: "org_selection_required",
+      email: "clinician@example.test",
+    }));
+
+    render(
+      <SupabaseWorkspaceAccessGate>
+        <div>Unlocked workspace</div>
+      </SupabaseWorkspaceAccessGate>,
+    );
+
+    await waitFor(() => expect(routerReplace).toHaveBeenCalledWith("/login"));
+    expect(screen.queryByText("Unlocked workspace")).not.toBeInTheDocument();
+  });
+
   it("automatically redirects unauthenticated visitors to /login", async () => {
     render(
       <SupabaseWorkspaceAccessGate>
@@ -281,8 +84,8 @@ describe("SupabaseWorkspaceAccessGate", () => {
     await waitFor(() => {
       expect(routerReplace).toHaveBeenCalledWith("/login");
     });
-    expect(await screen.findByRole("heading", { name: "Workspace access is blocked" })).toBeInTheDocument();
-    expect(screen.getByRole("link", { name: "Go to login" })).toHaveAttribute("href", "/login");
+    expect(screen.getByRole("status")).toHaveTextContent("Taking you to sign in…");
+    expect(screen.queryByText("Unlocked workspace")).not.toBeInTheDocument();
   });
 });
 

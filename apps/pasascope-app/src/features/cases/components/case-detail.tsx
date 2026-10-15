@@ -46,14 +46,8 @@ export function CaseDetail({ model }: { model: CaseDetailViewModel }) {
   const { caseItem, timeline, goals, consent } = model;
   const {
     localConsent,
-    consentSigner,
-    setConsentSigner,
     consentChecked,
     setConsentChecked,
-    consentDate,
-    setConsentDate,
-    consentNotes,
-    setConsentNotes,
     consentBusy,
     consentMsg,
   } = consent;
@@ -148,17 +142,10 @@ export function CaseDetail({ model }: { model: CaseDetailViewModel }) {
             busy={consentBusy}
             checked={consentChecked}
             onCheckedChange={setConsentChecked}
-            signer={consentSigner}
-            onSignerChange={setConsentSigner}
-            consentDate={consentDate}
-            onConsentDateChange={setConsentDate}
-            notes={consentNotes}
-            onNotesChange={setConsentNotes}
             onSubmit={handleGrantConsent}
             submitLabel={shared.verifyConsent}
             submitBlockedReason={gate(grantConsentBlockedReason({ checked: consentChecked, busy: consentBusy }))}
             reasonId="case-grant-consent-reason"
-            idPrefix="case"
           />
         </Panel>
       ) : null}

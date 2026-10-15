@@ -2,7 +2,6 @@
 
 import { shellMessages } from "@/components/shell.messages";
 import { useMessages } from "@/i18n/locale-provider";
-import { useAppMode } from "@/lib/app-mode";
 import { signOutSupabaseWorkspace } from "@/lib/supabase-workspace-logout";
 import { useRuntimeSettings } from "@/lib/use-runtime-settings";
 import { useSupabaseAccessSession } from "@/lib/use-supabase-access-session";
@@ -21,7 +20,6 @@ export function useShellUser(): ShellUser {
   const t = useMessages(shellMessages);
   const runtimeSettings = useRuntimeSettings();
   const supabaseSession = useSupabaseAccessSession();
-  const { publicSignup } = useAppMode();
   const isSupabaseRuntime = runtimeSettings.status === "success" && runtimeSettings.data.auth_mode === "supabase";
 
   const name = runtimeSettings.status !== "success"
@@ -32,7 +30,7 @@ export function useShellUser(): ShellUser {
   const workspace = runtimeSettings.status !== "success"
     ? runtimeSettings.status === "loading" ? t.user.confirmingWorkspace : t.user.workspaceUnavailable
     : isSupabaseRuntime
-      ? publicSignup ? t.user.personalWorkspace : `${t.user.signedInWorkspace}${supabaseSession?.role ? ` · ${supabaseSession.role}` : ""}`
+      ? t.user.personalWorkspace
       : t.user.localWorkspace;
 
   return {

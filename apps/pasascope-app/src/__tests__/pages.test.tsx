@@ -190,16 +190,13 @@ describe("pasascope pages", () => {
     const enterWorkspace = screen.getByRole("link", { name: "Enter workspace" });
     expect(enterWorkspace).toHaveAttribute("href", "/");
     expect(screen.getByText("Clinical transcript workbench")).toBeInTheDocument();
-    expect(screen.getByText("Production access stays invitation-only and requires AAL2 before app access.")).toBeInTheDocument();
+    expect(screen.getByText("The live site uses personal accounts: anyone can sign up, and each account has a workspace of its own.")).toBeInTheDocument();
     expect(screen.getByText("This mock role has a single organization membership, so the active organization is preselected.")).toBeInTheDocument();
 
     fireEvent.change(screen.getByLabelText("Role"), { target: { value: "clinical_supervisor" } });
     expect(enterWorkspace).toHaveAttribute("href", "/");
     expect(screen.getByText("Clinical supervisor opens the work queue with org-wide oversight.")).toBeInTheDocument();
     expect(screen.getByText("This mock role simulates multiple memberships, so the active organization must be selected explicitly before workspace access.")).toBeInTheDocument();
-    expect(screen.getByText("Organization session selection").parentElement).toHaveTextContent(
-      "Selecting AAL1 will stop at the MFA gate until the session is promoted to AAL2.",
-    );
 
   });
 
@@ -231,12 +228,10 @@ describe("pasascope pages", () => {
 
     render(<LoginPage />);
 
-    expect(await screen.findByRole("heading", { name: "Sign in to the clinic workspace" })).toBeInTheDocument();
+    expect(await screen.findByRole("heading", { name: "Sign in to PasaScope" })).toBeInTheDocument();
     expect(screen.queryByRole("link", { name: "Enter workspace" })).not.toBeInTheDocument();
-    expect(screen.getByText("Public signup is off. Only users with an accepted invitation can continue to account access.")).toBeInTheDocument();
-    expect(screen.getByText(/After invitation acceptance, TOTP MFA enrollment is mandatory\./)).toBeInTheDocument();
-    expect(screen.getByText(/If multiple memberships are active, the user must explicitly choose one organization before workspace access\./)).toBeInTheDocument();
-    expect(screen.getByText(/Password recovery uses the Supabase-managed reset path/)).toBeInTheDocument();
+    expect(screen.queryByText(/invitation|organization/i)).not.toBeInTheDocument();
+    expect(screen.getByRole("link", { name: "Privacy: what is stored and where it goes" })).toHaveAttribute("href", "/privacy");
     expect(screen.getByRole("button", { name: "Supabase browser config missing" })).toBeDisabled();
   });
 
@@ -294,92 +289,8 @@ describe("pasascope pages", () => {
 
     render(<TodayPage />);
 
-    expect(await screen.findByRole("heading", { name: "Workspace access is blocked" })).toBeInTheDocument();
-    expect(screen.getByRole("link", { name: "Go to login" })).toHaveAttribute("href", "/login");
+    expect(await screen.findByText("Taking you to sign in…")).toBeInTheDocument();
     expect(screen.queryByRole("link", { name: "Start session" })).not.toBeInTheDocument();
-  });
-
-  it("blocks workspace routes behind the supabase MFA gate for an aal1 session", async () => {
-    runtimeSettingsState.current = { status: "success", mode: "backend", data: supabaseRuntimeSettings };
-    window.sessionStorage.setItem("pasascope.supabase-browser-auth.v1", JSON.stringify({
-      userId: "user_therapist_001",
-      email: "clinician@clinic.example",
-      aal: "aal1",
-      appMetadata: {
-        role: "therapist",
-        membership_active: true,
-        invitation_status: "accepted",
-        organization_id: "clinic_001",
-        organizations: [
-          { organizationId: "clinic_001", label: "PasaScope Clinic" },
-        ],
-      },
-    }));
-
-    vi.stubGlobal("fetch", vi.fn(async (input: RequestInfo | URL) => {
-      if (String(input).includes("/settings")) {
-        return jsonResponse({
-          mock_mode: false,
-          auth_mode: "supabase",
-          user_roles: ["therapist", "clinical_supervisor", "org_admin"],
-          access_model: {
-            invitation_only: true,
-            required_app_aal: "aal2",
-            active_organization_session: "explicit_selection_when_ambiguous",
-            production_mock_mode: "forbidden",
-          },
-        });
-      }
-      return jsonResponse({});
-    }));
-
-    render(<TodayPage />);
-
-    expect(await screen.findByRole("heading", { name: "Additional verification required" })).toBeInTheDocument();
-    expect(screen.getByText(/Complete the Supabase TOTP step below to elevate this session to/)).toBeInTheDocument();
-    expect(screen.getByRole("button", { name: "Start TOTP enrollment" })).toBeInTheDocument();
-    expect(screen.queryByRole("link", { name: "Start session" })).not.toBeInTheDocument();
-  });
-
-  it("keeps the org-admin settings route behind the Supabase MFA gate for an aal1 session", async () => {
-    runtimeSettingsState.current = { status: "success", mode: "backend", data: supabaseRuntimeSettings };
-    window.sessionStorage.setItem("pasascope.supabase-browser-auth.v1", JSON.stringify({
-      userId: "user_org_admin_001",
-      email: "admin@clinic.example",
-      aal: "aal1",
-      appMetadata: {
-        role: "org_admin",
-        membership_active: true,
-        invitation_status: "accepted",
-        organization_id: "clinic_001",
-        organizations: [
-          { organizationId: "clinic_001", label: "PasaScope Clinic", role: "org_admin" },
-        ],
-      },
-    }));
-
-    vi.stubGlobal("fetch", vi.fn(async (input: RequestInfo | URL) => {
-      if (String(input).includes("/settings")) {
-        return jsonResponse({
-          mock_mode: false,
-          auth_mode: "supabase",
-          user_roles: ["therapist", "clinical_supervisor", "org_admin"],
-          access_model: {
-            invitation_only: true,
-            required_app_aal: "aal2",
-            active_organization_session: "explicit_selection_when_ambiguous",
-            production_mock_mode: "forbidden",
-          },
-        });
-      }
-      return jsonResponse({});
-    }));
-
-    await renderSettingsPage({ scope: "admin" });
-
-    expect(await screen.findByRole("heading", { name: "Additional verification required" })).toBeInTheDocument();
-    expect(screen.getByText(/Complete the Supabase TOTP step below to elevate this session to/)).toBeInTheDocument();
-    expect(screen.queryByRole("heading", { name: "Team" })).not.toBeInTheDocument();
   });
 
   it("renders case cards with consent and session context", async () => {

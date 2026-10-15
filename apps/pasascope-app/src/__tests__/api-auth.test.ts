@@ -43,17 +43,13 @@ describe("api auth headers", () => {
     vi.unstubAllGlobals();
   });
 
-  it("sends bearer auth and active organization headers in supabase runtime", async () => {
+  it("sends bearer auth and no organization header in supabase runtime", async () => {
     window.sessionStorage.setItem("pasascope.supabase-access-session.v1", JSON.stringify({
       stage: "authenticated",
       userId: "user_therapist_001",
       email: "clinician@clinic.example",
       role: "therapist",
       aal: "aal2",
-      organizationId: "clinic_001",
-      availableOrganizations: [
-        { organizationId: "clinic_001", label: "PasaScope Clinic" },
-      ],
     }));
     window.sessionStorage.setItem("pasascope.supabase-session-token.v1", "supabase-access-token");
 
@@ -90,7 +86,7 @@ describe("api auth headers", () => {
 
       const headers = new Headers(init?.headers);
       expect(headers.get("Authorization")).toBe("Bearer supabase-access-token");
-      expect(headers.get("X-Organization-Id")).toBe("clinic_001");
+      expect(headers.get("X-Organization-Id")).toBeNull();
       expect(headers.get("X-User-Id")).toBeNull();
       return jsonResponse({ ok: true });
     });
@@ -109,7 +105,6 @@ describe("api auth headers", () => {
       email: "clinician@clinic.example",
       role: "therapist",
       aal: "aal2",
-      organizationId: "clinic_001",
     }));
     window.sessionStorage.setItem("pasascope.supabase-session-token.v1", "supabase-access-token");
 
@@ -146,7 +141,7 @@ describe("api auth headers", () => {
 
       const headers = new Headers(init?.headers);
       expect(headers.get("Authorization")).toBe("Bearer supabase-access-token");
-      expect(headers.get("X-Organization-Id")).toBe("clinic_001");
+      expect(headers.get("X-Organization-Id")).toBeNull();
       return new Response(new Blob(["audio-bytes"], { type: "audio/webm" }), {
         status: 200,
         headers: { "Content-Type": "audio/webm" },
@@ -168,7 +163,6 @@ describe("api auth headers", () => {
       email: "clinician@clinic.example",
       role: "org_admin",
       aal: "aal2",
-      organizationId: "clinic_001",
     }));
     window.localStorage.setItem("sb-cbhwxklvcpgizeqriqxi-auth-token", JSON.stringify({
       access_token: "persisted-supabase-access-token",
@@ -212,7 +206,7 @@ describe("api auth headers", () => {
 
       const headers = new Headers(init?.headers);
       expect(headers.get("Authorization")).toBe("Bearer persisted-supabase-access-token");
-      expect(headers.get("X-Organization-Id")).toBe("clinic_001");
+      expect(headers.get("X-Organization-Id")).toBeNull();
       return jsonResponse({ ok: true });
     });
 
@@ -230,7 +224,6 @@ describe("api auth headers", () => {
       email: "clinician@clinic.example",
       role: "org_admin",
       aal: "aal2",
-      organizationId: "clinic_001",
     }));
     window.sessionStorage.setItem("pasascope.supabase-session-token.v1", "stale-access-token");
     window.localStorage.setItem("sb-cbhwxklvcpgizeqriqxi-auth-token", JSON.stringify({
@@ -279,7 +272,7 @@ describe("api auth headers", () => {
 
       const headers = new Headers(init?.headers);
       expect(headers.get("Authorization")).toBe("Bearer fresh-persisted-supabase-access-token");
-      expect(headers.get("X-Organization-Id")).toBe("clinic_001");
+      expect(headers.get("X-Organization-Id")).toBeNull();
       return jsonResponse({ ok: true });
     });
 
@@ -333,7 +326,6 @@ describe("api auth headers", () => {
   it("sends bearer auth for relative backend blob uploads in supabase runtime", async () => {
     window.sessionStorage.setItem("pasascope.supabase-access-session.v1", JSON.stringify({
       stage: "authenticated",
-      organizationId: "clinic_001",
       aal: "aal2",
     }));
     window.sessionStorage.setItem("pasascope.supabase-session-token.v1", "supabase-access-token");
@@ -371,7 +363,7 @@ describe("api auth headers", () => {
 
       const headers = new Headers(init?.headers);
       expect(headers.get("Authorization")).toBe("Bearer supabase-access-token");
-      expect(headers.get("X-Organization-Id")).toBe("clinic_001");
+      expect(headers.get("X-Organization-Id")).toBeNull();
       expect(headers.get("content-type")).toBe("audio/webm");
       return new Response(null, { status: 200 });
     });
@@ -420,7 +412,6 @@ describe("api auth headers", () => {
   it("sends bearer auth for report export and reviewed CHA export in supabase runtime", async () => {
     window.sessionStorage.setItem("pasascope.supabase-access-session.v1", JSON.stringify({
       stage: "authenticated",
-      organizationId: "clinic_001",
       aal: "aal2",
     }));
     window.sessionStorage.setItem("pasascope.supabase-session-token.v1", "supabase-access-token");
@@ -460,7 +451,7 @@ describe("api auth headers", () => {
 
       const headers = new Headers(init?.headers);
       expect(headers.get("Authorization")).toBe("Bearer supabase-access-token");
-      expect(headers.get("X-Organization-Id")).toBe("clinic_001");
+      expect(headers.get("X-Organization-Id")).toBeNull();
 
       if (url.includes("/reports/REPORT-001/export")) {
         return jsonResponse({

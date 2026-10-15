@@ -22,24 +22,10 @@ vi.mock("@/lib/supabase-auth-runtime", () => ({
           aal: "aal2",
           access_token: "test-access-token",
           user: {
-            id: "user_org_admin_a",
-            email: "org.admin.a@lingualens-staging.test",
-            app_metadata: {
-              role: "org_admin",
-              membership_active: true,
-              invitation_status: "accepted",
-              organization_id: "org_lingualens_a",
-              organizations: [
-                {
-                  organization_id: "org_lingualens_a",
-                  name: "PasaScope",
-                  role: "org_admin",
-                  active: true,
-                },
-              ],
-            },
+            id: "user_a",
+            email: "user.a@example.test",
             user_metadata: {
-              display_name: "Org Admin A",
+              display_name: "User A",
             },
           },
         },
@@ -64,7 +50,7 @@ describe("SupabaseAuthRuntimeBridge", () => {
 
     await waitFor(() => {
       expect(window.sessionStorage.getItem("pasascope.supabase-session-token.v1")).toBe("test-access-token");
-      expect(window.sessionStorage.getItem("pasascope.supabase-browser-auth.v1")).toContain("\"organization_id\":\"org_lingualens_a\"");
+      expect(window.sessionStorage.getItem("pasascope.supabase-browser-auth.v1")).toContain("\"displayName\":\"User A\"");
       expect(window.sessionStorage.getItem("pasascope.supabase-access-session.v1")).toContain("\"stage\":\"authenticated\"");
     });
   });

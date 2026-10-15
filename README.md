@@ -140,44 +140,25 @@ scaffolds, organization-scoped clinical child records, broader backend route
 guards, org-admin membership/care-team assignment endpoints, and PostgreSQL RLS
 policy SQL as defense-in-depth. This still requires managed Supabase Auth/RLS
 verification before production use.
-Backend Supabase Auth scaffolding now validates configured HS256 bearer tokens,
-requires invitation/MFA/active-membership claims, ignores mock headers in
-Supabase mode, and documents the claim contract in
-`docs/SUPABASE_AUTH_CONTRACT.md`. Backend Phase 2 workflow endpoints now cover
-org-admin invitation records, invitation acceptance into active membership,
-membership revocation, and scoped audited break-glass case access. Therapist
-App v2 Settings/Admin also exposes a local Pilot Access Lifecycle console for
-invitation creation, invitation acceptance into active membership, membership
-review, membership revocation, and preparation of an invited `aal1` session to
-exercise the MFA gate against the backend admin endpoints; real Supabase
-project setup, invitation delivery, custom-claim sync, and staging verification
-against real MFA claims are still required.
+Backend Supabase Auth verifies the bearer token's signature, issuer and
+audience (HS256 or JWKS) and gives every verified user a workspace of their
+own, `personal_<user id>`, derived from the token's subject; organization,
+role and invitation claims in a token are ignored, and mock headers are ignored
+in Supabase mode.
 The production boundary is now frozen around Supabase Auth/Postgres/private
 Storage plus FastAPI as the authoritative clinical policy layer. Browser clients
 may use Supabase Auth and short-lived signed storage URLs only; clinical
 workflow reads/writes go through `apps/api`. PasaScope is responsive
 web/PWA only, and the removed Vite/Capacitor app must not be recreated.
-The maintained `/login` surface is now runtime-aware: mock auth mode still
-offers explicit local role/org/AAL simulation, while `supabase` auth mode now
-uses a real browser-side `@supabase/supabase-js` client for email/password
-sign-in, recovery-email requests, initial session restore, and auth-state
-change syncing into the invitation/MFA/org access-state scaffold. Workspace
-routes now respect that frontend `supabase` access-state model so
-`signed_out`, `aal1`, and ambiguous multi-org states block app content instead
-of silently falling back to mock access behavior. In the `aal1` gate, the app
-can now start TOTP enrollment, show the QR/secret, and verify the authenticator
-code through the Supabase browser client to elevate the session to `aal2`.
-Explicit organization selection and org switching also persist back into the
-browser auth snapshot so the active organization survives refreshes within the
-current session. The frontend API layer now also switches from demo
-`X-User-Id` headers to real Supabase bearer tokens plus active-organization
-context whenever `supabase` auth mode is active, and protected audio playback
-now loads through authenticated blob fetches instead of raw backend file URLs.
-The remaining production work is real claim provisioning, invitation delivery,
-and staging verification against the actual Supabase projects.
-For local multi-org auth simulation, the maintained shell now exposes an
-explicit active-organization session switcher; only one organization remains
-active per session, and subsequent scoped requests use that selected org.
+The `/login` surface is runtime-aware: mock auth mode offers local role and
+organization simulation for the mock API, while `supabase` auth mode uses the
+browser `@supabase/supabase-js` client for email/password and Google sign-in,
+sign-up, recovery email, session restore and auth-state syncing. Every signed-in
+account opens its own workspace; there is no organization choice and no
+invitation step. Workspace routes send a signed-out visitor to `/login`, and the
+API layer sends the Supabase bearer token (no organization header) whenever
+`supabase` auth mode is active. Protected audio playback loads through
+authenticated blob fetches instead of raw backend file URLs.
 
 The canonical therapist path starts from Home or Cases and opens a persisted
 session at `/sessions/{sessionId}`. Session Workspace uses the validated

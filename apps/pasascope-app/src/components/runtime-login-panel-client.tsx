@@ -57,7 +57,7 @@ export function RuntimeLoginPanelClient() {
     return (
       <>
         <SupabaseAuthRuntimeBridge />
-        <SupabaseLoginFormClient runtimeSettings={runtimeSettings.data} />
+        <SupabaseLoginFormClient />
       </>
     );
   }
@@ -65,7 +65,7 @@ export function RuntimeLoginPanelClient() {
   return (
     <>
       <SupabaseAuthRuntimeBridge />
-      <MockLoginFormClient runtimeSettings={runtimeSettings.data} />
+      <MockLoginFormClient />
     </>
   );
 }

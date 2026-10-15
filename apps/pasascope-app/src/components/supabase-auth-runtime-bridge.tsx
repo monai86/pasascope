@@ -8,7 +8,6 @@ import {
   SUPABASE_BROWSER_AUTH_EVENT,
   syncSupabaseAccessSessionFromBrowserAuth,
   syncSupabaseAccessSessionFromSession,
-  PUBLIC_SIGNUP_FLAG,
 } from "@/lib/supabase-browser-auth";
 import { SUPABASE_SESSION_SOURCE_EVENT } from "@/lib/supabase-session-source";
 import { useRuntimeSettings } from "@/lib/use-runtime-settings";
@@ -16,28 +15,6 @@ import { useRuntimeSettings } from "@/lib/use-runtime-settings";
 export function SupabaseAuthRuntimeBridge() {
   const runtimeSettings = useRuntimeSettings();
   const authMode = runtimeSettings.status === "success" ? runtimeSettings.data.auth_mode : undefined;
-  const requiredAal = runtimeSettings.status === "success" ? runtimeSettings.data.access_model?.required_app_aal : undefined;
-
-  const publicSignup = runtimeSettings.status === "success" ? runtimeSettings.data.access_model?.public_signup === true : undefined;
-
-  useEffect(() => {
-    if (typeof window === "undefined" || publicSignup === undefined) return;
-    if (publicSignup) window.sessionStorage.setItem(PUBLIC_SIGNUP_FLAG, "true");
-    else window.sessionStorage.removeItem(PUBLIC_SIGNUP_FLAG);
-    ensureSupabaseAuthRuntimeSync();
-    syncSupabaseAccessSessionFromBrowserAuth();
-  }, [publicSignup]);
-
-  useEffect(() => {
-    if (typeof window === "undefined") return;
-    if (requiredAal === "aal1") {
-      window.sessionStorage.setItem("pasascope.mfa_optional", "true");
-      syncSupabaseAccessSessionFromBrowserAuth();
-    } else if (requiredAal === "aal2") {
-      window.sessionStorage.removeItem("pasascope.mfa_optional");
-      syncSupabaseAccessSessionFromBrowserAuth();
-    }
-  }, [requiredAal]);
 
   useEffect(() => {
     if (authMode !== "supabase") return;

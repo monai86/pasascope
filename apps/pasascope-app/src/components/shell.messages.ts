@@ -36,10 +36,10 @@ export const shellMessages = defineMessages({
       demoName: "Demo Therapist",
       confirmingWorkspace: "Confirming runtime settings",
       workspaceUnavailable: "Runtime settings unavailable",
-      signedInWorkspace: "Supabase-authenticated workspace",
       personalWorkspace: "Personal workspace",
       localWorkspace: "Local clinician workspace",
     },
+    signInRedirect: "Taking you to sign in…",
     opening: {
       title: "Opening your workspace",
       waking: "The service is starting up. This can take about a minute.",
@@ -86,10 +86,10 @@ export const shellMessages = defineMessages({
       demoName: "นักบำบัด (สาธิต)",
       confirmingWorkspace: "กำลังยืนยันการตั้งค่าระบบ",
       workspaceUnavailable: "ไม่สามารถอ่านการตั้งค่าระบบได้",
-      signedInWorkspace: "พื้นที่ทำงานที่ลงชื่อเข้าใช้แล้ว",
       personalWorkspace: "พื้นที่ทำงานส่วนตัว",
       localWorkspace: "พื้นที่ทำงานบนเครื่องนี้",
     },
+    signInRedirect: "กำลังพาไปหน้าลงชื่อเข้าใช้…",
     opening: {
       title: "กำลังเปิดพื้นที่ทำงาน",
       waking: "ระบบกำลังเริ่มทำงาน อาจใช้เวลาประมาณหนึ่งนาที",

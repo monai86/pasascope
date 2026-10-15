@@ -1,13 +1,8 @@
 "use client";
 
 import {
-  loadSupabaseOrganizationHint,
   saveSupabaseAccessSession,
-  saveSupabaseOrganizationHint,
   type SupabaseAccessSession,
-  type SupabaseOrganizationHint,
-  type SupabaseOrganizationOption,
-  type SupabaseSessionRole,
 } from "@/lib/supabase-access-session";
 import { saveSupabaseSessionToken } from "@/lib/supabase-session-token";
 
@@ -16,18 +11,15 @@ import "@/lib/storage-key-migration";
 export const SUPABASE_BROWSER_AUTH_KEY = "pasascope.supabase-browser-auth.v1";
 export const SUPABASE_BROWSER_AUTH_EVENT = "pasascope:supabase-browser-auth-changed";
 
+/**
+ * Who is signed in, as the screens need to know it. The API derives the
+ * account's workspace from the token itself, so nothing here grants access.
+ */
 export type SupabaseBrowserAuthSnapshot = {
   userId: string;
   email: string;
   displayName?: string;
   aal: "aal1" | "aal2";
-  appMetadata: {
-    role: SupabaseSessionRole;
-    membership_active: boolean;
-    invitation_status: "pending" | "accepted" | "revoked" | "expired";
-    organization_id?: string;
-    organizations?: SupabaseOrganizationOption[];
-  };
 };
 
 export type SupabaseSessionLike = {
@@ -36,14 +28,6 @@ export type SupabaseSessionLike = {
   user?: {
     id?: string | null;
     email?: string | null;
-    app_metadata?: {
-      role?: unknown;
-      membership_active?: unknown;
-      invitation_status?: unknown;
-      organization_id?: unknown;
-      organizations?: unknown;
-      organization_memberships?: unknown;
-    } | null;
     user_metadata?: {
       display_name?: unknown;
       full_name?: unknown;
@@ -62,15 +46,8 @@ export function loadSupabaseBrowserAuthSnapshot(): SupabaseBrowserAuthSnapshot |
     return {
       userId: parsed.userId,
       email: parsed.email,
-      displayName: parsed.displayName,
+      displayName: typeof parsed.displayName === "string" ? parsed.displayName : undefined,
       aal: parsed.aal,
-      appMetadata: {
-        role: parsed.appMetadata.role,
-        membership_active: parsed.appMetadata.membership_active,
-        invitation_status: parsed.appMetadata.invitation_status,
-        organization_id: parsed.appMetadata.organization_id,
-        organizations: parsed.appMetadata.organizations,
-      },
     };
   } catch {
     return null;
@@ -83,7 +60,6 @@ export function saveSupabaseBrowserAuthSnapshot(snapshot: SupabaseBrowserAuthSna
     window.sessionStorage.setItem(SUPABASE_BROWSER_AUTH_KEY, JSON.stringify(snapshot));
   } else {
     window.sessionStorage.removeItem(SUPABASE_BROWSER_AUTH_KEY);
-    saveSupabaseOrganizationHint(null);
   }
   window.dispatchEvent(new CustomEvent(SUPABASE_BROWSER_AUTH_EVENT, { detail: snapshot }));
 }
@@ -120,107 +96,15 @@ export function resolveAalFromSession(session: SupabaseSessionLike): "aal1" | "a
   return null;
 }
 
-export const PUBLIC_SIGNUP_FLAG = "pasascope.public_signup";
-
-/** Set from the API's runtime settings; see SupabaseAuthRuntimeBridge. */
-export function isPublicSignupMode(): boolean {
-  return typeof window !== "undefined" && window.sessionStorage.getItem(PUBLIC_SIGNUP_FLAG) === "true";
-}
-
-export function personalOrganizationId(userId: string): string {
-  return `personal_${userId}`;
-}
-
 export function buildSupabaseBrowserAuthSnapshotFromSession(
   session: SupabaseSessionLike,
 ): SupabaseBrowserAuthSnapshot | null {
-  if (isPublicSignupMode()) {
-    // Public app: a signed-in user is a therapist in a workspace of their own.
-    // The API derives the same workspace from the token, so nothing here
-    // grants access; it only tells the screens who is signed in.
-    if (!session?.user?.id || !session.user.email) return null;
-    const organizationId = personalOrganizationId(session.user.id);
-    return {
-      userId: session.user.id,
-      email: session.user.email,
-      displayName: extractDisplayName(session.user.user_metadata),
-      aal: resolveAalFromSession(session) ?? "aal1",
-      appMetadata: {
-        role: "therapist",
-        membership_active: true,
-        invitation_status: "accepted",
-        organization_id: organizationId,
-        organizations: [{ organizationId, label: organizationId, role: "therapist" }],
-      },
-    };
-  }
-  const resolvedAal = resolveAalFromSession(session);
-  if (!session?.user?.id || !session.user.email || !resolvedAal) {
-    return null;
-  }
-
-  const appMetadata = session.user.app_metadata ?? {};
-
-  if (appMetadata.membership_active !== undefined && typeof appMetadata.membership_active !== "boolean") {
-    return null;
-  }
-  if (appMetadata.invitation_status !== undefined && !isValidInvitationStatus(appMetadata.invitation_status)) {
-    return null;
-  }
-  if (appMetadata.role !== undefined && !isValidRole(appMetadata.role)) {
-    return null;
-  }
-
-  // No defaults: the role, membership and organization must come from the
-  // signed token. An account without them has not been provisioned for any
-  // organization, and the API would reject every request it made.
-  const rawOrgs = normalizeOrganizations(
-    appMetadata.organizations ?? appMetadata.organization_memberships,
-  );
-  if (appMetadata.membership_active !== true || !isValidInvitationStatus(appMetadata.invitation_status)) {
-    return null;
-  }
-  // A member of several organizations carries a role per organization and no
-  // top-level role until one organization is selected.
-  const role = isValidRole(appMetadata.role) ? appMetadata.role : rawOrgs?.[0]?.role;
-  if (!role) {
-    return null;
-  }
-  const invitationStatus = appMetadata.invitation_status;
-  const membershipActive = true;
-
-  const claimedOrganizationId = typeof appMetadata.organization_id === "string" && appMetadata.organization_id.trim()
-    ? appMetadata.organization_id.trim()
-    : undefined;
-  const organizations = rawOrgs && rawOrgs.length > 0
-    ? rawOrgs
-    : claimedOrganizationId
-      ? [{ organizationId: claimedOrganizationId, label: claimedOrganizationId, role }]
-      : [];
-  if (organizations.length === 0) {
-    return null;
-  }
-  const organizationId = claimedOrganizationId && organizations.some((option) => option.organizationId === claimedOrganizationId)
-    ? claimedOrganizationId
-    : organizations[0].organizationId;
-  const displayName = extractDisplayName(session.user.user_metadata);
-
-  if (!membershipActive || invitationStatus === "revoked" || invitationStatus === "expired") {
-    return null;
-  }
-
+  if (!session?.user?.id || !session.user.email) return null;
   return {
     userId: session.user.id,
     email: session.user.email,
-    displayName,
-    aal: resolvedAal,
-    appMetadata: {
-      role,
-      membership_active: membershipActive,
-      invitation_status: invitationStatus,
-      organization_id: organizationId,
-      organizations,
-    },
+    displayName: extractDisplayName(session.user.user_metadata),
+    aal: resolveAalFromSession(session) ?? "aal1",
   };
 }
 
@@ -231,56 +115,8 @@ export function saveSupabaseBrowserAuthSnapshotFromSession(session: SupabaseSess
   return snapshot;
 }
 
-export function beginSupabaseBrowserOrganizationSwitch(): SupabaseAccessSession {
-  const snapshot = loadSupabaseBrowserAuthSnapshot();
-  if (!snapshot) {
-    return syncSupabaseAccessSessionFromBrowserAuth();
-  }
-
-  saveSupabaseBrowserAuthSnapshot({
-    ...snapshot,
-    appMetadata: {
-      ...snapshot.appMetadata,
-      organization_id: undefined,
-    },
-  });
-
-  return syncSupabaseAccessSessionFromBrowserAuth();
-}
-
-export function selectSupabaseBrowserOrganization(organizationId: string): SupabaseAccessSession {
-  const snapshot = loadSupabaseBrowserAuthSnapshot();
-  if (!snapshot) {
-    return syncSupabaseAccessSessionFromBrowserAuth();
-  }
-
-  const selectedOrganization = snapshot.appMetadata.organizations?.find(
-    (option) => option.organizationId === organizationId,
-  );
-  if (!selectedOrganization) {
-    return syncSupabaseAccessSessionFromBrowserAuth();
-  }
-
-  saveSupabaseBrowserAuthSnapshot({
-    ...snapshot,
-    appMetadata: {
-      ...snapshot.appMetadata,
-      organization_id: organizationId,
-      organizations: snapshot.appMetadata.organizations ?? [selectedOrganization],
-    },
-  });
-  saveSupabaseOrganizationHint({
-    userId: snapshot.userId,
-    email: snapshot.email,
-    organizationId: selectedOrganization.organizationId,
-  });
-
-  return syncSupabaseAccessSessionFromBrowserAuth();
-}
-
 export function syncSupabaseAccessSessionFromBrowserAuth(): SupabaseAccessSession {
-  const snapshot = loadSupabaseBrowserAuthSnapshot();
-  const accessSession = deriveSupabaseAccessSession(snapshot, loadSupabaseOrganizationHint());
+  const accessSession = deriveSupabaseAccessSession(loadSupabaseBrowserAuthSnapshot());
   saveSupabaseAccessSession(accessSession);
   return accessSession;
 }
@@ -290,96 +126,17 @@ export function syncSupabaseAccessSessionFromSession(session: SupabaseSessionLik
   return syncSupabaseAccessSessionFromBrowserAuth();
 }
 
-export function deriveSupabaseAccessSession(
-  snapshot: SupabaseBrowserAuthSnapshot | null,
-  organizationHint?: SupabaseOrganizationHint | null,
-): SupabaseAccessSession {
+export function deriveSupabaseAccessSession(snapshot: SupabaseBrowserAuthSnapshot | null): SupabaseAccessSession {
   if (!snapshot) {
     return { stage: "signed_out" };
   }
-
-  const organizations = snapshot.appMetadata.organizations ?? [];
-  const selectedOrganizationId = snapshot.appMetadata.organization_id;
-  const organizationMatch = selectedOrganizationId
-    ? organizations.find((option) => option.organizationId === selectedOrganizationId)
-    : undefined;
-  const soleOrganization = organizations.length === 1 ? organizations[0] : undefined;
-  const resolvedOrganizationId = selectedOrganizationId
-    ?? soleOrganization?.organizationId;
-  const resolvedRole = organizationMatch?.role
-    ?? soleOrganization?.role
-    ?? snapshot.appMetadata.role;
-  const suggestedOrganizationId = selectedOrganizationId || organizations.length <= 1
-    ? undefined
-    : organizationHint?.userId === snapshot.userId
-        && organizationHint.email === snapshot.email
-        && organizations.some((option) => option.organizationId === organizationHint.organizationId)
-      ? organizationHint.organizationId
-      : undefined;
-
-  if (
-    !snapshot.appMetadata.membership_active
-    || snapshot.appMetadata.invitation_status !== "accepted"
-  ) {
-    return {
-      stage: "signed_out",
-      email: snapshot.email,
-      displayName: snapshot.displayName,
-      role: snapshot.appMetadata.role,
-    };
-  }
-
-  const isMfaOptional = typeof window !== "undefined" && window.sessionStorage.getItem("pasascope.mfa_optional") === "true";
-  if (!isMfaOptional && snapshot.aal !== "aal2") {
-    return {
-      stage: "mfa_required",
-      userId: snapshot.userId,
-      email: snapshot.email,
-      displayName: snapshot.displayName,
-      role: snapshot.appMetadata.role,
-      aal: snapshot.aal,
-      organizationId: selectedOrganizationId,
-      availableOrganizations: organizations,
-      suggestedOrganizationId,
-    };
-  }
-
-  if (!resolvedOrganizationId) {
-    return {
-      stage: "org_selection_required",
-      userId: snapshot.userId,
-      email: snapshot.email,
-      displayName: snapshot.displayName,
-      role: snapshot.appMetadata.role,
-      aal: snapshot.aal,
-      availableOrganizations: organizations,
-      suggestedOrganizationId,
-    };
-  }
-
-  if (selectedOrganizationId && organizations.length > 0 && !organizationMatch) {
-    return {
-      stage: "org_selection_required",
-      userId: snapshot.userId,
-      email: snapshot.email,
-      displayName: snapshot.displayName,
-      role: snapshot.appMetadata.role,
-      aal: snapshot.aal,
-      availableOrganizations: organizations,
-      suggestedOrganizationId,
-    };
-  }
-
   return {
     stage: "authenticated",
     userId: snapshot.userId,
     email: snapshot.email,
     displayName: snapshot.displayName,
-    role: resolvedRole,
+    role: "therapist",
     aal: snapshot.aal,
-    organizationId: resolvedOrganizationId,
-    availableOrganizations: organizations,
-    suggestedOrganizationId: undefined,
   };
 }
 
@@ -387,70 +144,11 @@ function isValidSnapshot(value: Partial<SupabaseBrowserAuthSnapshot> | undefined
   return Boolean(
     value
     && typeof value.userId === "string"
+    && value.userId.trim()
     && typeof value.email === "string"
+    && value.email.trim()
     && (value.aal === "aal1" || value.aal === "aal2")
-    && value.appMetadata
-    && isValidRole(value.appMetadata.role)
-    && typeof value.appMetadata.membership_active === "boolean"
-    && isValidInvitationStatus(value.appMetadata.invitation_status)
-    && (value.appMetadata.organization_id == null || typeof value.appMetadata.organization_id === "string")
-    && (value.appMetadata.organizations == null || value.appMetadata.organizations.every(isValidOrganizationOption))
   );
-}
-
-function isValidRole(value: unknown): value is SupabaseSessionRole {
-  return value === "therapist" || value === "clinical_supervisor" || value === "org_admin" || value === "platform_operator";
-}
-
-function isValidInvitationStatus(value: unknown): value is SupabaseBrowserAuthSnapshot["appMetadata"]["invitation_status"] {
-  return value === "pending" || value === "accepted" || value === "revoked" || value === "expired";
-}
-
-function isValidOrganizationOption(value: unknown): value is SupabaseOrganizationOption {
-  if (!value || typeof value !== "object") return false;
-  const option = value as Partial<SupabaseOrganizationOption>;
-  return typeof option.organizationId === "string"
-    && typeof option.label === "string"
-    && Boolean(option.organizationId.trim())
-    && Boolean(option.label.trim())
-    && (option.role == null || isValidRole(option.role));
-}
-
-function normalizeOrganizations(value: unknown): SupabaseOrganizationOption[] | undefined {
-  if (!Array.isArray(value)) return undefined;
-
-  const organizations = value.flatMap((item) => {
-    if (typeof item === "string" && item.trim()) {
-      return [{ organizationId: item, label: item }];
-    }
-
-    if (!item || typeof item !== "object") {
-      return [];
-    }
-
-    const option = item as {
-      organizationId?: unknown;
-      organization_id?: unknown;
-      label?: unknown;
-      name?: unknown;
-      role?: unknown;
-    };
-    const organizationId = typeof option.organizationId === "string"
-      ? option.organizationId
-      : typeof option.organization_id === "string"
-        ? option.organization_id
-        : null;
-    const label = typeof option.label === "string"
-      ? option.label
-      : typeof option.name === "string"
-        ? option.name
-        : organizationId;
-    const role = isValidRole(option.role) ? option.role : undefined;
-
-    return organizationId && label ? [{ organizationId, label, role }] : [];
-  });
-
-  return organizations.length ? organizations : undefined;
 }
 
 function extractDisplayName(

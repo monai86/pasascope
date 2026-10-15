@@ -593,51 +593,6 @@ export type BackendReport = {
   sections?: ReportSection[];
 };
 
-export type OrganizationMembership = {
-  membership_id: string;
-  organization_id: string;
-  user_id: string;
-  display_name: string;
-  role: string;
-  active: boolean;
-  created_at?: string;
-};
-
-export type OrganizationInvitation = {
-  invitation_id: string;
-  organization_id: string;
-  email: string;
-  display_name: string;
-  role: string;
-  status: "pending" | "accepted" | "expired" | "revoked";
-  invited_by: string;
-  accepted_user_id?: string | null;
-  expires_at: string;
-  created_at?: string;
-  accepted_at?: string | null;
-};
-
-export type OrganizationReadinessItem = {
-  key: string;
-  label: string;
-  status: "ready" | "attention" | "blocked";
-  detail: string;
-  evidence: string[];
-  next_action: string;
-};
-
-export type OrganizationReadiness = {
-  organization_id: string;
-  checked_by: string;
-  role: string;
-  environment: string;
-  pilot_ready: boolean;
-  production_ready: boolean;
-  active_memberships: number;
-  pending_invitations: number;
-  items: OrganizationReadinessItem[];
-};
-
 export type CareTeamAssignment = {
   assignment_id: string;
   organization_id: string;

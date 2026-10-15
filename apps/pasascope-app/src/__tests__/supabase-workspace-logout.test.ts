@@ -26,12 +26,6 @@ describe("signOutSupabaseWorkspace", () => {
       userId: "user_therapist_001",
       email: "clinician@clinic.example",
       aal: "aal2",
-      appMetadata: {
-        role: "therapist",
-        membership_active: true,
-        invitation_status: "accepted",
-        organization_id: "clinic_001",
-      },
     }));
     window.sessionStorage.setItem("pasascope.supabase-access-session.v1", JSON.stringify({
       stage: "authenticated",
@@ -39,8 +33,8 @@ describe("signOutSupabaseWorkspace", () => {
       email: "clinician@clinic.example",
       role: "therapist",
       aal: "aal2",
-      organizationId: "clinic_001",
     }));
+    // Left by the organization-based app.
     window.localStorage.setItem("pasascope.supabase-organization-hint.v1", JSON.stringify({
       userId: "user_therapist_001",
       email: "clinician@clinic.example",

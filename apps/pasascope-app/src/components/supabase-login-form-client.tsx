@@ -2,26 +2,9 @@
 
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import {
-  ArrowRight,
-  Building2,
-  CheckCircle2,
-  ChevronDown,
-  Eye,
-  EyeOff,
-  LockKeyhole,
-  LogIn,
-  Mail,
-  ShieldCheck,
-  UserPlus,
-} from "lucide-react";
+import { ArrowRight, Eye, EyeOff, LockKeyhole, Mail, UserPlus } from "lucide-react";
 import { useEffect, useRef, type FormEvent, useState } from "react";
 
-import { type RuntimeSettings } from "@/lib/api";
-import {
-  buildSupabaseBrowserAuthSnapshotFromSession,
-  type SupabaseSessionLike,
-} from "@/lib/supabase-browser-auth";
 import { getSupabaseBrowserClient } from "@/lib/supabase-browser-client";
 import { getSupabaseBrowserClientConfigStatus } from "@/lib/supabase-browser-client-config";
 import { classifyAuthError } from "@/lib/supabase-auth-error";
@@ -30,14 +13,6 @@ import { useSupabaseAccessSession } from "@/lib/use-supabase-access-session";
 import { supabaseLoginMessages } from "@/components/supabase-login.messages";
 import { useMessages } from "@/i18n/locale-provider";
 import { PASSWORD_MIN_LENGTH } from "@/lib/password-policy";
-
-function resolvePostLoginRoute(role: unknown): string {
-  if (role === "org_admin" || role === "platform_operator") {
-    return "/settings?scope=admin";
-  }
-
-  return "/dashboard";
-}
 
 const FOCUS_RING = "focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-[color:var(--color-focus-ring)]";
 // 16px text keeps iOS from zooming the page when a field takes focus.
@@ -50,35 +25,26 @@ const PRIMARY = `group inline-flex min-h-[52px] w-full items-center justify-cent
 // It applies to a new password; an existing one still signs in.
 export { PASSWORD_MIN_LENGTH };
 
-export const ACCOUNT_NOT_PROVISIONED_MESSAGE =
-  "บัญชีนี้ยังไม่ได้รับสิทธิ์เข้าองค์กรใด กรุณาติดต่อผู้ดูแลองค์กรเพื่อรับคำเชิญ · This account has not been added to an organization yet. Ask your organization admin for an invitation.";
+/** Where a signed-in account lands: the home conversation. */
+const LANDING_PATH = "/today";
 
-export function SupabaseLoginFormClient({
-  runtimeSettings,
-}: {
-  runtimeSettings: RuntimeSettings;
-}) {
+export function SupabaseLoginFormClient() {
   const router = useRouter();
   const supabaseSession = useSupabaseAccessSession();
 
   useEffect(() => {
     if (supabaseSession?.stage === "authenticated") {
-      router.replace(runtimeSettings.access_model?.public_signup === true ? "/today" : resolvePostLoginRoute(supabaseSession.role));
+      router.replace(LANDING_PATH);
     }
-  }, [supabaseSession?.stage, supabaseSession?.role, router, runtimeSettings.access_model?.public_signup]);
+  }, [supabaseSession?.stage, router]);
 
-  const invitationOnly = runtimeSettings.access_model?.invitation_only !== false;
-  const publicSignup = runtimeSettings.access_model?.public_signup === true;
-  const landingPath = publicSignup ? "/today" : "/dashboard";
   const browserClientStatus = getSupabaseBrowserClientConfigStatus();
   const [mode, setMode] = useState<"signin" | "signup">("signin");
   const t = useMessages(supabaseLoginMessages);
-  const [roleTab, setRoleTab] = useState<"slp" | "admin" | "parent">("slp");
   const [fullName, setFullName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
-  const [showPolicy, setShowPolicy] = useState(false);
   const [acknowledged, setAcknowledged] = useState(false);
   // Which sign-up field stopped the form, so its own message can sit beside it.
   const [fieldError, setFieldError] = useState<"password" | "acknowledge" | null>(null);
@@ -126,7 +92,7 @@ export function SupabaseLoginFormClient({
     const code = searchParams.get("code");
     if (code || hashAccessToken) {
       setIsGoogleSubmitting(true);
-      setStatusMessage("กำลังยืนยันข้อมูลการเข้าสู่ระบบ...");
+      setStatusMessage(t.status.verifying);
       if (browserClient && code && typeof browserClient.auth?.exchangeCodeForSession === "function") {
         void browserClient.auth.exchangeCodeForSession(code).then(({ data, error }) => {
           if (error) {
@@ -134,7 +100,7 @@ export function SupabaseLoginFormClient({
             setIsGoogleSubmitting(false);
           } else if (data?.session) {
             publishSupabaseSessionPayload(data.session);
-            router.replace(landingPath);
+            router.replace(LANDING_PATH);
           }
         }).catch((err) => {
           setErrorMessage(err instanceof Error ? err.message : "Exchange failed");
@@ -142,19 +108,16 @@ export function SupabaseLoginFormClient({
         });
       }
     }
-  }, [browserClient, router, landingPath]);
-  const configStatusLabel = browserClientStatus.configured
-    ? "NEXT_PUBLIC_SUPABASE_URL and NEXT_PUBLIC_SUPABASE_ANON_KEY detected."
-    : browserClientStatus.missingUrl || browserClientStatus.missingAnonKey
-      ? "waiting for NEXT_PUBLIC_SUPABASE_URL and NEXT_PUBLIC_SUPABASE_ANON_KEY."
-      : "NEXT_PUBLIC_SUPABASE_URL or NEXT_PUBLIC_SUPABASE_ANON_KEY is malformed for the launch contract.";
+    // Runs once per visit; the message catalog follows the language and must not restart it.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [browserClient, router]);
 
   async function handleGoogleSignIn() {
     setErrorMessage("");
     setStatusMessage("");
 
     if (!browserClient) {
-      setErrorMessage("ไม่พบการตั้งค่า Supabase บนระบบ (NEXT_PUBLIC_SUPABASE_URL หรือ NEXT_PUBLIC_SUPABASE_ANON_KEY ขาดหายไปใน Vercel Environment Variables)");
+      setErrorMessage(t.errors.configMissing);
       return;
     }
 
@@ -169,7 +132,7 @@ export function SupabaseLoginFormClient({
       const { error } = await browserClient.auth.signInWithOAuth({
         provider: "google",
         options: {
-          redirectTo: typeof window === "undefined" ? undefined : `${window.location.origin}${landingPath}`,
+          redirectTo: typeof window === "undefined" ? undefined : `${window.location.origin}${LANDING_PATH}`,
         },
       });
 
@@ -208,7 +171,7 @@ export function SupabaseLoginFormClient({
       passwordInput.current?.focus();
       return;
     }
-    if (publicSignup && !acknowledged) {
+    if (!acknowledged) {
       setFieldError("acknowledge");
       acknowledgeInput.current?.focus();
       return;
@@ -225,11 +188,10 @@ export function SupabaseLoginFormClient({
           data: {
             full_name: fullName.trim() || undefined,
             display_name: fullName.trim() || undefined,
-            clinical_role: roleTab === "admin" ? "clinic_admin" : roleTab === "parent" ? "parent_guardian" : "therapist_slp",
             // When the person confirmed they had read the privacy page.
-            privacy_acknowledged_at: publicSignup ? new Date().toISOString() : undefined,
+            privacy_acknowledged_at: new Date().toISOString(),
           },
-          emailRedirectTo: typeof window === "undefined" ? undefined : `${window.location.origin}${landingPath}`,
+          emailRedirectTo: typeof window === "undefined" ? undefined : `${window.location.origin}${LANDING_PATH}`,
         },
       });
 
@@ -241,10 +203,10 @@ export function SupabaseLoginFormClient({
       if (data.session) {
         publishSupabaseSessionPayload(data.session);
         setStatusMessage(t.status.signUpSignedIn);
-        router.push(publicSignup ? landingPath : resolvePostLoginRoute(data.session.user?.app_metadata?.role));
+        router.push(LANDING_PATH);
         router.refresh();
       } else {
-        setStatusMessage(publicSignup ? t.open.status.signUpConfirmEmail : t.status.signUpConfirmEmail);
+        setStatusMessage(t.status.signUpConfirmEmail);
       }
     } catch (error) {
       setErrorMessage(describe(error, t.errors.signUpFailed));
@@ -276,17 +238,9 @@ export function SupabaseLoginFormClient({
         return;
       }
 
-      if (data.session && !buildSupabaseBrowserAuthSnapshotFromSession(data.session as unknown as SupabaseSessionLike)) {
-        // Signed in, but the token carries no organization membership yet.
-        await browserClient.auth.signOut?.();
-        publishSupabaseSessionPayload(null);
-        setErrorMessage(ACCOUNT_NOT_PROVISIONED_MESSAGE);
-        return;
-      }
-
       publishSupabaseSessionPayload(data.session ?? null);
-      setStatusMessage(publicSignup ? t.open.status.signInAccepted : t.status.signInAccepted);
-      router.push(publicSignup ? landingPath : resolvePostLoginRoute(data.session?.user?.app_metadata?.role));
+      setStatusMessage(t.status.signInAccepted);
+      router.push(LANDING_PATH);
       router.refresh();
     } catch (error) {
       setErrorMessage(describe(error, t.errors.signInFailed));
@@ -321,7 +275,7 @@ export function SupabaseLoginFormClient({
         return;
       }
 
-      setStatusMessage(publicSignup ? t.open.status.recoverySent : t.status.recoverySent);
+      setStatusMessage(t.status.recoverySent);
     } catch (error) {
       setErrorMessage(describe(error, t.errors.recoveryFailed));
     } finally {
@@ -340,52 +294,11 @@ export function SupabaseLoginFormClient({
   return (
     <div className="rounded-panel bg-surface p-6 shadow-chat-card sm:p-8">
       <h2 className="font-display text-2xl font-semibold leading-snug text-ink sm:text-[1.7rem]">
-        {publicSignup ? t.open.title : t.title}
+        {t.title}
       </h2>
       <p className="mb-6 mt-2 leading-relaxed text-ink-muted">
-        {publicSignup ? t.open.subtitle : t.subtitle}
+        {t.subtitle}
       </p>
-
-      {/* Role tabs apply only where accounts carry an organization role. */}
-      {publicSignup ? null : (
-      <div className="mb-5 grid grid-cols-3 gap-1 rounded-xl border border-line bg-surface-muted p-1 text-xs font-semibold">
-        <button
-          type="button"
-          onClick={() => setRoleTab("slp")}
-          className={`flex items-center justify-center gap-1.5 rounded-lg py-2 transition-all ${
-            roleTab === "slp"
-              ? "bg-white text-[color:var(--color-success-text)] shadow-xs font-bold"
-              : "text-ink-muted hover:text-ink"
-          }`}
-        >
-          <ShieldCheck size={14} className={roleTab === "slp" ? "text-[color:var(--color-success-text)]" : "text-ink-subtle"} />
-          <span>{t.roles.slp}</span>
-        </button>
-        <button
-          type="button"
-          onClick={() => setRoleTab("admin")}
-          className={`flex items-center justify-center gap-1.5 rounded-lg py-2 transition-all ${
-            roleTab === "admin"
-              ? "bg-white text-[color:var(--color-success-text)] shadow-xs font-bold"
-              : "text-ink-muted hover:text-ink"
-          }`}
-        >
-          <Building2 size={14} className={roleTab === "admin" ? "text-[color:var(--color-success-text)]" : "text-ink-subtle"} />
-          <span>{t.roles.admin}</span>
-        </button>
-        <button
-          type="button"
-          onClick={() => setRoleTab("parent")}
-          className={`flex items-center justify-center gap-1.5 rounded-lg py-2 transition-all ${
-            roleTab === "parent"
-              ? "bg-white text-[color:var(--color-success-text)] shadow-xs font-bold"
-              : "text-ink-muted hover:text-ink"
-          }`}
-        >
-          <span>{t.roles.parent}</span>
-        </button>
-      </div>
-      )}
 
       {/* Sign in or create an account */}
       <div className="mb-5 flex flex-wrap items-center justify-between gap-2">
@@ -409,7 +322,6 @@ export function SupabaseLoginFormClient({
             </button>
           ))}
         </div>
-        {publicSignup ? null : <span className="text-xs font-medium text-ink-subtle">{t.modes.invitationOnly}</span>}
       </div>
 
       {/* Form */}
@@ -441,7 +353,6 @@ export function SupabaseLoginFormClient({
             <label htmlFor="clinical-email-input" className="block text-sm font-medium text-ink">
               {t.email}
             </label>
-            {publicSignup ? null : <span className="text-xs text-ink-subtle">{t.emailHint}</span>}
           </div>
           <div className="relative">
             <Mail className="pointer-events-none absolute left-4 top-1/2 h-4 w-4 -translate-y-1/2 text-ink-subtle" />
@@ -515,7 +426,7 @@ export function SupabaseLoginFormClient({
           ) : null}
         </div>
 
-        {mode === "signup" && publicSignup ? (
+        {mode === "signup" ? (
           <div>
             <label className="flex min-h-11 cursor-pointer items-start gap-3 py-2 text-sm leading-6 text-ink">
               <input
@@ -558,11 +469,7 @@ export function SupabaseLoginFormClient({
             >
               <span className="flex items-center justify-center gap-2">
                 <span>
-                  {isSubmitting
-                    ? t.signingIn
-                    : publicSignup
-                      ? t.open.signIn
-                      : t.signIn}
+                  {isSubmitting ? t.signingIn : t.signIn}
                 </span>
                 <ArrowRight size={17} className="transition-transform group-hover:translate-x-1" />
               </span>
@@ -577,11 +484,7 @@ export function SupabaseLoginFormClient({
             >
               <span className="flex items-center justify-center gap-2">
                 <span>
-                  {isSubmitting
-                    ? t.creatingAccount
-                    : publicSignup
-                      ? t.open.createAccount
-                      : t.createAccount}
+                  {isSubmitting ? t.creatingAccount : t.createAccount}
                 </span>
                 <UserPlus size={17} />
               </span>
@@ -647,76 +550,11 @@ export function SupabaseLoginFormClient({
         </button>
       </div>
 
-      {publicSignup ? (
-        <div className="mt-5 space-y-2 border-t border-chat-line pt-4 text-[13px] leading-5 text-ink-subtle">
-          <p>{t.publicNote.stored}</p>
-          <p>{t.publicNote.boundary}</p>
-          <p><Link href="/privacy" className="font-semibold text-brand underline underline-offset-4">{t.publicNote.privacy}</Link></p>
-        </div>
-      ) : (
-      <div className="mt-4 pt-3 border-t border-line">
-        <button
-          type="button"
-          onClick={() => setShowPolicy(!showPolicy)}
-          className="flex min-h-10 w-full items-center justify-between text-xs font-semibold text-ink-muted hover:text-ink transition"
-        >
-          <span className="flex items-center gap-1.5">
-            <ShieldCheck size={13} className="text-[color:var(--color-success-text)]" />
-            {t.policyToggle}
-          </span>
-          <ChevronDown
-            size={14}
-            className={`transition-transform duration-200 ${showPolicy ? "rotate-180" : ""}`}
-          />
-        </button>
-
-        <div className={`mt-3 space-y-2 text-xs leading-relaxed text-ink-muted ${showPolicy ? "block" : "sr-only sm:not-sr-only"}`}>
-          <div className="rounded-xl border border-[color:var(--color-attention-border)] bg-[color:var(--color-warning-bg)] p-3 text-[color:var(--color-warning-text)]">
-            <p className="font-semibold text-xs uppercase tracking-wider text-[color:var(--color-warning-text)]">
-              {t.policy.invitationTitle}
-            </p>
-            <p className="mt-0.5 text-xs">
-              {invitationOnly
-                ? t.policy.invitationOn
-                : t.policy.invitationOff}
-            </p>
-          </div>
-
-          <div className="rounded-xl border border-[color:var(--color-success-border)] bg-[color:var(--color-success-bg)] p-3 text-[color:var(--color-success-text)]">
-            <p className="font-semibold text-xs uppercase tracking-wider text-[color:var(--color-success-text)]">
-              {t.policy.mfaTitle}
-            </p>
-            <p className="mt-0.5 text-xs">
-              {t.policy.mfaBefore} <strong>aal1</strong> {t.policy.mfaMiddle} <strong>aal2</strong> {t.policy.mfaAfter}
-            </p>
-          </div>
-
-          <div className="rounded-xl border border-line bg-surface-soft p-3 text-ink">
-            <p className="font-semibold text-xs uppercase tracking-wider text-ink">
-              {t.policy.organizationTitle}
-            </p>
-            <p className="mt-0.5 text-xs">
-              {t.policy.organizationBody}
-            </p>
-          </div>
-
-          <div className="rounded-xl border border-line bg-white p-3 text-ink-muted">
-            <p className="font-semibold text-xs uppercase tracking-wider text-ink">
-              {t.policy.recoveryTitle}
-            </p>
-            <p className="mt-0.5 text-xs">
-              {t.policy.recoveryBody}
-            </p>
-            <p className="mt-1 text-xs">
-              {t.policy.runtimeBody}
-            </p>
-            <p className="mt-1 text-xs font-mono text-ink-subtle">
-              {t.policy.browserConfig(configStatusLabel)}
-            </p>
-          </div>
-        </div>
+      <div className="mt-5 space-y-2 border-t border-chat-line pt-4 text-[13px] leading-5 text-ink-subtle">
+        <p>{t.publicNote.stored}</p>
+        <p>{t.publicNote.boundary}</p>
+        <p><Link href="/privacy" className="font-semibold text-brand underline underline-offset-4">{t.publicNote.privacy}</Link></p>
       </div>
-      )}
     </div>
   );
 }

@@ -226,7 +226,6 @@ async function applyRuntimeAuthHeaders(headers: Headers): Promise<void> {
     headers.delete("X-Mock-Display-Name");
 
     const browserClient = getSupabaseBrowserClient();
-    const currentAccessSession = loadSupabaseAccessSession();
     const cachedAccessToken = loadSupabaseSessionToken();
     const { data } = browserClient
       ? await browserClient.auth.getSession()
@@ -246,11 +245,8 @@ async function applyRuntimeAuthHeaders(headers: Headers): Promise<void> {
       headers.delete("Authorization");
     }
 
-    if (currentAccessSession?.organizationId) {
-      headers.set("X-Organization-Id", currentAccessSession.organizationId);
-    } else {
-      headers.delete("X-Organization-Id");
-    }
+    // The API derives the workspace from the token.
+    headers.delete("X-Organization-Id");
 
     return;
   }

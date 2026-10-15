@@ -1,14 +1,18 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 import {
-  beginSupabaseBrowserOrganizationSwitch,
   buildSupabaseBrowserAuthSnapshotFromSession,
   deriveSupabaseAccessSession,
-  selectSupabaseBrowserOrganization,
-  syncSupabaseAccessSessionFromSession,
+  resolveAalFromSession,
   syncSupabaseAccessSessionFromBrowserAuth,
+  syncSupabaseAccessSessionFromSession,
 } from "@/lib/supabase-browser-auth";
 import { publishSupabaseSessionPayload } from "@/lib/supabase-session-source";
+
+function jwtWithPayload(payload: Record<string, unknown>): string {
+  const encode = (value: unknown) => btoa(JSON.stringify(value)).replace(/=+$/, "").replace(/\+/g, "-").replace(/\//g, "_");
+  return `${encode({ alg: "none" })}.${encode(payload)}.signature`;
+}
 
 beforeEach(() => {
   window.sessionStorage.clear();
@@ -19,326 +23,93 @@ describe("supabase browser auth bridge", () => {
     expect(deriveSupabaseAccessSession(null)).toEqual({ stage: "signed_out" });
   });
 
-  it("derives an MFA-required access state for an aal1 accepted membership", () => {
+  it("derives an authenticated therapist for any signed-in account", () => {
     expect(deriveSupabaseAccessSession({
-      userId: "user_therapist_001",
-      email: "clinician@clinic.example",
+      userId: "user_001",
+      email: "clinician@example.test",
+      displayName: "Clinician",
       aal: "aal1",
-      appMetadata: {
-        role: "therapist",
-        membership_active: true,
-        invitation_status: "accepted",
-        organization_id: "clinic_001",
-        organizations: [
-          { organizationId: "clinic_001", label: "PasaScope Clinic" },
-        ],
-      },
-    })).toMatchObject({
-      stage: "mfa_required",
-      email: "clinician@clinic.example",
+    })).toEqual({
+      stage: "authenticated",
+      userId: "user_001",
+      email: "clinician@example.test",
+      displayName: "Clinician",
+      role: "therapist",
       aal: "aal1",
-      organizationId: "clinic_001",
     });
-  });
-
-  it("derives an org-selection-required state when aal2 claims do not carry an active organization", () => {
-    expect(deriveSupabaseAccessSession({
-      userId: "user_supervisor_001",
-      email: "supervisor@clinic.example",
-      aal: "aal2",
-      appMetadata: {
-        role: "clinical_supervisor",
-        membership_active: true,
-        invitation_status: "accepted",
-        organizations: [
-          { organizationId: "clinic_001", label: "PasaScope Clinic" },
-          { organizationId: "clinic_002", label: "North Review Clinic" },
-        ],
-      },
-    })).toMatchObject({
-      stage: "org_selection_required",
-      email: "supervisor@clinic.example",
-      aal: "aal2",
-    });
-  });
-
-  it("derives an authenticated state when aal2 claims carry exactly one organization membership", () => {
-    expect(deriveSupabaseAccessSession({
-      userId: "user_therapist_001",
-      email: "clinician@clinic.example",
-      aal: "aal2",
-      appMetadata: {
-        role: "therapist",
-        membership_active: true,
-        invitation_status: "accepted",
-        organizations: [
-          { organizationId: "clinic_001", label: "PasaScope Clinic" },
-        ],
-      },
-    })).toMatchObject({
-      stage: "authenticated",
-      email: "clinician@clinic.example",
-      aal: "aal2",
-      organizationId: "clinic_001",
-    });
-  });
-
-  it("derives an authenticated state when aal2 claims carry an explicit organization without membership list", () => {
-    expect(deriveSupabaseAccessSession({
-      userId: "user_supervisor_001",
-      email: "supervisor@clinic.example",
-      aal: "aal2",
-      appMetadata: {
-        role: "clinical_supervisor",
-        membership_active: true,
-        invitation_status: "accepted",
-        organization_id: "clinic_001",
-      },
-    })).toMatchObject({
-      stage: "authenticated",
-      email: "supervisor@clinic.example",
-      aal: "aal2",
-      organizationId: "clinic_001",
-    });
-  });
-
-  it("syncs an authenticated access session from accepted aal2 browser auth claims", () => {
-    window.sessionStorage.setItem("pasascope.supabase-browser-auth.v1", JSON.stringify({
-      userId: "user_org_admin_001",
-      email: "admin@clinic.example",
-      displayName: "Clinic Admin",
-      aal: "aal2",
-      appMetadata: {
-        role: "org_admin",
-        membership_active: true,
-        invitation_status: "accepted",
-        organization_id: "clinic_001",
-        organizations: [
-          { organizationId: "clinic_001", label: "PasaScope Clinic" },
-        ],
-      },
-    }));
-
-    const accessSession = syncSupabaseAccessSessionFromBrowserAuth();
-
-    expect(accessSession).toMatchObject({
-      stage: "authenticated",
-      email: "admin@clinic.example",
-      displayName: "Clinic Admin",
-      aal: "aal2",
-      organizationId: "clinic_001",
-    });
-    expect(window.sessionStorage.getItem("pasascope.supabase-access-session.v1")).toContain("\"stage\":\"authenticated\"");
-    expect(window.sessionStorage.getItem("pasascope.supabase-access-session.v1")).toContain("\"organizationId\":\"clinic_001\"");
   });
 
   it("builds a browser-auth snapshot from a Supabase-like session payload", () => {
     expect(buildSupabaseBrowserAuthSnapshotFromSession({
       aal: "aal2",
       user: {
-        id: "user_org_admin_001",
-        email: "admin@clinic.example",
-        app_metadata: {
-          role: "org_admin",
-          membership_active: true,
-          invitation_status: "accepted",
-          organization_id: "clinic_001",
-          organization_memberships: [
-            { organization_id: "clinic_001", name: "PasaScope Clinic", role: "org_admin" },
-            { organization_id: "clinic_002", name: "North Review Clinic", role: "clinical_supervisor" },
-          ],
-        },
-        user_metadata: {
-          full_name: "Clinic Admin",
-        },
+        id: "user_001",
+        email: "clinician@example.test",
+        user_metadata: { full_name: "Clinician" },
       },
     })).toEqual({
-      userId: "user_org_admin_001",
-      email: "admin@clinic.example",
-      displayName: "Clinic Admin",
+      userId: "user_001",
+      email: "clinician@example.test",
+      displayName: "Clinician",
       aal: "aal2",
-      appMetadata: {
-        role: "org_admin",
-        membership_active: true,
-        invitation_status: "accepted",
-        organization_id: "clinic_001",
-        organizations: [
-          { organizationId: "clinic_001", label: "PasaScope Clinic", role: "org_admin" },
-          { organizationId: "clinic_002", label: "North Review Clinic", role: "clinical_supervisor" },
-        ],
-      },
     });
   });
 
-  it("syncs access state directly from a Supabase-like session payload", () => {
+  it("reads the assurance level from the access token when the session does not say", () => {
+    const session = { access_token: jwtWithPayload({ aal: "aal2" }), user: { id: "u", email: "u@example.test" } };
+
+    expect(resolveAalFromSession(session)).toBe("aal2");
+    expect(buildSupabaseBrowserAuthSnapshotFromSession(session)?.aal).toBe("aal2");
+  });
+
+  it("treats a session with no assurance level as aal1", () => {
+    expect(buildSupabaseBrowserAuthSnapshotFromSession({
+      access_token: "not-a-jwt",
+      user: { id: "user_001", email: "clinician@example.test" },
+    })?.aal).toBe("aal1");
+  });
+
+  it("syncs access state and the token from a Supabase-like session payload", () => {
     const accessSession = syncSupabaseAccessSessionFromSession({
-      aal: "aal2",
+      aal: "aal1",
       access_token: "supabase-access-token",
       user: {
-        id: "user_org_admin_001",
-        email: "admin@clinic.example",
-        app_metadata: {
-          role: "org_admin",
-          membership_active: true,
-          invitation_status: "accepted",
-          organization_id: "clinic_001",
-          organizations: [
-            { organizationId: "clinic_001", label: "PasaScope Clinic" },
-          ],
-        },
-        user_metadata: {
-          display_name: "Clinic Admin",
-        },
+        id: "user_001",
+        email: "clinician@example.test",
+        user_metadata: { display_name: "Clinician" },
       },
     });
 
-    expect(accessSession).toMatchObject({
-      stage: "authenticated",
-      email: "admin@clinic.example",
-      organizationId: "clinic_001",
-    });
-    expect(window.sessionStorage.getItem("pasascope.supabase-browser-auth.v1")).toContain("\"Clinic Admin\"");
+    expect(accessSession).toMatchObject({ stage: "authenticated", email: "clinician@example.test" });
+    expect(window.sessionStorage.getItem("pasascope.supabase-browser-auth.v1")).toContain("\"Clinician\"");
     expect(window.sessionStorage.getItem("pasascope.supabase-access-session.v1")).toContain("\"stage\":\"authenticated\"");
     expect(window.sessionStorage.getItem("pasascope.supabase-session-token.v1")).toBe("supabase-access-token");
   });
 
-  it("fails closed when the Supabase session aal claim is missing", () => {
-    const accessSession = syncSupabaseAccessSessionFromSession({
-      access_token: "stale-access-token",
-      user: {
-        id: "user_org_admin_001",
-        email: "admin@clinic.example",
-        app_metadata: {
-          role: "org_admin",
-          membership_active: true,
-          invitation_status: "accepted",
-          organization_id: "clinic_001",
-        },
-      },
-    });
-
-    expect(accessSession).toEqual({ stage: "signed_out" });
-    expect(window.sessionStorage.getItem("pasascope.supabase-browser-auth.v1")).toBeNull();
-    expect(window.sessionStorage.getItem("pasascope.supabase-session-token.v1")).toBeNull();
-  });
-
-  it("fails closed and clears cached token when required claims downgrade to malformed state", () => {
+  it("signs out and clears the cached token when the session has no user", () => {
     syncSupabaseAccessSessionFromSession({
-      aal: "aal2",
+      aal: "aal1",
       access_token: "valid-access-token",
-      user: {
-        id: "user_org_admin_001",
-        email: "admin@clinic.example",
-        app_metadata: {
-          role: "org_admin",
-          membership_active: true,
-          invitation_status: "accepted",
-          organization_id: "clinic_001",
-        },
-      },
+      user: { id: "user_001", email: "clinician@example.test" },
     });
 
-    const downgraded = syncSupabaseAccessSessionFromSession({
-      aal: "aal2",
-      access_token: "invalid-access-token",
-      user: {
-        id: "user_org_admin_001",
-        email: "admin@clinic.example",
-        app_metadata: {
-          role: "org_admin",
-          membership_active: "true",
-          invitation_status: "accepted",
-          organization_id: "clinic_001",
-        },
-      },
-    });
+    const signedOut = syncSupabaseAccessSessionFromSession({ access_token: "stale-access-token", user: null });
 
-    expect(downgraded).toEqual({ stage: "signed_out" });
+    expect(signedOut).toEqual({ stage: "signed_out" });
     expect(window.sessionStorage.getItem("pasascope.supabase-browser-auth.v1")).toBeNull();
     expect(window.sessionStorage.getItem("pasascope.supabase-access-session.v1")).toContain("\"stage\":\"signed_out\"");
     expect(window.sessionStorage.getItem("pasascope.supabase-session-token.v1")).toBeNull();
   });
 
-  it("persists explicit organization selection back into the browser auth snapshot", () => {
+  it("ignores a snapshot stored by the earlier organization-based app", () => {
     window.sessionStorage.setItem("pasascope.supabase-browser-auth.v1", JSON.stringify({
-      userId: "user_supervisor_001",
-      email: "supervisor@clinic.example",
-      aal: "aal2",
-      appMetadata: {
-        role: "clinical_supervisor",
-        membership_active: true,
-        invitation_status: "accepted",
-        organizations: [
-          { organizationId: "clinic_001", label: "PasaScope Clinic", role: "clinical_supervisor" },
-          { organizationId: "clinic_002", label: "North Review Clinic", role: "org_admin" },
-        ],
-      },
+      userId: "user_001",
+      email: "clinician@example.test",
+      aal: "aal7",
+      appMetadata: { role: "org_admin", organization_id: "clinic_001" },
     }));
 
-    const accessSession = selectSupabaseBrowserOrganization("clinic_002");
-
-    expect(accessSession).toMatchObject({
-      stage: "authenticated",
-      organizationId: "clinic_002",
-      role: "org_admin",
-    });
-    expect(window.sessionStorage.getItem("pasascope.supabase-browser-auth.v1")).toContain("\"organization_id\":\"clinic_002\"");
-    expect(window.localStorage.getItem("pasascope.supabase-organization-hint.v1")).toContain("\"organizationId\":\"clinic_002\"");
-  });
-
-  it("uses the last active organization as a hint only for ambiguous aal2 sessions", () => {
-    window.localStorage.setItem("pasascope.supabase-organization-hint.v1", JSON.stringify({
-      userId: "user_supervisor_001",
-      email: "supervisor@clinic.example",
-      organizationId: "clinic_002",
-    }));
-
-    expect(deriveSupabaseAccessSession({
-      userId: "user_supervisor_001",
-      email: "supervisor@clinic.example",
-      aal: "aal2",
-      appMetadata: {
-        role: "clinical_supervisor",
-        membership_active: true,
-        invitation_status: "accepted",
-        organizations: [
-          { organizationId: "clinic_001", label: "PasaScope Clinic" },
-          { organizationId: "clinic_002", label: "North Review Clinic" },
-        ],
-      },
-    }, {
-      userId: "user_supervisor_001",
-      email: "supervisor@clinic.example",
-      organizationId: "clinic_002",
-    })).toMatchObject({
-      stage: "org_selection_required",
-      suggestedOrganizationId: "clinic_002",
-    });
-  });
-
-  it("clears the selected organization from the browser auth snapshot when switching orgs", () => {
-    window.sessionStorage.setItem("pasascope.supabase-browser-auth.v1", JSON.stringify({
-      userId: "user_supervisor_001",
-      email: "supervisor@clinic.example",
-      aal: "aal2",
-      appMetadata: {
-        role: "clinical_supervisor",
-        membership_active: true,
-        invitation_status: "accepted",
-        organization_id: "clinic_001",
-        organizations: [
-          { organizationId: "clinic_001", label: "PasaScope Clinic" },
-          { organizationId: "clinic_002", label: "North Review Clinic" },
-        ],
-      },
-    }));
-
-    const accessSession = beginSupabaseBrowserOrganizationSwitch();
-
-    expect(accessSession).toMatchObject({
-      stage: "org_selection_required",
-    });
-    expect(window.sessionStorage.getItem("pasascope.supabase-browser-auth.v1")).not.toContain("\"organization_id\":\"clinic_001\"");
+    expect(syncSupabaseAccessSessionFromBrowserAuth()).toEqual({ stage: "signed_out" });
   });
 
   it("publishes a Supabase session payload event for the runtime bridge to consume", () => {
@@ -346,66 +117,11 @@ describe("supabase browser auth bridge", () => {
     window.addEventListener("pasascope:supabase-session-source", listener as EventListener);
 
     publishSupabaseSessionPayload({
-      user: { id: "user_therapist_001", email: "clinician@clinic.example" },
+      user: { id: "user_001", email: "clinician@example.test" },
       aal: "aal2",
     });
 
     expect(listener).toHaveBeenCalledTimes(1);
     window.removeEventListener("pasascope:supabase-session-source", listener as EventListener);
   });
-
-  it("clears the organization hint when browser auth is removed", () => {
-    window.localStorage.setItem("pasascope.supabase-organization-hint.v1", JSON.stringify({
-      userId: "user_supervisor_001",
-      email: "supervisor@clinic.example",
-      organizationId: "clinic_002",
-    }));
-
-    syncSupabaseAccessSessionFromSession(null);
-
-    expect(window.localStorage.getItem("pasascope.supabase-organization-hint.v1")).toBeNull();
-    expect(window.sessionStorage.getItem("pasascope.supabase-access-session.v1")).toContain("\"stage\":\"signed_out\"");
-  });
-
-  it.each([
-    ["no app metadata at all", {}],
-    ["no role", { membership_active: true, invitation_status: "accepted", organization_id: "org_a" }],
-    ["no membership flag", { role: "therapist", invitation_status: "accepted", organization_id: "org_a" }],
-    ["no invitation status", { role: "therapist", membership_active: true, organization_id: "org_a" }],
-    ["no organization", { role: "therapist", membership_active: true, invitation_status: "accepted" }],
-  ])("does not invent access for an account with %s", (_label, appMetadata) => {
-    const snapshot = buildSupabaseBrowserAuthSnapshotFromSession({
-      access_token: "token",
-      user: {
-        id: "user-unprovisioned",
-        email: "new.user@clinic.example",
-        app_metadata: appMetadata,
-        user_metadata: {},
-        aal: "aal2",
-      },
-    } as never);
-
-    expect(snapshot).toBeNull();
-  });
-
-  it("accepts a multi-organization account that has per-organization roles and no top-level role", () => {
-    const snapshot = buildSupabaseBrowserAuthSnapshotFromSession({
-      aal: "aal2",
-      user: {
-        id: "user-multi",
-        email: "multi@clinic.example",
-        app_metadata: {
-          membership_active: true,
-          invitation_status: "accepted",
-          organizations: [
-            { organization_id: "org_a", name: "Clinic A", role: "therapist", active: true },
-            { organization_id: "org_b", name: "Clinic B", role: "clinical_supervisor", active: true },
-          ],
-        },
-      },
-    } as never);
-
-    expect(snapshot?.appMetadata.organizations?.map((item) => item.organizationId)).toEqual(["org_a", "org_b"]);
-  });
 });
-

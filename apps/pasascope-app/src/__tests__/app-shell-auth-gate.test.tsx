@@ -52,63 +52,7 @@ describe("AppShell auth gating", () => {
     });
   });
 
-  it("keeps aal1 supabase sessions on the MFA gate instead of rendering workspace content", async () => {
-    window.sessionStorage.setItem("pasascope.supabase-browser-auth.v1", JSON.stringify({
-      userId: "user_therapist_001",
-      email: "clinician@clinic.example",
-      aal: "aal1",
-      appMetadata: {
-        role: "therapist",
-        membership_active: true,
-        invitation_status: "accepted",
-        organization_id: "clinic_001",
-        organizations: [
-          { organizationId: "clinic_001", label: "PasaScope Clinic" },
-        ],
-      },
-    }));
-    window.sessionStorage.setItem("pasascope.supabase-access-session.v1", JSON.stringify({
-      stage: "mfa_required",
-      userId: "user_therapist_001",
-      email: "clinician@clinic.example",
-      role: "therapist",
-      aal: "aal1",
-      organizationId: "clinic_001",
-      availableOrganizations: [
-        { organizationId: "clinic_001", label: "PasaScope Clinic" },
-      ],
-    }));
-
-    listFactors.mockResolvedValue({
-      data: {
-        all: [],
-        totp: [],
-        phone: [],
-        webauthn: [],
-      },
-      error: null,
-    });
-    getSession.mockResolvedValue({
-      data: {
-        session: {
-          aal: "aal1",
-          user: {
-            id: "user_therapist_001",
-            email: "clinician@clinic.example",
-            app_metadata: {
-              role: "therapist",
-              membership_active: true,
-              invitation_status: "accepted",
-              organization_id: "clinic_001",
-              organizations: [
-                { organizationId: "clinic_001", label: "PasaScope Clinic" },
-              ],
-            },
-          },
-        },
-      },
-    });
-
+  it("keeps workspace content hidden from a visitor who is not signed in", async () => {
     vi.stubGlobal("fetch", vi.fn(async (input: RequestInfo | URL) => {
       if (String(input).includes("/settings")) {
         return jsonResponse({
@@ -117,10 +61,10 @@ describe("AppShell auth gating", () => {
           model_version: "v2-mock",
           feature_schema: "pasascope-app.1",
           guideline_mapping: "review-support-only",
-          user_roles: ["therapist", "clinical_supervisor", "org_admin"],
+          user_roles: ["therapist"],
           access_model: {
-            invitation_only: true,
-            required_app_aal: "aal2",
+            invitation_only: false,
+            required_app_aal: "aal1",
             active_organization_session: "explicit_selection_when_ambiguous",
             production_mock_mode: "forbidden",
           },
@@ -139,7 +83,7 @@ describe("AppShell auth gating", () => {
       </AppShell>,
     );
 
-    expect(await screen.findByRole("heading", { name: "Additional verification required" })).toBeInTheDocument();
+    expect(await screen.findByText("Taking you to sign in…")).toBeInTheDocument();
     expect(screen.queryByText("Workspace payload")).not.toBeInTheDocument();
     expect(screen.queryByRole("navigation", { name: /primary navigation/i })).not.toBeInTheDocument();
   });
@@ -154,15 +98,6 @@ describe("AppShell auth gating", () => {
       userId: "user_therapist_001",
       email: "clinician@clinic.example",
       aal: "aal2",
-      appMetadata: {
-        role: "therapist",
-        membership_active: true,
-        invitation_status: "accepted",
-        organization_id: "clinic_001",
-        organizations: [
-          { organizationId: "clinic_001", label: "PasaScope Clinic" },
-        ],
-      },
     }));
     window.sessionStorage.setItem("pasascope.supabase-access-session.v1", JSON.stringify({
       stage: "authenticated",
@@ -170,10 +105,6 @@ describe("AppShell auth gating", () => {
       email: "clinician@clinic.example",
       role: "therapist",
       aal: "aal2",
-      organizationId: "clinic_001",
-      availableOrganizations: [
-        { organizationId: "clinic_001", label: "PasaScope Clinic" },
-      ],
     }));
     getSession.mockResolvedValue({
       data: {
@@ -182,15 +113,6 @@ describe("AppShell auth gating", () => {
           user: {
             id: "user_therapist_001",
             email: "clinician@clinic.example",
-            app_metadata: {
-              role: "therapist",
-              membership_active: true,
-              invitation_status: "accepted",
-              organization_id: "clinic_001",
-              organizations: [
-                { organizationId: "clinic_001", label: "PasaScope Clinic" },
-              ],
-            },
           },
         },
       },
@@ -229,7 +151,6 @@ describe("AppShell auth gating", () => {
     await waitFor(() => expect(screen.getByText("Workspace payload")).toBeInTheDocument());
     expect(screen.getByRole("navigation", { name: /primary navigation/i })).toBeInTheDocument();
     expect(screen.getAllByRole("button", { name: /log out/i }).length).toBeGreaterThan(0);
-    expect(screen.queryByRole("heading", { name: "Additional verification required" })).not.toBeInTheDocument();
   });
 
   it("blocks workspace access when runtime settings fail schema validation", async () => {

@@ -28,14 +28,8 @@ export type CaseListViewModel = {
 
 export type CaseConsentViewModel = {
   localConsent: string;
-  consentSigner: string;
-  setConsentSigner: Dispatch<SetStateAction<string>>;
   consentChecked: boolean;
   setConsentChecked: Dispatch<SetStateAction<boolean>>;
-  consentDate: string;
-  setConsentDate: Dispatch<SetStateAction<string>>;
-  consentNotes: string;
-  setConsentNotes: Dispatch<SetStateAction<string>>;
   consentBusy: boolean;
   consentMsg: string;
   grantConsent: () => Promise<void>;
@@ -99,19 +93,13 @@ export function useCasesWorkspace(caseId?: string): CasesWorkspaceViewModel {
   currentCaseIdRef.current = currentCaseId;
 
   const [localConsent, setLocalConsent] = useState("pending");
-  const [consentSigner, setConsentSigner] = useState("Parent");
   const [consentChecked, setConsentChecked] = useState(false);
-  const [consentDate, setConsentDate] = useState(() => new Date().toISOString().slice(0, 10));
-  const [consentNotes, setConsentNotes] = useState("");
   const [consentBusy, setConsentBusy] = useState(false);
   const [consentMsg, setConsentMsg] = useState("");
 
   useEffect(() => {
     setLocalConsent("pending");
-    setConsentSigner("Parent");
     setConsentChecked(false);
-    setConsentDate(new Date().toISOString().slice(0, 10));
-    setConsentNotes("");
     setConsentBusy(false);
     setConsentMsg("");
   }, [currentCaseId]);
@@ -128,9 +116,9 @@ export function useCasesWorkspace(caseId?: string): CasesWorkspaceViewModel {
     setConsentMsg("");
     try {
       await grantBackendCaseConsent(currentCase.case_id, {
-        signer: consentSigner,
-        consentDate,
-        notes: consentNotes,
+        signer: "Parent",
+        consentDate: new Date().toISOString().slice(0, 10),
+        notes: "",
       });
       if (currentCaseIdRef.current === targetCaseId) {
         setLocalConsent("granted");
@@ -179,14 +167,8 @@ export function useCasesWorkspace(caseId?: string): CasesWorkspaceViewModel {
       featureTrend: data.featureTrend,
       consent: {
         localConsent,
-        consentSigner,
-        setConsentSigner,
         consentChecked,
         setConsentChecked,
-        consentDate,
-        setConsentDate,
-        consentNotes,
-        setConsentNotes,
         consentBusy,
         consentMsg,
         grantConsent,
