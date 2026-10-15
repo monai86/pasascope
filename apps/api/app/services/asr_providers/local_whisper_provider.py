@@ -89,6 +89,17 @@ class LocalWhisperProvider(BaseTranscriptionProvider):
                 reason="The faster-whisper package is not installed.",
                 missing_dependencies=["faster-whisper"],
             )
+        if settings.asr_language_strategy == "thai_specialized":
+            whisper_transcribe = import_module("src.audio_pipeline.whisper_transcribe")
+            if not whisper_transcribe.thai_specialized_model_ready():
+                return ProviderAvailability(
+                    available=False,
+                    reason=(
+                        "The Thai Whisper model has not been converted on this machine. "
+                        "Run scripts/convert_thai_whisper.sh or set PASASCOPE_ASR_THAI_MODEL_PATH."
+                    ),
+                    missing_dependencies=["PASASCOPE_ASR_THAI_MODEL_PATH"],
+                )
         return ProviderAvailability(available=True, reason="Local Whisper is ready.")
 
     def transcribe(
@@ -168,6 +179,7 @@ class LocalWhisperProvider(BaseTranscriptionProvider):
             provider_metadata={
                 "model_size": settings.asr_whisper_model_size,
                 "language_strategy": settings.asr_language_strategy,
+                "asr_model": getattr(pipeline_result, "asr_model", None),
             },
         )
 

@@ -28,7 +28,8 @@ from app.services.asr_providers.base import (
 # Upload limit of the default service's free tier.
 MAX_HOSTED_AUDIO_BYTES = 25 * 1024 * 1024
 UNCLEAR_CONFIDENCE_THRESHOLD = 0.30
-_LANGUAGE_HINTS = {"thai": "th", "thai_specialized": "th", "english": "en"}
+# "thai_specialized" names an on-device model; the service detects the language.
+_LANGUAGE_HINTS = {"thai": "th", "english": "en"}
 _TIMEOUT = httpx.Timeout(300.0, connect=10.0)
 
 

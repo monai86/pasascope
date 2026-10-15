@@ -20,6 +20,7 @@ audio (.wav/.mp3/...)
      │   - Hallucination filter (no_speech_prob, avg_logprob, repeated
      │     n-grams, prompt-leak)
      │   - Per-segment language tag
+     │   - Digits in Thai utterances spelled out (spell_out_thai_numbers)
      ▼
 [2] Diarization (speechbrain ECAPA-TDNN + sklearn AgglomerativeClustering)
      │   - 192-dim embeddings, cosine clustering
@@ -223,7 +224,7 @@ artifact pipeline itself.
 | `english` | Fast (1×) | Force English (clean monolingual recordings) |
 | `thai` | Fast (1×) | Force Thai |
 | `dual_pass` | Slow (2×) | TH+EN code-switching — runs both passes and picks per-segment winner by ``avg_logprob`` |
-| `thai_specialized` | Medium | Thai-heavy recordings — uses ``biodatlab/whisper-th-medium-combined`` |
+| `thai_specialized` | Medium | Thai-heavy recordings — uses ``biodatlab/whisper-th-medium-combined`` after `scripts/convert_thai_whisper.sh` converts it to CTranslate2; raises `ThaiModelUnavailableError` when the conversion is missing |
 
 ## Speaker enrollment
 

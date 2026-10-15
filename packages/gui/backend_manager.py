@@ -126,9 +126,9 @@ class BackendServerManager:
         # The desktop app transcribes recordings on this machine; an explicit
         # setting in the caller's environment still wins.
         env.setdefault("PASASCOPE_ASR_LOCAL_WHISPER_ENABLED", "true")
-        # Recordings may be Thai or English; let Whisper detect the language
-        # per recording instead of the API's Thai-only default.
-        env.setdefault("PASASCOPE_ASR_LANGUAGE_STRATEGY", "auto")
+        # Recordings may be Thai or English: Thai ones go to the Thai model,
+        # the rest to the multilingual one.
+        env.setdefault("PASASCOPE_ASR_LANGUAGE_STRATEGY", "thai_specialized")
 
         cmd = [
             sys.executable,

@@ -51,7 +51,7 @@ def _use_pipeline(monkeypatch, audio_to_cha):
     monkeypatch.setattr(
         local_whisper_provider,
         "import_module",
-        lambda name: SimpleNamespace(audio_to_cha=audio_to_cha),
+        lambda name: SimpleNamespace(audio_to_cha=audio_to_cha, thai_specialized_model_ready=lambda: True),
     )
 
 
@@ -98,6 +98,22 @@ def test_remote_language_strategy_is_refused(whisper_enabled):
     assert LocalWhisperProvider().check_availability().available is False
 
 
+@pytest.mark.parametrize("converted", [False, True])
+def test_thai_specialized_needs_the_converted_model(whisper_enabled, monkeypatch, tmp_path, converted):
+    whisper_enabled.asr_language_strategy = "thai_specialized"
+    model_dir = tmp_path / "thai-ct2"
+    if converted:
+        model_dir.mkdir()
+        (model_dir / "model.bin").write_bytes(b"")
+    monkeypatch.setenv("PASASCOPE_ASR_THAI_MODEL_PATH", str(model_dir))
+
+    availability = LocalWhisperProvider().check_availability()
+
+    assert availability.available is converted
+    if not converted:
+        assert availability.missing_dependencies == ["PASASCOPE_ASR_THAI_MODEL_PATH"]
+
+
 def test_pipeline_segments_become_reviewable_lines(whisper_enabled, monkeypatch, tmp_path):
     recording = tmp_path / "clip.wav"
     recording.write_bytes(b"x")
@@ -123,7 +139,7 @@ def test_pipeline_segments_become_reviewable_lines(whisper_enabled, monkeypatch,
 
     assert result.status == "completed"
     assert calls["path"] == recording
-    assert calls["kwargs"]["strategy"] == "auto"
+    assert calls["kwargs"]["strategy"] == "thai_specialized"
     assert calls["kwargs"]["model_size"] == "medium"
     assert calls["kwargs"]["child_age_months"] == 48
     assert [(line.speaker, line.text) for line in result.transcript_lines] == [

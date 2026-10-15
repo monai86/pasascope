@@ -20,3 +20,18 @@ diagnose ASD and must be reviewed by a qualified clinician.
 
 Acoustic profile values are context-only indicators in this iteration and are
 not classifier inputs.
+
+## Thai Whisper model (not committed)
+
+`models/whisper-th-medium-combined-ct2/` holds Thonburian Whisper
+(`biodatlab/whisper-th-medium-combined`, Apache-2.0) converted to the
+CTranslate2 format that faster-whisper loads. The `thai_specialized` language
+strategy uses it. Create it with:
+
+```bash
+bash scripts/convert_thai_whisper.sh
+```
+
+`PASASCOPE_ASR_THAI_MODEL_PATH` points the API at a conversion stored
+elsewhere. Without it, `thai_specialized` reports itself unavailable instead of
+quietly using the multilingual model.

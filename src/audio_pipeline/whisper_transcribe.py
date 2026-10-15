@@ -66,6 +66,34 @@ def get_cached_whisper_model(
 
 
 # ----------------------------------------------------------------------
+# Thai-specialized model (Thonburian Whisper)
+# ----------------------------------------------------------------------
+# The Hugging Face repository ships transformers weights only, which
+# faster-whisper cannot open; scripts/convert_thai_whisper.sh converts it to
+# CTranslate2 at THAI_SPECIALIZED_DEFAULT_PATH.
+THAI_SPECIALIZED_SOURCE_MODEL = "biodatlab/whisper-th-medium-combined"
+THAI_SPECIALIZED_PATH_ENV = "PASASCOPE_ASR_THAI_MODEL_PATH"
+THAI_SPECIALIZED_DEFAULT_PATH = (
+    Path(__file__).resolve().parents[2] / "models" / "whisper-th-medium-combined-ct2"
+)
+
+
+class ThaiModelUnavailableError(FileNotFoundError):
+    """The converted Thai-specialized model is not on this machine."""
+
+
+def thai_specialized_model_path() -> Path:
+    """Where the converted Thai-specialized model is expected."""
+    configured = os.environ.get(THAI_SPECIALIZED_PATH_ENV, "").strip()
+    return Path(configured).expanduser() if configured else THAI_SPECIALIZED_DEFAULT_PATH
+
+
+def thai_specialized_model_ready() -> bool:
+    """True when a CTranslate2 conversion of the Thai model is present."""
+    return (thai_specialized_model_path() / "model.bin").is_file()
+
+
+# ----------------------------------------------------------------------
 # Initial prompts (bias Whisper towards child-therapy / TH+EN domain)
 # ----------------------------------------------------------------------
 PROMPT_EN = (
@@ -203,6 +231,8 @@ class WhisperTranscriber:
         self._initial_prompt = initial_prompt
         self._model: Optional["WhisperModel"] = None      # lazy-loaded primary
         self._model_th: Optional["WhisperModel"] = None   # lazy-loaded Thai-specialized
+        # Which checkpoint produced the last transcript, for provenance.
+        self.last_model_id: Optional[str] = None
 
     # ------------------------------------------------------------------
     # Model management
@@ -219,20 +249,43 @@ class WhisperTranscriber:
         return self._model
 
     def _load_thai_specialized(self):
-        """Lazy-load or retrieve cached Thai-specialized Whisper checkpoint."""
+        """Lazy-load or retrieve cached Thai-specialized Whisper checkpoint.
+
+        Raises ``ThaiModelUnavailableError`` instead of quietly using the
+        multilingual model, so a draft is never labelled with a model that
+        did not produce it.
+        """
         if self._model_th is not None:
             return self._model_th
-        try:
-            self._model_th = get_cached_whisper_model(
-                self._WhisperModel,
-                "biodatlab/whisper-th-medium-combined",
-                self.device,
-                self.compute_type,
+        if not thai_specialized_model_ready():
+            raise ThaiModelUnavailableError(
+                f"Thai-specialized Whisper model not found at {thai_specialized_model_path()}. "
+                "Run scripts/convert_thai_whisper.sh or set "
+                f"{THAI_SPECIALIZED_PATH_ENV}."
             )
-        except Exception as e:  # noqa: BLE001
-            print(f"[whisper] Thai-specialized model unavailable, using primary: {e}")
-            self._model_th = self._load()
+        self._model_th = get_cached_whisper_model(
+            self._WhisperModel,
+            str(thai_specialized_model_path()),
+            self.device,
+            self.compute_type,
+        )
         return self._model_th
+
+    def _detect_language(self, audio_path: str) -> Optional[str]:
+        """Spoken language of the recording, from the multilingual model.
+
+        The Thai fine-tuned model writes everything as Thai, so it is only
+        given recordings the multilingual model hears as Thai.
+        """
+        from faster_whisper import decode_audio
+
+        audio = decode_audio(audio_path, sampling_rate=16000)
+        if not len(audio):
+            return None
+        language, _probability, _all = self._load().detect_language(
+            audio=audio, vad_filter=True, language_detection_segments=3,
+        )
+        return language
 
     # ------------------------------------------------------------------
     # Internals
@@ -431,6 +484,7 @@ class WhisperTranscriber:
 
             try:
                 client = _OpenAIClient(api_key=api_key)
+                self.last_model_id = "whisper-1"
                 with open(audio_path, "rb") as audio_file:
                     # verbose_json returns segments and word timings if requested
                     response = client.audio.transcriptions.create(
@@ -490,6 +544,7 @@ class WhisperTranscriber:
 
         if self.strategy == "dual_pass":
             model = self._load()
+            self.last_model_id = self.model_size
             en = self._run_single(
                 model, audio_path, language="en",
                 vad_filter=vad_filter, beam_size=beam_size, prompt=PROMPT_EN,
@@ -514,23 +569,31 @@ class WhisperTranscriber:
                 )
             return self._merge_dual_pass(en, th)
 
-        if self.strategy == "thai_specialized":
+        if self.strategy == "thai_specialized" and self._detect_language(audio_path) in (None, "th"):
             model = self._load_thai_specialized()
+            self.last_model_id = THAI_SPECIALIZED_SOURCE_MODEL
+            # Thonburian Whisper was fine-tuned without prompts: with PROMPT_TH
+            # it appends looping greetings ("ขอบคุณครับ สวัสดีค่ะ ...") and one
+            # 9 s FLEURS clip took 512 s instead of 14 s. Only an explicit
+            # caller prompt is passed.
+            th_prompt = self._initial_prompt
             primary = self._run_single(
                 model, audio_path, language="th",
-                vad_filter=vad_filter, beam_size=beam_size, prompt=PROMPT_TH,
+                vad_filter=vad_filter, beam_size=beam_size, prompt=th_prompt,
                 temperature=temperature, progress_callback=progress_callback,
             )
             if vad_filter:
                 return self._fallback_if_sparse(
                     primary, model, audio_path,
-                    language="th", beam_size=beam_size, prompt=PROMPT_TH,
+                    language="th", beam_size=beam_size, prompt=th_prompt,
                     temperature=temperature,
                 )
             return primary
 
-        # auto / english / thai => single pass
+        # auto / english / thai, and thai_specialized recordings that are
+        # not Thai => single pass with the multilingual model
         model = self._load()
+        self.last_model_id = self.model_size
         primary = self._run_single(
             model, audio_path, language=self._explicit_language,
             vad_filter=vad_filter, beam_size=beam_size, prompt=prompt,

@@ -7,6 +7,7 @@ ENV PYTHONUNBUFFERED=1 \
     PYTHONPATH=/home/user/app:/home/user/app/apps/api:/home/user/app/src \
     HF_HOME=/home/user/.cache/huggingface \
     PASASCOPE_LOCAL_STORAGE_ROOT=/home/user/storage \
+    PASASCOPE_ASR_LANGUAGE_STRATEGY=auto \
     WEB_CONCURRENCY=1
 
 RUN apt-get update && apt-get install -y --no-install-recommends \

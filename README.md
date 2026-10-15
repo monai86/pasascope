@@ -412,7 +412,14 @@ PASASCOPE_ASR_LOCAL_WHISPER_ENABLED=true bash scripts/start_local.sh
 Recordings stay on the machine running the API. With the flag off, the app
 reports that transcription is unavailable and offers paste or `.cha` import; it
 never substitutes synthetic text. `PASASCOPE_ASR_WHISPER_MODEL_SIZE` (default
-`medium`) and `PASASCOPE_ASR_LANGUAGE_STRATEGY` (default `auto`, which detects Thai or English per recording; `thai` or `english` forces one) tune it.
+`medium`) and `PASASCOPE_ASR_LANGUAGE_STRATEGY` tune it. The default,
+`thai_specialized`, sends a recording the multilingual model hears as Thai to
+Thonburian Whisper, a Thai fine-tuned model, and any other recording to the
+multilingual model; the draft records which model wrote it. The Thai model has
+to be converted once with `bash scripts/convert_thai_whisper.sh` (see
+`models/README.md`); until then on-device transcription reports itself
+unavailable, and `PASASCOPE_ASR_LANGUAGE_STRATEGY=auto` uses the multilingual
+model only. `thai` or `english` forces one language.
 
 **Evaluating it on Thai recordings:** follow
 [`data/evaluation/README.md`](./data/evaluation/README.md), then run

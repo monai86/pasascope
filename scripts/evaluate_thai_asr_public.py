@@ -15,6 +15,7 @@ Outputs:
 
 Usage:
     python scripts/evaluate_thai_asr_public.py --clips 60 --models small medium
+    python scripts/evaluate_thai_asr_public.py --clips 30 --models medium thai-medium
 """
 
 from __future__ import annotations
@@ -40,6 +41,9 @@ from scripts.evaluate_thai_asr import Turn, _characters, _error_rate, _words  # 
 FLEURS_BASE = "https://huggingface.co/datasets/google/fleurs/resolve/main/data/th_th"
 DOWNLOAD_DIR = PROJECT_ROOT / ".local" / "evaluation" / "public_thai"
 REPORT_DIR = PROJECT_ROOT / "reports" / "metrics"
+# "thai-medium" is the Thai fine-tuned Thonburian Whisper (medium), converted
+# by scripts/convert_thai_whisper.sh; the other names are multilingual models.
+THAI_SPECIALIZED_MODEL = "thai-medium"
 CSV_COLUMNS = ["model", "clip_id", "reference_words", "wer", "cer", "audio_seconds", "processing_seconds"]
 
 
@@ -112,7 +116,9 @@ def render_markdown(summaries: dict[str, dict]) -> str:
         "",
         f"Data: first {first['clips']} clips of the FLEURS Thai test split "
         f"({first['audio_minutes']} minutes; adult speakers reading sentences; CC BY 4.0). "
-        "Models: faster-whisper, run on-device.",
+        "Models: faster-whisper, run on-device; `thai-medium` is Thonburian Whisper "
+        "(biodatlab/whisper-th-medium-combined, fine-tuned for Thai, Apache-2.0) "
+        "converted with `scripts/convert_thai_whisper.sh`.",
         "",
         "| Model | WER mean | WER median | CER mean | CER median | Clips with CER under 10% | Processing time / audio length |",
         "|---|---|---|---|---|---|---|",
@@ -159,7 +165,12 @@ def evaluate(download_dir: Path, report_dir: Path, *, clips: int, models: list[s
         for clip_id, reference in references.items():
             path = download_dir / clip_id
             if clip_id not in drafts:
-                transcriber = transcriber or WhisperTranscriber(model_size=model, strategy="thai")
+                if transcriber is None:
+                    transcriber = (
+                        WhisperTranscriber(model_size="medium", strategy="thai_specialized")
+                        if model == THAI_SPECIALIZED_MODEL
+                        else WhisperTranscriber(model_size=model, strategy="thai")
+                    )
                 started = time.perf_counter()
                 segments = transcriber.transcribe(path)
                 drafts[clip_id] = {
@@ -195,7 +206,7 @@ def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__.split("\n")[0])
     parser.add_argument("--clips", type=int, default=60)
     parser.add_argument(
-        "--models", nargs="+", default=["small"], choices=["tiny", "base", "small", "medium", "large-v3"]
+        "--models", nargs="+", default=["small"], choices=["tiny", "base", "small", "medium", "large-v3", THAI_SPECIALIZED_MODEL],
     )
     parser.add_argument("--download-dir", type=Path, default=DOWNLOAD_DIR)
     parser.add_argument("--report-dir", type=Path, default=REPORT_DIR)

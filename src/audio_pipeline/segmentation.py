@@ -14,6 +14,8 @@ The output is consumed by the CHAT formatter.
 
 from __future__ import annotations
 
+import re
+from dataclasses import replace
 from typing import List, Sequence, Tuple
 
 from .whisper_transcribe import UtteranceSegment, WordSegment
@@ -104,6 +106,40 @@ def _split_at_long_silences(
             no_speech_prob=seg.no_speech_prob,
             speaker=seg.speaker,
             language=seg.language,
+        ))
+    return out
+
+
+_NUMBER_RE = re.compile(r"\d+(?:,\d{3})*(?:\.\d+)?")
+
+
+def _thai_number_words(match: re.Match) -> str:
+    from pythainlp.util import num_to_thaiword
+
+    whole, _, fraction = match.group(0).replace(",", "").partition(".")
+    words = num_to_thaiword(int(whole))
+    if fraction:
+        words += "จุด" + "".join(num_to_thaiword(int(digit)) for digit in fraction)
+    return words
+
+
+def spell_out_thai_numbers(utterances: Sequence[UtteranceSegment]) -> List[UtteranceSegment]:
+    """Write digits in Thai utterances as Thai words ("5" -> "ห้า").
+
+    CHAT transcribes numbers as spoken words, and word counts should count
+    "หนึ่งร้อย" the way the child said it rather than as one "100" token.
+    Batchalign does the same for its languages. English utterances are left
+    unchanged.
+    """
+    out: List[UtteranceSegment] = []
+    for u in utterances:
+        if not (_is_thai(u.text) or u.language == "th") or not _NUMBER_RE.search(u.text):
+            out.append(u)
+            continue
+        out.append(replace(
+            u,
+            text=_NUMBER_RE.sub(_thai_number_words, u.text),
+            words=[replace(w, text=_NUMBER_RE.sub(_thai_number_words, w.text)) for w in u.words],
         ))
     return out
 

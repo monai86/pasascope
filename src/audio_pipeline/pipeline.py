@@ -27,7 +27,7 @@ from .acoustic_profile import AcousticProfile, compute_acoustic_profile
 from .chat_formatter import utterances_to_chat, write_chat
 from .chatter_validator import ValidationReport, validate_chat_file
 from .diarization import BaseDiarizer, get_diarizer
-from .segmentation import clean_segments, drop_short_segments, split_at_pauses
+from .segmentation import clean_segments, drop_short_segments, spell_out_thai_numbers, split_at_pauses
 from .whisper_transcribe import LanguageStrategy, WhisperTranscriber
 
 
@@ -42,6 +42,7 @@ class PipelineResult:
     total_duration_sec: float
     validation: Optional[ValidationReport] = None
     acoustic_profile: Optional[AcousticProfile] = None
+    asr_model: Optional[str] = None   # checkpoint that produced the words
 
 
 PIPELINE_SAMPLE_RATE = 16000
@@ -153,6 +154,7 @@ def audio_to_cha(
     if progress_callback:
         progress_callback(0.18, "Running Whisper speech transcription...")
     utterances = transcriber.transcribe(audio_path, progress_callback=progress_callback)
+    utterances = spell_out_thai_numbers(utterances)
 
     # ---- 2. Diarization ---------------------------------------------------
     if progress_callback:
@@ -235,6 +237,7 @@ def audio_to_cha(
         total_duration_sec=total_duration,
         validation=validation,
         acoustic_profile=acoustic_profile,
+        asr_model=getattr(transcriber, "last_model_id", None),
     )
 
 
