@@ -309,3 +309,31 @@ class TestFeatureServicePassThrough:
         result = get_feature_definitions()
         assert isinstance(result, list)
         assert len(result) >= len(EXPECTED_FEATURES)
+
+
+# ---------------------------------------------------------------------------
+# Repetitions (Thai-aware, n-gram)
+# ---------------------------------------------------------------------------
+
+def _child_repetitions(text: str) -> tuple[int, int]:
+    transcript = _make_transcript([("INV", "เล่นอะไรดี"), ("CHI", text)])
+    values = {v.name: v.value for v in BasicFeatureProvider().extract_features(transcript).values}
+    return values["repetition_marker_count"], values["repetitive_phrase_cue"]
+
+
+@pytest.mark.parametrize(
+    ("text", "markers", "single_word_cues"),
+    [
+        ("ที่ ที่ บ้าน", 1, 1),
+        ("ไปไปโรงเรียน", 1, 1),
+        ("ไปโรงเรียน ไปโรงเรียน", 1, 0),
+        ("<ไป โรงเรียน> [/] ไป โรงเรียน", 1, 0),
+        ("I want I want cookie", 1, 0),
+        ("I [/] I want", 1, 1),
+        ("go go go home", 2, 2),
+        ("the dog [//] the cat", 1, 0),
+        ("หนูอยากกินขนม", 0, 0),
+    ],
+)
+def test_repetitions_are_counted_in_thai_and_english(text, markers, single_word_cues):
+    assert _child_repetitions(text) == (markers, single_word_cues)

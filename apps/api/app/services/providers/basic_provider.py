@@ -191,9 +191,13 @@ _DEFINITIONS: list[FeatureDefinition] = [
         description="Count of CHAT retracing markers [/] or immediate word repetitions in CHI utterances.",
         value_type="integer",
         unit="markers",
-        calculation_method="Regex search for [/] and (word word) patterns in CHI utterances.",
+        calculation_method=(
+            "Per CHI utterance: immediate repeats of one to three tokens (Thai text is "
+            "word-segmented first, so ไปไป and ไป โรงเรียน ไป โรงเรียน count), or the number "
+            "of [/] markers if larger, plus [//] reformulation markers."
+        ),
         required_inputs=["utterances"],
-        limitations=["Heuristic; may miss multi-word repetitions across utterances."],
+        limitations=["Heuristic; misses repetitions across utterances and repeats longer than three tokens."],
         clinical_interpretation_caution=_CAUTION,
     ),
     FeatureDefinition(
@@ -249,7 +253,7 @@ _DEFINITIONS: list[FeatureDefinition] = [
         description="Count of immediate word-pair repetitions within CHI utterances.",
         value_type="integer",
         unit="review cues",
-        calculation_method="Regex \\b(\\w+)\\s+\\1\\b applied to CHI utterances.",
+        calculation_method="Immediate repeats of a single token in CHI utterances; Thai text is word-segmented first.",
         required_inputs=["utterances"],
         limitations=["Only captures adjacent single-word repetitions."],
         clinical_interpretation_caution="Review cue only; not diagnostic.",
@@ -486,8 +490,8 @@ class BasicFeatureProvider(BaseFeatureProvider):
             fv(
                 "repetition_marker_count",
                 sum(
-                    len(re.findall(r"\[/\]|\b(\w+)\s+\1\b", u.text, re.I))
-                    for u in child
+                    _repetition_marker_count(u.text, tokens)
+                    for u, tokens in zip(child, child_token_lists)
                 ),
                 unit="markers",
                 value_type="integer",
@@ -523,10 +527,7 @@ class BasicFeatureProvider(BaseFeatureProvider):
             ),
             fv(
                 "repetitive_phrase_cue",
-                sum(
-                    len(re.findall(r"\b(\w+)\s+\1\b", u.text, re.I))
-                    for u in child
-                ),
+                sum(_repeated_ngrams(tokens, max_n=1) for tokens in child_token_lists),
                 unit="review cues",
                 value_type="integer",
                 hint="Review cue only; not diagnostic.",
@@ -592,6 +593,36 @@ def _tokens(text: str) -> list[str]:
 
 
 _THAI_CHARS = re.compile(r"[\u0e00-\u0e7f]")
+_WORD_TOKEN = re.compile(r"[\w\u0e00-\u0e7f]")
+
+
+def _repeated_ngrams(tokens: Sequence[str], *, max_n: int = 3) -> int:
+    """
+    Count immediate repeats of one to ``max_n`` tokens, longest match first.
+
+    Follows Batchalign's n-gram retrace detection: ``a a b`` is one repeat,
+    ``a b a b c`` is one repeat of ``a b``, and ``a a a`` is two.
+    """
+    words = [tok for tok in tokens if _WORD_TOKEN.search(tok)]
+    repeats = 0
+    index = 0
+    while index < len(words):
+        for size in range(max_n, 0, -1):
+            if words[index:index + size] == words[index + size:index + 2 * size]:
+                repeats += 1
+                index += size
+                break
+        else:
+            index += 1
+    return repeats
+
+
+def _repetition_marker_count(text: str, tokens: Sequence[str]) -> int:
+    """Repetition events in one utterance, from coding or from the words."""
+    # A coded repeat ("I [/] I want") also shows up as a token repeat, so the
+    # two sources describe the same events: take whichever finds more.
+    retraces = max(len(re.findall(r"\[/\]", text)), _repeated_ngrams(tokens))
+    return retraces + len(re.findall(r"\[//\]", text))
 
 
 def _thai_lsa():
