@@ -124,6 +124,7 @@ class LocalWhisperProvider(BaseTranscriptionProvider):
                 strategy=settings.asr_language_strategy,
                 child_age_months=(config or {}).get("child_age_months"),
                 validate=False,
+                progress_callback=(config or {}).get("progress_callback"),
             )
         except Exception as exc:
             return self._result("failed", error_message=f"Local Whisper transcription failed: {type(exc).__name__}.")

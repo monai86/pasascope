@@ -4,6 +4,7 @@ import base64
 import hashlib
 import html
 import json
+import re
 from datetime import datetime, timezone
 from io import BytesIO
 
@@ -621,29 +622,59 @@ def markdown_to_html(markdown: str) -> str:
     return "\n".join(rows)
 
 
-def apply_signoff_block(markdown: str, signed_by: str, signed_at: datetime) -> str:
-    lines = markdown.splitlines()
-    try:
-        index = lines.index("## Therapist Sign-off")
-    except ValueError:
-        lines.extend(["", "## Therapist Sign-off"])
-        index = len(lines) - 1
+_SIGNOFF_PLACEHOLDER = "Pending therapist edit and sign-off."
+_EXPORT_PLACEHOLDER = "- Pending until therapist sign-off."
+_GENERATED_SIGNOFF_PREFIXES = ("- Signed by:", "- Sign-off status:", "- Export timestamp:")
+_GENERATED_TIMESTAMP = re.compile(r"^- \d{4}-\d{2}-\d{2}T")
 
-    replacement = [
-        "## Therapist Sign-off",
-        f"- Signed by: {signed_by}",
-        f"- Sign-off status: {ReviewStatus.signed_off.value}",
-        f"- Export timestamp: {signed_at.isoformat()}",
-    ]
-    next_section = next((idx for idx in range(index + 1, len(lines)) if lines[idx].startswith("## ")), len(lines))
-    lines = [*lines[:index], *replacement, *lines[next_section:]]
+
+def _section_span(lines: list[str], heading: str) -> tuple[int, int] | None:
+    """(heading index, index of the next "## " heading or the end), or None."""
     try:
-        export_index = lines.index("## Export Timestamp")
+        start = lines.index(heading)
     except ValueError:
-        lines.extend(["", "## Export Timestamp", f"- {signed_at.isoformat()}"])
-        return "\n".join(lines)
-    export_next_section = next((idx for idx in range(export_index + 1, len(lines)) if lines[idx].startswith("## ")), len(lines))
-    return "\n".join([*lines[:export_index], "## Export Timestamp", f"- {signed_at.isoformat()}", *lines[export_next_section:]])
+        return None
+    end = next((i for i in range(start + 1, len(lines)) if lines[i].startswith("## ")), len(lines))
+    return start, end
+
+
+def _replace_generated(lines: list[str], heading: str, generated: list[str], is_generated) -> list[str]:
+    """Put ``generated`` under ``heading`` and keep every other line the therapist wrote there."""
+    span = _section_span(lines, heading)
+    if span is None:
+        return [*lines, "", heading, *generated]
+    start, end = span
+    kept = [line for line in lines[start + 1:end] if not is_generated(line.strip())]
+    while kept and not kept[0].strip():
+        kept.pop(0)
+    return [*lines[:start], heading, *generated, *(([""] + kept) if kept else []), *lines[end:]]
+
+
+def apply_signoff_block(markdown: str, signed_by: str, signed_at: datetime) -> str:
+    """Fill the sign-off and export-timestamp sections.
+
+    Only the lines the system wrote there are replaced; text the therapist
+    typed into these sections (often a note added at the end of the report)
+    stays in the signed report.
+    """
+    lines = markdown.splitlines()
+    lines = _replace_generated(
+        lines,
+        "## Therapist Sign-off",
+        [
+            f"- Signed by: {signed_by}",
+            f"- Sign-off status: {ReviewStatus.signed_off.value}",
+            f"- Export timestamp: {signed_at.isoformat()}",
+        ],
+        lambda line: line == _SIGNOFF_PLACEHOLDER or line.startswith(_GENERATED_SIGNOFF_PREFIXES),
+    )
+    lines = _replace_generated(
+        lines,
+        "## Export Timestamp",
+        [f"- {signed_at.isoformat()}"],
+        lambda line: line == _EXPORT_PLACEHOLDER or bool(_GENERATED_TIMESTAMP.match(line)),
+    )
+    return "\n".join(lines)
 
 
 def previous_session_feature_sets(repo: MockRepository, session: TherapySession) -> list[FeatureSet]:

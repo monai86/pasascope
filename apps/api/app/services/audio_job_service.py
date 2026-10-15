@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+from collections.abc import Callable
 from dataclasses import dataclass
 from pathlib import Path
 
@@ -304,7 +305,18 @@ def create_audio_processing_job(repo: MockRepository, session_id: str, payload: 
     return job
 
 
-def run_audio_processing_job(repo: MockRepository, job_id: str, *, actor_id: str = "worker") -> ProcessingJob:
+def run_audio_processing_job(
+    repo: MockRepository,
+    job_id: str,
+    *,
+    actor_id: str = "worker",
+    progress_callback: Callable[[float, str], None] | None = None,
+) -> ProcessingJob:
+    """Run a queued transcription job.
+
+    ``progress_callback`` receives (fraction, stage) from an on-device
+    provider; the desktop app shows it, the API worker passes none.
+    """
     if job_id not in repo.jobs:
         raise ValueError("Job not found.")
     job = repo.jobs[job_id]
@@ -395,6 +407,8 @@ def run_audio_processing_job(repo: MockRepository, job_id: str, *, actor_id: str
         if local_audio_path is not None:
             transcribe_config["audio_path"] = str(local_audio_path)
             transcribe_config["child_age_months"] = repo.cases[repo.sessions[session_id].case_id].age_months
+            if progress_callback is not None:
+                transcribe_config["progress_callback"] = progress_callback
 
         result: TranscriptionResult = provider.transcribe(
             audio_ref=audio_file_id or "",
