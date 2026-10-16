@@ -8,6 +8,10 @@ already says who spoke when (time bullets on every utterance):
 1. The gold utterance spans are given to a diarization backend, which labels
    each one child or adult. ASR is not run, so only speaker attribution is
    measured.
+   Backends: ``embedding`` (the app's default: ECAPA clusters, child chosen
+   by pitch and duration), ``hybrid`` (ECAPA clusters, child chosen by the
+   USC child/adult frame model), ``usc`` (frame model alone, majority vote
+   per utterance) and ``pitch`` (pitch alone).
 2. Each label is compared with the transcript: accuracy, child precision,
    recall and F1, time-weighted accuracy.
 3. MLU-w and NDW are computed from the gold text twice, once with the gold
@@ -142,6 +146,14 @@ def make_backend(name: str, age_months: float | None):
 
     if name == "embedding":
         return d.EmbeddingDiarizer(d.EmbeddingDiarizerConfig(child_age_months=age_months))
+    if name == "usc":
+        from src.audio_pipeline.child_adult_frames import FrameRoleDiarizer
+
+        return FrameRoleDiarizer(_frame_model())
+    if name == "hybrid":
+        from src.audio_pipeline.child_adult_frames import HybridChildAdultDiarizer
+
+        return HybridChildAdultDiarizer(d.EmbeddingDiarizerConfig(child_age_months=age_months), model=_frame_model())
     if name == "pitch":
         return d.PitchHeuristicDiarizer(
             d.PitchDiarizerConfig(child_f0_threshold_hz=d.age_aware_child_f0_threshold(age_months))
@@ -149,7 +161,18 @@ def make_backend(name: str, age_months: float | None):
     raise ValueError(f"unknown backend {name!r}")
 
 
-BACKENDS = ("embedding", "pitch")
+BACKENDS = ("embedding", "hybrid", "usc", "pitch")
+_FRAME_MODEL = None
+
+
+def _frame_model():
+    """Load the frame-level child/adult model once per run."""
+    global _FRAME_MODEL
+    if _FRAME_MODEL is None:
+        from src.audio_pipeline.child_adult_frames import ChildAdultFrameModel
+
+        _FRAME_MODEL = ChildAdultFrameModel()
+    return _FRAME_MODEL
 
 
 def predict_roles(recording: Recording, backend_name: str, *, use_text: bool) -> list[str]:

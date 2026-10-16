@@ -575,6 +575,47 @@ class EmbeddingDiarizer(BaseDiarizer):
         y, sr = librosa.load(str(audio_path), sr=16000, mono=True)
         return self._embed_clip(y, sr)
 
+    def _score_clusters(
+        self,
+        unique: Sequence[int],
+        labels: Sequence[Optional[int]],
+        f0s: Sequence[Optional[float]],
+        durations: Sequence[float],
+        embeddings: Sequence[Optional[np.ndarray]],
+        audio: np.ndarray,
+        sr: int,
+        utterances: Sequence[UtteranceSegment],
+    ) -> dict[int, float]:
+        """How child-like each cluster is; the highest becomes CHI.
+
+        Combines median F0 against the age-aware threshold, mean utterance
+        duration (children speak in shorter bursts) and, when given, the
+        similarity to an enrollment recording of the child.
+        """
+        scores: dict[int, float] = {}
+        f0_thresh = age_aware_child_f0_threshold(self.config.child_age_months)
+        for c in unique:
+            members = [i for i, l in enumerate(labels) if l == c]
+            f0_vals = [f0s[i] for i in members if f0s[i] is not None]
+            dur_vals = [durations[i] for i in members]
+            score = 0.0
+            if f0_vals:
+                score += self.config.weight_f0 * (np.median(f0_vals) - f0_thresh)
+            mean_dur = float(np.mean(dur_vals)) if dur_vals else 5.0
+            score += -self.config.weight_duration * mean_dur
+            if self._enrollment_embedding is not None:
+                centroid = np.mean(
+                    [embeddings[i] for i in members if embeddings[i] is not None],
+                    axis=0,
+                )
+                centroid = centroid / (np.linalg.norm(centroid) + 1e-8)
+                ref = self._enrollment_embedding / (
+                    np.linalg.norm(self._enrollment_embedding) + 1e-8
+                )
+                score += self.config.weight_enrollment * float(centroid @ ref)
+            scores[c] = score
+        return scores
+
     # ------------------------------------------------------------------
     def assign(
         self,
@@ -657,29 +698,10 @@ class EmbeddingDiarizer(BaseDiarizer):
 
         # ---- 3. Score each cluster, pick child --------------------------
         unique = sorted({l for l in labels if l is not None})
-        cluster_score: dict[int, float] = {}
         f0_thresh = age_aware_child_f0_threshold(self.config.child_age_months)
-        for c in unique:
-            members = [i for i, l in enumerate(labels) if l == c]
-            f0_vals = [f0s[i] for i in members if f0s[i] is not None]
-            dur_vals = [durations[i] for i in members]
-            score = 0.0
-            if f0_vals:
-                score += self.config.weight_f0 * (np.median(f0_vals) - f0_thresh)
-            # Children speak in shorter bursts
-            mean_dur = float(np.mean(dur_vals)) if dur_vals else 5.0
-            score += -self.config.weight_duration * mean_dur
-            if self._enrollment_embedding is not None:
-                centroid = np.mean(
-                    [embeddings[i] for i in members if embeddings[i] is not None],
-                    axis=0,
-                )
-                centroid = centroid / (np.linalg.norm(centroid) + 1e-8)
-                ref = self._enrollment_embedding / (
-                    np.linalg.norm(self._enrollment_embedding) + 1e-8
-                )
-                score += self.config.weight_enrollment * float(centroid @ ref)
-            cluster_score[c] = score
+        cluster_score = self._score_clusters(
+            unique, labels, f0s, durations, embeddings, y_full, sr, utterances,
+        )
 
         child_cluster = max(cluster_score, key=cluster_score.get)
 
