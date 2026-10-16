@@ -478,6 +478,14 @@ class EmbeddingDiarizerConfig:
     distance_threshold: float = 0.5
     # Cap clusters even if more are found (avoids over-splitting)
     max_speakers: int = 4
+    # A cluster smaller than this share of the embedded speech, or with
+    # fewer utterances, is merged into the nearest larger cluster before the
+    # child is chosen. Without it a single short, high-pitched utterance can
+    # form its own cluster, win the child score, and leave the rest of the
+    # child's speech labelled adult (pyannote's ``min_cluster_size`` plays
+    # the same role).
+    min_cluster_fraction: float = 0.1
+    min_cluster_utterances: int = 2
     # Minimum utterance duration to embed (seconds) — too short and
     # ECAPA embeddings are unstable.  Short utterances fall back to F0.
     min_embed_duration: float = 0.4
@@ -634,6 +642,13 @@ class EmbeddingDiarizer(BaseDiarizer):
                             sizes,
                             key=lambda c: float(centroids[c] @ X_norm[j]),
                         )
+            cluster_ids = merge_small_clusters(
+                X_norm,
+                cluster_ids,
+                [durations[i] for i in usable],
+                min_fraction=self.config.min_cluster_fraction,
+                min_count=self.config.min_cluster_utterances,
+            )
             for i, c in zip(usable, cluster_ids):
                 labels[i] = int(c)
         else:
@@ -713,6 +728,42 @@ class EmbeddingDiarizer(BaseDiarizer):
 
         # Pass 3: Apply dialogue turn-taking and clinical prompt refinement
         return refine_speakers_by_dialogue_flow(utterances)
+
+
+def merge_small_clusters(
+    embeddings: np.ndarray,
+    cluster_ids: np.ndarray,
+    durations: Sequence[float],
+    *,
+    min_fraction: float,
+    min_count: int,
+) -> np.ndarray:
+    """Fold clusters with too little speech into the nearest larger cluster.
+
+    ``embeddings`` are L2-normalised rows aligned with ``cluster_ids`` and
+    ``durations``. A cluster is kept when it has at least ``min_count``
+    members and ``min_fraction`` of the total duration; if none qualifies,
+    the largest is kept. Members of dropped clusters move to the kept
+    centroid with the highest cosine similarity.
+    """
+    ids = np.asarray(cluster_ids).copy()
+    weights = np.asarray(durations, dtype=float)
+    total = float(weights.sum()) or 1.0
+    unique = list(np.unique(ids))
+    seconds = {c: float(weights[ids == c].sum()) for c in unique}
+    kept = [
+        c for c in unique
+        if int(np.sum(ids == c)) >= min_count and seconds[c] / total >= min_fraction
+    ]
+    if not kept:
+        kept = [max(unique, key=lambda c: seconds[c])]
+    if len(kept) == len(unique):
+        return ids
+    centroids = {c: embeddings[ids == c].mean(axis=0) for c in kept}
+    for j, c in enumerate(ids):
+        if c not in kept:
+            ids[j] = max(kept, key=lambda k: float(centroids[k] @ embeddings[j]))
+    return ids
 
 
 # ======================================================================

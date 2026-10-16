@@ -886,3 +886,21 @@ def test_same_speaker_pieces_separated_by_a_brief_pause_are_rejoined():
         piece.speaker = "CHI"
 
     assert [u.text for u in clean_segments(pieces, min_duration=0.0)] == ["one two", "three"]
+
+
+def test_small_clusters_merge_into_the_nearest_speaker():
+    """A one-utterance cluster must not be able to win the child label on its own."""
+    import numpy as np
+
+    from src.audio_pipeline.diarization import merge_small_clusters
+
+    child, adult = np.array([1.0, 0.0]), np.array([0.0, 1.0])
+    stray_child = np.array([0.9, 0.1]) / np.linalg.norm([0.9, 0.1])
+    embeddings = np.stack([adult, child, adult, child, adult, stray_child])
+    ids = np.array([0, 1, 0, 1, 0, 2])
+    durations = [2.5, 0.8, 2.9, 1.0, 2.2, 0.4]
+
+    merged = merge_small_clusters(embeddings, ids, durations, min_fraction=0.1, min_count=2)
+    assert list(merged) == [0, 1, 0, 1, 0, 1]
+    # Nothing to merge: clusters are returned unchanged.
+    assert list(merge_small_clusters(embeddings[:5], ids[:5], durations[:5], min_fraction=0.1, min_count=2)) == [0, 1, 0, 1, 0]
