@@ -178,3 +178,67 @@ def test_lists_mix_records_read_back_and_new_ones(tmp_path):
     reopened.list_cases()  # loads the stored case
     reopened.create_case("TH-101", 41)
     assert [c.child_code for c in reopened.list_cases()] == ["TH-101", "TH-100"]
+
+
+def test_review_time_report_reads_the_desktop_database(service, tmp_path, monkeypatch):
+    import importlib.util
+    import types
+
+    import numpy as np
+    import soundfile
+
+    from app.services.asr_providers import local_whisper_provider
+    from app.services.asr_providers.base import ProviderAvailability
+
+    wav = tmp_path / "clip.wav"
+    soundfile.write(wav, np.zeros(32000, dtype="float32"), 16000)
+    case = _case_with_consent(service)
+    session = service.create_session(case.case_id, date(2026, 10, 16))
+    stored = service.store_recording(session.session_id, wav)
+
+    def fake_audio_to_cha(path, **kwargs):
+        words = [types.SimpleNamespace(probability=0.9)]
+        segment = lambda spk, text, a, b: types.SimpleNamespace(  # noqa: E731
+            text=text, speaker=spk, start=a, end=b, words=words, language="th"
+        )
+        return types.SimpleNamespace(
+            utterances=[segment("INV", "เล่นอะไรดี", 0.0, 0.8), segment("CHI", "เล่นรถ", 1.0, 1.6)],
+            asr_model="test",
+        )
+
+    monkeypatch.setattr(
+        local_whisper_provider.LocalWhisperProvider, "check_availability",
+        lambda self: ProviderAvailability(available=True, reason="ok"),
+    )
+    monkeypatch.setattr(
+        local_whisper_provider, "import_module",
+        lambda name: types.SimpleNamespace(audio_to_cha=fake_audio_to_cha),
+    )
+    transcript = service.transcribe(session.session_id, stored.audio_file_id)
+    service.attest(transcript.transcript_id)
+
+    spec = importlib.util.spec_from_file_location("review_time", "scripts/report_transcript_review_time.py")
+    review_time = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(review_time)
+    rows = review_time.review_times(review_time.repository_from_desktop(service.workspace.root))
+
+    assert len(rows) == 1
+    assert rows[0]["transcript_id"] == transcript.transcript_id
+    assert rows[0]["audio_seconds"] == 2.0
+    assert rows[0]["review_minutes"] >= 0
+
+
+def test_transcription_mode_switches_the_strategy_and_is_remembered(tmp_path):
+    from app.core.config import get_settings
+
+    svc = DesktopService(open_workspace(tmp_path / "ws"))
+    assert svc.transcription_mode == "accurate"
+    assert get_settings().asr_language_strategy == "thai_specialized"
+
+    svc.set_transcription_mode("fast")
+    assert get_settings().asr_language_strategy == "thai"
+
+    reopened = DesktopService(open_workspace(tmp_path / "ws"))
+    assert reopened.transcription_mode == "fast"
+    reopened.set_transcription_mode("accurate")
+    assert get_settings().asr_language_strategy == "thai_specialized"

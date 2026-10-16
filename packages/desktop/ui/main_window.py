@@ -182,6 +182,18 @@ class MainWindow(QMainWindow):
         name_action = QAction("ชื่อนักบำบัด…", self)
         name_action.triggered.connect(lambda: self.ask_therapist_name(first_run=False))
         settings_menu.addAction(name_action)
+        settings_menu.addSeparator()
+        mode_menu = settings_menu.addMenu("โหมดถอดเสียง")
+        self.mode_actions = {}
+        for mode, text in (
+            ("accurate", "แม่นยำ: โมเดลภาษาไทย (ช้ากว่า ราว 5 เท่าของความยาวเสียง)"),
+            ("fast", "เร็ว: โมเดลหลายภาษา (ราวเท่าความยาวเสียง แต่ผิดมากกว่า)"),
+        ):
+            action = QAction(text, self, checkable=True)
+            action.setChecked(self.service.transcription_mode == mode)
+            action.triggered.connect(lambda _=False, m=mode: self._set_mode(m))
+            mode_menu.addAction(action)
+            self.mode_actions[mode] = action
 
         help_menu = bar.addMenu("ช่วยเหลือ")
         audit = QAction("ประวัติการทำงาน (audit log)", self)
@@ -467,6 +479,15 @@ class MainWindow(QMainWindow):
             break
         self._update_status_bar()
 
+    def _set_mode(self, mode: str) -> None:
+        try:
+            self.service.set_transcription_mode(mode)
+        except Exception as exc:  # noqa: BLE001
+            QMessageBox.warning(self, "ตั้งค่าไม่สำเร็จ", str(exc))
+        for key, action in self.mode_actions.items():
+            action.setChecked(key == self.service.transcription_mode)
+        self._update_status_bar()
+
     def show_audit_log(self) -> None:
         dialogs.AuditLogDialog(self.service.audit_events(500), self).exec()
 
@@ -495,7 +516,8 @@ class MainWindow(QMainWindow):
         name = self.service.therapist_name
         self.name_label.setText(f"นักบำบัด: {name}" if name else "ยังไม่ได้ตั้งชื่อนักบำบัด (เมนู ตั้งค่า)")
         available, reason = self.service.transcription_availability()
-        self.asr_label.setText("ถอดเสียงบนเครื่อง: พร้อม" if available else f"ถอดเสียงบนเครื่อง: ไม่พร้อม ({reason})")
+        mode = "แม่นยำ" if self.service.transcription_mode == "accurate" else "เร็ว"
+        self.asr_label.setText(f"ถอดเสียงบนเครื่อง: พร้อม · โหมด{mode}" if available else f"ถอดเสียงบนเครื่อง: ไม่พร้อม ({reason})")
         self.asr_label.setStyleSheet(f"color: {theme.OK if available else theme.ATTENTION};")
 
     def closeEvent(self, event) -> None:  # noqa: N802 - Qt override

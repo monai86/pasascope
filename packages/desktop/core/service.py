@@ -69,6 +69,7 @@ class DesktopService:
 
             repository = SqlAlchemyRepository(workspace.database_url, create_schema=True, seed_demo=False)
         self.repo = repository
+        self._apply_transcription_mode()
 
     # ------------------------------------------------------------------
     # Therapist on this computer
@@ -86,6 +87,37 @@ class DesktopService:
         profile = self.workspace.read_profile()
         profile["display_name"] = name
         self.workspace.write_profile(profile)
+
+    # Transcription modes the therapist can pick. On six scripted Thai
+    # dialogues the Thai model had CER 1.2% at ~4.8x the audio length, the
+    # multilingual model 5.2% at ~0.9x (reports/metrics/asr_desktop_tuning.md).
+    TRANSCRIPTION_MODES = {
+        "accurate": "thai_specialized",
+        "fast": "thai",
+    }
+
+    @property
+    def transcription_mode(self) -> str:
+        mode = str(self.workspace.read_profile().get("transcription_mode") or "accurate")
+        return mode if mode in self.TRANSCRIPTION_MODES else "accurate"
+
+    def set_transcription_mode(self, mode: str) -> None:
+        if mode not in self.TRANSCRIPTION_MODES:
+            raise WorkflowError(f"ไม่รู้จักโหมด {mode}")
+        profile = self.workspace.read_profile()
+        profile["transcription_mode"] = mode
+        self.workspace.write_profile(profile)
+        self._apply_transcription_mode()
+
+    def _apply_transcription_mode(self) -> None:
+        import os
+
+        from app.core.config import get_settings
+
+        strategy = self.TRANSCRIPTION_MODES[self.transcription_mode]
+        if os.environ.get("PASASCOPE_ASR_LANGUAGE_STRATEGY") != strategy:
+            os.environ["PASASCOPE_ASR_LANGUAGE_STRATEGY"] = strategy
+            get_settings.cache_clear()
 
     @property
     def user(self):
