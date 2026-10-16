@@ -947,3 +947,44 @@ def test_one_voice_cluster_is_not_called_the_child(monkeypatch, tmp_path):
     utterances = [UtteranceSegment(i, i + 0.9, "x") for i in range(3)]
     diarizer.assign(path, utterances)
     assert called["utts"] == utterances
+
+
+def test_speaker_labels_record_what_they_rest_on(monkeypatch, tmp_path):
+    """Voice-cluster labels are confident; pitch, neighbour and rule labels are guesses."""
+    import numpy as np
+    import soundfile
+
+    from src.audio_pipeline import diarization as d
+    from src.audio_pipeline.whisper_transcribe import UtteranceSegment
+
+    path = tmp_path / "two.wav"
+    soundfile.write(path, np.zeros(16000 * 8, dtype="float32"), 16000)
+    diarizer = d.EmbeddingDiarizer(d.EmbeddingDiarizerConfig(child_age_months=48))
+    voices = iter([np.array([1.0, 0.0])] * 2 + [None] + [np.array([0.0, 1.0])] * 2 + [None])
+    monkeypatch.setattr(diarizer, "_embed_clip", lambda clip, sr: next(voices))
+    pitches = iter([300.0, 300.0, 310.0, 120.0, 120.0, None])
+    monkeypatch.setattr(diarizer._pitch, "_median_f0", lambda clip, sr: next(pitches))
+    utterances = [UtteranceSegment(i, i + 0.9, "") for i in range(6)]
+    out = diarizer.assign(path, utterances)
+    assert [u.speaker_basis for u in out] == ["voice", "voice", "pitch", "voice", "voice", "context"]
+
+
+def test_dialogue_rule_overrides_are_marked():
+    from src.audio_pipeline.diarization import refine_speakers_by_dialogue_flow
+    from src.audio_pipeline.whisper_transcribe import UtteranceSegment
+
+    adult = UtteranceSegment(0, 2, "what color is it?", speaker="MOT", speaker_basis="voice")
+    answer = UtteranceSegment(2.5, 3.2, "red", speaker="MOT", speaker_basis="voice")
+    refine_speakers_by_dialogue_flow([adult, answer])
+    assert answer.speaker == "CHI" and answer.speaker_basis == "rule"
+    assert adult.speaker_basis == "voice"
+
+
+def test_hybrid_diarizer_is_chosen_only_when_wanted_or_installed(monkeypatch, tmp_path):
+    from src.audio_pipeline import diarization as d
+
+    monkeypatch.setenv("PASASCOPE_CHILD_ADULT_MODEL", str(tmp_path / "missing.pt"))
+    monkeypatch.delenv("PASASCOPE_DIARIZER", raising=False)
+    assert d._hybrid_diarizer(48) is None  # not installed, not asked for: no download
+    monkeypatch.setenv("PASASCOPE_DIARIZER", "embedding")
+    assert d._hybrid_diarizer(48) is None

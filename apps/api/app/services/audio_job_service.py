@@ -506,6 +506,7 @@ def create_draft_transcript_from_result(
             end_ms=line.end_ms,
             confidence=line.confidence,
             unintelligible=line.unclear,
+            speaker_uncertain=getattr(line, "speaker_uncertain", False),
             source=line.source,
             notes="ASR draft — therapist review required." if (line.unclear or speaker_code == "UNK") else "",
             review_status="draft",

@@ -37,6 +37,9 @@ class TranscriptLine:
     confidence: float | None = None
     source: str = "asr"  # "asr" | "mock" | "manual"
     unclear: bool = False
+    # The speaker label was guessed (pitch, neighbours or a dialogue rule)
+    # rather than recognised from the voice: check it first.
+    speaker_uncertain: bool = False
 
 
 @dataclass

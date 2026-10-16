@@ -256,6 +256,10 @@ class UtteranceSegment:
     avg_logprob: float = 0.0
     no_speech_prob: float = 0.0
     speaker: Optional[str] = None   # "CHI", "MOT", "INV", ... set by diarizer
+    # What the speaker label rests on: "voice" (a voice cluster), "frame"
+    # (the child/adult frame model), "pitch", "context" (neighbouring labels)
+    # or "rule" (a dialogue rule overrode it). Only the first two are confident.
+    speaker_basis: Optional[str] = None
     language: Optional[str] = None  # detected language: "en" / "th" / None
 
 

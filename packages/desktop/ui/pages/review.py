@@ -300,9 +300,12 @@ class ReviewPage(SessionPage):
         time_item.setFlags(time_item.flags() & ~Qt.ItemFlag.ItemIsEditable)
         time_item.setForeground(QBrush(QColor(theme.MUTED)))
         speaker = str(utt.speaker)
-        speaker_item = QTableWidgetItem(labels.SPEAKER_LABELS.get(speaker, speaker))
+        uncertain = bool(getattr(utt, "speaker_uncertain", False))
+        speaker_item = QTableWidgetItem(labels.SPEAKER_LABELS.get(speaker, speaker) + ("  ?" if uncertain else ""))
         speaker_item.setData(Qt.ItemDataRole.UserRole, speaker)
-        speaker_item.setForeground(QBrush(QColor(theme.SPEAKER_COLORS.get(speaker, theme.INK))))
+        speaker_item.setForeground(QBrush(QColor(theme.ATTENTION if uncertain else theme.SPEAKER_COLORS.get(speaker, theme.INK))))
+        if uncertain:
+            speaker_item.setToolTip("ระบบเดาผู้พูดจากระดับเสียงหรือประโยครอบข้าง ไม่ได้จำจากเสียง ฟังแล้วยืนยันก่อน")
         text_item = QTableWidgetItem(utt.text)
         conf = utt.confidence
         conf_item = QTableWidgetItem("—" if conf is None else f"{conf * 100:.0f}%")
@@ -373,6 +376,7 @@ class ReviewPage(SessionPage):
         n_child = sum(1 for u in self.utterances if str(u.speaker) == "CHI")
         n_unknown = sum(1 for u in self.utterances if str(u.speaker) == "UNK")
         n_low = sum(1 for u in self.utterances if u.confidence is not None and u.confidence < LOW_CONFIDENCE)
+        n_guessed = sum(1 for u in self.utterances if getattr(u, "speaker_uncertain", False))
         parts = [f"{len(self.utterances)} ประโยค", f"เด็ก {n_child}"]
         analyses: list[MainTierAnalysis] = [
             analyze_main_tier(u.text) for u in self.utterances if str(u.speaker) == "CHI"
@@ -386,6 +390,8 @@ class ReviewPage(SessionPage):
             parts.append(f"ยังไม่ระบุผู้พูด {n_unknown}")
         if n_low:
             parts.append(f"ไม่มั่นใจ {n_low}")
+        if n_guessed:
+            parts.append(f"ผู้พูดที่ควรเช็ก {n_guessed}")
         self.summary.setText(" · ".join(parts))
         if self.dirty:
             set_chip(self.status_chip, "มีการแก้ไขที่ยังไม่บันทึก", "attention")
@@ -433,7 +439,7 @@ class ReviewPage(SessionPage):
         elif item.column() == COL_SPEAKER:
             code = item.data(Qt.ItemDataRole.UserRole)
             if code and code != str(utt.speaker):
-                self.utterances[row] = utt.model_copy(update={"speaker": code, "review_status": "reviewed"})
+                self.utterances[row] = utt.model_copy(update={"speaker": code, "review_status": "reviewed", "speaker_uncertain": False})
                 item.setForeground(QBrush(QColor(theme.SPEAKER_COLORS.get(code, theme.INK))))
                 self._fill_word_cell(row, self.utterances[row])
                 self._update_regions()
@@ -476,7 +482,7 @@ class ReviewPage(SessionPage):
         self._loading = True
         for row in rows:
             utt = self.utterances[row]
-            self.utterances[row] = utt.model_copy(update={"speaker": code, "review_status": "reviewed"})
+            self.utterances[row] = utt.model_copy(update={"speaker": code, "review_status": "reviewed", "speaker_uncertain": False})
             self._fill_row(row, self.utterances[row])
         self._loading = False
         self._update_regions()

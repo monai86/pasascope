@@ -102,6 +102,8 @@ def _configure_shared_services(workspace: Workspace) -> None:
     os.environ["PASASCOPE_AUDIO_BACKUP_MODE"] = "none"
     os.environ["PASASCOPE_ASR_HOSTED_ENABLED"] = "false"
     os.environ.setdefault("PASASCOPE_ASR_LOCAL_WHISPER_ENABLED", "true")
+    # Child/adult attribution with the USC frame model (downloaded once).
+    os.environ.setdefault("PASASCOPE_DIARIZER", "hybrid")
 
     from app.core.config import get_settings
 

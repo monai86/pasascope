@@ -345,6 +345,7 @@ class Utterance(BaseModel):
     dependent_tiers: list[DependentTier] = Field(default_factory=list)
     source: str = "manual"          # "manual" | "asr" | "mock" | "imported_chat"
     review_status: str = "draft"    # "draft" | "reviewed"
+    speaker_uncertain: bool = False  # ASR guessed the speaker; cleared when the therapist sets it
 
 
 

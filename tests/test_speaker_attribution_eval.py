@@ -93,3 +93,14 @@ def test_missing_audio_is_reported(tmp_path, capsys):
     assert main(["--cha-dir", str(tmp_path / "chat"), "--audio-dir", str(tmp_path / "media"),
                  "--backend", "pitch", "--report-dir", str(tmp_path / "out")]) == 1
     assert "no audio named talk01" in capsys.readouterr().out
+
+
+def test_audio_claimed_by_two_transcripts_is_not_used(tmp_path, capsys):
+    """Corpora reuse a child's media name across ages; a name match alone is not enough."""
+    cha = _dialogue(tmp_path)
+    older = tmp_path / "chat" / "older"
+    older.mkdir()
+    (older / "talk01.cha").write_text(cha.read_text(encoding="utf-8"), encoding="utf-8")
+    assert main(["--cha-dir", str(tmp_path / "chat"), "--audio-dir", str(tmp_path / "media"),
+                 "--backend", "pitch", "--report-dir", str(tmp_path / "out")]) == 1
+    assert "also matches 1 other transcript" in capsys.readouterr().out

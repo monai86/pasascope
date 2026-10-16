@@ -86,22 +86,25 @@ def test_frame_majority_labels_each_utterance(tmp_path):
     assert [u.speaker for u in labelled] == ["MOT", "CHI", "MOT"]
 
 
-def test_hybrid_uses_the_frame_model_only_when_it_separates_clusters():
-    from src.audio_pipeline.diarization import EmbeddingDiarizerConfig
+def test_hybrid_lets_the_frame_model_decide_the_child(tmp_path, monkeypatch):
+    """Voice clusters name the adults; the frame model has the last word on CHI."""
+    from src.audio_pipeline.diarization import EmbeddingDiarizer
 
-    hybrid = caf.HybridChildAdultDiarizer(EmbeddingDiarizerConfig(child_age_months=48), model=_FakeFrames())
-    audio = np.zeros(3 * caf.SAMPLE_RATE, dtype="float32")
+    def clusters_say(self, audio_path, utterances):
+        for utt, speaker in zip(utterances, ["CHI", "INV", "CHI"]):  # wrong on purpose
+            utt.speaker, utt.speaker_basis = speaker, "voice"
+        return list(utterances)
+
+    monkeypatch.setattr(EmbeddingDiarizer, "assign", clusters_say)
+    hybrid = caf.HybridChildAdultDiarizer(model=_FakeFrames())
     utterances = [UtteranceSegment(0.1, 0.9, ""), UtteranceSegment(1.1, 1.9, ""), UtteranceSegment(2.1, 2.9, "")]
-    # Cluster 1 holds the child-sounding utterance even though its pitch is lower.
-    scores = hybrid._score_clusters([0, 1], [0, 1, 0], [300.0, 150.0, 300.0], [0.8, 0.8, 0.8],
-                                    [None] * 3, audio, caf.SAMPLE_RATE, utterances)
-    assert max(scores, key=scores.get) == 1
+    labelled = hybrid.assign(_wav(tmp_path), utterances)
+    assert [u.speaker for u in labelled] == ["MOT", "CHI", "MOT"]
+    assert all(u.speaker_basis == "frame" for u in labelled)
 
-    class Undecided:
-        def frame_probabilities(self, audio):
-            return np.tile([0.1, 0.0, 0.9, 0.0], (150, 1))
 
-    hybrid.frame_model = Undecided()
-    scores = hybrid._score_clusters([0, 1], [0, 1, 0], [300.0, 150.0, 300.0], [0.8, 0.8, 0.8],
-                                    [None] * 3, audio, caf.SAMPLE_RATE, utterances)
-    assert max(scores, key=scores.get) == 0  # falls back to pitch: cluster 0 is higher
+def test_unsure_or_short_labels_are_flagged():
+    sure = UtteranceSegment(0, 1.0, "")
+    assert caf.frame_basis(0.8, sure) == "frame"
+    assert caf.frame_basis(-0.1, sure) == "frame_unsure"  # model undecided
+    assert caf.frame_basis(0.9, UtteranceSegment(0, 0.3, "")) == "frame_unsure"  # too short

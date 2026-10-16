@@ -194,3 +194,22 @@ def test_backup_from_the_menu_updates_the_reminder(window, qtbot, tmp_path, monk
     qtbot.waitUntil(lambda: not window.busy, timeout=10000)
     assert target.exists()
     assert "สำรองล่าสุด" in window.backup_label.text() and "สำรองตอนนี้" not in window.backup_label.text()
+
+
+def test_guessed_speakers_are_marked_until_the_therapist_sets_them(window):
+    from packages.desktop.ui.pages.review import COL_SPEAKER
+
+    case, session = _case_with_session(window)
+    capture = window.pages[0]
+    capture.paste.setPlainText(CHAT)
+    capture.paste_btn.click()
+    review = window.pages[1]
+    review.utterances[0] = review.utterances[0].model_copy(update={"speaker_uncertain": True})
+    review._fill_table()
+    review._update_status()
+    assert review.table.item(0, COL_SPEAKER).text().endswith("?")
+    assert "ผู้พูดที่ควรเช็ก 1" in review.summary.text()
+    review.table.selectRow(0)
+    review.set_speaker("CHI")
+    assert review.utterances[0].speaker_uncertain is False
+    assert not review.table.item(0, COL_SPEAKER).text().endswith("?")

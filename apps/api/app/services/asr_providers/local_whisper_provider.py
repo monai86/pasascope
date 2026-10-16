@@ -162,6 +162,7 @@ class LocalWhisperProvider(BaseTranscriptionProvider):
                     confidence=confidence,
                     source="asr",
                     unclear=confidence is not None and confidence < UNCLEAR_CONFIDENCE_THRESHOLD,
+                    speaker_uncertain=getattr(segment, "speaker_basis", None) not in ("voice", "frame"),
                 )
             )
 

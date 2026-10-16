@@ -118,6 +118,13 @@ def find_audio(audio_dir: Path, media: str, cha_path: Path) -> Path | None:
 
 
 def collect_recordings(cha_dir: Path, audio_dir: Path, *, max_minutes: float | None, limit: int | None) -> tuple[list[Recording], list[str]]:
+    """Timed transcripts paired with their audio.
+
+    An audio file claimed by more than one transcript is not used: corpora
+    reuse a child's media name across ages (EllisWeismer 11066 is in 30ec,
+    42ec and 54ec), so a name match alone could pair a transcript with
+    another session's recording.
+    """
     recordings: list[Recording] = []
     skipped: list[str] = []
     for cha_path in sorted(cha_dir.rglob("*.cha")):
@@ -133,9 +140,20 @@ def collect_recordings(cha_dir: Path, audio_dir: Path, *, max_minutes: float | N
             skipped.append(f"{cha_path.name}: no audio named {media or cha_path.stem}")
             continue
         recordings.append(Recording(cha_path, audio, age, utterances))
-        if limit and len(recordings) >= limit:
-            break
-    return recordings, skipped
+    claims: dict[Path, list[Recording]] = {}
+    for recording in recordings:
+        claims.setdefault(recording.audio_path.resolve(), []).append(recording)
+    unique: list[Recording] = []
+    for recording in recordings:
+        rivals = claims[recording.audio_path.resolve()]
+        if len(rivals) > 1:
+            skipped.append(
+                f"{recording.cha_path.name}: audio {recording.audio_path.name} also matches "
+                f"{len(rivals) - 1} other transcript(s); pass a --cha-dir holding only the matching transcript"
+            )
+            continue
+        unique.append(recording)
+    return (unique[:limit] if limit else unique), skipped
 
 
 # ---------------------------------------------------------------------------
@@ -151,9 +169,9 @@ def make_backend(name: str, age_months: float | None):
 
         return FrameRoleDiarizer(_frame_model())
     if name == "hybrid":
-        from src.audio_pipeline.child_adult_frames import HybridChildAdultDiarizer
+        from src.audio_pipeline.child_adult_frames import HybridChildAdultDiarizer, hybrid_config
 
-        return HybridChildAdultDiarizer(d.EmbeddingDiarizerConfig(child_age_months=age_months), model=_frame_model())
+        return HybridChildAdultDiarizer(hybrid_config(age_months), model=_frame_model())
     if name == "pitch":
         return d.PitchHeuristicDiarizer(
             d.PitchDiarizerConfig(child_f0_threshold_hz=d.age_aware_child_f0_threshold(age_months))
