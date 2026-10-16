@@ -41,6 +41,12 @@ def default_home() -> Path:
     return Path(os.environ.get("XDG_DATA_HOME", Path.home() / ".local" / "share")) / "pasascope"
 
 
+def demo_home() -> Path:
+    """The demonstration data folder, next to the real one ("PasaScope Demo")."""
+    home = default_home()
+    return home.with_name(home.name + " Demo")
+
+
 @dataclass(frozen=True)
 class Workspace:
     root: Path

@@ -6,6 +6,8 @@ dismisses each one, and each echo pair is shown so it can be judged in context.
 
 from __future__ import annotations
 
+import re
+
 from PySide6.QtCore import Qt
 from PySide6.QtWidgets import (
     QComboBox,
@@ -24,6 +26,14 @@ from PySide6.QtWidgets import (
 from packages.desktop.ui import labels, theme
 from packages.desktop.ui.pages.base import SessionPage
 from packages.desktop.ui.widgets import EmptyState, TrendChart, button, card, chip, label, set_chip
+
+
+_CHAT_TERMINATOR = re.compile(r"\s*[.?!]+$")
+
+
+def _spoken(text: str) -> str:
+    """Utterance text without the CHAT end-of-utterance mark."""
+    return _CHAT_TERMINATOR.sub("", text or "")
 
 
 class CueCard(QFrame):
@@ -89,9 +99,9 @@ class CueCard(QFrame):
         adult = utterances.get(item.get("adult_utterance_id", ""))
         child = utterances.get(item.get("child_utterance_id", "") or item.get("utterance_id", ""))
         if adult is not None:
-            row.addWidget(label(f"ผู้ใหญ่: {adult.text}", "Hint", wrap=True))
+            row.addWidget(label(f"ผู้ใหญ่: {_spoken(adult.text)}", "Hint", wrap=True))
         if child is not None:
-            text = label(f"เด็ก: {child.text}", wrap=True)
+            text = label(f"เด็ก: {_spoken(child.text)}", wrap=True)
             text.setStyleSheet(f"color: {theme.PRIMARY_DARK}; font-weight: 600;")
             row.addWidget(text)
         category = labels.ECHO_CATEGORY.get(item.get("category", ""))
