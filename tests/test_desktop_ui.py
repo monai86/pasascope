@@ -107,3 +107,23 @@ def test_editing_after_attest_marks_findings_stale(window, qtbot):
     assert window.service.get_session(session.session_id).findings_stale
     window.tabs.setCurrentIndex(2)
     assert window.pages[2].empty.isVisible()
+
+
+def test_report_is_thai_and_exports_to_pdf_and_html(window, tmp_path):
+    from packages.desktop.ui.pdf import write_report_pdf
+
+    case, session = _case_with_session(window)
+    svc = window.service
+    svc.import_transcript_text(session.session_id, CHAT)
+    svc.attest(svc.get_transcript(session.session_id).transcript_id, override_reason="ตรวจแล้ว")
+    svc.analyze(session.session_id)
+    report = svc.draft_report(session.session_id)
+    assert report.markdown.startswith("# รายงานการทบทวนตัวอย่างภาษา")
+    signed = svc.sign_off(report.report_id)
+    assert "- ลงนามโดย: นักบำบัด ทดสอบ" in signed.markdown
+
+    pdf = write_report_pdf(signed.markdown, tmp_path / "r.pdf")
+    assert pdf.read_bytes().startswith(b"%PDF") and pdf.stat().st_size > 5000
+    html_path = svc.export_report(signed.report_id, "html", tmp_path / "r.html")
+    page = html_path.read_text(encoding="utf-8")
+    assert '<meta charset="utf-8">' in page and "<table>" in page and "ความยาวประโยคเฉลี่ย" in page

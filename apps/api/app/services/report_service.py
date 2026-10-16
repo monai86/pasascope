@@ -5,7 +5,7 @@ import hashlib
 import html
 import json
 import re
-from datetime import datetime, timezone
+from datetime import datetime, timedelta, timezone
 from io import BytesIO
 
 from app.core.config import get_settings
@@ -20,6 +20,7 @@ from app.schemas.clinical import (
     TherapySession,
     ReportGenerationRequest,
     ReportGenerationInput,
+    ReportProviderResult,
     ReportSection,
     ReportSafetyResult,
     ReportSafetyIssue,
@@ -38,6 +39,32 @@ def _report_reference_band(case, session) -> dict | None:
     simply omits the reference comparison.
     """
     return runtime_td_reference_band(case.age_months, session.session_type)
+
+
+# Template providers fill fixed wording from the reviewed data; no model writes text.
+DETERMINISTIC_REPORT_PROVIDERS = {"template", "template_th"}
+
+
+def assemble_report_markdown(result: ReportProviderResult, report_type: str) -> str:
+    """The report's markdown: a heading, the provider's sections, then the sign-off sections.
+
+    A provider may give its own heading (``metadata["title"]``) and its own
+    sign-off sections (ids ``therapist_signoff`` and ``export_timestamp``);
+    otherwise the English defaults are added.
+    """
+    lines = [f"# {result.metadata.get('title') or report_type}\n"]
+    for sec in result.sections:
+        lines.append(f"## {sec.title}\n{sec.content}\n")
+    ids = {s.section_id for s in result.sections}
+    if "therapist_signoff" not in ids and not any("Therapist Sign-off" in s.title for s in result.sections):
+        lines.append("## Therapist Sign-off\nPending therapist edit and sign-off.\n")
+    if (
+        "export_timestamp" not in ids
+        and result.metadata.get("language") != "th"
+        and not any("Export Timestamp" in s.title for s in result.sections)
+    ):
+        lines.append("## Export Timestamp\n- Pending until therapist sign-off.\n")
+    return "\n".join(lines)
 
 
 def draft_report(
@@ -70,6 +97,7 @@ def draft_report(
     previous_feature_sets = previous_session_feature_sets(repo, session)
     previous_feature_set = previous_feature_sets[-1] if previous_feature_sets else None
     ai_review = repo.ai_reviews.get(session.ai_review_id or "")
+    ml_result = repo.ml_results.get(session.ml_result_id or "")
     therapy_goals = [goal for goal in repo.find("therapy_goals", case_id=session.case_id) if goal.retained]
 
     # Readiness Gates Check
@@ -118,12 +146,14 @@ def draft_report(
         ai_review=ai_review,
         previous_features=prev_features_list,
         reference_band=_report_reference_band(case, session),
+        review_cues=list(ml_result.cues) if ml_result is not None else [],
+        child_age_months=case.age_months,
     )
 
     # Generate Input Hash
     input_str = f"{input_data.transcript_id}:{input_data.feature_result_id}:{input_data.therapist_notes}:{','.join(input_data.session_goals)}"
     input_hash = hashlib.sha256(input_str.encode("utf-8")).hexdigest()
-    ai_drafting_requested = payload.provider_id != "template"
+    ai_drafting_requested = payload.provider_id not in DETERMINISTIC_REPORT_PROVIDERS
     ai_drafting_enabled = get_settings().ai_report_drafting_enabled
     if ai_drafting_requested and not ai_drafting_enabled:
         raise ValueError("AI report drafting is not enabled for this environment or organization.")
@@ -189,15 +219,7 @@ def draft_report(
             )
 
     # Assemble initial markdown
-    markdown_lines = [f"# {payload.report_type}\n"]
-    for sec in result.sections:
-        markdown_lines.append(f"## {sec.title}\n{sec.content}\n")
-    # Default therapist sign-off and export headers if not present in the sections
-    if not any("Therapist Sign-off" in s.title for s in result.sections):
-        markdown_lines.append("## Therapist Sign-off\nPending therapist edit and sign-off.\n")
-    if not any("Export Timestamp" in s.title for s in result.sections):
-        markdown_lines.append("## Export Timestamp\n- Pending until therapist sign-off.\n")
-    initial_markdown = "\n".join(markdown_lines)
+    initial_markdown = assemble_report_markdown(result, payload.report_type)
 
     # Run safety validator (source="generation")
     validator = ReportSafetyValidator()
@@ -236,14 +258,7 @@ def draft_report(
                 result = provider.generate_report(input_data, rewrite_config)
             
             if result.status == "completed" and result.sections:
-                markdown_lines = [f"# {payload.report_type}\n"]
-                for sec in result.sections:
-                    markdown_lines.append(f"## {sec.title}\n{sec.content}\n")
-                if not any("Therapist Sign-off" in s.title for s in result.sections):
-                    markdown_lines.append("## Therapist Sign-off\nPending therapist edit and sign-off.\n")
-                if not any("Export Timestamp" in s.title for s in result.sections):
-                    markdown_lines.append("## Export Timestamp\n- Pending until therapist sign-off.\n")
-                initial_markdown = "\n".join(markdown_lines)
+                initial_markdown = assemble_report_markdown(result, payload.report_type)
                 
                 safety_result = validator.validate_report(
                     initial_markdown, source="generation", checked_sections=[s.section_id for s in result.sections]
@@ -261,14 +276,7 @@ def draft_report(
             actual_provider = provider.provider_id
             result = provider.generate_report(input_data, payload.provider_config)
             
-            markdown_lines = [f"# {payload.report_type}\n"]
-            for sec in result.sections:
-                markdown_lines.append(f"## {sec.title}\n{sec.content}\n")
-            if not any("Therapist Sign-off" in s.title for s in result.sections):
-                markdown_lines.append("## Therapist Sign-off\nPending therapist edit and sign-off.\n")
-            if not any("Export Timestamp" in s.title for s in result.sections):
-                markdown_lines.append("## Export Timestamp\n- Pending until therapist sign-off.\n")
-            initial_markdown = "\n".join(markdown_lines)
+            initial_markdown = assemble_report_markdown(result, payload.report_type)
             
             safety_result = validator.validate_report(
                 initial_markdown, source="generation", checked_sections=[s.section_id for s in result.sections]
@@ -622,10 +630,27 @@ def markdown_to_html(markdown: str) -> str:
     return "\n".join(rows)
 
 
-_SIGNOFF_PLACEHOLDER = "Pending therapist edit and sign-off."
-_EXPORT_PLACEHOLDER = "- Pending until therapist sign-off."
-_GENERATED_SIGNOFF_PREFIXES = ("- Signed by:", "- Sign-off status:", "- Export timestamp:")
+_SIGNOFF_PLACEHOLDERS = {"Pending therapist edit and sign-off.", "รอนักบำบัดแก้ไขและลงนาม"}
+_EXPORT_PLACEHOLDERS = {"- Pending until therapist sign-off.", "- รอการลงนาม"}
+_GENERATED_SIGNOFF_PREFIXES = (
+    "- Signed by:", "- Sign-off status:", "- Export timestamp:",
+    "- ลงนามโดย:", "- สถานะ:", "- เวลาลงนาม:",
+)
 _GENERATED_TIMESTAMP = re.compile(r"^- \d{4}-\d{2}-\d{2}T")
+
+# (sign-off heading, export heading, signed-by, status, timestamp labels) per report language
+# (sign-off heading, export heading or None, signed-by, status, time labels) per report language.
+# The Thai report states the signing time once, in Thai time and the Buddhist-era year.
+_SIGNOFF_WORDING = {
+    "en": ("## Therapist Sign-off", "## Export Timestamp", "Signed by", "Sign-off status", "Export timestamp"),
+    "th": ("## การลงนามของนักบำบัด", None, "ลงนามโดย", "สถานะ", "เวลาลงนาม"),
+}
+_THAI_TIME = timezone(timedelta(hours=7))
+
+
+def _thai_time(moment: datetime) -> str:
+    local = moment.astimezone(_THAI_TIME)
+    return f"{local.day}/{local.month}/{local.year + 543} {local:%H:%M} น. (เวลาประเทศไทย)"
 
 
 def _section_span(lines: list[str], heading: str) -> tuple[int, int] | None:
@@ -655,24 +680,30 @@ def apply_signoff_block(markdown: str, signed_by: str, signed_at: datetime) -> s
 
     Only the lines the system wrote there are replaced; text the therapist
     typed into these sections (often a note added at the end of the report)
-    stays in the signed report.
+    stays in the signed report. A Thai report keeps Thai headings.
     """
     lines = markdown.splitlines()
+    language = "th" if _SIGNOFF_WORDING["th"][0] in lines else "en"
+    signoff_heading, export_heading, by_label, status_label, time_label = _SIGNOFF_WORDING[language]
+    status_value = "ลงนามแล้ว" if language == "th" else ReviewStatus.signed_off.value
+    when = _thai_time(signed_at) if language == "th" else signed_at.isoformat()
     lines = _replace_generated(
         lines,
-        "## Therapist Sign-off",
+        signoff_heading,
         [
-            f"- Signed by: {signed_by}",
-            f"- Sign-off status: {ReviewStatus.signed_off.value}",
-            f"- Export timestamp: {signed_at.isoformat()}",
+            f"- {by_label}: {signed_by}",
+            f"- {status_label}: {status_value}",
+            f"- {time_label}: {when}",
         ],
-        lambda line: line == _SIGNOFF_PLACEHOLDER or line.startswith(_GENERATED_SIGNOFF_PREFIXES),
+        lambda line: line in _SIGNOFF_PLACEHOLDERS or line.startswith(_GENERATED_SIGNOFF_PREFIXES),
     )
+    if export_heading is None:
+        return "\n".join(lines)
     lines = _replace_generated(
         lines,
-        "## Export Timestamp",
+        export_heading,
         [f"- {signed_at.isoformat()}"],
-        lambda line: line == _EXPORT_PLACEHOLDER or bool(_GENERATED_TIMESTAMP.match(line)),
+        lambda line: line in _EXPORT_PLACEHOLDERS or bool(_GENERATED_TIMESTAMP.match(line)),
     )
     return "\n".join(lines)
 

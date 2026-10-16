@@ -10,7 +10,6 @@ attest → features and review cues → report draft → sign-off → export.
 
 from __future__ import annotations
 
-import base64
 from collections.abc import Callable
 from datetime import date, datetime, timezone
 from hashlib import sha256
@@ -578,6 +577,7 @@ class DesktopService:
                 self.repo,
                 session_id,
                 ReportGenerationRequest(
+                    provider_id="template_th",
                     therapist_notes=therapist_notes or None,
                     replace_existing=self.get_report(session_id) is not None,
                 ),
@@ -618,26 +618,38 @@ class DesktopService:
         self._save()
         return report
 
-    def export_report(self, report_id: str, export_format: str, destination: Path) -> Path:
-        """Write the report as markdown, html or pdf. Returns the file written."""
+    def report_for_export(self, report_id: str):
+        """The report, when it may be exported now (consent active, not stale)."""
         from app.services.consent_service import ensure_report_consent_active
-        from app.services.report_service import export_report
 
         self._ensure(ensure_report_consent_active, report_id)
-        try:
-            exported = export_report(self.repo, report_id, export_format)
-        except ValueError as exc:
-            raise WorkflowError(str(exc)) from exc
-        if exported.unavailable_reason:
-            raise WorkflowError(exported.unavailable_reason)
+        report = self.repo.reports.get(report_id)
+        if report is None:
+            raise WorkflowError("ไม่พบรายงานนี้")
+        if _status_value(report.status) == "stale":
+            raise WorkflowError("transcript หรือตัวชี้วัดเปลี่ยนหลังทำรายงานนี้ สร้างร่างใหม่ก่อน export")
+        return report
+
+    def record_export(self, report_id: str, export_format: str) -> None:
+        self.repo.add_audit(
+            "report.export", report_id, f"Report exported as {export_format} from the desktop app.", actor_id=LOCAL_USER_ID
+        )
+        self._save()
+
+    def export_report(self, report_id: str, export_format: str, destination: Path) -> Path:
+        """Write the report as markdown or html. PDF is drawn by the UI, which has the fonts."""
+        from packages.desktop.core.rendering import report_html
+
+        report = self.report_for_export(report_id)
         destination = Path(destination)
         destination.parent.mkdir(parents=True, exist_ok=True)
-        if exported.encoding == "base64":
-            destination.write_bytes(base64.b64decode(exported.content))
+        if export_format == "html":
+            destination.write_text(report_html(report.markdown, report.title), encoding="utf-8")
+        elif export_format == "markdown":
+            destination.write_text(report.markdown, encoding="utf-8")
         else:
-            destination.write_text(exported.content, encoding="utf-8")
-        self.repo.add_audit("report.export", report_id, f"Report exported as {exported.format} from the desktop app.", actor_id=LOCAL_USER_ID)
-        self._save()
+            raise WorkflowError(f"ไม่รองรับรูปแบบ {export_format}")
+        self.record_export(report_id, export_format)
         return destination
 
     # ------------------------------------------------------------------

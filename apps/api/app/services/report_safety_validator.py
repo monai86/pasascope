@@ -50,6 +50,32 @@ PROHIBITED_RULES = [
     }
 ]
 
+# Thai wording that states a diagnosis or an automated detection. Matched on
+# the raw text; a match inside a negated statement is skipped (see below).
+PROHIBITED_RULES += [
+    {
+        "rule_id": "RULE_TH_DIAGNOSIS",
+        "patterns": [
+            r"วินิจฉัย(ว่า)?(เด็ก)?(เป็น|มีภาวะ)\s*(โรค)?\s*(ออทิสติก|ออทิซึม|asd)",
+            r"ผล(การ)?วินิจฉัย(คือ|ว่า|:)",
+        ],
+        "message": "Thai wording that states a diagnosis is prohibited.",
+        "suggested_fix": "บรรยายสิ่งที่สังเกตได้จากตัวอย่างภาษาแทน",
+        "suggested_replacement": "พบลักษณะที่ควรตรวจเพิ่ม",
+    },
+    {
+        "rule_id": "RULE_TH_DETECTED",
+        "patterns": [
+            r"(ตรวจพบ|พบว่าเป็น|ระบุว่าเป็น)\s*(โรค|ภาวะ)?\s*(ออทิสติก|ออทิซึม|asd)",
+            r"(เด็ก|ผู้รับบริการ)\s*(เป็น|มีภาวะ)\s*(โรค)?\s*(ออทิสติก|ออทิซึม)",
+            r"asd\s*(บวก|ลบ)",
+        ],
+        "message": "Thai wording that labels the child as autistic or reports automated detection is prohibited.",
+        "suggested_fix": "ใช้คำบรรยายพฤติกรรมภาษาที่สังเกตได้ และให้นักบำบัดแปลผล",
+        "suggested_replacement": "พบ cue ที่ควรตรวจในบริบท",
+    },
+]
+
 APPROVED_DISCLAIMERS = [
     "this report does not provide asd positive/negative classification",
     "this system does not diagnose asd",
@@ -57,7 +83,11 @@ APPROVED_DISCLAIMERS = [
     "not diagnostic",
     "does not confirm a diagnosis",
     "does not diagnose asd",
-    "not a diagnostic tool"
+    "not a diagnostic tool",
+    "ไม่ใช่การวินิจฉัย",
+    "ไม่ได้วินิจฉัย",
+    "ไม่วินิจฉัย",
+    "ไม่ใช่ผลวินิจฉัย",
 ]
 
 
@@ -149,22 +179,34 @@ class ReportSafetyValidator:
         # 2. Required Disclaimers Checking
         missing_disclaimers = []
         
-        has_decision_support = ("decision support only" in normalized) or ("decision-support only" in normalized)
+        has_decision_support = (
+            ("decision support only" in normalized)
+            or ("decision-support only" in normalized)
+            or ("สนับสนุนการตัดสินใจเท่านั้น" in normalized)
+        )
         if not has_decision_support:
             missing_disclaimers.append("decision-support only")
             
-        has_not_diagnostic = ("not diagnostic" in normalized) or ("not a diagnostic tool" in normalized)
+        has_not_diagnostic = (
+            ("not diagnostic" in normalized)
+            or ("not a diagnostic tool" in normalized)
+            or ("ไม่ใช่การวินิจฉัย" in normalized)
+        )
         if not has_not_diagnostic:
             missing_disclaimers.append("not diagnostic")
             
-        has_therapist_review = ("therapist review required" in normalized) or ("requires therapist review" in normalized)
+        has_therapist_review = (
+            ("therapist review required" in normalized)
+            or ("requires therapist review" in normalized)
+            or ("ต้องให้นักบำบัดตรวจ" in normalized)
+        )
         if not has_therapist_review:
             missing_disclaimers.append("therapist review required")
 
         # 3. Limitations Section presence
         if "## limitations" not in normalized and "limitations" not in checked_sections:
             # Check if there is a header or just text
-            if "limitations" not in normalized:
+            if "limitations" not in normalized and "## ข้อจำกัด" not in normalized:
                 missing_disclaimers.append("limitations section")
 
         # Required disclaimer severity varies by phase/source

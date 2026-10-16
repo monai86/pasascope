@@ -20,6 +20,7 @@ from PySide6.QtWidgets import (
 
 from packages.desktop.ui import theme
 from packages.desktop.ui.pages.base import SessionPage
+from packages.desktop.ui.pdf import write_report_pdf
 from packages.desktop.ui.widgets import EmptyState, button, chip, label, set_chip
 
 EXPORTS = [
@@ -240,15 +241,22 @@ class ReportPage(SessionPage):
         if not path:
             return
         report_id = self.report.report_id
-
-        def done(written: Path) -> None:
+        if fmt == "pdf":
+            # Qt draws text on the UI thread; a report takes well under a second.
+            report = self.attempt(self.service.report_for_export, report_id, title="Export ไม่สำเร็จ")
+            if report is None:
+                return
+            try:
+                written = write_report_pdf(report.markdown, Path(path), title=f"{self.case.child_code} {self.session.session_date}")
+            except OSError as exc:
+                self.report_error(exc, "บันทึกไฟล์ไม่ได้")
+                return
+            self.service.record_export(report_id, "pdf")
             self._exported(written)
-
-        self.runner.run(
-            lambda: self.service.export_report(report_id, fmt, Path(path)),
-            on_done=done,
-            on_error=lambda exc: self.report_error(exc, "Export ไม่สำเร็จ"),
-        )
+            return
+        written = self.attempt(self.service.export_report, report_id, fmt, Path(path), title="Export ไม่สำเร็จ")
+        if written is not None:
+            self._exported(written)
 
     def _export_cha(self) -> None:
         transcript = self.service.get_transcript(self.session.session_id)

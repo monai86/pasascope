@@ -73,7 +73,10 @@ class ReportProviderRegistry:
 
 
 # Eager singleton instantiation
+from app.services.providers.thai_template_provider import ThaiTemplateReportProvider  # noqa: E402
+
 report_provider_registry = ReportProviderRegistry()
 report_provider_registry.register(TemplateReportProvider())
+report_provider_registry.register(ThaiTemplateReportProvider())
 report_provider_registry.register(LocalLLMReportProvider())
 report_provider_registry.register(FutureCloudLLMReportProvider())

@@ -890,6 +890,9 @@ class ReportGenerationInput(BaseModel):
     # Typical-development reference band ({age_band, task_type, features:
     # {runtime_feature: {q1, median, q3}}}) for the Progress Comparison section.
     reference_band: dict | None = None
+    # Review cues for this session with the therapist's confirm/dismiss state.
+    review_cues: list[ReviewCue] = Field(default_factory=list)
+    child_age_months: int | None = None
 
 
 class ReportGenerationRequest(BaseModel):
