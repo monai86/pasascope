@@ -34,6 +34,11 @@ def main(argv: list[str] | None = None) -> int:
     QCoreApplication.setOrganizationName("PasaScope")
     QCoreApplication.setApplicationName("PasaScope")
     app = QApplication(sys.argv[:1])
+    icon = ROOT / "packages" / "desktop" / "ui" / "assets" / "icon.png"
+    if icon.is_file():
+        from PySide6.QtGui import QIcon
+
+        app.setWindowIcon(QIcon(str(icon)))
 
     from packages.desktop.ui.theme import apply_theme
 
