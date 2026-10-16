@@ -39,6 +39,9 @@ def parse_cha_document(text: str) -> ParsedChaDocument:
     validation_issues: list[str] = []
     orphan_dependent_tiers: list[OrphanDependentTier] = []
     malformed_lines: list[dict] = []
+    # A tab-indented continuation line belongs to the tier just above it,
+    # which may be a dependent tier such as a long %mor line.
+    last_dependent: DependentTier | OrphanDependentTier | None = None
     source_lines = str(text or "").splitlines()
     headers = parse_cha_metadata(text)
     participants = parse_participants(headers.get("@Participants", []))
@@ -66,31 +69,32 @@ def parse_cha_document(text: str) -> ParsedChaDocument:
                 warnings.append(warning)
                 
             if utterances:
-                utterances[-1].dependent_tiers.append(
-                    DependentTier(
-                        tier=tier,
-                        raw_text=tier_text,
-                        line_number=line_number,
-                        supported=False,
-                        analyzed=False,
-                        parser_action="preserved_not_analyzed"
-                    )
+                last_dependent = DependentTier(
+                    tier=tier,
+                    raw_text=tier_text,
+                    line_number=line_number,
+                    supported=False,
+                    analyzed=False,
+                    parser_action="preserved_not_analyzed"
                 )
+                utterances[-1].dependent_tiers.append(last_dependent)
             else:
-                orphan_dependent_tiers.append(
-                    OrphanDependentTier(
-                        tier=tier,
-                        raw_text=tier_text,
-                        line_number=line_number,
-                        parser_action="preserved_unattached"
-                    )
+                last_dependent = OrphanDependentTier(
+                    tier=tier,
+                    raw_text=tier_text,
+                    line_number=line_number,
+                    parser_action="preserved_unattached"
                 )
+                orphan_dependent_tiers.append(last_dependent)
             continue
         match = SPEAKER_RE.match(raw_line)
         if not match:
             if raw_line[:1].isspace():
                 stripped = raw_line.strip()
                 if stripped and not (stripped.startswith("@") or stripped.startswith("*") or stripped.startswith("%")):
+                    if last_dependent is not None:
+                        last_dependent.raw_text = f"{last_dependent.raw_text} {stripped}".strip()
+                        continue
                     if utterances:
                         body, start_ms, end_ms = parse_media_bullet(stripped)
                         previous = utterances[-1]
@@ -104,6 +108,7 @@ def parse_cha_document(text: str) -> ParsedChaDocument:
                 malformed_lines.append({"line_number": line_number, "raw_text": raw_line})
                 validation_issues.append(f"Line {line_number} is malformed and was not imported.")
             continue
+        last_dependent = None
         speaker = normalize_speaker(match.group(1))
         utterance_text, start_ms, end_ms = parse_media_bullet(match.group(2).strip())
         if not utterance_text:

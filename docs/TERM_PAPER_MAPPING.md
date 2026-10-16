@@ -18,7 +18,7 @@
 | ที่มาและปัญหา | การถอดเสียงและวิเคราะห์ language sample ด้วยมือใช้เวลามาก | วรรณกรรมใน `docs/REFERENCES.md` |
 | การออกแบบระบบ | โปรแกรมเดสก์ท็อปบนเครื่องนักบำบัด (`packages/desktop`): หน้าจอ PySide6 เรียก service layer ชุดเดียวกับ API (`apps/api/app/services`) ในโปรแกรมเดียว เก็บข้อมูลใน SQLite บนเครื่อง ไม่มี server | `SCOPE_AND_DELIVERABLES.md`, `docs/PROJECT_SOURCE_OF_TRUTH.md` |
 | AI ส่วนที่ 1: ถอดเสียง | Whisper บนเครื่อง (โมเดลไทย fine-tuned หรือโมเดลหลายภาษา) + แยกผู้พูดเด็ก/ผู้ใหญ่ (`src/audio_pipeline`, provider `local_whisper`) | `reports/metrics/thai_asr_public.md`, `reports/metrics/thai_asr_evaluation*.md`, `reports/metrics/asr_desktop_tuning.md` |
-| AI ส่วนที่ 2: ตัวชี้วัดภาษา | MLU-w, TTR, การผลัดกันพูด, echolalia cue, pronoun cue (`src/clinical_speech/thai_lsa.py`) | `reports/metrics/feature_agreement_clan.md`, `reports/metrics/echolalia_cue_check.md` |
+| AI ส่วนที่ 2: ตัวชี้วัดภาษา | นับคำและประโยคตามกติกา CLAN/KIDEVAL (`packages/cha/clan_words.py`): MLU-w, MLU50, NDW, NDW-100, TTR, MATTR, VOCD D (`packages/features/language_sample.py`); echolalia cue, pronoun cue (`src/clinical_speech/thai_lsa.py`) | `reports/metrics/feature_agreement_clan.md`, `reports/metrics/echolalia_cue_check.md` |
 | Human-in-the-loop | แก้ transcript เทียบคลื่นเสียงทีละประโยค, attest, ยืนยันหรือปัดตก cue พร้อมคู่ประโยคหลักฐาน, แก้และลงนามรายงานภาษาไทย | `reports/metrics/transcript_review_time.csv`, audit log (เมนู ช่วยเหลือ → ประวัติการทำงาน) |
 | ผลการทดลองโมเดลจำแนก | การศึกษา classifier บนคลังข้อมูลภาษาอังกฤษสาธารณะ | `reports/ml/MODEL_RESULTS.md`, `reports/ml/ML_VALIDITY_DECISION.md`, `reports/ml/LEAKAGE_AND_CONFOUNDING_AUDIT.md` |
 | ข้อจำกัด | ดูหัวข้อด้านล่าง | `KNOWN_LIMITATIONS.md` |
@@ -62,7 +62,7 @@ DEMO-002 ยังไม่มีความยินยอม) แล้วเ
 
 | คำถาม | ข้อมูล | ผล | ไฟล์ |
 |---|---|---|---|
-| ระบบคำนวณตัวชี้วัดจาก transcript ถูกไหม | transcript TalkBank 1,961 ไฟล์จาก 12 คลัง (ASD 136 ไฟล์) เทียบกับ CLAN | จำนวนคำ r = 0.997 ต่างกันค่ากลาง 4.7%; TTR r = 0.92; จำนวนประโยคเด็ก r = 0.86 | `reports/metrics/feature_agreement_clan.md` |
+| ระบบคำนวณตัวชี้วัดจาก transcript ถูกไหม | transcript TalkBank 1,961 ไฟล์จาก 12 คลัง (ASD 136 ไฟล์) เทียบกับ CLAN | ได้ค่าเท่ากับ KIDEVAL ทุกตัว: จำนวนคำ 97.9% ของไฟล์, จำนวนประโยคที่ใช้คิด MLU 99.7%, คำไม่ซ้ำ 85.5% (ต่างไม่เกิน 1 คำ 96.6%); TTR r = 0.9999; VOCD D ต่างกันค่ากลาง 0.5% (ก่อนใช้กติกา CLAN: จำนวนคำต่างกันค่ากลาง 4.7%, คำไม่ซ้ำ 21.4%) | `reports/metrics/feature_agreement_clan.md` |
 | Whisper ถอดภาษาไทยแม่นแค่ไหน | FLEURS ไทย 30 คลิป 5.4 นาที (ผู้ใหญ่อ่านประโยคทางการ) | CER เฉลี่ย: `small` 29.2%, `medium` 20.3% | `reports/metrics/thai_asr_public.md` |
 | ถอดบทสนทนาแบบห้องบำบัดได้ไหม | บทสนทนาไทยสังเคราะห์ 6 บท 48 ผลัดพูด (เสียง TTS) | CER เฉลี่ย: `medium` 0.8%, `small` 6.7%; ตัดประโยคได้ 8 จาก 8 ทุกบท | `reports/metrics/thai_asr_evaluation.md` |
 | ถอดเสียงบนโน้ตบุ๊กนักบำบัดเร็วพอไหม | คลิป FLEURS 19 วินาที และบทสนทนา 6 บท บน Apple M2 | ตั้ง thread และชนิดตัวเลขให้ตรงเครื่อง เร็วขึ้น 4.5 เท่า (70.6 → 15.6 วินาที); โมเดลไทย CER 1.2% ใช้เวลา 4.8 เท่าของเสียง, โมเดลหลายภาษา CER 5.2% ราวเท่าความยาวเสียง | `reports/metrics/asr_desktop_tuning.md` |

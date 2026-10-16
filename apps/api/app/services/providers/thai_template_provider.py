@@ -31,9 +31,13 @@ THAI_LIMITATION_TEXT = (
 FEATURES: list[tuple[str, str, str]] = [
     ("child_utterance_count", "จำนวนประโยคของเด็ก", "int"),
     ("adult_utterance_count", "จำนวนประโยคของผู้ใหญ่", "int"),
+    ("mlu_utterance_count", "จำนวนประโยคที่ใช้คิด MLU", "int"),
     ("total_word_count", "จำนวนคำของเด็ก", "int"),
     ("number_of_different_words", "จำนวนคำที่ไม่ซ้ำ (NDW)", "int"),
+    ("ndw_100", "คำไม่ซ้ำใน 100 คำแรก (NDW-100)", "int"),
     ("type_token_ratio", "ความหลากหลายของคำ (TTR)", "ratio"),
+    ("mattr_50", "TTR เฉลี่ยหน้าต่าง 50 คำ (MATTR)", "ratio"),
+    ("vocd_d", "ความหลากหลายของคำ (VOCD D)", "float"),
     ("mean_length_of_utterance_words", "ความยาวประโยคเฉลี่ย (MLU-w, คำ)", "float"),
     ("unintelligible_ratio", "สัดส่วนประโยคที่ฟังไม่ออก", "percent"),
     ("question_ratio", "สัดส่วนประโยคคำถามของเด็ก", "percent"),

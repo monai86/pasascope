@@ -5,7 +5,7 @@ import re
 from pathlib import Path
 
 from app.schemas.clinical import AsrDatasetEvaluationResult, AsrDatasetSampleResult, AsrEvaluationInput, AsrEvaluationReport
-from app.services.providers.basic_provider import _tokens
+from packages.cha.clan_words import countable_words
 
 
 def evaluate_asr(payload: AsrEvaluationInput) -> AsrEvaluationReport:
@@ -157,8 +157,8 @@ def extract_speakers(text: str) -> list[str]:
 
 
 def feature_deviation_report(reference_text: str, hypothesis_text: str) -> dict[str, float]:
-    ref_tokens = _tokens(reference_text)
-    hyp_tokens = _tokens(hypothesis_text)
+    ref_tokens = countable_words(reference_text)
+    hyp_tokens = countable_words(hypothesis_text)
     ref_utt = max(count_utterances(reference_text), 1)
     hyp_utt = max(count_utterances(hypothesis_text), 1)
     ref_ttr = len(set(ref_tokens)) / len(ref_tokens) if ref_tokens else 0

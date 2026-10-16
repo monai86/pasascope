@@ -1,5 +1,5 @@
 from app.schemas.clinical import Utterance
-from app.services.cha_service import build_cha_text, parse_cha_document
+from app.services.cha_service import build_cha_text, parse_cha_document, parse_cha_utterances
 
 
 def test_parse_cha_document_preserves_codes_timestamps_metadata_and_warnings():
@@ -48,3 +48,19 @@ def test_build_cha_text_emits_basic_headers_ids_media_and_preserved_codes():
     assert "@Media:\tsession_audio, audio" in chat
     assert "*CHI:\tBlue car. \x15100_900\x15" in chat
     assert "*GRM:\tYes. \x15950_1200\x15" in chat
+
+
+def test_wrapped_dependent_tier_stays_out_of_the_main_tier():
+    text = (
+        "@Begin\n@Participants:\tCHI Target_Child\n"
+        "*CHI:\tI want the big red ball .\n"
+        "%mor:\tpro:sub|I v|want det:art|the adj|big\n"
+        "\tadj|red n|ball .\n"
+        "*CHI:\tmore\n"
+        "\tplease .\n"
+        "@End\n"
+    )
+    utterances = parse_cha_utterances(text)
+    assert utterances[0].text == "I want the big red ball ."
+    assert utterances[0].dependent_tiers[0].raw_text == "pro:sub|I v|want det:art|the adj|big adj|red n|ball ."
+    assert utterances[1].text == "more please ."

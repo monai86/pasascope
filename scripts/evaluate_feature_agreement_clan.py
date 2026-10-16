@@ -3,8 +3,8 @@
 CLAN is the reference tool for CHAT transcripts. For every transcript that has
 KIDEVAL output in ``data/reference/english_child_clan_features.csv`` this script
 runs the therapist app's own CHAT parser and feature provider on the same file
-and compares the child word count, number of different words, type-token ratio
-and child utterance count with CLAN's values.
+and compares the child word count, number of different words, type-token ratio,
+MLU utterance count and VOCD D with CLAN's values.
 
 This needs no audio. It measures whether the features shown to therapists are
 computed correctly from a transcript, not whether the transcript is correct.
@@ -43,7 +43,8 @@ MEASURES = [
     ("Child word tokens", "system_tokens", "clan_tokens"),
     ("Different words (types)", "system_types", "clan_types"),
     (f"Type-token ratio (samples with >= {MIN_TOKENS_FOR_TTR} tokens)", "system_ttr", "clan_ttr"),
-    ("Child utterances", "system_child_utterances", "clan_mlu_utterances"),
+    ("MLU utterances", "system_mlu_utterances", "clan_mlu_utterances"),
+    ("VOCD D", "system_vocd", "clan_vocd"),
 ]
 
 
@@ -61,7 +62,8 @@ def product_features(cha_text: str) -> dict:
         "system_tokens": values["total_word_count"],
         "system_types": values["number_of_different_words"],
         "system_ttr": values["type_token_ratio"],
-        "system_child_utterances": values["child_utterance_count"],
+        "system_mlu_utterances": values["mlu_utterance_count"],
+        "system_vocd": values["vocd_d"],
     }
 
 
@@ -82,23 +84,26 @@ def build_rows(clan: pd.DataFrame, project_root: Path) -> pd.DataFrame:
                 "clan_types": record.kideval_freq_types,
                 "clan_ttr": round(record.kideval_freq_types / clan_tokens, 4) if clan_tokens else None,
                 "clan_mlu_utterances": record.kideval_mlu_utts,
+                "clan_vocd": record.kideval_vocd_score,
             }
         )
     return pd.DataFrame(rows)
 
 
 def agreement(rows: pd.DataFrame, system: str, clan: str) -> dict:
-    pairs = rows[[system, clan]].dropna()
+    pairs = rows[[system, clan]].apply(pd.to_numeric, errors="coerce").dropna()
     if system == "system_ttr":
         pairs = pairs[rows.loc[pairs.index, "clan_tokens"] >= MIN_TOKENS_FOR_TTR]
     difference = pairs[system] - pairs[clan]
     relative = (difference.abs() / pairs[clan].where(pairs[clan] != 0)).dropna()
     return {
         "n": len(pairs),
-        "pearson_r": round(pairs[system].corr(pairs[clan]), 3),
+        "pearson_r": round(pairs[system].corr(pairs[clan]), 4),
         "spearman_rho": round(pairs[system].corr(pairs[clan], method="spearman"), 3),
         "mean_difference": round(difference.mean(), 3),
         "median_relative_difference": round(relative.median(), 3),
+        # Counts can match CLAN exactly; ratios and D are compared by difference.
+        "same_value": None if system in {"system_ttr", "system_vocd"} else round((difference == 0).mean(), 3),
     }
 
 
@@ -108,18 +113,20 @@ def summarize(rows: pd.DataFrame) -> list[dict]:
 
 def _table(summary: list[dict]) -> list[str]:
     lines = [
-        "| Measure | n | Pearson r | Spearman rho | Mean difference (system - CLAN) | Median relative difference |",
-        "|---|---|---|---|---|---|",
+        "| Measure | n | Same value as CLAN | Pearson r | Spearman rho | Mean difference (system - CLAN) | Median relative difference |",
+        "|---|---|---|---|---|---|---|",
     ]
     for row in summary:
+        same = "n/a" if row["same_value"] is None else f"{row['same_value']:.1%}"
         lines.append(
-            f"| {row['measure']} | {row['n']} | {row['pearson_r']} | {row['spearman_rho']} | "
+            f"| {row['measure']} | {row['n']} | {same} | {row['pearson_r']} | {row['spearman_rho']} | "
             f"{row['mean_difference']} | {row['median_relative_difference']:.1%} |"
         )
     return lines
 
 
 def render_markdown(rows: pd.DataFrame) -> str:
+    provider = BasicFeatureProvider()
     asd = rows[rows["group"] == "ASD"]
     groups = ", ".join(f"{name} {count}" for name, count in rows["group"].value_counts().items())
     lines = [
@@ -128,6 +135,7 @@ def render_markdown(rows: pd.DataFrame) -> str:
         f"Transcripts: {len(rows)} from {rows['corpus'].nunique()} TalkBank corpora ({groups}). English.",
         "",
         "Each transcript was processed by the therapist app's CHAT parser and feature provider "
+        f"({provider.provider_name} {provider.provider_version}, schema {provider.feature_schema_version}) "
         "and compared with CLAN KIDEVAL output for the same file.",
         "",
         "## All transcripts",
@@ -143,8 +151,10 @@ def render_markdown(rows: pd.DataFrame) -> str:
         "- High correlation means the app ranks samples the same way CLAN does. A non-zero mean "
         "difference means the two tools count differently, so app values must not be compared "
         "with published CLAN-based norms.",
-        "- CLAN's utterance count is the number of utterances it accepts for MLU, which excludes "
-        "some utterances the app counts.",
+        "- KIDEVAL counts FREQ types and tokens on %mor lemmas; the app does the same when a "
+        "transcript has a %mor tier and counts word forms otherwise (Thai).",
+        "- VOCD samples at random. The app uses its own seeded generator, so its D can differ "
+        "slightly from CLAN's even on identical tokens.",
         "- This checks feature computation on English CHAT transcripts. It says nothing about "
         "transcription accuracy or about Thai.",
         "",

@@ -20,10 +20,12 @@ def test_product_features_ignore_chat_annotation_codes():
 
     features = product_features(coded)
 
-    # the, dog, dog, is, run -- not "um", "running" or the bracket codes
-    assert features["system_tokens"] == 5
+    # CLAN counts the, dog, is, running: the filler and the repeated "dog [/]"
+    # are not words, and [: running] replaces what was said.
+    assert features["system_tokens"] == 4
     assert features["system_types"] == 4
-    assert features["system_child_utterances"] == 2
+    # "xxx ." has no countable word, so only one utterance counts for MLU.
+    assert features["system_mlu_utterances"] == 1
 
 
 def test_agreement_reports_correlation_and_bias():

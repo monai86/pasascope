@@ -21,8 +21,9 @@ clinical validation.
 ## Inputs and outputs
 
 - Input: backend-persisted `BasicFeatureProvider` results with a known schema.
-- Input feature schema: `features-basic-v1`; incompatible or unknown schemas
-  are blocked from ML review.
+- Input feature schema: `features-basic-v2` (CLAN/KIDEVAL word and utterance
+  rules) or `features-basic-v1`; incompatible or unknown schemas are blocked
+  from ML review.
 - Core values: child utterance count, adult utterance count, and total child
   word count.
 - Output: immutable `MLResult` records with cues, supporting values,
