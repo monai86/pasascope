@@ -10,15 +10,19 @@
 # environment stays unchanged.
 #
 # Usage:
-#   bash scripts/convert_thai_whisper.sh [output_dir]
+#   bash scripts/convert_thai_whisper.sh [output_dir] [source_model]
 #
 # Default output: models/whisper-th-medium-combined-ct2 (ignored by git).
 # The API finds it there, or at PASASCOPE_ASR_THAI_MODEL_PATH.
+#
+# Another Thai Whisper can be converted for comparison, e.g. Typhoon Whisper
+# Turbo (typhoon-ai/typhoon-whisper-turbo, MIT):
+#   bash scripts/convert_thai_whisper.sh models/typhoon-whisper-turbo-ct2 typhoon-ai/typhoon-whisper-turbo
 set -euo pipefail
 
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
-SOURCE_MODEL="biodatlab/whisper-th-medium-combined"
 OUTPUT_DIR="${1:-$ROOT/models/whisper-th-medium-combined-ct2}"
+SOURCE_MODEL="${2:-biodatlab/whisper-th-medium-combined}"
 VENV="$ROOT/.local/venvs/ct2-convert"
 PYTHON="${PYTHON:-$ROOT/.venv312/bin/python}"
 
