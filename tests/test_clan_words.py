@@ -2,6 +2,10 @@
 
 from __future__ import annotations
 
+from collections import Counter
+from pathlib import Path
+import re
+
 import pytest
 
 from packages.cha.clan_words import analyze_main_tier, countable_words, mor_stems
@@ -111,3 +115,49 @@ def test_vocd_is_reproducible_and_tracks_diversity():
     narrow = [f"w{i % 15}" for i in range(400)]
     assert vocd_d(varied) == vocd_d(varied)
     assert vocd_d(varied) > vocd_d(narrow) > 0
+
+
+# --- Parity with CLANc itself -------------------------------------------------
+# tests/fixtures/clan/clan_rules.cha exercises every rule above. The .cex files
+# are CLANc 4.13 (V 01-May-2026) output for it, run by hand:
+#   mlu -t%mor -bw +t*CHI clan_rules.cha
+#   freq +t*CHI clan_rules.cha
+
+FIXTURES = Path(__file__).parent / "fixtures" / "clan"
+
+
+def _fixture_child_analyses():
+    lines = (FIXTURES / "clan_rules.cha").read_text(encoding="utf-8").splitlines()
+    return [analyze_main_tier(line.split("\t", 1)[1]) for line in lines if line.startswith("*CHI:")]
+
+
+def _clan_number(text: str, pattern: str) -> float:
+    return float(re.search(pattern, text).group(1))
+
+
+def test_matches_clan_mlu_output():
+    clan = (FIXTURES / "clan_rules.mlu.cex").read_text(encoding="utf-8")
+    m = compute_language_sample_measures(_fixture_child_analyses(), kideval_exclusions=False)
+    assert m.mlu_utterances == _clan_number(clan, r"utterances = (\d+)")
+    assert m.mlu_word_total == _clan_number(clan, r"words = (\d+)")
+    assert round(m.mlu_words, 3) == _clan_number(clan, r"Ratio of words over utterances = ([\d.]+)")
+    assert round(m.mlu_words_sd, 3) == _clan_number(clan, r"Standard deviation = ([\d.]+)")
+
+
+def test_matches_clan_freq_output_word_by_word():
+    clan = (FIXTURES / "clan_rules.freq.cex").read_text(encoding="utf-8")
+    clan_counts = Counter({w.lower(): int(n) for n, w in re.findall(r"^\s+(\d+) (\S+)$", clan, re.M)})
+    analyses = _fixture_child_analyses()
+    ours = Counter(word for item in analyses for word in item.words)
+    assert ours == clan_counts
+    m = compute_language_sample_measures(analyses, kideval_exclusions=False)
+    assert m.freq_types == _clan_number(clan, r"(\d+)\s+Total number of different item types")
+    assert m.freq_tokens == _clan_number(clan, r"(\d+)\s+Total number of items")
+    assert round(m.ttr, 3) == _clan_number(clan, r"([\d.]+)\s+Type/Token ratio")
+
+
+def test_kideval_mode_drops_exc_utterances_that_mlu_and_freq_keep():
+    m = compute_language_sample_measures(_fixture_child_analyses())
+    # "no more . [+ exc]" is the only difference from the stand-alone commands.
+    assert (m.mlu_utterances, m.mlu_word_total, m.freq_tokens, m.freq_types) == (15, 51, 52, 33)
+    assert m.excluded_utterances == 2  # [+ exc] and www

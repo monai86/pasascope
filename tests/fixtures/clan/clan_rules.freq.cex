@@ -1,0 +1,48 @@
+freq +t*CHI clan_rules.cha
+Fri Oct 16 15:01:23 2026
+freq (01-May-2026) is conducting analyses on:
+  ONLY speaker main tiers matching: *CHI;
+****************************************
+From file <clan_rules.cha>
+Speaker: *CHI:
+  1 กิน
+  1 ข้าว
+  1 ค่ะ
+  2 หนู
+  2 อยาก
+  1 เที่ยว
+  1 เร็วๆ
+  2 ไป
+  5 I
+  3 ball
+  1 because
+  1 big
+  1 cold
+  1 cookie
+  1 dog
+  1 goed
+  1 going
+  3 he
+  2 home
+  1 ice+cream
+  2 is
+  1 it
+  1 juice
+  2 more
+  1 no
+  1 one
+  1 out
+  1 please
+  1 red
+  1 running
+  3 the
+  1 there
+  4 want
+  2 went
+------------------------------
+   34  Total number of different item types used
+   54  Total number of items (tokens)
+0.630  Type/Token ratio
+    This TTR number was not calculated on the basis of %mor line forms.
+    If you want a TTR based on lemmas, run FREQ on the %mor line
+    with option: +sm;*,o%

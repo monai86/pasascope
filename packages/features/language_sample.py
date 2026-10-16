@@ -9,7 +9,9 @@ only aggregates.
 * ``MLU_Utts`` / ``MLU_Words``: as above, also without ``xxx``/``yyy``/
   ``www``/``[+ mlue]``; a ``+,`` line joins the interrupted utterance before
   it. The standard deviation uses CLAN's formula
-  ``sqrt(mean(len^2) - mean(len)^2)`` and is undefined for one utterance.
+  ``sqrt(sum(len^2)/n - mean(len)^2)`` and is undefined for one utterance.
+  Like CLAN, a joined ``+,`` line adds its own square to ``sum(len^2)``
+  rather than enlarging the square of the utterance it joins.
 * ``MLU50``: the first 50 MLU utterances.
 * ``FREQ_tokens`` / ``FREQ_types`` / TTR: countable words of every included
   utterance. Like KIDEVAL, ``%mor`` lemmas are used when the utterance has a
@@ -74,9 +76,17 @@ def compute_language_sample_measures(
     mor_tiers: Sequence[str | None] | None = None,
     *,
     vocd_seed: int = VOCD_SEED,
+    kideval_exclusions: bool = True,
 ) -> LanguageSampleMeasures:
+    """Aggregate per-utterance analyses into KIDEVAL's measures.
+
+    ``kideval_exclusions=False`` reproduces CLAN's stand-alone ``mlu`` and
+    ``freq`` commands instead, which keep ``[+ exc]`` utterances and count the
+    other words of a ``www`` utterance in FREQ.
+    """
     mor_tiers = list(mor_tiers) if mor_tiers is not None else [None] * len(utterances)
     lengths: list[int] = []
+    squares = 0
     total = 0
     excluded = 0
     can_continue = False
@@ -84,7 +94,7 @@ def compute_language_sample_measures(
     units: set[str] = set()
 
     for analysis, mor in zip(utterances, mor_tiers):
-        if analysis.excluded:
+        if kideval_exclusions and analysis.excluded:
             excluded += 1
             continue
         if mor and mor.strip():
@@ -99,12 +109,13 @@ def compute_language_sample_measures(
         joins = analysis.self_completion and can_continue
         if not joins:
             total += 1
-        if analysis.mlu_excluded:
+        if analysis.has_www or analysis.has_unintelligible or "mlue" in analysis.postcodes:
             continue
         if joins and lengths:
             lengths[-1] += count
         else:
             lengths.append(count)
+        squares += count * count
         can_continue = analysis.continues
 
     mlu50 = lengths[:MLU50_UTTERANCES]
@@ -114,7 +125,7 @@ def compute_language_sample_measures(
         mlu_utterances=len(lengths),
         mlu_word_total=sum(lengths),
         mlu_words=_mean(lengths),
-        mlu_words_sd=_clan_sd(lengths),
+        mlu_words_sd=_clan_sd(lengths, squares),
         mlu50_utterances=len(mlu50),
         mlu50_words=_mean(mlu50),
         freq_tokens=len(tokens),
@@ -208,9 +219,9 @@ def _mean(values: Sequence[int]) -> float | None:
     return round(sum(values) / len(values), 4) if values else None
 
 
-def _clan_sd(values: Sequence[int]) -> float | None:
+def _clan_sd(values: Sequence[int], squares: int) -> float | None:
     if len(values) < 2:
         return None
     mean = sum(values) / len(values)
-    variance = sum(v * v for v in values) / len(values) - mean * mean
+    variance = squares / len(values) - mean * mean
     return round(math.sqrt(variance), 4) if variance >= 0 else None

@@ -1,0 +1,11 @@
+mlu -t%mor -bw +t*CHI clan_rules.cha
+Fri Oct 16 15:00:33 2026
+mlu (01-May-2026) is conducting analyses on:
+  ONLY speaker main tiers matching: *CHI;
+****************************************
+From file <clan_rules.cha>
+MLU for Speaker: *CHI:
+  MLU (xxx, yyy and www are EXCLUDED from the utterance and morpheme counts):
+    Number of: utterances = 16, words = 53
+    Ratio of words over utterances = 3.312
+    Standard deviation = 0.682
