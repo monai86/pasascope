@@ -20,7 +20,9 @@ Typical usage
 from __future__ import annotations
 
 import os
+import platform
 import re
+import sys
 from dataclasses import dataclass, field
 from pathlib import Path
 import threading
@@ -36,6 +38,52 @@ _MODEL_CACHE: dict[tuple[str, str, str, int], Any] = {}
 _MODEL_LOCK = threading.Lock()
 
 
+THREADS_ENV = "PASASCOPE_ASR_THREADS"
+COMPUTE_TYPE_ENV = "PASASCOPE_ASR_COMPUTE_TYPE"
+
+
+def _sysctl_int(name: str) -> int | None:
+    import subprocess
+
+    try:
+        out = subprocess.run(["sysctl", "-n", name], capture_output=True, text=True, timeout=5, check=True)
+        return int(out.stdout.strip())
+    except (OSError, subprocess.SubprocessError, ValueError):
+        return None
+
+
+def default_cpu_threads() -> int:
+    """Threads for CTranslate2: the performance cores only.
+
+    On Apple Silicon, work spread onto the efficiency cores waits for them:
+    on an M2 (4+4 cores) a Thai clip took 70.6 s with 8 threads and 25.2 s
+    with 4.
+    """
+    configured = os.environ.get(THREADS_ENV, "").strip()
+    if configured.isdigit() and int(configured) > 0:
+        return int(configured)
+    if sys.platform == "darwin":
+        performance = _sysctl_int("hw.perflevel0.physicalcpu")
+        if performance:
+            return max(2, performance)
+    return max(2, min(8, os.cpu_count() or 4))
+
+
+def default_compute_type() -> str:
+    """Numeric type for transcription on this machine.
+
+    CTranslate2's int8 kernels are slow on Apple Silicon; float32 ran the
+    same clip in 15.6 s against 25.2 s for int8, with the same text, at the
+    cost of about 3 GB of memory for a medium model.
+    """
+    configured = os.environ.get(COMPUTE_TYPE_ENV, "").strip()
+    if configured:
+        return configured
+    if sys.platform == "darwin" and platform.machine() == "arm64":
+        return "float32"
+    return "int8"
+
+
 def get_cached_whisper_model(
     whisper_cls: Any,
     model_size_or_path: str,
@@ -44,7 +92,7 @@ def get_cached_whisper_model(
     cpu_threads: int | None = None,
 ) -> Any:
     """Retrieve or instantiate a cached WhisperModel singleton with multi-core parallelism."""
-    threads = cpu_threads or max(2, min(8, os.cpu_count() or 4))
+    threads = cpu_threads or default_cpu_threads()
     key = (str(model_size_or_path), str(device), str(compute_type), threads)
     with _MODEL_LOCK:
         if key not in _MODEL_CACHE:
@@ -137,6 +185,40 @@ def _looks_hallucinated(text: str, avg_logprob: float, no_speech_prob: float) ->
     return False
 
 
+# A run of the same phrase three or more times (spaces optional, as Thai output
+# may or may not separate words).
+_LOOP = re.compile(r"(?P<unit>\S.{0,59}?)(?:\s*(?P=unit)){2,}")
+
+
+def _trim_repetition_loop(text: str) -> str:
+    """Cut a phrase the decoder kept repeating at the end of a segment.
+
+    Fine-tuned models sometimes transcribe a turn correctly and then loop on
+    its last phrase ("… แม่ มา ส่ง แม่ มา ส่ง แม่ มา ส่ง …"). One copy of the
+    phrase is kept, since it was usually said once. Returns the text
+    unchanged when the repetition does not run to the end.
+    """
+    for match in _LOOP.finditer(text):
+        unit = match.group("unit").strip()
+        rest = text[match.end():].strip()
+        if not rest or unit.replace(" ", "").startswith(rest.replace(" ", "")):
+            return (text[:match.start()] + match.group("unit")).strip()
+    return text
+
+
+def _keep_words_for(text: str, words: list) -> list:
+    """The leading words whose letters make up ``text``."""
+    budget = len(text.replace(" ", ""))
+    kept, used = [], 0
+    for word in words:
+        letters = len((word.text or "").replace(" ", ""))
+        if used + letters > budget:
+            break
+        kept.append(word)
+        used += letters
+    return kept
+
+
 @dataclass
 class WordSegment:
     """A single recognised word with timing and confidence."""
@@ -199,7 +281,7 @@ class WhisperTranscriber:
         self,
         model_size: str = DEFAULT_MODEL,
         device: str = "auto",
-        compute_type: str = "int8",
+        compute_type: Optional[str] = None,
         language: Optional[str] = None,
         strategy: LanguageStrategy = "auto",
         initial_prompt: Optional[str] = None,
@@ -217,7 +299,7 @@ class WhisperTranscriber:
         self._WhisperModel = WhisperModel
         self.model_size = model_size
         self.device = device
-        self.compute_type = compute_type
+        self.compute_type = compute_type or default_compute_type()
         self.strategy = strategy
         # `language` overrides strategy if explicitly set ("en" / "th" / None)
         if language is not None:
@@ -247,6 +329,16 @@ class WhisperTranscriber:
                 self.compute_type,
             )
         return self._model
+
+    def _load_detector(self):
+        """The multilingual model used only to tell Thai from other languages.
+
+        Under ``thai_specialized`` it never transcribes, so the small int8
+        build is enough and keeps memory down next to the Thai model.
+        """
+        if self.strategy != "thai_specialized":
+            return self._load()
+        return get_cached_whisper_model(self._WhisperModel, self.model_size, self.device, "int8")
 
     def _load_thai_specialized(self):
         """Lazy-load or retrieve cached Thai-specialized Whisper checkpoint.
@@ -282,7 +374,7 @@ class WhisperTranscriber:
         audio = decode_audio(audio_path, sampling_rate=16000)
         if not len(audio):
             return None
-        language, _probability, _all = self._load().detect_language(
+        language, _probability, _all = self._load_detector().detect_language(
             audio=audio, vad_filter=True, language_detection_segments=3,
         )
         return language
@@ -334,8 +426,13 @@ class WhisperTranscriber:
                 cur_prog = min(0.70, 0.20 + (float(seg.end) / total_duration) * 0.50)
                 progress_callback(cur_prog, f"ASR Transcribing: {float(seg.start):.1f}s - {float(seg.end):.1f}s...")
 
+            trimmed = False
             if _looks_hallucinated(text, avg_logprob, no_speech_prob):
-                continue
+                # A correct turn followed by a decoding loop: keep the turn.
+                shorter = _trim_repetition_loop(text)
+                if shorter == text or _looks_hallucinated(shorter, avg_logprob, no_speech_prob):
+                    continue
+                text, trimmed = shorter, True
             seg_lang = getattr(seg, "language", None) or detected_lang
             words: List[WordSegment] = []
             if seg.words:
@@ -347,9 +444,13 @@ class WhisperTranscriber:
                         probability=float(w.probability) if w.probability is not None else 0.0,
                         language=seg_lang,
                     ))
+            seg_end = float(seg.end)
+            if trimmed and words:
+                words = _keep_words_for(text, words) or words[:1]
+                seg_end = words[-1].end
             out.append(UtteranceSegment(
                 start=float(seg.start),
-                end=float(seg.end),
+                end=seg_end,
                 text=text,
                 words=words,
                 avg_logprob=avg_logprob,

@@ -73,6 +73,47 @@ def _join_word_pieces(words: Sequence[WordSegment]) -> str:
     return text
 
 
+# How many word pieces a cut may move to reach a Thai word boundary.
+MAX_CUT_SHIFT = 3
+
+
+def _thai_word_boundaries(pieces: Sequence[str]) -> set[int]:
+    """Character offsets in the joined pieces where a Thai word starts or ends."""
+    from pythainlp.tokenize import word_tokenize
+
+    offsets, position = {0}, 0
+    for token in word_tokenize("".join(pieces), engine="newmm", keep_whitespace=False):
+        position += len(token)
+        offsets.add(position)
+    return offsets
+
+
+def _snap_cuts_to_thai_words(words: Sequence[WordSegment], cuts: List[int]) -> List[int]:
+    """Move cuts that fall inside a Thai word to the nearest word boundary.
+
+    Whisper returns Thai as sub-word pieces and times each piece, so a pause
+    can be measured between "ครั" and "บ"; cutting there sends half a word to
+    the next speaker. Cuts move forward first (the tail of a word was said
+    with its head), at most ``MAX_CUT_SHIFT`` pieces.
+    """
+    pieces = [w.text.strip() for w in words]
+    if not any(_is_thai(p) for p in pieces):
+        return cuts
+    boundaries = _thai_word_boundaries(pieces)
+    starts = [0]
+    for piece in pieces:
+        starts.append(starts[-1] + len(piece))
+    snapped: List[int] = []
+    for cut in cuts:
+        if starts[cut] in boundaries or not (_is_thai(pieces[cut - 1]) and _is_thai(pieces[cut])):
+            snapped.append(cut)
+            continue
+        candidates = [cut + d for d in range(1, MAX_CUT_SHIFT + 1)] + [cut - d for d in range(1, MAX_CUT_SHIFT + 1)]
+        target = next((c for c in candidates if 0 < c < len(pieces) and starts[c] in boundaries), cut)
+        snapped.append(target)
+    return sorted(set(snapped))
+
+
 def _split_at_long_silences(
     seg: UtteranceSegment,
     min_gap: float = MIN_GAP_FOR_SPLIT,
@@ -81,13 +122,16 @@ def _split_at_long_silences(
     if len(seg.words) < 2:
         return [seg]
 
-    groups: List[List[WordSegment]] = [[seg.words[0]]]
-    for prev, cur in zip(seg.words, seg.words[1:]):
-        gap = cur.start - prev.end
-        if gap > min_gap:
-            groups.append([cur])
-        else:
-            groups[-1].append(cur)
+    cuts = [
+        index
+        for index in range(1, len(seg.words))
+        if seg.words[index].start - seg.words[index - 1].end > min_gap
+    ]
+    if not cuts:
+        return [seg]
+    cuts = _snap_cuts_to_thai_words(seg.words, cuts)
+    bounds = [0, *cuts, len(seg.words)]
+    groups: List[List[WordSegment]] = [list(seg.words[a:b]) for a, b in zip(bounds, bounds[1:]) if b > a]
 
     if len(groups) == 1:
         return [seg]
