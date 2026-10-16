@@ -270,3 +270,52 @@ def _segment_thai(text: str) -> tuple[str, ...]:
         if any(ch.isalnum() or _THAI.match(ch) for ch in piece):
             words.append(piece)
     return tuple(words)
+
+
+def chat_code_problems(text: str) -> list[str]:
+    """Problems in the CHAT codes of one main tier that would change what CLAN counts.
+
+    Checks what the counting rules rely on: balanced ``[ ]`` and ``< >``,
+    a word or ``<...>`` group before each scoped code, a target inside
+    ``[: ]``, and no bare ``&`` or ``0``. It is not a full CHAT validator.
+    """
+    problems: list[str] = []
+    line = _MEDIA_BULLET.sub(" ", str(text or ""))
+    depth = 0
+    for char in line:
+        if char == "[":
+            depth += 1
+            if depth > 1:
+                problems.append("วงเล็บ [ ] ซ้อนกัน")
+                break
+        elif char == "]":
+            depth -= 1
+            if depth < 0:
+                problems.append("มี ] โดยไม่มี [ เปิด")
+                break
+    if depth > 0:
+        problems.append("มี [ ที่ไม่ได้ปิดด้วย ]")
+    tokens = _TOKEN.findall(line)
+    if tokens.count("<") != tokens.count(">"):  # "+<" is its own token, not a group
+        problems.append("< > ไม่ครบคู่")
+    previous: str | None = None
+    for token in tokens:
+        if token.startswith("["):
+            code = re.sub(r"\s+", " ", token[1:-1].strip())
+            scoped = code in RETRACE_CODES or code.startswith((":", "*", "=", "!", "?", "%"))
+            if scoped and previous not in ("word", ">"):
+                problems.append(f"[{code}] ต้องตามหลังคำหรือกลุ่ม <...>")
+            if code.startswith(":") and not code.lstrip(":").strip():
+                problems.append("[: ] ยังไม่ได้ใส่คำที่ตั้งใจพูด")
+            continue
+        if token in ("<", "+<"):
+            previous = "<"
+        elif token == ">":
+            previous = ">"
+        elif token.startswith("+"):
+            previous = None
+        else:
+            if token in ("&", "&-", "&+", "&=", "0"):
+                problems.append(f"รหัส {token} ไม่มีคำตามหลัง")
+            previous = "word"
+    return list(dict.fromkeys(problems))

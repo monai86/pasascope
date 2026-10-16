@@ -401,7 +401,22 @@ def qa_issues(transcript: Transcript, audio_files: list[AudioFileMetadata] | Non
                     blocking=False
                 ))
 
-    # 6. Empty utterances
+    # 6. CHAT codes the word counts depend on
+    from packages.cha.clan_words import chat_code_problems
+
+    for utterance in utterances:
+        problems = chat_code_problems(utterance.text)
+        if problems:
+            issues.append(QaIssue(
+                severity="warning",
+                code="CHAT_CODE_FORMAT",
+                message=f"Utterance {utterance.utterance_id} has {len(problems)} malformed CHAT code(s); its words may be counted wrongly.",
+                recommended_action="Check the brackets and codes ([/], [//], [: ], &-, < >) in this utterance.",
+                line_id=utterance.utterance_id,
+                blocking=False,
+            ))
+
+    # 7. Empty utterances
     for utterance in utterances:
         if not utterance.text.strip():
             issues.append(QaIssue(

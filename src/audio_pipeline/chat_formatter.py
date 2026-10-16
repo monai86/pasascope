@@ -47,18 +47,21 @@ PAUSE_SHORT = 0.6     # (.)
 PAUSE_MEDIUM = 1.2    # (..)
 PAUSE_LONG = 2.0      # (...)
 
-# Word-level filler dictionaries (lowercased, tokenised)
+# Filled pauses, written as CHAT fillers (&-) so CLAN's rules leave them out
+# of word counts. Only sounds that are never words belong here: "oh", "huh"
+# and "mhm" are interjections CHAT counts as words, and Thai "หา" (look for),
+# "อะ" (a final particle), "เออ" (yeah) and "อ๋อ/อ่อ" (I see) carry meaning, so
+# marking them as fillers would wrongly lower MLU.
 FILLER_WORDS = {
     "en": {
-        "um": "&-um", "uh": "&-uh", "uhh": "&-uh", "umm": "&-um",
-        "ah": "&-ah", "er": "&-er", "hmm": "&-hmm", "mhm": "&-mhm",
-        "huh": "&-huh", "oh": "&-oh", "eh": "&-eh",
+        "um": "&-um", "umm": "&-um", "uh": "&-uh", "uhh": "&-uh", "er": "&-er", "erm": "&-erm",
     },
     "th": {
-        "เอ่อ": "&-เอ่อ", "อืม": "&-อืม", "อ่อ": "&-อ่อ",
-        "เออ": "&-เออ", "หา": "&-หา", "อะ": "&-อะ",
+        "เอ่อ": "&-เอ่อ", "อ่า": "&-อ่า", "เอิ่ม": "&-เอิ่ม", "อืม": "&-อืม",
     },
 }
+# Longest repeated phrase marked as a retrace.
+MAX_RETRACE_WORDS = 4
 
 
 # ----------------------------------------------------------------------
@@ -261,28 +264,42 @@ def _pause_marker(gap_seconds: float) -> Optional[str]:
 
 
 def _detect_repetition(tokens: List[str]) -> List[str]:
-    """Mark immediate adjacent duplicates with ``[/]``.
+    """Mark immediate repetitions with ``[/]`` (see :func:`mark_retraces`).
 
     Example: ``['cat', 'cat', 'sat']`` -> ``['cat [/]', 'cat', 'sat']``.
     """
-    if len(tokens) < 2:
-        return tokens
+    return mark_retraces(tokens)
+
+
+def _is_plain_word(token: str) -> bool:
+    return bool(token) and not token.startswith(("&", "(", "<", "[", "+", "0")) and token != "xxx" and "[" not in token
+
+
+def mark_retraces(tokens: List[str], max_words: int = MAX_RETRACE_WORDS) -> List[str]:
+    """Mark a word or phrase said again straight away as a CHAT retrace.
+
+    Longest phrase first, as Batchalign's n-gram retrace detection does:
+    ``a b a b c`` -> ``<a b> [/] a b c`` and ``a a a`` -> ``a [/] a [/] a``.
+    A repeated single Thai word is left alone: doubling a Thai word
+    (ดี ดี, เร็ว เร็ว) is often reduplication, which is grammar rather than a
+    disfluency (Batchalign skips single-word repeats in Chinese for the same
+    reason), so the therapist decides.
+    """
     out: List[str] = []
     i = 0
     while i < len(tokens):
-        # Find run of identical tokens
-        j = i + 1
-        while j < len(tokens) and tokens[j] == tokens[i]:
-            j += 1
-        run_len = j - i
-        if run_len >= 2:
-            # Each but the last gets [/]
-            for _ in range(run_len - 1):
-                out.append(f"{tokens[i]} [/]")
-            out.append(tokens[i])
+        for n in range(min(max_words, (len(tokens) - i) // 2), 0, -1):
+            gram = tokens[i:i + n]
+            if gram != tokens[i + n:i + 2 * n] or not all(_is_plain_word(t) for t in gram):
+                continue
+            if n == 1 and _has_thai(gram[0]):
+                continue
+            out.append(f"{gram[0]} [/]" if n == 1 else f"<{' '.join(gram)}> [/]")
+            i += n
+            break
         else:
             out.append(tokens[i])
-        i = j
+            i += 1
     return out
 
 
@@ -365,7 +382,7 @@ def _render_utterance_body(
         # Segment sub-words if the token contains Thai characters and was combined
         word_has_thai = any('\u0e00' <= char <= '\u0e7f' for char in word)
         if word_has_thai:
-            sub_tokens = _tokenize_thai_words(word)
+            sub_tokens = [_detect_filler(t, "th") or t for t in _tokenize_thai_words(word)]
             if not sub_tokens:
                 raw_tokens.append(word)
             else:
@@ -389,6 +406,31 @@ def _render_utterance_body(
     # Mark immediate repetitions with [/]
     spaced = _detect_repetition(spaced)
     return " ".join(spaced)
+
+
+def draft_utterance_text(u: UtteranceSegment) -> str:
+    """The ASR draft of one utterance, in CHAT form for the therapist to correct.
+
+    Words are separated by spaces (Thai is word-segmented, as CLAN expects),
+    filled pauses are written as ``&-`` fillers and a phrase said twice in a
+    row as a ``[/]`` retrace, so the draft already follows the counting rules
+    the measures use. Low-confidence words are kept as heard rather than
+    replaced with ``xxx``; the review page highlights them instead.
+    """
+    text = (u.text or "").strip()
+    question = text.endswith("?")
+    tokens: List[str] = []
+    for piece in [_split_terminator(text)[0]]:
+        for chunk in _WHITESPACE_RE.sub(" ", piece).split(" "):
+            word = _STRIP_PUNCT_RE.sub("", chunk.strip().strip(",;:\""))
+            if not word:
+                continue
+            if _has_thai(word):
+                tokens.extend(_detect_filler(t, "th") or t for t in _tokenize_thai_words(word))
+            else:
+                tokens.append(_detect_filler(word, "en") or (word.lower() if word.isascii() else word))
+    body = " ".join(mark_retraces(tokens))
+    return f"{body} ?" if question and body else body
 
 
 def _languages_field(detected_languages: Iterable[Optional[str]],

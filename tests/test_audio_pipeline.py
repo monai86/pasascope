@@ -904,3 +904,46 @@ def test_small_clusters_merge_into_the_nearest_speaker():
     assert list(merged) == [0, 1, 0, 1, 0, 1]
     # Nothing to merge: clusters are returned unchanged.
     assert list(merge_small_clusters(embeddings[:5], ids[:5], durations[:5], min_fraction=0.1, min_count=2)) == [0, 1, 0, 1, 0]
+
+
+def test_sign_off_phrases_with_no_audio_behind_them_are_dropped():
+    """Whisper appends 'ขอบคุณที่ติดตาม สวัสดีครับ' at 6.5-6.5 s after the speech ends."""
+    from src.audio_pipeline.whisper_transcribe import _too_fast_to_be_speech
+
+    assert _too_fast_to_be_speech("ขอบคุณที่ติดตาม สวัสดีครับ", 6.5, 6.5)
+    assert _too_fast_to_be_speech("ขอบคุณที่ติดตาม สวัสดีครับ", 6.5, 6.8)  # ~80 letters/s
+    assert not _too_fast_to_be_speech("พื้นผิวของดวงจันทร์ประกอบด้วยหินและฝุ่น", 0.9, 3.6)
+    assert not _too_fast_to_be_speech("ค่ะ", 1.0, 1.15)
+
+
+def test_draft_text_is_chat_ready():
+    from src.audio_pipeline.chat_formatter import draft_utterance_text, mark_retraces
+    from src.audio_pipeline.whisper_transcribe import UtteranceSegment
+
+    assert draft_utterance_text(UtteranceSegment(0, 1, "เล่นรถไหมครับ เล่นรถไหมครับ")) == "<เล่น รถ ไหม ครับ> [/] เล่น รถ ไหม ครับ"
+    assert draft_utterance_text(UtteranceSegment(0, 1, "อืมหนูอยากกินข้าว")) == "&-อืม หนู อยาก กินข้าว"
+    # "หา" (look for) and "อะ" (a particle) are words, not fillers.
+    assert draft_utterance_text(UtteranceSegment(0, 1, "หนูหาของเล่นอะ")) == "หนู หา ของเล่น อะ"
+    assert draft_utterance_text(UtteranceSegment(0, 1, "เอ่อ ไปไหนมา?")) == "&-เอ่อ ไป ไหน มา ?"
+    # A doubled single Thai word may be reduplication, so it is left for the therapist.
+    assert mark_retraces(["หนู", "หนู", "อยาก"]) == ["หนู", "หนู", "อยาก"]
+    assert mark_retraces(["i", "want", "i", "want", "it"]) == ["<i want> [/]", "i", "want", "it"]
+
+
+def test_one_voice_cluster_is_not_called_the_child(monkeypatch, tmp_path):
+    """If clustering finds a single voice, utterances are labelled one by one instead."""
+    import numpy as np
+    import soundfile
+
+    from src.audio_pipeline import diarization as d
+    from src.audio_pipeline.whisper_transcribe import UtteranceSegment
+
+    path = tmp_path / "one.wav"
+    soundfile.write(path, np.zeros(16000 * 4, dtype="float32"), 16000)
+    diarizer = d.EmbeddingDiarizer(d.EmbeddingDiarizerConfig(child_age_months=48))
+    monkeypatch.setattr(diarizer, "_embed_clip", lambda clip, sr: np.array([1.0, 0.0, 0.0]))
+    called = {}
+    monkeypatch.setattr(diarizer, "_single_voice_fallback", lambda audio, utts, f0s: called.setdefault("utts", list(utts)))
+    utterances = [UtteranceSegment(i, i + 0.9, "x") for i in range(3)]
+    diarizer.assign(path, utterances)
+    assert called["utts"] == utterances

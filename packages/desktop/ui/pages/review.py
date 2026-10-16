@@ -35,7 +35,7 @@ from PySide6.QtWidgets import (
     QWidget,
 )
 
-from packages.cha.clan_words import MainTierAnalysis, analyze_main_tier
+from packages.cha.clan_words import MainTierAnalysis, analyze_main_tier, chat_code_problems
 from packages.desktop.core import QaOverrideRequired
 from packages.desktop.ui import labels, theme
 from packages.desktop.ui.audio import SegmentPlayer, waveform_peaks
@@ -88,6 +88,9 @@ def apply_chat_code(text: str, start: int, length: int, code: str) -> tuple[str,
 
 def word_cell(utt) -> tuple[str, str, bool]:
     """(text, tooltip, counts for the child) for the words column."""
+    problems = chat_code_problems(utt.text)
+    if problems:
+        return "⚠ ตรวจรหัส", "รหัส CHAT อาจเขียนผิด ระบบจะนับคำผิด:\n" + "\n".join(f"• {p}" for p in problems), False
     if str(utt.speaker) != "CHI":
         return "", "ผู้ใหญ่: ไม่ใช้คิดตัวชี้วัดของเด็ก", False
     analysis = analyze_main_tier(utt.text)
@@ -320,7 +323,9 @@ class ReviewPage(SessionPage):
         item.setFlags(item.flags() & ~Qt.ItemFlag.ItemIsEditable)
         item.setToolTip(tooltip)
         item.setTextAlignment(Qt.AlignmentFlag.AlignRight | Qt.AlignmentFlag.AlignVCenter)
-        if not counted or text.endswith("MLU"):
+        if text.startswith("⚠"):
+            item.setForeground(QBrush(QColor(theme.DANGER)))
+        elif not counted or text.endswith("MLU"):
             item.setForeground(QBrush(QColor(theme.ATTENTION if text else theme.MUTED)))
         loading, self._loading = self._loading, True
         self.table.setItem(row, COL_WORDS, item)
@@ -392,6 +397,9 @@ class ReviewPage(SessionPage):
         self.attest_btn.setEnabled(not attested)
         self.attest_btn.setText("บันทึกและรับรอง" if self.dirty else "รับรอง transcript")
         notes = []
+        n_bad_codes = sum(1 for u in self.utterances if chat_code_problems(u.text))
+        if n_bad_codes:
+            notes.append(f"มี {n_bad_codes} ประโยคที่รหัส CHAT อาจเขียนผิด (ดูช่อง \"คำที่นับ\" ที่ขึ้น ⚠) ระบบจะนับคำของประโยคนั้นผิด")
         if n_unknown:
             notes.append(f"มี {n_unknown} ประโยคที่ยังไม่ระบุผู้พูด ระบุให้ครบก่อนรับรอง")
         if self.transcript and self.transcript.therapist_attested and self.dirty:

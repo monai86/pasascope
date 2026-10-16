@@ -132,10 +132,14 @@ class LocalWhisperProvider(BaseTranscriptionProvider):
         lines: list[TranscriptLine] = []
         languages: set[str] = set()
         has_words = False
+        from src.audio_pipeline.chat_formatter import draft_utterance_text as draft_text
+
         for segment in pipeline_result.utterances:
-            text = (segment.text or "").strip()
-            if not text:
+            if not (segment.text or "").strip():
                 continue
+            # CHAT form: segmented words, &- fillers and [/] retraces, so the
+            # therapist corrects a draft that already follows CLAN's rules.
+            text = draft_text(segment) or (segment.text or "").strip()
             words = list(segment.words or [])
             has_words = has_words or bool(words)
             confidence = (

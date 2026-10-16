@@ -143,9 +143,9 @@ def test_pipeline_segments_become_reviewable_lines(whisper_enabled, monkeypatch,
     assert calls["kwargs"]["model_size"] == "medium"
     assert calls["kwargs"]["child_age_months"] == 48
     assert [(line.speaker, line.text) for line in result.transcript_lines] == [
-        ("INV", "ไหนลองพูดซิ"),
+        ("INV", "ไหน ลอง พูด ซิ"),
         ("CHI", "รถ แดง"),
-        ("UNK", "อะไรนะ"),
+        ("UNK", "อะไร นะ"),
     ]
     adult, child, unknown = result.transcript_lines
     assert (adult.start_ms, adult.end_ms) == (500, 2100)
@@ -212,8 +212,8 @@ def test_job_runs_local_whisper_on_the_stored_recording(whisper_enabled, monkeyp
     assert transcript.source == "asr_draft:local_whisper"
     assert transcript.therapist_attested is False
     assert [(str(u.speaker), u.text) for u in transcript.utterances] == [
-        ("INV", "เล่นอะไรดี"),
-        ("CHI", "เล่นรถ"),
+        ("INV", "เล่น อะไร ดี"),
+        ("CHI", "เล่น รถ"),
     ]
     assert all(issue.code != "MOCK_ASR_OUTPUT" for issue in transcript.qa_issues)
     # The draft is declared Thai, so QA does not warn about undeclared Thai text.
