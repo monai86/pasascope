@@ -3,10 +3,16 @@
 Keys while the table has focus: Space plays the selected utterance,
 Ctrl+1 marks it as the child, Ctrl+2 as the adult, Enter edits the text,
 Ctrl+S saves.
+
+The words column shows what CLAN's rules count in each utterance, so the
+therapist sees the effect of a CHAT code (xxx, [/], &-...) as soon as it is
+typed. The code buttons insert those codes around the selected words.
 """
 
 from __future__ import annotations
 
+from collections import Counter
+from functools import partial
 from pathlib import Path
 import uuid
 
@@ -14,11 +20,13 @@ from PySide6.QtCore import QModelIndex, Qt, QTimer
 from PySide6.QtGui import QBrush, QColor, QKeySequence, QShortcut
 from PySide6.QtWidgets import (
     QAbstractItemView,
+    QApplication,
     QCheckBox,
     QComboBox,
     QHBoxLayout,
     QHeaderView,
     QInputDialog,
+    QLineEdit,
     QMessageBox,
     QStyledItemDelegate,
     QTableWidget,
@@ -27,15 +35,75 @@ from PySide6.QtWidgets import (
     QWidget,
 )
 
+from packages.cha.clan_words import MainTierAnalysis, analyze_main_tier
 from packages.desktop.core import QaOverrideRequired
 from packages.desktop.ui import labels, theme
 from packages.desktop.ui.audio import SegmentPlayer, waveform_peaks
 from packages.desktop.ui.pages.base import SessionPage
 from packages.desktop.ui.widgets import EmptyState, WaveformView, button, chip, label, set_chip
+from packages.features.language_sample import compute_language_sample_measures
 
-COL_TIME, COL_SPEAKER, COL_TEXT, COL_CONF = range(4)
+COL_TIME, COL_SPEAKER, COL_TEXT, COL_WORDS, COL_CONF = range(5)
 LOW_CONFIDENCE = 0.6
 ADULT = "INV"
+
+# (button text, what it does, action) for the CHAT code buttons.
+CHAT_CODES = [
+    ("ฟังไม่ออก xxx", "ใส่แทนคำที่ฟังไม่ออก ประโยคนี้จะไม่ถูกนับใน MLU", "xxx"),
+    ("พูดซ้ำ [/]", "เลือกคำที่พูดซ้ำครั้งแรกก่อน ส่วนที่เลือกจะไม่ถูกนับ", "[/]"),
+    ("พูดแก้ [//]", "เลือกคำที่พูดผิดแล้วพูดแก้ ส่วนที่เลือกจะไม่ถูกนับ", "[//]"),
+    ("คำเติม &-", "เช่น อือ เอ่อ ไม่นับเป็นคำ", "&-"),
+    ("ตั้งใจพูดว่า [: ]", "เลือกคำที่พูดเพี้ยน แล้วพิมพ์คำที่ตั้งใจพูดในวงเล็บ ระบบนับคำที่ตั้งใจพูด", "[: ]"),
+    ("คำผิด [*]", "ทำเครื่องหมายคำที่ใช้ผิด นับใน Word_Errors", "[*]"),
+    ("ไม่นับประโยค [+ exc]", "ตัดประโยคนี้ออกจากตัวชี้วัดทั้งหมด", "[+ exc]"),
+]
+
+
+def apply_chat_code(text: str, start: int, length: int, code: str) -> tuple[str, int]:
+    """Insert ``code`` at the selection; return the new text and cursor position."""
+    before, chosen, after = text[:start], text[start:start + length].strip(), text[start + length:]
+    if code == "[+ exc]":
+        if "[+ exc]" in text:
+            return text, len(text)
+        new = f"{text.rstrip()} [+ exc]"
+        return new, len(new)
+    if code == "xxx":
+        insert = "xxx"
+    elif code == "&-":
+        insert = f"&-{chosen}"
+    elif code == "[: ]":
+        insert = f"{chosen} [: ]" if chosen else "[: ]"
+    else:
+        scope = f"<{chosen}>" if " " in chosen else chosen
+        insert = f"{scope} {code}" if scope else code
+    if before and not before.endswith(" "):
+        insert = " " + insert
+    if after and not after.startswith(" "):
+        insert = insert + " "
+    cursor = len(before) + len(insert.rstrip())
+    if code == "[: ]":
+        cursor -= 1  # inside the brackets, ready to type the target word
+    return before + insert + after, cursor
+
+
+def word_cell(utt) -> tuple[str, str, bool]:
+    """(text, tooltip, counts for the child) for the words column."""
+    if str(utt.speaker) != "CHI":
+        return "", "ผู้ใหญ่: ไม่ใช้คิดตัวชี้วัดของเด็ก", False
+    analysis = analyze_main_tier(utt.text)
+    lines = [f"นับ {len(analysis.words)} คำ: {' '.join(analysis.words) or '—'}"]
+    if analysis.excluded:
+        lines.append("ประโยคนี้ไม่ถูกนับในตัวชี้วัดใด ([+ exc] หรือ www)")
+        return "ไม่นับ", "\n".join(lines), False
+    dropped = Counter(analysis.spoken_words) - Counter(analysis.words)
+    if dropped:
+        lines.append("ไม่นับส่วนที่พูดซ้ำหรือพูดแก้: " + " ".join(dropped.elements()))
+    if "&-" in utt.text or "&+" in utt.text:
+        lines.append("ไม่นับคำเติมและคำที่พูดไม่จบ (&-, &+)")
+    if analysis.mlu_excluded:
+        lines.append("มีคำที่ฟังไม่ออก จึงไม่ใช้คิด MLU แต่ยังนับคำอื่นในจำนวนคำ")
+        return f"{len(analysis.words)} · ไม่คิด MLU", "\n".join(lines), True
+    return str(len(analysis.words)), "\n".join(lines), True
 
 
 def _fmt(ms: int | None) -> str:
@@ -141,14 +209,27 @@ class ReviewPage(SessionPage):
             controls.addWidget(widget)
         body.addLayout(controls)
 
-        self.table = QTableWidget(0, 4)
-        self.table.setHorizontalHeaderLabels(["เวลา", "ผู้พูด", "ข้อความ", "ความมั่นใจ"])
+        codes = QHBoxLayout()
+        codes.setSpacing(6)
+        codes.addWidget(label("รหัส CHAT", "Hint"))
+        for text, tip, code in CHAT_CODES:
+            code_btn = button(text.replace("&", "&&"), tooltip=tip)  # "&" alone marks a Qt mnemonic
+            # Keep focus in the open text editor so the code lands at its cursor.
+            code_btn.setFocusPolicy(Qt.FocusPolicy.NoFocus)
+            code_btn.clicked.connect(partial(self.insert_code, code))
+            codes.addWidget(code_btn)
+        codes.addStretch(1)
+        body.addLayout(codes)
+
+        self.table = QTableWidget(0, 5)
+        self.table.setHorizontalHeaderLabels(["เวลา", "ผู้พูด", "ข้อความ", "คำที่นับ", "ความมั่นใจ"])
         self.table.verticalHeader().setDefaultSectionSize(34)
         self.table.verticalHeader().setVisible(True)
         header = self.table.horizontalHeader()
         header.setSectionResizeMode(COL_TIME, QHeaderView.ResizeMode.ResizeToContents)
         header.setSectionResizeMode(COL_SPEAKER, QHeaderView.ResizeMode.Fixed)
         header.setSectionResizeMode(COL_TEXT, QHeaderView.ResizeMode.Stretch)
+        header.setSectionResizeMode(COL_WORDS, QHeaderView.ResizeMode.ResizeToContents)
         header.setSectionResizeMode(COL_CONF, QHeaderView.ResizeMode.ResizeToContents)
         self.table.setColumnWidth(COL_SPEAKER, 150)
         self.table.setSelectionBehavior(QAbstractItemView.SelectionBehavior.SelectRows)
@@ -164,7 +245,7 @@ class ReviewPage(SessionPage):
 
         hint = label(
             "Space เล่นเสียง · Enter แก้ข้อความ · Ctrl+1 เด็ก · Ctrl+2 ผู้ใหญ่ · Ctrl+S บันทึก · คลิกที่คลื่นเสียงเพื่อเล่นจากจุดนั้น · "
-            "แถวสีส้มคือคำที่ระบบไม่มั่นใจ",
+            "แถวสีส้มคือคำที่ระบบไม่มั่นใจ · ชี้ที่ช่อง \"คำที่นับ\" เพื่อดูว่านับคำไหนบ้าง",
             "Muted", wrap=True,
         )
         body.addWidget(hint)
@@ -231,6 +312,19 @@ class ReviewPage(SessionPage):
         self.table.setItem(row, COL_SPEAKER, speaker_item)
         self.table.setItem(row, COL_TEXT, text_item)
         self.table.setItem(row, COL_CONF, conf_item)
+        self._fill_word_cell(row, utt)
+
+    def _fill_word_cell(self, row: int, utt) -> None:
+        text, tooltip, counted = word_cell(utt)
+        item = QTableWidgetItem(text)
+        item.setFlags(item.flags() & ~Qt.ItemFlag.ItemIsEditable)
+        item.setToolTip(tooltip)
+        item.setTextAlignment(Qt.AlignmentFlag.AlignRight | Qt.AlignmentFlag.AlignVCenter)
+        if not counted or text.endswith("MLU"):
+            item.setForeground(QBrush(QColor(theme.ATTENTION if text else theme.MUTED)))
+        loading, self._loading = self._loading, True
+        self.table.setItem(row, COL_WORDS, item)
+        self._loading = loading
 
     def _load_audio(self) -> None:
         self.audio_wav = None
@@ -275,6 +369,14 @@ class ReviewPage(SessionPage):
         n_unknown = sum(1 for u in self.utterances if str(u.speaker) == "UNK")
         n_low = sum(1 for u in self.utterances if u.confidence is not None and u.confidence < LOW_CONFIDENCE)
         parts = [f"{len(self.utterances)} ประโยค", f"เด็ก {n_child}"]
+        analyses: list[MainTierAnalysis] = [
+            analyze_main_tier(u.text) for u in self.utterances if str(u.speaker) == "CHI"
+        ]
+        if analyses:
+            live = compute_language_sample_measures(analyses, include_vocd=False)
+            parts.append(f"คำของเด็ก {live.freq_tokens}")
+            if live.mlu_words is not None:
+                parts.append(f"MLU {live.mlu_words:.2f}")
         if n_unknown:
             parts.append(f"ยังไม่ระบุผู้พูด {n_unknown}")
         if n_low:
@@ -318,14 +420,43 @@ class ReviewPage(SessionPage):
             text = item.text().strip()
             if text != utt.text:
                 self.utterances[row] = utt.model_copy(update={"text": text, "review_status": "reviewed"})
+                self._fill_word_cell(row, self.utterances[row])
                 self._mark_dirty()
         elif item.column() == COL_SPEAKER:
             code = item.data(Qt.ItemDataRole.UserRole)
             if code and code != str(utt.speaker):
                 self.utterances[row] = utt.model_copy(update={"speaker": code, "review_status": "reviewed"})
                 item.setForeground(QBrush(QColor(theme.SPEAKER_COLORS.get(code, theme.INK))))
+                self._fill_word_cell(row, self.utterances[row])
                 self._update_regions()
                 self._mark_dirty()
+
+    def insert_code(self, code: str) -> None:
+        """Put a CHAT code around the words selected in the open text editor."""
+        editor = self._text_editor()
+        if editor is None:
+            rows = self._selected_rows()
+            if not rows:
+                return
+            item = self.table.item(rows[0], COL_TEXT)
+            self.table.setCurrentItem(item)
+            self.table.editItem(item)
+            editor = self._text_editor()
+            if editor is None:
+                return
+            editor.end(False)
+        start = editor.selectionStart() if editor.hasSelectedText() else editor.cursorPosition()
+        length = len(editor.selectedText()) if editor.hasSelectedText() else 0
+        text, cursor = apply_chat_code(editor.text(), start, length, code)
+        editor.setText(text)
+        editor.setCursorPosition(cursor)
+        editor.setFocus()
+
+    def _text_editor(self) -> QLineEdit | None:
+        widget = QApplication.focusWidget()
+        if isinstance(widget, QLineEdit) and self.table.isAncestorOf(widget):
+            return widget
+        return None
 
     def _selected_rows(self) -> list[int]:
         return sorted({index.row() for index in self.table.selectionModel().selectedRows()})

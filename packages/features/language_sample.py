@@ -77,12 +77,14 @@ def compute_language_sample_measures(
     *,
     vocd_seed: int = VOCD_SEED,
     kideval_exclusions: bool = True,
+    include_vocd: bool = True,
 ) -> LanguageSampleMeasures:
     """Aggregate per-utterance analyses into KIDEVAL's measures.
 
     ``kideval_exclusions=False`` reproduces CLAN's stand-alone ``mlu`` and
     ``freq`` commands instead, which keep ``[+ exc]`` utterances and count the
-    other words of a ``www`` utterance in FREQ.
+    other words of a ``www`` utterance in FREQ. ``include_vocd=False`` skips
+    the random sampling for live previews.
     """
     mor_tiers = list(mor_tiers) if mor_tiers is not None else [None] * len(utterances)
     lengths: list[int] = []
@@ -133,7 +135,7 @@ def compute_language_sample_measures(
         ttr=round(types / len(tokens), 4) if tokens else None,
         ndw_100=len(set(tokens[:NDW_WINDOW])) if len(tokens) >= NDW_WINDOW else None,
         mattr=mattr(tokens),
-        vocd_d=vocd_d(tokens, seed=vocd_seed),
+        vocd_d=vocd_d(tokens, seed=vocd_seed) if include_vocd else None,
         repetitions=sum(item.repetitions for item in utterances),
         retracings=sum(item.retracings for item in utterances),
         word_errors=sum(item.word_errors for item in utterances),

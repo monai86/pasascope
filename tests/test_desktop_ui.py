@@ -127,3 +127,55 @@ def test_report_is_thai_and_exports_to_pdf_and_html(window, tmp_path):
     html_path = svc.export_report(signed.report_id, "html", tmp_path / "r.html")
     page = html_path.read_text(encoding="utf-8")
     assert '<meta charset="utf-8">' in page and "<table>" in page and "ความยาวประโยคเฉลี่ย" in page
+
+
+def test_chat_codes_change_the_counted_words(window):
+    from packages.desktop.ui.pages.review import COL_TEXT, COL_WORDS, apply_chat_code
+
+    assert apply_chat_code("หนู อยาก หนู อยาก กิน", 0, 8, "[/]")[0] == "<หนู อยาก> [/] หนู อยาก กิน"
+    assert apply_chat_code("หนู อยาก กิน", 4, 4, "[: ]") == ("หนู อยาก [: ] กิน", 12)
+    assert apply_chat_code("อือ หนู กิน", 0, 3, "&-")[0] == "&-อือ หนู กิน"
+
+    case, session = _case_with_session(window)
+    capture = window.pages[0]
+    capture.paste.setPlainText(CHAT)
+    capture.paste_btn.click()
+    review = window.pages[1]
+    row = next(i for i, u in enumerate(review.utterances) if str(u.speaker) == "CHI")
+    review.table.item(row, COL_TEXT).setText("&-อือ <หนู อยาก> [/] หนู อยาก กิน")
+    assert review.table.item(row, COL_WORDS).text() == "3"
+    assert "หนู อยาก" in review.table.item(row, COL_WORDS).toolTip()
+    review.table.item(row, COL_TEXT).setText("xxx กิน")
+    assert review.table.item(row, COL_WORDS).text().endswith("MLU")
+    assert "MLU" in review.summary.text()
+
+
+def test_findings_lead_with_headline_values_and_sample_warning(window, qtbot):
+    case, session = _case_with_session(window)
+    capture = window.pages[0]
+    capture.paste.setPlainText(CHAT)
+    capture.paste_btn.click()
+    window.pages[1].attest_btn.click()
+    findings = window.pages[2]
+    findings.empty_btn.click()
+    qtbot.waitUntil(lambda: findings.body.isVisible(), timeout=10000)
+    mlu = findings.metric_cards["mean_length_of_utterance_words"]
+    assert mlu.value.text() not in {"", "—"}
+    assert "ประโยค" in mlu.detail.text()
+    assert not findings.sample_notice.isHidden()  # the sample has far fewer than 50 utterances
+    assert findings.schema_notice.isHidden()
+
+
+def test_case_with_several_sessions_opens_on_the_overview(window, qtbot):
+    case, first = _case_with_session(window)
+    second = window.service.create_session(case.case_id, date(2026, 10, 20))
+    window.open_case(case.case_id)
+    assert window.session_pick.currentData() == "__overview__"
+    assert window.session_stack.currentWidget() is window.overview
+    assert window.overview.table.rowCount() == 2
+    assert window.overview.cards["sessions"].value.text() == "2"
+    window.overview.open_session.emit(second.session_id)
+    assert window.session.session_id == second.session_id
+    assert window.session_stack.currentWidget() is window.tabs
+    window.session_pick.setCurrentIndex(0)
+    assert window.session is None and window.session_stack.currentWidget() is window.overview

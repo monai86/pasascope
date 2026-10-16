@@ -52,6 +52,36 @@ def label(text: str, name: str = "", wrap: bool = False) -> QLabel:
     return widget
 
 
+def notice(text: str = "", kind: str = "attention") -> QLabel:
+    """A full-width banner for a warning the therapist should read before going on."""
+    widget = label(text, wrap=True)
+    widget.setObjectName("Notice")
+    widget.setProperty("kind", kind)
+    return widget
+
+
+class MetricCard(QFrame):
+    """One headline value: a caption, the number, and a line of context."""
+
+    def __init__(self, title: str, parent: QWidget | None = None) -> None:
+        super().__init__(parent)
+        self.setObjectName("Card")
+        layout = QVBoxLayout(self)
+        layout.setContentsMargins(14, 10, 14, 10)
+        layout.setSpacing(2)
+        self.title = label(title, "MetricTitle", wrap=True)
+        self.value = label("—", "MetricValue")
+        self.detail = label("", "Muted", wrap=True)
+        layout.addWidget(self.title)
+        layout.addWidget(self.value)
+        layout.addWidget(self.detail)
+
+    def set_value(self, value: str, detail: str = "", tooltip: str = "") -> None:
+        self.value.setText(value)
+        self.detail.setText(detail)
+        self.setToolTip(tooltip)
+
+
 class EmptyState(QWidget):
     def __init__(self, title: str, body: str = "", parent: QWidget | None = None) -> None:
         super().__init__(parent)

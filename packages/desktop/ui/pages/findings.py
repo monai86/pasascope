@@ -9,9 +9,11 @@ from __future__ import annotations
 import re
 
 from PySide6.QtCore import Qt
+from PySide6.QtGui import QBrush, QColor, QFont
 from PySide6.QtWidgets import (
     QComboBox,
     QFrame,
+    QGridLayout,
     QHBoxLayout,
     QHeaderView,
     QLineEdit,
@@ -19,13 +21,26 @@ from PySide6.QtWidgets import (
     QSplitter,
     QTableWidget,
     QTableWidgetItem,
+    QTabWidget,
     QVBoxLayout,
     QWidget,
 )
 
 from packages.desktop.ui import labels, theme
 from packages.desktop.ui.pages.base import SessionPage
-from packages.desktop.ui.widgets import EmptyState, TrendChart, button, card, chip, label, set_chip
+from packages.desktop.ui.widgets import (
+    EmptyState,
+    MetricCard,
+    TrendChart,
+    button,
+    card,
+    chip,
+    label,
+    notice,
+    set_chip,
+)
+
+CURRENT_SCHEMA = "features-basic-v2"
 
 
 _CHAT_TERMINATOR = re.compile(r"\s*[.?!]+$")
@@ -50,11 +65,11 @@ class CueCard(QFrame):
         title, explanation, step = labels.CUES.get(
             cue.cue_code, (cue.title, cue.explanation, cue.recommended_next_review_step)
         )
+        # Thai titles cannot wrap mid-word, so the chips get their own row.
+        layout.addWidget(label(title, "SectionTitle", wrap=True))
         head = QHBoxLayout()
-        head.addWidget(label(title, "SectionTitle"))
         severity_text, severity_kind = labels.CUE_SEVERITY.get(cue.severity, (cue.severity, "neutral"))
         head.addWidget(chip(severity_text, severity_kind))
-        head.addStretch(1)
         state = cue.review_state.status if cue.review_state else "unreviewed"
         self.state_chip = chip("")
         set_chip(
@@ -63,6 +78,7 @@ class CueCard(QFrame):
             {"acknowledged": "ok", "dismissed": "neutral"}.get(state, "attention"),
         )
         head.addWidget(self.state_chip)
+        head.addStretch(1)
         layout.addLayout(head)
         layout.addWidget(label(explanation, "Hint", wrap=True))
 
@@ -152,6 +168,26 @@ class FindingsPage(SessionPage):
         left_layout.setContentsMargins(0, 0, 6, 0)
         left_layout.addWidget(label("ตัวชี้วัดจากตัวอย่างภาษา", "SectionTitle"))
         left_layout.addWidget(label("ค่าเชิงบรรยายของ session นี้ ยังไม่มีเกณฑ์อ้างอิงของเด็กไทย จึงไม่แปลว่าปกติหรือผิดปกติ", "Muted", wrap=True))
+
+        cards = QGridLayout()
+        cards.setSpacing(8)
+        self.metric_cards: dict[str, MetricCard] = {}
+        for column, (name, title) in enumerate(labels.HEADLINE_FEATURES.items()):
+            self.metric_cards[name] = MetricCard(title)
+            cards.addWidget(self.metric_cards[name], 0, column)
+            cards.setColumnStretch(column, 1)
+        left_layout.addLayout(cards)
+        self.sample_notice = notice()
+        left_layout.addWidget(self.sample_notice)
+        self.schema_notice = notice(
+            "คำนวณด้วยวิธีนับแบบเดิม · กด \"วิเคราะห์ใหม่\" เพื่อนับตามกติกา CLAN",
+            "primary",
+        )
+        left_layout.addWidget(self.schema_notice)
+
+        self.left_tabs = QTabWidget()
+        self.left_tabs.setDocumentMode(True)
+        left_layout.addWidget(self.left_tabs, 1)
         self.table = QTableWidget(0, 2)
         self.table.setHorizontalHeaderLabels(["ตัวชี้วัด", "ค่า"])
         self.table.verticalHeader().hide()
@@ -159,8 +195,10 @@ class FindingsPage(SessionPage):
         self.table.setSelectionMode(QTableWidget.SelectionMode.NoSelection)
         self.table.horizontalHeader().setSectionResizeMode(0, QHeaderView.ResizeMode.Stretch)
         self.table.horizontalHeader().setSectionResizeMode(1, QHeaderView.ResizeMode.ResizeToContents)
+        self.table.setHorizontalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAlwaysOff)
+        self.table.setWordWrap(False)
         self.table.verticalHeader().setDefaultSectionSize(32)
-        left_layout.addWidget(self.table, 1)
+        self.left_tabs.addTab(self.table, "ตัวชี้วัดทั้งหมด")
 
         trend_card, trend = card()
         trow = QHBoxLayout()
@@ -173,8 +211,8 @@ class FindingsPage(SessionPage):
         trow.addWidget(self.trend_pick)
         trend.addLayout(trow)
         self.chart = TrendChart()
-        trend.addWidget(self.chart)
-        left_layout.addWidget(trend_card)
+        trend.addWidget(self.chart, 1)
+        self.left_tabs.addTab(trend_card, "แนวโน้มข้าม session")
         split.addWidget(left)
 
         right = QWidget()
@@ -185,6 +223,7 @@ class FindingsPage(SessionPage):
         scroll = QScrollArea()
         scroll.setWidgetResizable(True)
         scroll.setFrameShape(QScrollArea.Shape.NoFrame)
+        scroll.setHorizontalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAlwaysOff)
         self.cue_holder = QWidget()
         self.cue_layout = QVBoxLayout(self.cue_holder)
         self.cue_layout.setContentsMargins(0, 0, 0, 0)
@@ -192,7 +231,9 @@ class FindingsPage(SessionPage):
         scroll.setWidget(self.cue_holder)
         right_layout.addWidget(scroll, 1)
         split.addWidget(right)
-        split.setSizes([520, 520])
+        split.setStretchFactor(0, 3)
+        split.setStretchFactor(1, 2)
+        split.setSizes([600, 400])
 
         self._empty_target = 0
 
@@ -240,18 +281,88 @@ class FindingsPage(SessionPage):
             self.navigate.emit(self._empty_target)
 
     def _fill_features(self, features) -> None:
-        rows = [f for f in features.features if f.name in labels.FEATURES]
+        values = {f.name: f.value for f in features.features}
+        by_name = {f.name: f for f in features.features}
+        self._fill_cards(values)
+        self._fill_notices(features, values)
+
+        rows: list[tuple[str, object]] = []
+        for group, names in labels.FEATURE_GROUPS:
+            present = [by_name[name] for name in names if name in by_name and name in labels.FEATURES]
+            if not present:
+                continue
+            rows.append(("group", group))
+            if group == labels.CODED_GROUP and not any(values.get(f.name) for f in present):
+                rows.append(("note", "ยังไม่มีรหัส [/] [//] [*] ใน transcript นี้"))
+                continue
+            rows.extend(("feature", feature) for feature in present)
+
+        self.table.clearSpans()
         self.table.setRowCount(len(rows))
-        for row, feature in enumerate(rows):
-            title, _, hint = labels.FEATURES[feature.name]
-            name_item = QTableWidgetItem(title)
-            name_item.setToolTip(hint)
+        for row, (kind, item) in enumerate(rows):
+            if kind == "feature":
+                self._feature_row(row, item, values)
+            else:
+                self._span_row(row, item, heading=kind == "group")
+
+    def _feature_row(self, row: int, feature, values: dict) -> None:
+        title, _, hint = labels.FEATURES[feature.name]
+        name_item = QTableWidgetItem(f"   {title}")
+        name_item.setToolTip(hint)
+        if feature.value is None or feature.value == "not_available":
+            reason = labels.missing_reason(feature.name, values)
+            value_item = QTableWidgetItem(f"— {reason}")
+            value_item.setForeground(QBrush(QColor(theme.MUTED)))
+        else:
             value_item = QTableWidgetItem(labels.feature_value_text(feature.name, feature.value, feature.unit))
-            value_item.setTextAlignment(Qt.AlignmentFlag.AlignRight | Qt.AlignmentFlag.AlignVCenter)
-            if feature.warnings:
-                value_item.setToolTip("\n".join(feature.warnings))
-            self.table.setItem(row, 0, name_item)
-            self.table.setItem(row, 1, value_item)
+        value_item.setTextAlignment(Qt.AlignmentFlag.AlignRight | Qt.AlignmentFlag.AlignVCenter)
+        value_item.setToolTip(hint)
+        self.table.setItem(row, 0, name_item)
+        self.table.setItem(row, 1, value_item)
+
+    def _span_row(self, row: int, text: str, *, heading: bool) -> None:
+        item = QTableWidgetItem(text if heading else f"   {text}")
+        if heading:
+            font = QFont(self.table.font())
+            font.setBold(True)
+            item.setFont(font)
+            item.setForeground(QBrush(QColor(theme.PRIMARY_DARK)))
+            item.setBackground(QBrush(QColor(theme.CANVAS)))
+        else:
+            item.setForeground(QBrush(QColor(theme.MUTED)))
+        self.table.setItem(row, 0, item)
+        self.table.setItem(row, 1, QTableWidgetItem(""))
+        self.table.setSpan(row, 0, 1, 2)
+
+    def _fill_cards(self, values: dict) -> None:
+        details = {
+            "mean_length_of_utterance_words": (
+                f"จาก {values['mlu_utterance_count']} ประโยค" if "mlu_utterance_count" in values else "คำต่อประโยค"
+            ),
+            "number_of_different_words": (
+                f"จาก {values['total_word_count']} คำ" if values.get("total_word_count") is not None else ""
+            ),
+            "type_token_ratio": (
+                f"MATTR {labels.feature_value_text('mattr_50', values['mattr_50'])}"
+                if values.get("mattr_50") is not None else "ขึ้นกับความยาวตัวอย่าง"
+            ),
+            "mlu_utterance_count": f"แนะนำ ≥ {labels.RECOMMENDED_MLU_UTTERANCES}",
+        }
+        for name, card_widget in self.metric_cards.items():
+            value = values.get(name)
+            text = labels.feature_value_text(name, value) if name in values else "—"
+            card_widget.set_value(text, details.get(name, ""), labels.FEATURES[name][2])
+
+    def _fill_notices(self, features, values: dict) -> None:
+        count = values.get("mlu_utterance_count", values.get("child_utterance_count"))
+        short = isinstance(count, (int, float)) and count < labels.RECOMMENDED_MLU_UTTERANCES
+        self.sample_notice.setVisible(short)
+        if short:
+            self.sample_notice.setText(
+                f"ตัวอย่างสั้น: {int(count)} ประโยค (CLAN แนะนำ ≥ {labels.RECOMMENDED_MLU_UTTERANCES}) "
+                "ค่าอาจยังไม่นิ่ง ระวังเมื่อเทียบข้าม session"
+            )
+        self.schema_notice.setVisible(features.schema_version != CURRENT_SCHEMA)
 
     def _fill_cues(self, result, transcript) -> None:
         while self.cue_layout.count():

@@ -24,12 +24,15 @@ from packages.desktop.core import DesktopService
 from packages.desktop.ui import dialogs, labels, theme
 from packages.desktop.ui.pages.capture import CapturePage
 from packages.desktop.ui.pages.findings import FindingsPage
+from packages.desktop.ui.pages.overview import CaseOverview
 from packages.desktop.ui.pages.report import ReportPage
 from packages.desktop.ui.pages.review import ReviewPage
 from packages.desktop.ui.tasks import TaskRunner
 from packages.desktop.ui.widgets import EmptyState, button, chip, label, set_chip
 
 STEPS = ["1 · เสียง", "2 · ตรวจ transcript", "3 · ตัวชี้วัดและ cue", "4 · รายงาน"]
+OVERVIEW = "__overview__"  # session picker entry for the case overview
+NO_SESSION_PAGE, SESSION_PAGE, OVERVIEW_PAGE = range(3)
 
 
 class MainWindow(QMainWindow):
@@ -157,6 +160,9 @@ class MainWindow(QMainWindow):
             page.navigate.connect(self.tabs.setCurrentIndex)
             page.busy_changed.connect(self._set_busy)
         self.session_stack.addWidget(self.tabs)
+        self.overview = CaseOverview(self.service)
+        self.overview.open_session.connect(self._pick_session)
+        self.session_stack.addWidget(self.overview)
         layout.addWidget(self.session_stack, 1)
         return view
 
@@ -285,23 +291,24 @@ class MainWindow(QMainWindow):
         self.new_session_btn.setEnabled(case.consent_status == "granted")
 
     def _fill_sessions(self, select_id: str | None = None) -> None:
-        sessions = self.service.list_sessions(self.case.case_id)
+        sessions = self._fill_session_items()
         self._switching = True
-        self.session_pick.clear()
-        for session in sessions:
-            self.session_pick.addItem(f"{session.session_date} · {labels.status_text(session.status)}", session.session_id)
-        index = 0
-        if select_id:
-            found = self.session_pick.findData(select_id)
-            index = max(0, found)
+        if select_id and self.session_pick.findData(select_id) >= 0:
+            index = self.session_pick.findData(select_id)
+        elif len(sessions) > 1:
+            index = 0  # several sessions: start from the overview
+        else:
+            index = 1
         self.session_pick.setCurrentIndex(index if sessions else -1)
         self._switching = False
         self.session_pick.setVisible(bool(sessions))
-        if sessions:
+        if sessions and self.session_pick.currentData() == OVERVIEW:
+            self._show_overview()
+        elif sessions:
             self._open_session(self.session_pick.currentData())
         else:
             self.session = None
-            self.session_stack.setCurrentIndex(0)
+            self.session_stack.setCurrentIndex(NO_SESSION_PAGE)
             if self.case.consent_status == "granted":
                 self.no_session.set_text("ยังไม่มี session", "สร้าง session แรกเพื่อบันทึกหรือนำเข้าเสียง")
                 self.no_session_btn.setText("+ สร้าง session แรก")
@@ -320,36 +327,61 @@ class MainWindow(QMainWindow):
         else:
             self.record_consent()
 
+    def _fill_session_items(self) -> list:
+        sessions = self.service.list_sessions(self.case.case_id)
+        self._switching = True
+        self.session_pick.clear()
+        if sessions:
+            self.session_pick.addItem(f"ภาพรวมเคส · {len(sessions)} session", OVERVIEW)
+        for session in sessions:
+            self.session_pick.addItem(f"{session.session_date} · {labels.status_text(session.status)}", session.session_id)
+        self._switching = False
+        return sessions
+
+    def _pick_session(self, session_id: str) -> None:
+        self.session_pick.setCurrentIndex(max(0, self.session_pick.findData(session_id)))
+
     def _on_session_pick(self, index: int) -> None:
         if self._switching or index < 0:
             return
         session_id = self.session_pick.itemData(index)
         if self.session and session_id == self.session.session_id:
             return
+        if session_id == OVERVIEW and self.session is None:
+            return
         if not self._confirm_leave():
             self._switching = True
             self.session_pick.setCurrentIndex(self.session_pick.findData(self.session.session_id))
             self._switching = False
             return
-        self._open_session(session_id)
+        if session_id == OVERVIEW:
+            self._show_overview()
+        else:
+            self._open_session(session_id)
+
+    def _show_overview(self) -> None:
+        self.stop_pages()
+        self.session = None
+        self.overview.load(self.case)
+        self.session_stack.setCurrentIndex(OVERVIEW_PAGE)
+
+    def stop_pages(self) -> None:
+        """Stop playback before the session pages are hidden."""
+        review = self.pages[1]
+        if hasattr(review, "stop_playback"):
+            review.stop_playback()
 
     def _open_session(self, session_id: str) -> None:
         self.session = self.service.get_session(session_id)
-        self.session_stack.setCurrentIndex(1)
+        self.session_stack.setCurrentIndex(SESSION_PAGE)
         for page in self.pages:
             page.load(self.case, self.session)
         self.tabs.setCurrentIndex(self._suggested_step())
         self._update_tab_state()
 
     def _suggested_step(self) -> int:
-        transcript = self.service.get_transcript(self.session.session_id)
-        if transcript is None:
-            return 0
-        if not transcript.therapist_attested:
-            return 1
-        if self.service.get_features(self.session.session_id) is None or self.session.findings_stale:
-            return 2
-        return 3
+        # A signed session (step 4) opens on its report.
+        return min(self.service.session_step(self.session), 3)
 
     def _update_tab_state(self) -> None:
         if self.session is None:
@@ -374,13 +406,12 @@ class MainWindow(QMainWindow):
         self._fill_case_header()
         session_id = self.session.session_id if self.session else None
         current_tab = self.tabs.currentIndex()
+        self._fill_session_items()
         self._switching = True
-        sessions = self.service.list_sessions(self.case.case_id)
-        self.session_pick.clear()
-        for session in sessions:
-            self.session_pick.addItem(f"{session.session_date} · {labels.status_text(session.status)}", session.session_id)
-        self.session_pick.setCurrentIndex(max(0, self.session_pick.findData(session_id)))
+        self.session_pick.setCurrentIndex(max(0, self.session_pick.findData(session_id or OVERVIEW)))
         self._switching = False
+        if session_id is None and self.session_stack.currentIndex() == OVERVIEW_PAGE:
+            self.overview.refresh()
         if session_id:
             self.session = self.service.get_session(session_id)
             for page in self.pages:

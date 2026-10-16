@@ -574,6 +574,41 @@ class DesktopService:
         self._save()
         return updated
 
+    def session_step(self, session) -> int:
+        """Where a session stands: 0 needs a transcript, 1 review, 2 analysis, 3 sign-off, 4 done."""
+        transcript = self.get_transcript(session.session_id)
+        if transcript is None:
+            return 0
+        if not transcript.therapist_attested:
+            return 1
+        if self.get_features(session.session_id) is None or session.findings_stale:
+            return 2
+        report = self.get_report(session.session_id)
+        status = getattr(getattr(report, "status", None), "value", getattr(report, "status", None))
+        return 4 if status == "Signed Off" else 3
+
+    def session_summaries(self, case_id: str, names: list[str]) -> list[dict]:
+        """One row per session, newest first: its step, open cues and feature values."""
+        rows = []
+        for session in self.list_sessions(case_id):
+            features = self.get_features(session.session_id)
+            cues = self.get_cues(session.session_id)
+            values = {}
+            if features is not None and not session.findings_stale:
+                values = {f.name: f.value for f in features.features if f.name in names}
+            pending = sum(
+                1 for cue in (cues.cues if cues else [])
+                if (cue.review_state.status if cue.review_state else "unreviewed") == "unreviewed"
+            )
+            rows.append({
+                "session": session,
+                "step": self.session_step(session),
+                "values": values,
+                "pending_cues": pending,
+                "schema_version": getattr(features, "schema_version", None),
+            })
+        return rows
+
     def feature_trend(self, case_id: str, names: list[str]) -> list[tuple[str, dict[str, float]]]:
         """Each session's value for the named features, oldest session first."""
         rows: list[tuple[str, dict[str, float]]] = []

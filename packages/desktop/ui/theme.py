@@ -48,6 +48,10 @@ QMainWindow, QDialog {{ background: {CANVAS}; }}
 #Muted {{ color: {MUTED}; }}
 #Hint {{ color: {INK_SOFT}; }}
 #EmptyTitle {{ font-size: 18px; font-weight: 600; color: {INK_SOFT}; }}
+#MetricTitle {{ color: {INK_SOFT}; font-size: 13px; }}
+#MetricValue {{ font-size: 26px; font-weight: 700; color: {PRIMARY_DARK}; }}
+#Notice {{ border-radius: 8px; padding: 8px 12px; background: {ATTENTION_SOFT}; color: {ATTENTION}; }}
+#Notice[kind="primary"] {{ background: {PRIMARY_SOFT}; color: {PRIMARY_DARK}; }}
 
 QLineEdit, QTextEdit, QPlainTextEdit, QComboBox, QSpinBox, QDateEdit {{
     background: {SURFACE}; border: 1px solid {LINE}; border-radius: 6px; padding: 6px 8px;

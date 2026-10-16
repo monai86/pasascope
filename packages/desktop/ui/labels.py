@@ -63,6 +63,55 @@ FEATURES: dict[str, tuple[str, str, str]] = {
     "atypical_response_cue": ("cue การตอบไม่ตรงคำถาม", "text", "ระบบตัดสินเองไม่ได้ ต้องดูบริบท"),
 }
 
+# Findings page: headline cards, then the full list in groups.
+HEADLINE_FEATURES = {
+    "mean_length_of_utterance_words": "ความยาวประโยค (MLU-w)",
+    "number_of_different_words": "คำไม่ซ้ำ (NDW)",
+    "type_token_ratio": "ความหลากหลายของคำ (TTR)",
+    "mlu_utterance_count": "ประโยคที่ใช้คิด MLU",
+}
+
+FEATURE_GROUPS: list[tuple[str, list[str]]] = [
+    ("ขนาดตัวอย่าง", [
+        "child_utterance_count", "adult_utterance_count", "analyzable_utterance_count",
+        "mlu_utterance_count", "total_word_count", "unintelligible_ratio", "unknown_speaker_ratio",
+    ]),
+    ("ความยาวประโยค", [
+        "mean_length_of_utterance_words", "mlu_words_sd", "mlu50_words", "mean_length_of_utterance_morphemes",
+    ]),
+    ("คลังคำ", ["number_of_different_words", "ndw_100", "type_token_ratio", "mattr_50", "vocd_d"]),
+    ("การโต้ตอบและ cue", [
+        "question_ratio", "repetition_marker_count", "echolalia_cue_count", "pronoun_reversal_cue_count",
+        "limited_reciprocal_question_cue", "repetitive_phrase_cue", "atypical_response_cue",
+    ]),
+    ("รหัส CHAT ที่นักบำบัดใส่", [
+        "coded_repetition_count", "retracing_count", "word_error_count", "utterance_error_count",
+    ]),
+]
+CODED_GROUP = "รหัส CHAT ที่นักบำบัดใส่"
+
+# Measures that need a minimum sample: name → (what is counted, minimum, unit).
+MINIMUM_SAMPLE = {
+    "ndw_100": ("total_word_count", 100, "คำ"),
+    "mattr_50": ("total_word_count", 50, "คำ"),
+    "vocd_d": ("total_word_count", 50, "คำ"),
+    "mlu_words_sd": ("mlu_utterance_count", 2, "ประโยค"),
+}
+RECOMMENDED_MLU_UTTERANCES = 50
+
+
+def missing_reason(name: str, values: dict[str, Any]) -> str:
+    """Why a measure has no value, in words a therapist can act on."""
+    if name in MINIMUM_SAMPLE:
+        source, minimum, unit = MINIMUM_SAMPLE[name]
+        have = values.get(source)
+        have_text = f" (มี {int(have)})" if isinstance(have, (int, float)) else ""
+        return f"ต้องมี ≥ {minimum} {unit}{have_text}"
+    if name == "mean_length_of_utterance_morphemes":
+        return "ต้องมี %mor tier"
+    return "ไม่มีข้อมูล"
+
+
 TREND_FEATURES = [
     "mean_length_of_utterance_words",
     "type_token_ratio",
