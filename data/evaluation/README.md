@@ -120,11 +120,15 @@ transcript ใน `data/curated/english_child_transcripts/` ของ EllisWeism
 ```bash
 python scripts/evaluate_speaker_attribution.py \
     --cha-dir data/curated/english_child_transcripts/EllisWeismer \
-    --audio-dir ~/Downloads/EllisWeismer-media --backend embedding --max-minutes 10
+    --audio-dir ~/Downloads/EllisWeismer-media --backend hybrid --max-minutes 10
 ```
 
-ผลอยู่ที่ `reports/metrics/speaker_attribution_embedding.{md,csv}`
-`--text none` วัดจากเสียงอย่างเดียว (ไม่ให้ระบบเห็นข้อความ) และ `--backend pitch` วัดตัวสำรองที่ใช้ระดับเสียงอย่างเดียว
+ผลอยู่ที่ `reports/metrics/speaker_attribution_hybrid.{md,csv}`
+`--backend` เลือกได้: `hybrid` (ค่าเริ่มต้นของโปรแกรม), `usc`, `embedding` (แบบเดิม), `pitch`
+`--text none` วัดจากเสียงอย่างเดียว (ไม่ให้ระบบเห็นข้อความ)
+ถ้า transcript หลายไฟล์ใช้ชื่อสื่อเดียวกัน (เด็กคนเดียวกันต่างอายุ) สคริปต์จะไม่จับคู่ ให้ใส่ `--cha-dir` ที่มีเฉพาะ transcript ของไฟล์เสียงที่โหลดมา
+ผลกับเสียงเด็กจริง 16 ไฟล์อยู่ที่ `reports/metrics/speaker_attribution_real_children.md`
+และ `scripts/tune_speaker_attribution.py` ใช้เทียบและปรับค่าแบบแยกชุดปรับกับชุดทดสอบ
 
 ### เสียงภาษาไทย
 
