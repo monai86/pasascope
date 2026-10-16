@@ -33,6 +33,7 @@ from app.services.providers.base import (
     ProviderAvailability,
 )
 from packages.cha.clan_words import analyze_main_tier
+from packages.features.thai_pos import ThaiPosCounts, thai_pos_counts
 from packages.features.language_sample import (
     MATTR_WINDOW,
     RECOMMENDED_UTTERANCES,
@@ -270,6 +271,53 @@ _DEFINITIONS: list[FeatureDefinition] = [
         calculation_method="Each [*] counts once, or once per word when it follows an <...> group.",
         required_inputs=["utterances"],
         limitations=["Counts only what was coded in the transcript."],
+        clinical_interpretation_caution=_CAUTION,
+    ),
+    FeatureDefinition(
+        feature_name="thai_verbs_per_utterance",
+        display_name="Thai Verbs per Utterance (experimental)",
+        description="Verbs per Thai child MLU utterance, tagged by PyThaiNLP (Blackboard); a Thai counterpart of KIDEVAL Verbs_Utt.",
+        value_type="float",
+        unit="verbs per utterance",
+        calculation_method="VV-tagged countable words / MLU utterances containing Thai. Thai adjectives are stative verbs and count.",
+        required_inputs=["utterances"],
+        limitations=[
+            "Experimental: the tagger was trained on adult written Thai and is not validated on child speech.",
+            "Not comparable with English Verbs_Utt norms.",
+        ],
+        clinical_interpretation_caution=_CAUTION,
+    ),
+    FeatureDefinition(
+        feature_name="thai_pronoun_count",
+        display_name="Thai Pronouns (experimental)",
+        description="Pronouns, including question words, in Thai child MLU utterances.",
+        value_type="integer",
+        unit="words",
+        calculation_method="PR-tagged countable words (PyThaiNLP Blackboard tagger).",
+        required_inputs=["utterances"],
+        limitations=["Experimental: tagger not validated on child speech; kin terms used as pronouns (แม่, หนู) may be tagged as nouns."],
+        clinical_interpretation_caution=_CAUTION,
+    ),
+    FeatureDefinition(
+        feature_name="thai_particle_count",
+        display_name="Thai Sentence-final Particles (experimental)",
+        description="Sentence-final particles (ครับ, ค่ะ, นะ, จัง) in Thai child MLU utterances.",
+        value_type="integer",
+        unit="words",
+        calculation_method="PA-tagged countable words (PyThaiNLP Blackboard tagger).",
+        required_inputs=["utterances"],
+        limitations=["Experimental: tagger not validated on child speech."],
+        clinical_interpretation_caution=_CAUTION,
+    ),
+    FeatureDefinition(
+        feature_name="thai_negator_count",
+        display_name="Thai Negators (experimental)",
+        description="Negators (ไม่) in Thai child MLU utterances.",
+        value_type="integer",
+        unit="words",
+        calculation_method="NG-tagged countable words (PyThaiNLP Blackboard tagger).",
+        required_inputs=["utterances"],
+        limitations=["Experimental: tagger not validated on child speech."],
         clinical_interpretation_caution=_CAUTION,
     ),
     FeatureDefinition(
@@ -619,6 +667,7 @@ class BasicFeatureProvider(BaseFeatureProvider):
             fv("retracing_count", measures.retracings, unit="codes", value_type="integer"),
             fv("word_error_count", measures.word_errors, unit="words", value_type="integer"),
             fv("utterance_error_count", measures.utterance_errors, unit="codes", value_type="integer"),
+            *_thai_pos_values(fv, thai_pos_counts(analyses)),
             fv(
                 "mean_length_of_utterance_morphemes",
                 "not_available",
@@ -738,6 +787,25 @@ def _mor_tier(utterance: Utterance) -> str | None:
         if tier.tier.lstrip("%").lower() == "mor":
             return tier.raw_text
     return None
+
+
+def _thai_pos_values(fv, counts: ThaiPosCounts | None) -> list[FeatureValue]:
+    """Experimental Thai word-class values; not computed without Thai child speech or the tagger."""
+    reason = "Needs Thai child utterances and PyThaiNLP's Blackboard tagger."
+    note = "Experimental: Thai POS tagger not validated on child speech."
+    rows = [
+        ("thai_verbs_per_utterance", counts.verbs_per_utterance if counts else None, "verbs per utterance", "float"),
+        ("thai_pronoun_count", counts.pronouns if counts else None, "words", "integer"),
+        ("thai_particle_count", counts.particles if counts else None, "words", "integer"),
+        ("thai_negator_count", counts.negators if counts else None, "words", "integer"),
+    ]
+    values = []
+    for name, value, unit, value_type in rows:
+        item = _optional(fv, name, value, unit, value_type, reason)
+        if value is not None:
+            item.warnings.append(note)
+        values.append(item)
+    return values
 
 
 def _optional(fv, name: str, value, unit: str, value_type: str, missing_reason: str) -> FeatureValue:

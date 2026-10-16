@@ -56,6 +56,10 @@ FEATURES: dict[str, tuple[str, str, str]] = {
     "retracing_count": ("การพูดแก้ที่ทำเครื่องหมาย [//]", "int", "นับจากรหัสที่นักบำบัดใส่ใน transcript"),
     "word_error_count": ("คำผิดที่ทำเครื่องหมาย [*]", "int", "นับจากรหัสที่นักบำบัดใส่ใน transcript"),
     "utterance_error_count": ("ประโยคผิดที่ทำเครื่องหมาย", "int", "รหัส [+ gram], [+ jar], [+ es] และอื่น ๆ"),
+    "thai_verbs_per_utterance": ("คำกริยาต่อประโยค (ทดลอง)", "float", "ติดป้ายชนิดคำด้วย PyThaiNLP ยังไม่ได้ตรวจกับเสียงเด็ก นับคุณศัพท์เป็นกริยาตามหลักภาษาไทย"),
+    "thai_pronoun_count": ("สรรพนาม (ทดลอง)", "int", "รวมคำถาม เช่น อะไร ไหน ยังไม่ได้ตรวจกับเสียงเด็ก"),
+    "thai_particle_count": ("คำลงท้าย ครับ/ค่ะ/นะ (ทดลอง)", "int", "ยังไม่ได้ตรวจกับเสียงเด็ก"),
+    "thai_negator_count": ("คำปฏิเสธ (ทดลอง)", "int", "เช่น ไม่ ยังไม่ได้ตรวจกับเสียงเด็ก"),
     "pronoun_reversal_cue_count": ("cue การใช้สรรพนามสลับ", "int", "ต้องตรวจในบริบท"),
     "echolalia_cue_count": ("cue การพูดตาม (echolalia)", "int", "เด็กพูดซ้ำคำของผู้ใหญ่ที่เพิ่งพูด ต้องยืนยันทีละคู่"),
     "limited_reciprocal_question_cue": ("เด็กไม่ถามกลับ", "bool", "ไม่มีคำถามจากเด็กในตัวอย่างนี้"),
@@ -84,6 +88,9 @@ FEATURE_GROUPS: list[tuple[str, list[str]]] = [
         "question_ratio", "repetition_marker_count", "echolalia_cue_count", "pronoun_reversal_cue_count",
         "limited_reciprocal_question_cue", "repetitive_phrase_cue", "atypical_response_cue",
     ]),
+    ("ชนิดคำภาษาไทย (ทดลอง)", [
+        "thai_verbs_per_utterance", "thai_pronoun_count", "thai_particle_count", "thai_negator_count",
+    ]),
     ("รหัส CHAT ที่นักบำบัดใส่", [
         "coded_repetition_count", "retracing_count", "word_error_count", "utterance_error_count",
     ]),
@@ -109,6 +116,8 @@ def missing_reason(name: str, values: dict[str, Any]) -> str:
         return f"ต้องมี ≥ {minimum} {unit}{have_text}"
     if name == "mean_length_of_utterance_morphemes":
         return "ต้องมี %mor tier"
+    if name.startswith("thai_"):
+        return "ต้องมีคำพูดภาษาไทยของเด็ก"
     return "ไม่มีข้อมูล"
 
 
