@@ -16,13 +16,13 @@
 | ส่วนในเล่ม | ส่วนของระบบ | หลักฐาน |
 |---|---|---|
 | ที่มาและปัญหา | การถอดเสียงและวิเคราะห์ language sample ด้วยมือใช้เวลามาก | วรรณกรรมใน `docs/REFERENCES.md` |
-| การออกแบบระบบ | Web app + API (`apps/pasascope-app`, `apps/api`) และ GUI offline (`packages/gui`) | `docs/PROJECT_SOURCE_OF_TRUTH.md`, `docs/DATA_FLOW_DIAGRAM.md` |
-| AI ส่วนที่ 1: ถอดเสียง | Whisper บนเครื่อง + แยกผู้พูดเด็ก/ผู้ใหญ่ (`src/audio_pipeline`, provider `local_whisper`) | `reports/metrics/thai_asr_public.md`, `reports/metrics/thai_asr_evaluation.md` |
+| การออกแบบระบบ | โปรแกรมเดสก์ท็อปบนเครื่องนักบำบัด (`packages/desktop`): หน้าจอ PySide6 เรียก service layer ชุดเดียวกับ API (`apps/api/app/services`) ในโปรแกรมเดียว เก็บข้อมูลใน SQLite บนเครื่อง ไม่มี server | `SCOPE_AND_DELIVERABLES.md`, `docs/PROJECT_SOURCE_OF_TRUTH.md` |
+| AI ส่วนที่ 1: ถอดเสียง | Whisper บนเครื่อง (โมเดลไทย fine-tuned หรือโมเดลหลายภาษา) + แยกผู้พูดเด็ก/ผู้ใหญ่ (`src/audio_pipeline`, provider `local_whisper`) | `reports/metrics/thai_asr_public.md`, `reports/metrics/thai_asr_evaluation*.md`, `reports/metrics/asr_desktop_tuning.md` |
 | AI ส่วนที่ 2: ตัวชี้วัดภาษา | MLU-w, TTR, การผลัดกันพูด, echolalia cue, pronoun cue (`src/clinical_speech/thai_lsa.py`) | `reports/metrics/feature_agreement_clan.md`, `reports/metrics/echolalia_cue_check.md` |
-| Human-in-the-loop | แก้ transcript, attest, ยืนยันหรือปัดตก cue, sign-off รายงาน | `reports/metrics/transcript_review_time.csv`, audit log |
+| Human-in-the-loop | แก้ transcript เทียบคลื่นเสียงทีละประโยค, attest, ยืนยันหรือปัดตก cue พร้อมคู่ประโยคหลักฐาน, แก้และลงนามรายงานภาษาไทย | `reports/metrics/transcript_review_time.csv`, audit log (เมนู ช่วยเหลือ → ประวัติการทำงาน) |
 | ผลการทดลองโมเดลจำแนก | การศึกษา classifier บนคลังข้อมูลภาษาอังกฤษสาธารณะ | `reports/ml/MODEL_RESULTS.md`, `reports/ml/ML_VALIDITY_DECISION.md`, `reports/ml/LEAKAGE_AND_CONFOUNDING_AUDIT.md` |
 | ข้อจำกัด | ดูหัวข้อด้านล่าง | `KNOWN_LIMITATIONS.md` |
-| งานในอนาคต | ข้อมูลเด็กไทยจริง, เกณฑ์อ้างอิงไทย, การ deploy จริง | `reports/ml/THAI_ACOUSTIC_NORMATIVE_DATA_PLAN.md`, `docs/PRODUCTION_SAAS_ROADMAP.md` |
+| งานในอนาคต | ข้อมูลเด็กไทยจริง, เกณฑ์อ้างอิงไทย, ถอดเสียงเร็วขึ้นบน GPU/Apple Neural Engine, ติดตั้งเป็นแอปสำเร็จรูป, ระบบหลายผู้ใช้ (web app ที่พักไว้) | `reports/ml/THAI_ACOUSTIC_NORMATIVE_DATA_PLAN.md`, `docs/PRODUCTION_SAAS_ROADMAP.md` |
 
 ## วิธีเล่าผลโมเดลจำแนก
 
@@ -39,15 +39,17 @@
 
 ## ลำดับ demo
 
-1. `PASASCOPE_ASR_LOCAL_WHISPER_ENABLED=true bash scripts/start_local.sh`
-2. เปิดเคส บันทึก consent สร้าง session
-3. อัดเสียงในเบราว์เซอร์แล้วกดอัปโหลด รอร่าง transcript (ป้ายแสดงว่า Whisper เป็นผู้ถอด)
-4. ชี้จุดที่ ASR ผิด แก้ไข แล้ว attest
-5. สกัด feature กด Generate evidence review แล้วดู cue: echolalia cue จะแสดงคู่ประโยคผู้ใหญ่-เด็กที่ตรวจพบ ให้กดยืนยันหรือปัดตก
-6. ร่างรายงาน sign-off และ export
-7. เปิด `./run_gui.sh --mock` เพื่อแสดงว่า pipeline เดียวกันทำงานได้โดยไม่มี server
+1. พิมพ์ `pasascope` (หรือ `./run_gui.sh`) เปิดโปรแกรม ตั้งชื่อนักบำบัดครั้งแรก
+2. เพิ่มเคส บันทึกความยินยอม สร้าง session (ชี้ว่าก่อนบันทึกความยินยอม สร้าง session ไม่ได้)
+3. ขั้น 1 อัดเสียงจากไมโครโฟนหรือเลือกไฟล์ ดูแถบความคืบหน้า (ถอดบนเครื่อง เสียงไม่ออกนอกเครื่อง)
+4. ขั้น 2 คลิกประโยคเพื่อฟังเสียงช่วงนั้น แก้คำที่ผิด กด Ctrl+1/Ctrl+2 แก้ผู้พูด แล้วรับรอง
+5. ขั้น 3 ดูตัวชี้วัด และ cue echolalia พร้อมคู่ประโยคผู้ใหญ่-เด็ก กดยืนยันหรือปัดตก ดูกราฟแนวโน้มข้าม session
+6. ขั้น 4 สร้างร่างรายงานภาษาไทย แก้ข้อความ ลงนาม แล้ว export เป็น PDF
+7. เปิดเมนู ช่วยเหลือ → ประวัติการทำงาน เพื่อแสดง audit log
+8. ปิดแล้วเปิดโปรแกรมใหม่ เพื่อแสดงว่าข้อมูลยังอยู่
 
 ทดลองล่วงหน้าบนเครื่องที่จะใช้จริง ครั้งแรกที่ถอดเสียงจะช้ากว่าเพราะต้องโหลดโมเดล
+ถ้าเวลาน้อย ใช้โหมด "เร็ว" (ตั้งค่า → โหมดถอดเสียง) หรือเตรียม session ที่ถอดไว้แล้ว
 
 ## ผลการประเมินที่มีแล้ว (ไม่ต้องอัดเสียงเอง)
 
@@ -59,6 +61,7 @@
 | ระบบคำนวณตัวชี้วัดจาก transcript ถูกไหม | transcript TalkBank 1,961 ไฟล์จาก 12 คลัง (ASD 136 ไฟล์) เทียบกับ CLAN | จำนวนคำ r = 0.997 ต่างกันค่ากลาง 4.7%; TTR r = 0.92; จำนวนประโยคเด็ก r = 0.86 | `reports/metrics/feature_agreement_clan.md` |
 | Whisper ถอดภาษาไทยแม่นแค่ไหน | FLEURS ไทย 30 คลิป 5.4 นาที (ผู้ใหญ่อ่านประโยคทางการ) | CER เฉลี่ย: `small` 29.2%, `medium` 20.3% | `reports/metrics/thai_asr_public.md` |
 | ถอดบทสนทนาแบบห้องบำบัดได้ไหม | บทสนทนาไทยสังเคราะห์ 6 บท 48 ผลัดพูด (เสียง TTS) | CER เฉลี่ย: `medium` 0.8%, `small` 6.7%; ตัดประโยคได้ 8 จาก 8 ทุกบท | `reports/metrics/thai_asr_evaluation.md` |
+| ถอดเสียงบนโน้ตบุ๊กนักบำบัดเร็วพอไหม | คลิป FLEURS 19 วินาที และบทสนทนา 6 บท บน Apple M2 | ตั้ง thread และชนิดตัวเลขให้ตรงเครื่อง เร็วขึ้น 4.5 เท่า (70.6 → 15.6 วินาที); โมเดลไทย CER 1.2% ใช้เวลา 4.8 เท่าของเสียง, โมเดลหลายภาษา CER 5.2% ราวเท่าความยาวเสียง | `reports/metrics/asr_desktop_tuning.md` |
 | กฎตรวจ echolalia จับถูกไหม | คู่ประโยคไทย 40 คู่ที่ติดป้ายไว้ | จับ echo ได้ 20 จาก 20; จับผิด 4 จาก 20 คำตอบปกติ (precision 83%) | `reports/metrics/echolalia_cue_check.md` |
 
 ข้อค้นพบที่ใช้เขียนในเล่มได้:
@@ -69,6 +72,8 @@
 - ระบบนับจำนวนคำใกล้เคียง CLAN แต่นับชนิดคำมากกว่าราว 21% ค่าจากระบบจึงเทียบกับเกณฑ์ที่อิง CLAN โดยตรงไม่ได้
 - กฎ echolalia ไม่พลาด echo ในชุดทดสอบ แต่จับคำตอบปกติที่ใช้คำซ้ำกับผู้ใหญ่ด้วย (เช่น "อยากกินขนมครับ") จึงต้องให้นักบำบัดยืนยัน
 - ร่างเดิมรวมทั้งบทสนทนาเป็น 1–3 ประโยค เพราะแยกผู้พูดหลังจากได้ก้อนข้อความยาวแล้ว เมื่อตัดที่ช่วงเงียบก่อนแยกผู้พูด ร่างได้ครบ 8 ประโยคทุกบทโดยความแม่นยำระดับอักขระเท่าเดิม
+- การวัดความเร็วบนเครื่องจริงทำให้พบว่าค่าเริ่มต้นใช้ efficiency cores และ int8 ซึ่งช้าบน Apple Silicon แก้แล้วเร็วขึ้น 4.5 เท่า และพบว่าโมเดลไทยแม่นกว่าแต่ช้ากว่าราว 5 เท่า จึงให้นักบำบัดเลือกโหมดเอง
+- โมเดลไทยมีความผิดพลาดสองแบบที่โมเดลหลายภาษาไม่มี: วนพูดวลีท้ายซ้ำ (เดิมทำให้ทั้งบทหายไป) และตัดประโยคกลางคำ แก้แล้วทั้งสองจุด
 - การประเมินนี้ทำให้พบและแก้บั๊กสามจุด: ข้อความไทยถูกแทรกช่องว่างระหว่างตัวอักษรเมื่อคลิปมีหลายประโยค, CHAT ที่ export แตกคำไทยเป็นชิ้น และตัวนับคำนับรหัส CHAT เป็นคำ
 
 ## สิ่งที่ต้องเขียนเป็นข้อจำกัด
@@ -80,11 +85,13 @@
 - Whisper ไม่ได้ฝึกมาสำหรับเสียงเด็กเล็ก
 - echolalia cue และ pronoun cue เป็นกฎอย่างง่าย ตรวจได้เฉพาะการพูดตามทันที
 - ไม่มีเกณฑ์อ้างอิงของเด็กไทย ระบบจึงไม่บอกว่าค่าใดปกติหรือผิดปกติ
-- กราฟ radar ใน GUI แสดงเฉพาะค่าที่วัดได้ของ session นั้นบนสเกลคงที่ ไม่ได้เทียบกับเด็กคนอื่น
+- กราฟแนวโน้มในโปรแกรมแสดงค่าของเด็กคนเดียวข้าม session ไม่ได้เทียบกับเด็กคนอื่น
+- ความเร็วถอดเสียงวัดบนโน้ตบุ๊กเครื่องเดียวที่มีโปรแกรมอื่นเปิดอยู่ ตัวเลขเวลาจึงใช้เปรียบเทียบกันเท่านั้น
+- โปรแกรมทดสอบบน macOS เท่านั้น ยังไม่ได้ทำเป็นแอปติดตั้งสำเร็จรูป
 - โมเดลจำแนกศึกษาบนข้อมูลภาษาอังกฤษเท่านั้น
 
 ## สิ่งที่ทำเพิ่มได้ถ้ามีเวลา
 
 1. ทดสอบกับเสียงเด็กจริงภาษาอังกฤษหนึ่งคลิปเป็นกรณีศึกษา: ถอด gold ด้วยมือ วางไฟล์ตาม `data/evaluation/README.md` แล้วรัน `python scripts/evaluate_thai_asr.py --strategy english` จะได้ผลการแยกผู้พูดกับเสียงเด็กจริง
-2. อัปโหลดคลิปผ่าน Web app แก้ร่างจน attest แล้วรัน `python scripts/report_transcript_review_time.py` เพื่อเทียบเวลาแก้ร่างกับเวลาถอดเองทั้งคลิป
+2. นำเข้าคลิปในโปรแกรม แก้ร่างจนรับรอง แล้วรัน `python scripts/report_transcript_review_time.py --desktop` เพื่อเทียบเวลาแก้ร่างกับเวลาถอดเองทั้งคลิป
 3. เมื่ออัดเสียงไทยสองคนได้ ให้รัน `python scripts/evaluate_thai_asr.py` (ไม่ใส่ `--text-only`) เพื่อประเมินการแยกผู้พูดในภาษาไทย

@@ -1,0 +1,7 @@
+sample_id,wer_all,cer_all,gold_utterances,hyp_utterances,wer_child,cer_child,gold_child_utterances,hyp_child_utterances,gold_mlu_words,hyp_mlu_words,gold_ttr,hyp_ttr,gold_echolalia_count,hyp_echolalia_count,audio_seconds,processing_seconds,real_time_factor
+synthetic_echo_01,0.0,0.0,8,7,,,,,,,,,,,16.91,82.64,4.89
+synthetic_echo_02,0.0,0.0,8,7,,,,,,,,,,,17.52,91.34,5.21
+synthetic_echo_03,0.0645,0.0172,8,8,,,,,,,,,,,17.67,116.51,6.59
+synthetic_plain_01,0.0769,0.0463,8,8,,,,,,,,,,,17.95,52.66,2.93
+synthetic_plain_02,0.0303,0.0085,8,8,,,,,,,,,,,18.7,97.99,5.24
+synthetic_plain_03,0.0645,0.0,8,6,,,,,,,,,,,17.69,73.14,4.13

@@ -254,7 +254,7 @@ Generated folders from previous local builds may be deleted.
 
 The assessment-centric `/api/v2` API, its separate PostgreSQL database and
 worker, and the `/assessments` screens in the web app have been removed. The
-product is the `/api/v1` case and session workflow. The desktop app still has
+product is the `/api/v1` case and session workflow. The legacy Tkinter GUI still has
 its child, consent and assessment panels: it keeps those records itself, in
 `~/.pasascope/desktop/records.json` (or the file named by
 `PASASCOPE_DESKTOP_RECORDS_PATH`), and asks the API nothing for them.
@@ -305,7 +305,23 @@ Transcript tab can use backend CHAT/CLAN readiness checks before unlocking
 Reference Comparison; mock mode remains a lightweight local QA preview and does
 not pretend to validate CLAN readiness.
 
-### Terminal TUI and Desktop GUI Companion Clients (`packages/tui/`, `packages/gui/`)
+### Desktop App (`packages/desktop/`) — term paper deliverable
+
+`./run_gui.sh` (or `pasascope`) opens a PySide6 program that runs the clinical
+workflow on one computer with no server: case and consent → session → record
+or import audio (on-device Whisper, progress and cancel) → correct the draft
+against the waveform and attest → features and review cues → Thai report,
+sign-off, PDF/HTML/Markdown/CHAT export. It calls the `apps/api` service layer
+in-process over SQLite in the user's application-data folder
+(`~/Library/Application Support/PasaScope` on macOS; override with
+`PASASCOPE_DESKTOP_HOME`). Transcription mode (Thai model, or the faster
+multilingual model) is under ตั้งค่า → โหมดถอดเสียง. Tests:
+`tests/test_desktop_service.py`, `tests/test_desktop_ui.py`.
+
+### Terminal TUI and Legacy Desktop GUI (`packages/tui/`, `packages/gui/`)
+
+The Tkinter GUI below is retained as `./run_gui.sh --legacy` and is no longer
+developed.
 
 The terminal TUI (`packages/tui/`) and desktop companion GUI (`packages/gui/`) provide clinician
 companion workflows. The desktop GUI features a **Therapist 5-Step Guided Workflow** (`Open Case` ➔ `Add Session` ➔ `Ingest Material` ➔ `Review Transcript` ➔ `Progress Report`) with interactive step progress badges, a dynamic Next Action Ribbon, collapsible technical diagnostic disclosures, **Live Microphone Recording** with a real-time VU meter, and a **Deep Thai Clinical Language Sample Analyzer (Thai LSA Engine)** powered by `pythainlp`.

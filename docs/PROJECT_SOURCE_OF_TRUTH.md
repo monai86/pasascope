@@ -9,7 +9,11 @@
 - รุ่นโครงการ: `v1.7.2`
 - active user-facing surfaces และ API ใช้ version `v1.7.2`
 - branch หลัก: `main`
-- Therapist frontend หลัก: `apps/pasascope-app/`
+- ตัวหลักของ term paper (ตั้งแต่ 2026-10-16): **โปรแกรมเดสก์ท็อป** `packages/desktop/`
+  (PySide6, เปิดด้วย `./run_gui.sh` หรือคำสั่ง `pasascope`) รัน service layer ของ
+  `apps/api` ในโปรแกรมเดียวบน SQLite ในเครื่อง ไม่มี server; web app พักการพัฒนา
+  ดู `SCOPE_AND_DELIVERABLES.md`
+- Therapist frontend (web, พักการพัฒนา): `apps/pasascope-app/`
 - Therapist frontend runtime: Next.js `^16.3.8` / React 19 / Node.js `22.x`
 - Therapist workflow API หลัก: `apps/api/`
 - ML/audio/research libraries: `packages/` และ `src/`
@@ -22,8 +26,10 @@
 
 | Surface | Canonical path | สถานะ |
 |---|---|---|
-| Therapist web app | `apps/pasascope-app/` | Active |
-| Therapist workflow API | `apps/api/` | Active |
+| Desktop app (term paper deliverable) | `packages/desktop/` | Active |
+| Therapist web app | `apps/pasascope-app/` | Paused |
+| Therapist workflow API / shared service layer | `apps/api/` | Active (service layer used in-process by the desktop app) |
+| Legacy Tkinter GUI | `packages/gui/` (`./run_gui.sh --legacy`) | Retained, not developed |
 | Research ML/audio | `packages/`, `src/`, `scripts/` | Active research tooling |
 | Analysis-only transcript boundary | `packages/analysis_contract/`, `packages/cha/` | Active research contract; not a product API |
 
@@ -212,9 +218,14 @@ persistence layer หลักของ pasascope.
     เดียวใน `src/clinical_speech/thai_lsa.py` ทั้งใน `apps/api` และ GUI; ห้ามมีสูตร
     สำรองหรือค่าคงที่แทนค่าที่คำนวณไม่ได้ ให้ส่งเป็นค่าว่างแทน. สถานะของ guideline
     link ต้องเป็นคำบรรยายสิ่งที่นับได้ ไม่ใช่คำตัดสินเทียบเกณฑ์
-34. ขอบเขต term paper อยู่ใน `SCOPE_AND_DELIVERABLES.md` และการจับคู่หัวข้อกับหลักฐาน
+34. โปรแกรมเดสก์ท็อปเรียก service ใน `apps/api/app/services` ตรง ๆ ผ่าน
+    `packages/desktop/core/service.py` และต้องคงการตรวจความยินยอม audit event และ
+    การตรวจความปลอดภัยของรายงานแบบเดียวกับ route ของ API; ห้ามมีสูตรวิเคราะห์ของตัวเอง.
+    session ใหม่และการบันทึกเสียงต้องมีความยินยอมสถานะ `granted`. รายงานบนเดสก์ท็อปใช้
+    provider `template_th` และ export PDF ด้วย Qt (ฟอนต์ไทยของระบบ)
+35. ขอบเขต term paper อยู่ใน `SCOPE_AND_DELIVERABLES.md` และการจับคู่หัวข้อกับหลักฐาน
     อยู่ใน `docs/TERM_PAPER_MAPPING.md`
-35. ชื่อโครงการในโค้ด config และเอกสารที่ใช้งานอยู่คือ PasaScope เท่านั้น:
+36. ชื่อโครงการในโค้ด config และเอกสารที่ใช้งานอยู่คือ PasaScope เท่านั้น:
     path `apps/pasascope-app/`, ตัวแปร `PASASCOPE_*`, class `PasaScope*`.
     ชื่อเดิมอนุญาตเฉพาะในบันทึกย้อนหลัง ชื่อทรัพยากรภายนอก ตัวระบุที่บันทึกไปกับข้อมูล
     และโค้ดที่อ่านข้อมูลชื่อเดิม ตามรายการใน `docs/RENAME_FOLLOWUP.md`;
