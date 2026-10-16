@@ -163,6 +163,19 @@ LanguageStrategy = Literal[
 _HALLUCINATION_NO_SPEECH_PROB = 0.85
 _HALLUCINATION_AVG_LOGPROB = -1.25
 _HALLUCINATION_REPEAT_NGRAM = 4   # reject segment if same 4-gram repeats >=3x
+# Whisper sometimes appends sign-off phrases it never heard ("ขอบคุณที่ติดตาม
+# สวัสดีครับ", "บ๊ายบาย") after the last speech, with confident scores but
+# little or no time behind them. Speech cannot pack more letters into a
+# second than this (fast Thai is ~15-20), so such segments are dropped.
+_MIN_SEGMENT_SECONDS = 0.05
+_MAX_LETTERS_PER_SECOND = 40.0
+
+
+def _too_fast_to_be_speech(text: str, start: float, end: float) -> bool:
+    """True when a segment has (almost) no audio behind its text."""
+    duration = end - start
+    letters = len(re.sub(r"\s", "", text or ""))
+    return duration < _MIN_SEGMENT_SECONDS or letters / duration > _MAX_LETTERS_PER_SECOND
 
 
 def _looks_hallucinated(text: str, avg_logprob: float, no_speech_prob: float) -> bool:
@@ -448,6 +461,8 @@ class WhisperTranscriber:
             if trimmed and words:
                 words = _keep_words_for(text, words) or words[:1]
                 seg_end = words[-1].end
+            if _too_fast_to_be_speech(text, float(seg.start), seg_end):
+                continue
             out.append(UtteranceSegment(
                 start=float(seg.start),
                 end=seg_end,

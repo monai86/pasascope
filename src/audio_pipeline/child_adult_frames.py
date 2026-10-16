@@ -250,6 +250,9 @@ class HybridChildAdultDiarizer:
                 super().__init__(config)
                 self.frame_model = model or ChildAdultFrameModel()
 
+            def _single_voice_fallback(self, audio_path, utterances, f0s):
+                return FrameRoleDiarizer(self.frame_model).assign(audio_path, utterances)
+
             def _score_clusters(self, unique, labels, f0s, durations, embeddings, audio, sr, utterances):
                 import librosa
 

@@ -575,6 +575,16 @@ class EmbeddingDiarizer(BaseDiarizer):
         y, sr = librosa.load(str(audio_path), sr=16000, mono=True)
         return self._embed_clip(y, sr)
 
+    def _single_voice_fallback(
+        self,
+        audio_path: str | Path,
+        utterances: Sequence[UtteranceSegment],
+        f0s: Sequence[Optional[float]],
+    ) -> List[UtteranceSegment]:
+        """Label utterances one by one, by pitch, when clustering finds one voice."""
+        threshold = age_aware_child_f0_threshold(self.config.child_age_months)
+        return self._label_utterances(utterances, [None] * len(utterances), f0s, {}, threshold)
+
     def _score_clusters(
         self,
         unique: Sequence[int],
@@ -690,6 +700,10 @@ class EmbeddingDiarizer(BaseDiarizer):
                 min_fraction=self.config.min_cluster_fraction,
                 min_count=self.config.min_cluster_utterances,
             )
+            if len(set(int(c) for c in cluster_ids)) < 2:
+                # One voice cluster: calling it the child would put every adult
+                # word into the child's measures, so decide utterance by utterance.
+                return self._single_voice_fallback(audio_path, utterances, f0s)
             for i, c in zip(usable, cluster_ids):
                 labels[i] = int(c)
         else:
@@ -718,7 +732,18 @@ class EmbeddingDiarizer(BaseDiarizer):
                 ADULT_LABELS[idx] if idx < len(ADULT_LABELS) else f"AD{idx}"
             )
 
-        # ---- 4. Assign labels (fall back to pitch first if available, then context-aware continuity) -
+        # ---- 4. Assign labels ------------------------------------------
+        return self._label_utterances(utterances, labels, f0s, cluster_to_label, f0_thresh)
+
+    def _label_utterances(
+        self,
+        utterances: Sequence[UtteranceSegment],
+        labels: Sequence[Optional[int]],
+        f0s: Sequence[Optional[float]],
+        cluster_to_label: dict[int, str],
+        f0_thresh: float,
+    ) -> List[UtteranceSegment]:
+        """Cluster label, else pitch, else the neighbours' label, then dialogue rules."""
         # Pass 1: Assign clustered and pitch-based speaker labels first
         for u, l, f0 in zip(utterances, labels, f0s):
             if l is not None:
@@ -737,7 +762,7 @@ class EmbeddingDiarizer(BaseDiarizer):
             if u.speaker is None:
                 left_speakers = [utterances[i].speaker for i in range(max(0, idx-3), idx) if utterances[i].speaker]
                 right_speakers = [utterances[i].speaker for i in range(idx+1, min(len(utterances), idx+4)) if utterances[i].speaker]
-                
+
                 # If surrounded by the same speaker, inherit it
                 if left_speakers and right_speakers and left_speakers[-1] == right_speakers[0]:
                     u.speaker = left_speakers[-1]
