@@ -2,10 +2,14 @@
 
 from __future__ import annotations
 
+from datetime import datetime
+from pathlib import Path
+
 from PySide6.QtCore import QSettings, Qt, QUrl
 from PySide6.QtGui import QAction, QDesktopServices, QKeySequence
 from PySide6.QtWidgets import (
     QComboBox,
+    QFileDialog,
     QFrame,
     QHBoxLayout,
     QLabel,
@@ -21,6 +25,7 @@ from PySide6.QtWidgets import (
 )
 
 from packages.desktop.core import DesktopService
+from packages.desktop.core.backup import BackupError, read_backup, restore_backup
 from packages.desktop.ui import dialogs, labels, theme
 from packages.desktop.ui.pages.capture import CapturePage
 from packages.desktop.ui.pages.findings import FindingsPage
@@ -68,8 +73,12 @@ class MainWindow(QMainWindow):
         self._build_menus()
         self.asr_label = QLabel("")
         self.name_label = QLabel("")
+        self.backup_label = QLabel("")
+        self.backup_label.setTextFormat(Qt.TextFormat.RichText)
+        self.backup_label.linkActivated.connect(lambda _: self.backup())
         self.statusBar().setContentsMargins(12, 0, 12, 0)
         self.statusBar().addWidget(self.name_label)
+        self.statusBar().addWidget(self.backup_label)
         self.statusBar().addPermanentWidget(self.asr_label)
         self._update_status_bar()
 
@@ -178,6 +187,14 @@ class MainWindow(QMainWindow):
             lambda: QDesktopServices.openUrl(QUrl.fromLocalFile(str(self.service.workspace.root)))
         )
         file_menu.addAction(open_folder)
+        file_menu.addSeparator()
+        backup_action = QAction("สำรองข้อมูล…", self)
+        backup_action.setShortcut(QKeySequence("Ctrl+Shift+S"))
+        backup_action.triggered.connect(self.backup)
+        file_menu.addAction(backup_action)
+        restore_action = QAction("กู้คืนจากไฟล์สำรอง…", self)
+        restore_action.triggered.connect(self.restore)
+        file_menu.addAction(restore_action)
         file_menu.addSeparator()
         quit_action = QAction("ออก", self)
         quit_action.setShortcut(QKeySequence.StandardKey.Quit)
@@ -550,8 +567,101 @@ class MainWindow(QMainWindow):
         mode = "แม่นยำ" if self.service.transcription_mode == "accurate" else "เร็ว"
         self.asr_label.setText(f"ถอดเสียงบนเครื่อง: พร้อม · โหมด{mode}" if available else f"ถอดเสียงบนเครื่อง: ไม่พร้อม ({reason})")
         self.asr_label.setStyleSheet(f"color: {theme.OK if available else theme.ATTENTION};")
+        self._update_backup_label()
+
+    def _update_backup_label(self) -> None:
+        last = self.service.last_backup_at
+        when = f"สำรองล่าสุด {last:%d/%m/%Y %H:%M}" if last else "ยังไม่เคยสำรองข้อมูล"
+        if self.service.backup_due():
+            self.backup_label.setText(f'· <span style="color:{theme.ATTENTION}">{when}</span> <a href="backup">สำรองตอนนี้</a>')
+        else:
+            self.backup_label.setText(f'· <span style="color:{theme.MUTED}">{when}</span>')
+
+    # ------------------------------------------------------------------
+    # Backup and restore
+    # ------------------------------------------------------------------
+    def backup(self) -> None:
+        if self.busy or self.runner.busy:
+            QMessageBox.information(self, "สำรองข้อมูล", "รอให้งานที่ทำอยู่เสร็จก่อน แล้วค่อยสำรองข้อมูล")
+            return
+        if not self._confirm_leave():
+            return
+        last_dir = QSettings().value("backup/folder") or str(Path.home() / "Documents")
+        default = Path(last_dir) / f"PasaScope-สำรอง-{datetime.now():%Y-%m-%d-%H%M}.zip"
+        path, _ = QFileDialog.getSaveFileName(self, "สำรองข้อมูลไปที่", str(default), "ไฟล์สำรอง PasaScope (*.zip)")
+        if not path:
+            return
+        target = Path(path) if path.lower().endswith(".zip") else Path(path + ".zip")
+        if target.resolve().is_relative_to(self.service.workspace.root):
+            QMessageBox.warning(self, "สำรองข้อมูล", "เลือกที่เก็บนอกโฟลเดอร์ข้อมูลของโปรแกรม เช่น ไดรฟ์ภายนอก")
+            return
+        QSettings().setValue("backup/folder", str(target.parent))
+        self._set_busy(True)
+        self.statusBar().showMessage("กำลังสำรองข้อมูล…")
+
+        def done(info) -> None:
+            self._set_busy(False)
+            self.statusBar().clearMessage()
+            self._update_backup_label()
+            counts = info.counts
+            QMessageBox.information(
+                self, "สำรองข้อมูลแล้ว",
+                f"บันทึกที่ {info.path}\n"
+                f"{counts.get('cases', 0)} เคส · {counts.get('sessions', 0)} session · "
+                f"{counts.get('recordings', 0)} ไฟล์เสียง · {info.total_bytes / 1_048_576:.1f} MB\n\n"
+                "ไฟล์นี้ไม่เข้ารหัส และมีเสียงกับข้อความของเด็ก เก็บไว้ในที่ที่มีแต่นักบำบัดเข้าถึงได้",
+            )
+
+        def failed(exc: Exception) -> None:
+            self._set_busy(False)
+            self.statusBar().clearMessage()
+            QMessageBox.critical(self, "สำรองข้อมูลไม่สำเร็จ", f"{type(exc).__name__}: {exc}")
+
+        self.runner.run(lambda: self.service.create_backup(target, self.version), on_done=done, on_error=failed)
+
+    def restore(self) -> None:
+        if self.busy or self.runner.busy:
+            QMessageBox.information(self, "กู้คืนข้อมูล", "รอให้งานที่ทำอยู่เสร็จก่อน")
+            return
+        if not self._confirm_leave():
+            return
+        last_dir = QSettings().value("backup/folder") or str(Path.home() / "Documents")
+        path, _ = QFileDialog.getOpenFileName(self, "เลือกไฟล์สำรอง", str(last_dir), "ไฟล์สำรอง PasaScope (*.zip)")
+        if not path:
+            return
+        try:
+            info = read_backup(Path(path))
+        except BackupError as exc:
+            QMessageBox.warning(self, "กู้คืนข้อมูล", str(exc))
+            return
+        counts = info.counts
+        demo = "\n\nไฟล์นี้สำรองมาจากข้อมูลสาธิต (Demo)" if info.demo else ""
+        answer = QMessageBox.question(
+            self, "กู้คืนข้อมูล",
+            f"ไฟล์สำรองเมื่อ {info.created_at[:16].replace('T', ' ')}\n"
+            f"{counts.get('cases', 0)} เคส · {counts.get('sessions', 0)} session · {counts.get('recordings', 0)} ไฟล์เสียง{demo}\n\n"
+            "ข้อมูลปัจจุบันทั้งหมดจะถูกแทนที่ด้วยไฟล์สำรองนี้ ข้อมูลปัจจุบันไม่ถูกลบ "
+            "แต่จะย้ายไปไว้ในโฟลเดอร์ \"ก่อนกู้คืน\" ข้าง ๆ กัน\n\nกู้คืนแล้วโปรแกรมจะปิด ต้องเปิดใหม่ กู้คืนเลยไหม?",
+        )
+        if answer != QMessageBox.StandardButton.Yes:
+            return
+        self.service.close()
+        try:
+            previous = restore_backup(self.service.workspace.root, info.path)
+        except (BackupError, OSError) as exc:
+            QMessageBox.critical(self, "กู้คืนไม่สำเร็จ", f"ข้อมูลปัจจุบันยังอยู่ครบ ไม่ได้เปลี่ยนแปลง\n\n{exc}")
+            return
+        QMessageBox.information(
+            self, "กู้คืนแล้ว",
+            f"ข้อมูลเดิมย้ายไปที่ {previous}\nโปรแกรมจะปิดตอนนี้ เปิดใหม่เพื่อใช้ข้อมูลที่กู้คืน",
+        )
+        self._restored = True
+        self.close()
 
     def closeEvent(self, event) -> None:  # noqa: N802 - Qt override
+        if getattr(self, "_restored", False):
+            event.accept()
+            return
         if self.busy or self.runner.busy:
             answer = QMessageBox.question(
                 self, "กำลังทำงานอยู่", "ยังถอดเสียงหรือบันทึกเสียงอยู่ ปิดโปรแกรมแล้วงานนี้จะหยุด ปิดเลยไหม?"

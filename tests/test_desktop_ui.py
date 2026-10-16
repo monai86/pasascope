@@ -179,3 +179,18 @@ def test_case_with_several_sessions_opens_on_the_overview(window, qtbot):
     assert window.session_stack.currentWidget() is window.tabs
     window.session_pick.setCurrentIndex(0)
     assert window.session is None and window.session_stack.currentWidget() is window.overview
+
+
+def test_backup_from_the_menu_updates_the_reminder(window, qtbot, tmp_path, monkeypatch):
+    from PySide6.QtWidgets import QFileDialog
+
+    _case_with_session(window)
+    window._update_backup_label()
+    assert "สำรองตอนนี้" in window.backup_label.text()
+    target = tmp_path / "out" / "backup.zip"
+    target.parent.mkdir()
+    monkeypatch.setattr(QFileDialog, "getSaveFileName", lambda *a, **k: (str(target), ""))
+    window.backup()
+    qtbot.waitUntil(lambda: not window.busy, timeout=10000)
+    assert target.exists()
+    assert "สำรองล่าสุด" in window.backup_label.text() and "สำรองตอนนี้" not in window.backup_label.text()

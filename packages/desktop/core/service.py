@@ -119,6 +119,50 @@ class DesktopService:
             os.environ["PASASCOPE_ASR_LANGUAGE_STRATEGY"] = strategy
             get_settings.cache_clear()
 
+    # ------------------------------------------------------------------
+    # Backup
+    # ------------------------------------------------------------------
+    BACKUP_REMINDER_DAYS = 7
+
+    @property
+    def last_backup_at(self):
+        """When this workspace was last backed up, or None."""
+        value = self.workspace.read_profile().get("last_backup_at")
+        try:
+            return datetime.fromisoformat(value) if value else None
+        except ValueError:
+            return None
+
+    def backup_due(self) -> bool:
+        """True when there is real data and no backup in the last week."""
+        if (self.workspace.root / "pasascope-demo.json").exists() or not self.list_cases():
+            return False
+        last = self.last_backup_at
+        return last is None or (datetime.now(last.tzinfo) - last).days >= self.BACKUP_REMINDER_DAYS
+
+    def create_backup(self, destination, app_version: str = ""):
+        from packages.desktop.core.backup import create_backup
+
+        self._save()
+        cases = self.list_cases()
+        counts = {
+            "cases": len(cases),
+            "sessions": sum(len(self.list_sessions(case.case_id)) for case in cases),
+            "recordings": sum(1 for path in self.workspace.storage_root.rglob("*") if path.is_file()),
+        }
+        info = create_backup(self.workspace, Path(destination), counts=counts, app_version=app_version)
+        profile = self.workspace.read_profile()
+        profile["last_backup_at"] = info.created_at
+        profile["last_backup_path"] = str(info.path)
+        self.workspace.write_profile(profile)
+        return info
+
+    def close(self) -> None:
+        """Release the database file, e.g. before a restore replaces it."""
+        engine = getattr(self.repo, "engine", None)
+        if engine is not None:
+            engine.dispose()
+
     @property
     def user(self):
         from app.core.security import CurrentUser
