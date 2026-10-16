@@ -1,0 +1,6 @@
+# The desktop app (packages/desktop), on top of requirements.txt and
+# apps/api/requirements.txt. Not needed by the API server or its images.
+PySide6-Essentials>=6.10
+
+# Tests of the desktop window (tests/test_desktop_ui.py skips without it)
+pytest-qt>=4.4

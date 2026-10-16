@@ -27,6 +27,7 @@ source .venv/bin/activate
 ```bash
 pip install -r requirements.txt
 pip install -r apps/api/requirements.txt
+pip install -r requirements-desktop.txt   # desktop app (PySide6)
 ```
 
 ### 3. Run the Active Backend API
