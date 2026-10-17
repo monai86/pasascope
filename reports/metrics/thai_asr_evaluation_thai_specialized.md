@@ -8,26 +8,26 @@ Error rates are relative to hand-corrected gold transcripts (lower is better). C
 
 | Measure | Mean |
 |---|---|
-| Word error rate, all speakers | 0.0394 |
-| Character error rate, all speakers | 0.012 |
-| Absolute utterance-count difference (draft vs gold) | 0.6667 |
-| Word error rate, child only | - |
-| Character error rate, child only | - |
-| Absolute MLU-words difference (draft vs gold) | - |
-| Absolute TTR difference (draft vs gold) | - |
-| Absolute echolalia-count difference | - |
-| Processing time / audio length | 4.8317 |
+| Word error rate, all speakers | 0.0212 |
+| Character error rate, all speakers | 0.0029 |
+| Absolute utterance-count difference (draft vs gold) | 5.6667 |
+| Word error rate, child only | 1.0 |
+| Character error rate, child only | 1.0 |
+| Absolute MLU-words difference (draft vs gold) | 2.875 |
+| Absolute TTR difference (draft vs gold) | 0.9433 |
+| Absolute echolalia-count difference | 1.8333 |
+| Processing time / audio length | 2.3633 |
 
 ## Per sample
 
 | Sample | WER all | CER all | Utterances (gold/draft) | WER child | CER child | Child utts (gold/draft) | MLU-w (gold/draft) | TTR (gold/draft) | Echolalia (gold/draft) | RTF |
 |---|---|---|---|---|---|---|---|---|---|---|
-| synthetic_echo_01 | 0.0 | 0.0 | 8/7 | - | - | - | - | - | - | 4.89 |
-| synthetic_echo_02 | 0.0 | 0.0 | 8/7 | - | - | - | - | - | - | 5.21 |
-| synthetic_echo_03 | 0.0645 | 0.0172 | 8/8 | - | - | - | - | - | - | 6.59 |
-| synthetic_plain_01 | 0.0769 | 0.0463 | 8/8 | - | - | - | - | - | - | 2.93 |
-| synthetic_plain_02 | 0.0303 | 0.0085 | 8/8 | - | - | - | - | - | - | 5.24 |
-| synthetic_plain_03 | 0.0645 | 0.0 | 8/6 | - | - | - | - | - | - | 4.13 |
+| synthetic_echo_01 | 0.0 | 0.0 | 8/2 | 1.0 | 1.0 | 4/0 | 3.0/0.0 | 0.83/0.0 | 2/0 | 2.61 |
+| synthetic_echo_02 | 0.0 | 0.0 | 8/2 | 1.0 | 1.0 | 4/0 | 2.75/0.0 | 0.91/0.0 | 3/0 | 2.78 |
+| synthetic_echo_03 | 0.0323 | 0.0086 | 8/3 | 1.0 | 1.0 | 4/0 | 2.75/0.0 | 1.0/0.0 | 3/0 | 2.06 |
+| synthetic_plain_01 | 0.0 | 0.0 | 8/2 | 1.0 | 1.0 | 4/0 | 2.5/0.0 | 1.0/0.0 | 2/0 | 2.68 |
+| synthetic_plain_02 | 0.0303 | 0.0085 | 8/3 | 1.0 | 1.0 | 4/0 | 3.25/0.0 | 1.0/0.0 | 0/0 | 1.97 |
+| synthetic_plain_03 | 0.0645 | 0.0 | 8/2 | 1.0 | 1.0 | 4/0 | 3.0/0.0 | 0.92/0.0 | 1/0 | 2.08 |
 
 ## Reading these numbers
 

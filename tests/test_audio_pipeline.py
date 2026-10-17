@@ -879,8 +879,8 @@ def test_same_speaker_pieces_separated_by_a_brief_pause_are_rejoined():
     from src.audio_pipeline.segmentation import clean_segments, split_at_pauses
     from src.audio_pipeline.whisper_transcribe import UtteranceSegment, WordSegment
 
-    words = [WordSegment("one", 0.0, 0.3, 0.9), WordSegment("two", 0.57, 0.9, 0.9), WordSegment("three", 1.5, 1.9, 0.9)]
-    pieces = split_at_pauses([UtteranceSegment(start=0.0, end=1.9, text="one two three", words=words)])
+    words = [WordSegment("one", 0.0, 0.3, 0.9), WordSegment("two", 0.87, 1.2, 0.9), WordSegment("three", 2.3, 2.7, 0.9)]
+    pieces = split_at_pauses([UtteranceSegment(start=0.0, end=2.7, text="one two three", words=words)])
     assert [p.text for p in pieces] == ["one", "two", "three"]
     for piece in pieces:
         piece.speaker = "CHI"
@@ -988,3 +988,21 @@ def test_hybrid_diarizer_is_chosen_only_when_wanted_or_installed(monkeypatch, tm
     assert d._hybrid_diarizer(48) is None  # not installed, not asked for: no download
     monkeypatch.setenv("PASASCOPE_DIARIZER", "embedding")
     assert d._hybrid_diarizer(48) is None
+
+
+def test_quiet_audio_is_brought_to_a_fixed_level_for_vad(tmp_path):
+    """Silero VAD missed nearly all speech in a quiet recording; the level is normalised first."""
+    import numpy as np
+    import soundfile
+
+    from src.audio_pipeline import whisper_transcribe as wt
+
+    t = np.arange(16000 * 2) / 16000
+    quiet = tmp_path / "quiet.wav"
+    soundfile.write(quiet, (0.005 * np.sin(2 * np.pi * 220 * t)).astype("float32"), 16000)
+    level = float(np.sqrt((wt._level_normalized(str(quiet)) ** 2).mean()))
+    assert abs(level - wt._LOUD_FRAME_LEVEL) < 0.01
+
+    silent = tmp_path / "silent.wav"
+    soundfile.write(silent, np.zeros(16000, dtype="float32"), 16000)
+    assert not wt._level_normalized(str(silent)).any()  # silence is not amplified

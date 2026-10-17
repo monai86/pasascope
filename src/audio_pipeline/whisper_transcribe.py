@@ -171,6 +171,36 @@ _MIN_SEGMENT_SECONDS = 0.05
 _MAX_LETTERS_PER_SECOND = 40.0
 
 
+# Silero VAD misses quiet speech: on a far-field EllisWeismer recording it
+# found 3 s of speech in 5 minutes and the draft had one line. The audio is
+# scaled so its loud frames reach a fixed level before VAD and Whisper, and
+# the speech threshold is lowered from Silero's 0.5. On 8 EllisWeismer
+# recordings this cut the word error rate from 50% to 37% and found 211 child
+# utterances against 121 (gold: 210). Silences stay at 400 ms: with 2 s, a
+# scripted Thai dialogue went to Whisper as one chunk and the child's echoes of
+# the adult were left out of the draft. Pieces of one utterance are re-joined
+# later (segmentation.MAX_INTRA_TURN_GAP). A wider 300 ms speech pad ran the
+# dialogue's turns together.
+_VAD_PARAMETERS = dict(threshold=0.35, min_silence_duration_ms=400, speech_pad_ms=200)
+_LOUD_FRAME_LEVEL = 0.1  # RMS the 95th-percentile 25 ms frame is scaled to
+_FRAME_SAMPLES = 400
+
+
+def _level_normalized(audio_path: str):
+    """16 kHz mono samples with the loud frames at a fixed level."""
+    import numpy as np
+    from faster_whisper.audio import decode_audio
+
+    audio = decode_audio(audio_path, sampling_rate=16000)
+    frames = audio[: len(audio) // _FRAME_SAMPLES * _FRAME_SAMPLES].reshape(-1, _FRAME_SAMPLES)
+    if not len(frames):
+        return audio
+    loud = float(np.percentile(np.sqrt((frames ** 2).mean(axis=1)), 95))
+    if loud < 1e-5:
+        return audio
+    return np.clip(audio * (_LOUD_FRAME_LEVEL / loud), -1.0, 1.0).astype("float32")
+
+
 def _too_fast_to_be_speech(text: str, start: float, end: float) -> bool:
     """True when a segment has (almost) no audio behind its text."""
     duration = end - start
@@ -217,6 +247,29 @@ def _trim_repetition_loop(text: str) -> str:
         if not rest or unit.replace(" ", "").startswith(rest.replace(" ", "")):
             return (text[:match.start()] + match.group("unit")).strip()
     return text
+
+
+# Greedy decoding sometimes writes a whole sentence twice in one segment
+# (a 7 s FLEURS clip came back as the same 68-letter sentence twice). Shorter
+# repeats are left alone: a child echoing the adult's sentence straight back
+# can land in the same segment, and echoes are evidence the app has to keep.
+# Thai echoes in the test dialogues run up to 22 letters.
+_DOUBLED_MIN_LETTERS = 50
+
+
+def _collapse_doubled_sentence(text: str) -> str:
+    """One copy when the whole segment is a long sentence written twice."""
+    letters = re.sub(r"\s", "", text or "")
+    half = len(letters) // 2
+    if len(letters) % 2 or half < _DOUBLED_MIN_LETTERS or letters[:half] != letters[half:]:
+        return text
+    kept, count = [], 0
+    for char in text:
+        if count == half:
+            break
+        kept.append(char)
+        count += not char.isspace()
+    return "".join(kept).strip()
 
 
 def _keep_words_for(text: str, words: list) -> list:
@@ -415,9 +468,9 @@ class WhisperTranscriber:
 
         Applies hallucination filtering, Silero VAD acceleration, and per-segment language tagging.
         """
-        vad_params = dict(min_silence_duration_ms=400, speech_pad_ms=200) if vad_filter else None
+        vad_params = dict(_VAD_PARAMETERS) if vad_filter else None
         segments, info = model.transcribe(
-            audio_path,
+            _level_normalized(audio_path) if vad_filter else audio_path,
             language=language,
             beam_size=beam_size,
             best_of=1,
@@ -450,6 +503,9 @@ class WhisperTranscriber:
                 if shorter == text or _looks_hallucinated(shorter, avg_logprob, no_speech_prob):
                     continue
                 text, trimmed = shorter, True
+            collapsed = _collapse_doubled_sentence(text)
+            if collapsed != text:
+                text, trimmed = collapsed, True
             seg_lang = getattr(seg, "language", None) or detected_lang
             words: List[WordSegment] = []
             if seg.words:

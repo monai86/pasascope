@@ -25,7 +25,12 @@ from .whisper_transcribe import UtteranceSegment, WordSegment
 # Tunables
 # ----------------------------------------------------------------------
 MIN_SEGMENT_DURATION = 0.2          # seconds — drop if shorter
-MAX_INTRA_TURN_GAP = 0.3            # seconds — merge same-speaker if gap < this
+# A same-speaker pause over 0.6 s ends an utterance; shorter pauses stay
+# inside it, because young children pause mid-utterance. Gaps tried on 16
+# EllisWeismer (2;6-5;6) and 8 ENNI (4;9-6;10) recordings, draft MLU distance
+# from the gold: 0.3 s 0.73 / 1.78 words, 0.6 s 0.59 / 1.69, 1 s 0.55 / 2.03
+# (ENNI children speak fluently and 1 s joined separate utterances).
+MAX_INTRA_TURN_GAP = 0.6            # seconds — merge same-speaker if gap < this
 MIN_GAP_FOR_SPLIT = 0.6             # seconds — split same-speaker if gap > this
 # Pause that may hide a change of speaker. Whisper often returns a whole
 # exchange as one segment, and a segment can only get one speaker label, so

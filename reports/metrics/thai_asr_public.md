@@ -6,7 +6,9 @@ Data: first 30 clips of the FLEURS Thai test split (5.4 minutes; adult speakers 
 |---|---|---|---|---|---|---|
 | `small` | 97.2% | 92.8% | 29.2% | 26.5% | 3% | 0.74 |
 | `medium` | 71.4% | 62.8% | 20.3% | 16.3% | 20% | 0.97 |
-| `thai-medium` | 22.4% | 15.5% | 10.1% | 5.3% | 73% | 3.41 |
+| `thai-medium` | 18.4% | 15.5% | 6.5% | 5.0% | 80% | 3.96 |
+
+The `thai-medium` row was re-run on 2026-10-17 after a sentence Whisper wrote twice was collapsed to one copy and the voice-activity settings changed (it was CER 10.1%, 73% of clips under 10%); `small` and `medium` are from the earlier code.
 
 WER is word error rate after Thai word segmentation of both the reference and the draft; CER is character error rate. A misspelt Thai word usually segments into several wrong words, so WER is much higher than CER and CER is the steadier measure.
 

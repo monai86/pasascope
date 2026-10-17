@@ -41,3 +41,16 @@ before commit 33c56456. Whisper had been appending phrases nobody said after the
 segments have almost no audio behind them, so segments shorter than 0.05 s or faster than
 40 letters per second are now dropped (commit 645442d0). The figures above are after the fix,
 and `thai_asr_public.md` was regenerated from the fixed drafts.
+
+## Later fixes to the default model's drafts (2026-10-17)
+
+The Thonburian figures above predate two changes; Typhoon was not re-run.
+
+- A segment that is one long sentence written twice keeps one copy. A 7 s FLEURS clip had come back
+  as the same 68-letter sentence twice. Shorter repeats are kept, because a child echoing the
+  adult can land in the same segment.
+- Voice activity detection runs on level-normalised audio with a lower speech threshold, so quiet,
+  far-field speech is no longer skipped (`end_to_end_ellisweismer.md`).
+
+With both, Thonburian medium on the same 30 FLEURS clips: CER 6.5% (was 10.1%), WER 18.4%, 80% of
+clips under 10% CER, 3.96 times the audio length (`thai_asr_public.md`).

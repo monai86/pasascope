@@ -49,3 +49,14 @@ def test_pause_cut_inside_a_thai_word_moves_to_the_word_end():
     parts = split_at_pauses([segment])
 
     assert [p.text for p in parts] == ["สบายดีครับ", "เมื่อเช้า"]
+
+
+def test_a_long_sentence_written_twice_is_kept_once():
+    from src.audio_pipeline.whisper_transcribe import _collapse_doubled_sentence
+
+    sentence = "คู่สามีภรรยาเหล่านี้อาจเลือกที่จะมีบุตรโดยวางแผนรับเลี้ยงบุตรบุญธรรม"
+    assert _collapse_doubled_sentence(f"{sentence} {sentence}") == sentence
+    assert _collapse_doubled_sentence("I want that one I want that one") == "I want that one I want that one"  # short: kept
+    echo = "โยนลูกบอลมาให้ครูหน่อย โยนลูกบอลมาให้ครูหน่อย"  # adult sentence and the child's echo
+    assert _collapse_doubled_sentence(echo) == echo
+    assert _collapse_doubled_sentence(sentence) == sentence
