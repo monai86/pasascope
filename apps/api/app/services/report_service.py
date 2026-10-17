@@ -42,7 +42,7 @@ def _report_reference_band(case, session) -> dict | None:
 
 
 # Template providers fill fixed wording from the reviewed data; no model writes text.
-DETERMINISTIC_REPORT_PROVIDERS = {"template", "template_th"}
+DETERMINISTIC_REPORT_PROVIDERS = {"template", "template_th", "template_clinic_en"}
 
 
 def assemble_report_markdown(result: ReportProviderResult, report_type: str) -> str:
@@ -60,7 +60,7 @@ def assemble_report_markdown(result: ReportProviderResult, report_type: str) -> 
         lines.append("## Therapist Sign-off\nPending therapist edit and sign-off.\n")
     if (
         "export_timestamp" not in ids
-        and result.metadata.get("language") != "th"
+        and "therapist_signoff" not in ids
         and not any("Export Timestamp" in s.title for s in result.sections)
     ):
         lines.append("## Export Timestamp\n- Pending until therapist sign-off.\n")
@@ -630,20 +630,21 @@ def markdown_to_html(markdown: str) -> str:
     return "\n".join(rows)
 
 
-_SIGNOFF_PLACEHOLDERS = {"Pending therapist edit and sign-off.", "รอนักบำบัดแก้ไขและลงนาม"}
+_SIGNOFF_PLACEHOLDERS = {"Pending therapist edit and sign-off.", "รอนักบำบัดแก้ไขและลงนาม", "Awaiting therapist review and signature."}
 _EXPORT_PLACEHOLDERS = {"- Pending until therapist sign-off.", "- รอการลงนาม"}
 _GENERATED_SIGNOFF_PREFIXES = (
     "- Signed by:", "- Sign-off status:", "- Export timestamp:",
     "- ลงนามโดย:", "- สถานะ:", "- เวลาลงนาม:",
+    "- Status:", "- Signed at:",
 )
 _GENERATED_TIMESTAMP = re.compile(r"^- \d{4}-\d{2}-\d{2}T")
 
-# (sign-off heading, export heading, signed-by, status, timestamp labels) per report language
 # (sign-off heading, export heading or None, signed-by, status, time labels) per report language.
-# The Thai report states the signing time once, in Thai time and the Buddhist-era year.
+# The clinic reports state the signing time once, in Thai time; the Thai one in the Buddhist-era year.
 _SIGNOFF_WORDING = {
     "en": ("## Therapist Sign-off", "## Export Timestamp", "Signed by", "Sign-off status", "Export timestamp"),
     "th": ("## การลงนามของนักบำบัด", None, "ลงนามโดย", "สถานะ", "เวลาลงนาม"),
+    "clinic_en": ("## Therapist sign-off", None, "Signed by", "Status", "Signed at"),
 }
 _THAI_TIME = timezone(timedelta(hours=7))
 
@@ -651,6 +652,15 @@ _THAI_TIME = timezone(timedelta(hours=7))
 def _thai_time(moment: datetime) -> str:
     local = moment.astimezone(_THAI_TIME)
     return f"{local.day}/{local.month}/{local.year + 543} {local:%H:%M} น. (เวลาประเทศไทย)"
+
+
+_MONTHS = ("January", "February", "March", "April", "May", "June", "July",
+           "August", "September", "October", "November", "December")
+
+
+def _clinic_time(moment: datetime) -> str:
+    local = moment.astimezone(_THAI_TIME)
+    return f"{local.day} {_MONTHS[local.month - 1]} {local.year}, {local:%H:%M} (Thailand time)"
 
 
 def _section_span(lines: list[str], heading: str) -> tuple[int, int] | None:
@@ -683,10 +693,10 @@ def apply_signoff_block(markdown: str, signed_by: str, signed_at: datetime) -> s
     stays in the signed report. A Thai report keeps Thai headings.
     """
     lines = markdown.splitlines()
-    language = "th" if _SIGNOFF_WORDING["th"][0] in lines else "en"
+    language = next((key for key in ("th", "clinic_en") if _SIGNOFF_WORDING[key][0] in lines), "en")
     signoff_heading, export_heading, by_label, status_label, time_label = _SIGNOFF_WORDING[language]
-    status_value = "ลงนามแล้ว" if language == "th" else ReviewStatus.signed_off.value
-    when = _thai_time(signed_at) if language == "th" else signed_at.isoformat()
+    status_value = {"th": "ลงนามแล้ว", "clinic_en": "signed"}.get(language, ReviewStatus.signed_off.value)
+    when = {"th": _thai_time, "clinic_en": _clinic_time}.get(language, lambda m: m.isoformat())(signed_at)
     lines = _replace_generated(
         lines,
         signoff_heading,

@@ -20,7 +20,7 @@ import subprocess
 import threading
 from typing import Any
 
-from packages.desktop.core.i18n import tr
+from packages.desktop.core.i18n import language as current_language, report_language, tr
 from packages.desktop.core.workspace import LOCAL_ORGANIZATION_ID, LOCAL_USER_ID, Workspace
 
 ProgressCallback = Callable[[float, str], None]
@@ -72,6 +72,10 @@ def _status_value(status: Any) -> str:
     return status.value if hasattr(status, "value") else str(status)
 
 
+# Report language → the template that writes it (fixed wording, no model).
+REPORT_PROVIDERS = {"th": "template_th", "en": "template_clinic_en"}
+
+
 class DesktopService:
     def __init__(self, workspace: Workspace, *, repository: Any | None = None) -> None:
         self.workspace = workspace
@@ -98,6 +102,19 @@ class DesktopService:
             raise WorkflowError(tr("ชื่อยาวเกิน 120 ตัวอักษร", "The name is longer than 120 characters."))
         profile = self.workspace.read_profile()
         profile["display_name"] = name
+        self.workspace.write_profile(profile)
+
+    @property
+    def organization(self) -> str:
+        """The clinic or organisation printed at the top of each report page; may be empty."""
+        return str(self.workspace.read_profile().get("organization") or "").strip()
+
+    def set_organization(self, name: str) -> None:
+        name = name.strip()
+        if len(name) > 120:
+            raise WorkflowError(tr("ชื่อยาวเกิน 120 ตัวอักษร", "The name is longer than 120 characters."))
+        profile = self.workspace.read_profile()
+        profile["organization"] = name
         self.workspace.write_profile(profile)
 
     @property
@@ -913,21 +930,35 @@ class DesktopService:
         session = self.get_session(session_id)
         return self.repo.reports.get(session.report_id) if session.report_id else None
 
-    def draft_report(self, session_id: str, *, therapist_notes: str = ""):
+    def report_language(self, report) -> str:
+        """"th" or "en": the language a report was drafted in, read from its headings."""
+        return report_language(report.markdown if report is not None else "")
+
+    def draft_report(self, session_id: str, *, therapist_notes: str = "", language: str | None = None):
+        """Draft (or redraft) the session report in ``language``.
+
+        Without a language, a redraft keeps the current report's language and a
+        first draft uses the interface language in use.
+        """
         from app.schemas.clinical import ReportGenerationRequest
         from app.services.consent_service import ensure_session_consent_active
         from app.services.report_service import draft_report
 
         self.get_session(session_id)
         self._ensure(ensure_session_consent_active, session_id)
+        existing = self.get_report(session_id)
+        if language is None:
+            language = self.report_language(existing) if existing is not None else current_language()
+        if language not in REPORT_PROVIDERS:
+            raise WorkflowError(f"Unknown report language {language}")
         try:
             report = draft_report(
                 self.repo,
                 session_id,
                 ReportGenerationRequest(
-                    provider_id="template_th",
+                    provider_id=REPORT_PROVIDERS[language],
                     therapist_notes=therapist_notes or None,
-                    replace_existing=self.get_report(session_id) is not None,
+                    replace_existing=existing is not None,
                 ),
                 actor_id=LOCAL_USER_ID,
             )

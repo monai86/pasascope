@@ -4,32 +4,90 @@ from __future__ import annotations
 
 from packages.desktop.core.i18n import tr
 
+from datetime import datetime
 from pathlib import Path
+import tempfile
 
 from PySide6.QtCore import Qt, QTimer, QUrl
 from PySide6.QtGui import QDesktopServices
+from PySide6.QtPrintSupport import QPrinter, QPrintPreviewWidget
 from PySide6.QtWidgets import (
+    QComboBox,
     QFileDialog,
     QHBoxLayout,
     QMenu,
     QMessageBox,
     QPlainTextEdit,
     QSplitter,
-    QTextBrowser,
     QVBoxLayout,
     QWidget,
 )
 
 from packages.desktop.ui import theme
 from packages.desktop.ui.pages.base import SessionPage
-from packages.desktop.ui.pdf import write_report_pdf
+from packages.desktop.ui.pdf import ReportMeta, a4_layout, paint_report, write_report_pdf
 from packages.desktop.ui.widgets import EmptyState, button, chip, label, set_chip
+
+REPORT_LANGUAGES = [("en", "English"), ("th", "ไทย")]
 
 EXPORTS = [
     ("pdf", "PDF", "PDF (*.pdf)", ".pdf"),
     ("html", "HTML", "HTML (*.html)", ".html"),
     ("markdown", "Markdown", "Markdown (*.md)", ".md"),
 ]
+
+
+class PagePreview(QWidget):
+    """The report as printed A4 pages, drawn by the same code that writes the PDF."""
+
+    def __init__(self, parent: QWidget | None = None) -> None:
+        super().__init__(parent)
+        self.markdown = ""
+        self.meta = ReportMeta()
+        self.pages = 0
+        layout = QVBoxLayout(self)
+        layout.setContentsMargins(0, 0, 0, 0)
+        layout.setSpacing(4)
+
+        bar = QHBoxLayout()
+        bar.addWidget(label(tr("ตัวอย่างก่อนพิมพ์ (A4)", "Print preview (A4)"), "Muted"))
+        self.page_count = label("", "Hint")
+        bar.addWidget(self.page_count)
+        bar.addStretch(1)
+        self.fit_width_btn = button(tr("พอดีความกว้าง", "Fit width"), "ghost")
+        self.fit_page_btn = button(tr("ทั้งหน้า", "Whole page"), "ghost")
+        self.zoom_out_btn = button("−", "ghost", tooltip=tr("ย่อ", "Zoom out"))
+        self.zoom_in_btn = button("+", "ghost", tooltip=tr("ขยาย", "Zoom in"))
+        self.open_btn = button(tr("เปิดเป็น PDF", "Open as PDF"), tooltip=tr("เปิดในโปรแกรมดู PDF ของเครื่อง", "Open in this computer's PDF viewer"))
+        for widget in (self.fit_width_btn, self.fit_page_btn, self.zoom_out_btn, self.zoom_in_btn, self.open_btn):
+            bar.addWidget(widget)
+        layout.addLayout(bar)
+
+        self.printer = QPrinter(QPrinter.PrinterMode.HighResolution)
+        self.printer.setOutputFormat(QPrinter.OutputFormat.PdfFormat)
+        self.printer.setFullPage(True)
+        self.printer.setPageLayout(a4_layout())
+        self.view = QPrintPreviewWidget(self.printer, self)
+        self.view.setViewMode(QPrintPreviewWidget.ViewMode.SinglePageView)
+        self.view.paintRequested.connect(self._paint)
+        layout.addWidget(self.view, 1)
+
+        self.fit_width_btn.clicked.connect(self.view.fitToWidth)
+        self.fit_page_btn.clicked.connect(self.view.fitInView)
+        self.zoom_out_btn.clicked.connect(lambda: self.view.zoomOut())
+        self.zoom_in_btn.clicked.connect(lambda: self.view.zoomIn())
+        self.view.setZoomMode(QPrintPreviewWidget.ZoomMode.FitToWidth)
+        self.view.setStyleSheet(f"background: {theme.SIDEBAR};")
+
+    def show_report(self, markdown: str, meta: ReportMeta) -> None:
+        self.markdown, self.meta = markdown, meta
+        self.view.updatePreview()
+
+    def _paint(self, printer: QPrinter) -> None:
+        if not self.markdown:
+            return
+        self.pages = paint_report(printer, self.markdown, self.meta)
+        self.page_count.setText(tr(f"{self.pages} หน้า", f"{self.pages} page{'s' if self.pages != 1 else ''}"))
 
 
 class ReportPage(SessionPage):
@@ -62,6 +120,13 @@ class ReportPage(SessionPage):
         self.status_text = label("", "Hint")
         top.addWidget(self.status_text)
         top.addStretch(1)
+        top.addWidget(label(tr("ภาษาของรายงาน", "Report language"), "Muted"))
+        self.language_box = QComboBox()
+        for code, name in REPORT_LANGUAGES:
+            self.language_box.addItem(name, code)
+        self.language_box.setToolTip(tr("เปลี่ยนภาษาจะสร้างร่างใหม่ในภาษานั้น", "Changing the language redrafts the report in that language."))
+        self.language_box.activated.connect(self._change_language)
+        top.addWidget(self.language_box)
         self.redraft_btn = button(tr("สร้างร่างใหม่", "Redraft"))
         self.redraft_btn.clicked.connect(self._redraft)
         self.save_btn = button(tr("บันทึกการแก้ไข", "Save"), tooltip="Ctrl+S")
@@ -96,21 +161,18 @@ class ReportPage(SessionPage):
         self.editor.textChanged.connect(self._on_edit)
         editor_layout.addWidget(self.editor)
         split.addWidget(editor_box)
-        preview_box = QWidget()
-        preview_layout = QVBoxLayout(preview_box)
-        preview_layout.setContentsMargins(6, 0, 0, 0)
-        preview_layout.addWidget(label(tr("ตัวอย่าง", "Preview"), "Muted"))
-        self.preview = QTextBrowser()
-        self.preview.setOpenExternalLinks(False)
-        preview_layout.addWidget(self.preview)
-        split.addWidget(preview_box)
-        split.setSizes([500, 560])
+        self.preview = PagePreview()
+        self.preview.layout().setContentsMargins(6, 0, 0, 0)
+        self.preview.open_btn.clicked.connect(self._open_pdf)
+        split.addWidget(self.preview)
+        split.setSizes([440, 620])
         body.addWidget(split, 1)
 
+        # Laying out the pages takes a moment, so wait for a pause in typing.
         self.preview_timer = QTimer(self)
         self.preview_timer.setSingleShot(True)
-        self.preview_timer.setInterval(250)
-        self.preview_timer.timeout.connect(lambda: self.preview.setMarkdown(self.editor.toPlainText()))
+        self.preview_timer.setInterval(600)
+        self.preview_timer.timeout.connect(self._update_preview)
 
     # ------------------------------------------------------------------
     def refresh(self) -> None:
@@ -130,9 +192,11 @@ class ReportPage(SessionPage):
         self._loading = True
         self.editor.setPlainText(self.report.markdown)
         self._loading = False
-        self.preview.setMarkdown(self.report.markdown)
         self.dirty = False
+        index = self.language_box.findData(self.service.report_language(self.report))
+        self.language_box.setCurrentIndex(max(index, 0))
         self._update_status()
+        self._update_preview()
 
     def _status(self) -> str:
         status = self.report.status
@@ -168,6 +232,61 @@ class ReportPage(SessionPage):
             notes.append(tr("รายงานยังเป็นร่าง export ได้แต่จะไม่มีลายเซ็น", "Draft: exports will not carry a signature."))
         self.notice.setText("\n".join(notes))
         self.notice.setVisible(bool(notes))
+
+    def report_meta(self, report=None) -> ReportMeta:
+        """Page furniture for ``report`` (the page's report): clinic, child, session, signature."""
+        report = report or self.report
+        signed = report is not None and self._status_of(report) == "Signed Off" and not (report is self.report and self.dirty)
+        signed_at = report.signed_at if signed else None
+        if isinstance(signed_at, str):
+            signed_at = datetime.fromisoformat(signed_at)
+        return ReportMeta(
+            organization=self.service.organization,
+            child_code=self.case.child_code if self.case else "",
+            session_date=str(self.session.session_date) if self.session else "",
+            signed_by=(report.signed_by or "") if signed else "",
+            signed_at=signed_at,
+        )
+
+    @staticmethod
+    def _status_of(report) -> str:
+        status = report.status
+        return status.value if hasattr(status, "value") else str(status)
+
+    def _update_preview(self) -> None:
+        if self.report is None:
+            return
+        self.preview.show_report(self.editor.toPlainText(), self.report_meta())
+
+    def _open_pdf(self) -> None:
+        if self.report is None:
+            return
+        folder = Path(tempfile.mkdtemp(prefix="pasascope-report-"))
+        name = f"{self.case.child_code}_{self.session.session_date}.pdf" if self.case else "report.pdf"
+        try:
+            path = write_report_pdf(self.editor.toPlainText(), folder / name, self.report_meta())
+        except OSError as exc:
+            self.report_error(exc, tr("สร้างไฟล์ไม่ได้", "Could not create the file"))
+            return
+        QDesktopServices.openUrl(QUrl.fromLocalFile(str(path)))
+
+    def _change_language(self, _index: int) -> None:
+        code = self.language_box.currentData()
+        if self.report is None or code == self.service.report_language(self.report):
+            return
+        answer = QMessageBox.question(
+            self, tr("เปลี่ยนภาษาของรายงาน", "Change report language"),
+            tr("ระบบจะสร้างร่างใหม่ในภาษาที่เลือก ข้อความที่แก้ไว้ในรายงานนี้จะถูกแทนที่ ดำเนินการต่อ?",
+               "The report will be redrafted in the chosen language, replacing your edits. Continue?"),
+        )
+        if answer != QMessageBox.StandardButton.Yes:
+            index = self.language_box.findData(self.service.report_language(self.report))
+            self.language_box.setCurrentIndex(max(index, 0))
+            return
+        self.dirty = False
+        if self.attempt(self.service.draft_report, self.session.session_id, language=code,
+                        title=tr("สร้างรายงานไม่สำเร็จ", "Report not drafted")) is not None:
+            self.changed.emit()
 
     def has_unsaved_changes(self) -> bool:
         return self.dirty
@@ -251,7 +370,7 @@ class ReportPage(SessionPage):
             if report is None:
                 return
             try:
-                written = write_report_pdf(report.markdown, Path(path), title=f"{self.case.child_code} {self.session.session_date}")
+                written = write_report_pdf(report.markdown, Path(path), self.report_meta(report))
             except OSError as exc:
                 self.report_error(exc, tr("บันทึกไฟล์ไม่ได้", "Could not save the file"))
                 return

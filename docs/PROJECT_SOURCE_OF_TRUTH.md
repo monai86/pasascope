@@ -233,6 +233,10 @@ persistence layer หลักของ pasascope.
     (`src/audio_pipeline/utterance_boundaries.py`, ไฟล์ `src/audio_pipeline/models/utterance_boundaries_en.json`
     ต้องรวมไปกับแอปตอน build) ทุกประโยคที่โมเดลเริ่มใหม่ต้องเก็บเหตุผลให้นักบำบัดอ่าน;
     ภาษาไทยยังใช้กฎช่วงหยุด 0.6 วินาที และ `PASASCOPE_UTTERANCE_BOUNDARIES=rule` ปิดโมเดลได้
+36a. รายงาน session ของแอป desktop เขียนได้ทั้งไทย (`template_th`) และอังกฤษ (`template_clinic_en`)
+    ด้วยถ้อยคำคงที่ หัวข้อเดียวกัน; PDF และตัวอย่างก่อนพิมพ์วาดด้วย `paint_report` ตัวเดียว
+    ตามรูปแบบใน `docs/REPORT_LAYOUT.md`; ฟอนต์ Sarabun (OFL) ใน `packages/desktop/ui/assets/fonts/`
+    ต้องรวมไปกับแอปตอน build พร้อม `OFL.txt`
 37. ขอบเขต term paper อยู่ใน `SCOPE_AND_DELIVERABLES.md` และการจับคู่หัวข้อกับหลักฐาน
     อยู่ใน `docs/TERM_PAPER_MAPPING.md`
 38. ชื่อโครงการในโค้ด config และเอกสารที่ใช้งานอยู่คือ PasaScope เท่านั้น:

@@ -4,7 +4,7 @@ Every piece of interface text is written in both languages where it is used,
 ``tr("ภาษาไทย", "English")``, so a missing translation cannot slip through.
 The language is chosen once, from the workspace profile, before the window
 is built (``packages/desktop/app.py``); switching takes effect on restart.
-Clinical reports keep their own language (the Thai report template).
+Clinical reports have their own language, chosen per report (``report_language``).
 """
 
 from __future__ import annotations
@@ -83,3 +83,15 @@ class TrList(list):
 
     def __iter__(self):
         return (resolve(item) for item in super().__iter__())
+
+
+def has_thai(text: str) -> bool:
+    return any("\u0e00" <= ch <= "\u0e7f" for ch in text)
+
+
+def report_language(markdown: str) -> str:
+    """"th" when a report's title (its first heading) is Thai, otherwise "en"."""
+    for line in markdown.splitlines():
+        if line.startswith("#"):
+            return "th" if has_thai(line) else "en"
+    return "th" if has_thai(markdown) else "en"

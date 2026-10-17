@@ -12,6 +12,7 @@ from PySide6.QtWidgets import (
     QFileDialog,
     QFrame,
     QHBoxLayout,
+    QInputDialog,
     QLabel,
     QLineEdit,
     QListWidget,
@@ -234,6 +235,9 @@ class MainWindow(QMainWindow):
         name_action = QAction(tr("ชื่อนักบำบัด…", "Therapist name…"), self)
         name_action.triggered.connect(lambda: self.ask_therapist_name(first_run=False))
         settings_menu.addAction(name_action)
+        organization_action = QAction(tr("ชื่อหน่วยงานบนรายงาน…", "Clinic name on reports…"), self)
+        organization_action.triggered.connect(self.ask_organization)
+        settings_menu.addAction(organization_action)
         settings_menu.addSeparator()
         mode_menu = settings_menu.addMenu(tr("โหมดถอดเสียง", "Transcription"))
         self.mode_actions = {}
@@ -617,6 +621,23 @@ class MainWindow(QMainWindow):
                 continue
             break
         self._update_status_bar()
+
+    def ask_organization(self) -> None:
+        name, ok = QInputDialog.getText(
+            self, tr("ชื่อหน่วยงานบนรายงาน", "Clinic name on reports"),
+            tr("ชื่อคลินิกหรือหน่วยงาน พิมพ์ที่หัวกระดาษทุกหน้าของรายงาน (เว้นว่างได้)",
+               "The clinic or organisation printed at the top of every report page (may be left blank)."),
+            text=self.service.organization,
+        )
+        if not ok:
+            return
+        try:
+            self.service.set_organization(name)
+        except Exception as exc:  # noqa: BLE001
+            QMessageBox.warning(self, tr("ตั้งค่าไม่สำเร็จ", "Setting not saved"), str(exc))
+            return
+        if self.case is not None:
+            self.refresh_session()
 
     def _set_mode(self, mode: str) -> None:
         try:

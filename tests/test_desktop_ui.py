@@ -298,3 +298,94 @@ def test_knowledge_opens_every_topic_with_its_charts(window):
         assert page.article.toPlainText().strip()
     assert not knowledge.age_chart("mlu_words", "MLU").isNull()
     assert not knowledge.screening_chart().isNull() and not knowledge.boundary_weights_chart().isNull()
+
+
+def _analysed_session(window):
+    case, session = _case_with_session(window)
+    svc = window.service
+    svc.import_transcript_text(session.session_id, CHAT)
+    svc.attest(svc.get_transcript(session.session_id).transcript_id, override_reason="ตรวจแล้ว")
+    svc.analyze(session.session_id)
+    return case, session
+
+
+def test_english_report_has_the_thai_sections_and_signs_once(window):
+    _, session = _analysed_session(window)
+    svc = window.service
+    report = svc.draft_report(session.session_id, language="en")
+    assert report.markdown.startswith("# Language Sample Review Report")
+    assert svc.report_language(report) == "en"
+    assert "## Therapist sign-off" in report.markdown and "Export Timestamp" not in report.markdown
+    assert "| Mean length of utterance (MLU-w, words) |" in report.markdown
+
+    signed = svc.sign_off(report.report_id)
+    assert "- Signed by: นักบำบัด ทดสอบ" in signed.markdown
+    assert "- Status: signed" in signed.markdown and "(Thailand time)" in signed.markdown
+    assert "Awaiting therapist review" not in signed.markdown
+
+    # A redraft keeps the report's language unless another is asked for.
+    assert svc.report_language(svc.draft_report(session.session_id)) == "en"
+    assert svc.report_language(svc.draft_report(session.session_id, language="th")) == "th"
+
+
+def test_formal_pdf_layout_in_both_languages(window, tmp_path):
+    from datetime import datetime, timezone
+
+    from PySide6.QtGui import QPdfWriter
+
+    from packages.desktop.ui.pdf import (
+        ZERO_WIDTH_SPACE, ReportMeta, a4_layout, breakable, build_document, formal_date, LAYOUTS, write_report_pdf,
+    )
+    from PySide6.QtCore import QRectF
+
+    assert formal_date("2026-10-02", "th") == "2 ตุลาคม 2569"
+    assert formal_date("2026-10-02", "en") == "2 October 2026"
+    assert formal_date(datetime(2026, 10, 18, 7, 5, tzinfo=timezone.utc), "th", with_time=True) == "18 ตุลาคม 2569 เวลา 14:05 น."
+    assert ZERO_WIDTH_SPACE in breakable("รายงานการทบทวนตัวอย่างภาษา")
+    assert breakable("Child words").count(ZERO_WIDTH_SPACE) == 0
+
+    _, session = _analysed_session(window)
+    svc = window.service
+    for language in ("th", "en"):
+        report = svc.sign_off(svc.draft_report(session.session_id, language=language).report_id)
+        meta = ReportMeta(organization="Clinic", child_code="TH-010", session_date="2026-10-15",
+                          signed_by=report.signed_by, signed_at=report.signed_at)
+        pdf = write_report_pdf(report.markdown, tmp_path / f"{language}.pdf", meta)
+        assert pdf.read_bytes().startswith(b"%PDF")
+
+        writer = QPdfWriter(str(tmp_path / "probe.pdf"))
+        writer.setPageLayout(a4_layout())
+        page = QRectF(0, 0, writer.width(), writer.height())
+        document, headings, signature = build_document(writer, report.markdown, meta, LAYOUTS[language], page,
+                                                       page.adjusted(100, 100, -100, -100), language)
+        text = document.toPlainText().replace(ZERO_WIDTH_SPACE, "")
+        # Numbered sections, the details as a table, one signature block and no system sign-off lines.
+        assert ("1. ข้อมูล session" if language == "th" else "1. Session details") in text
+        assert len(headings) == 8 and signature is not None
+        assert ("ลงนามโดย:" if language == "th" else "Signed by:") not in text
+        assert report.signed_by in text
+        assert ("ลงนามอิเล็กทรอนิกส์" if language == "th" else "Signed electronically") in text
+        assert document.pageCount() >= 1
+    assert "TimesNewRoman" in (tmp_path / "en.pdf").read_bytes().decode("latin-1")
+    assert "Sarabun" in (tmp_path / "th.pdf").read_bytes().decode("latin-1")
+
+
+def test_report_page_previews_pages_and_switches_language(window, qtbot):
+    case, session = _analysed_session(window)
+    window.service.set_organization("คลินิกทดสอบ")
+    window.service.draft_report(session.session_id)
+    window.open_case(case.case_id, session.session_id)
+    window.tabs.setCurrentIndex(3)
+    page = window.pages[3]
+    page.refresh()
+    assert page.language_box.currentData() == "th"
+    page.preview.view.updatePreview()
+    qtbot.waitUntil(lambda: page.preview.pages > 0, timeout=5000)
+    assert page.report_meta().organization == "คลินิกทดสอบ"
+    assert not page.report_meta().signed
+
+    page.language_box.setCurrentIndex(page.language_box.findData("en"))
+    page._change_language(page.language_box.currentIndex())
+    page.refresh()
+    assert window.service.get_report(session.session_id).markdown.startswith("# Language Sample Review Report")
+    assert page.language_box.currentData() == "en"
