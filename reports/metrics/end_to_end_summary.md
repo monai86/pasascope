@@ -65,7 +65,14 @@ drafts). The table shows whether a draft moves the effect size, not that the gro
   and the drafts held 1,560 of the gold's 1,704 child words instead of 1,150
   (`end_to_end_ellisweismer_vad_default.md` is the run before the change).
 - **Utterances split at pauses.** A same-speaker pause has to exceed 0.6 s to end an utterance
-  (was 0.3 s). The constant in `src/audio_pipeline/segmentation.py` records the gaps tried.
+  (was 0.3 s). The constant in `src/audio_pipeline/segmentation.py` records the gaps tried. The
+  tables above are from this rule.
+- **Utterance boundaries from an explainable model (English).** A logistic regression on named
+  features now decides where a speaker's utterance ends (`utterance_boundaries.md`). With each child
+  held out, EllisWeismer MLU-w came to 0.37 words from the gold (r 0.97), against 0.60 with the
+  pause rule. `end_to_end_ellisweismer.md`, re-run with the shipped model, shows 0.36 words and
+  r 0.98, but that model was trained on these recordings among others, so 0.37 is the fair figure.
+  Thai drafts keep the pause rule.
 - **Echoes kept.** Letting VAD pass 2 s silences gave Whisper whole exchanges at once, and it left
   out a child's immediate repetitions of the adult. That is the echolalia the app is meant to find,
   so VAD still cuts at 400 ms silences.
