@@ -25,6 +25,7 @@ if str(PROJECT_ROOT) not in sys.path:
     sys.path.insert(0, str(PROJECT_ROOT))
 
 ICON_PNG = PROJECT_ROOT / "packages" / "desktop" / "ui" / "assets" / "icon.png"
+LOGO_PNG = PROJECT_ROOT / "packages" / "desktop" / "ui" / "assets" / "logo.png"
 BUNDLE_ID = "org.pasascope.desktop"
 
 LAUNCHER = """#!/bin/bash
@@ -43,46 +44,26 @@ exec "$PYTHON" -m packages.desktop.app {args} 2>>"$ROOT/.local/logs/desktop.log"
 
 
 def draw_icon(size: int):
-    """The app icon: a blue rounded square with sound bars under a lens."""
-    from PySide6.QtCore import QPointF, QRectF, Qt
+    """The app icon: the PasaScope mark (assets/logo.png) on a white rounded square, as macOS icons are drawn."""
+    from PySide6.QtCore import QRectF, Qt
     from PySide6.QtGui import QColor, QImage, QLinearGradient, QPainter, QPen
 
     image = QImage(size, size, QImage.Format.Format_ARGB32)
     image.fill(Qt.GlobalColor.transparent)
     p = QPainter(image)
     p.setRenderHint(QPainter.RenderHint.Antialiasing)
+    p.setRenderHint(QPainter.RenderHint.SmoothPixmapTransform)
     margin = size * 0.09
     rect = QRectF(margin, margin, size - 2 * margin, size - 2 * margin)
-    gradient = QLinearGradient(rect.topLeft(), rect.bottomRight())
-    gradient.setColorAt(0, QColor("#2a6fd6"))
-    gradient.setColorAt(1, QColor("#14306b"))
-    p.setPen(Qt.PenStyle.NoPen)
+    gradient = QLinearGradient(rect.topLeft(), rect.bottomLeft())
+    gradient.setColorAt(0, QColor("#ffffff"))
+    gradient.setColorAt(1, QColor("#f1f4f9"))
+    p.setPen(QPen(QColor(0, 0, 0, 28), max(1.0, size / 512)))
     p.setBrush(gradient)
     p.drawRoundedRect(rect, size * 0.2, size * 0.2)
-
-    bars = [0.28, 0.5, 0.8, 0.6, 0.38]
-    width = rect.width() * 0.07
-    gap = rect.width() * 0.045
-    total = len(bars) * width + (len(bars) - 1) * gap
-    x = rect.center().x() - total / 2 - rect.width() * 0.06
-    mid = rect.center().y() - rect.height() * 0.04
-    p.setBrush(QColor("#ffffff"))
-    for height in bars:
-        h = rect.height() * 0.42 * height
-        p.drawRoundedRect(QRectF(x, mid - h / 2, width, h), width / 2, width / 2)
-        x += width + gap
-
-    lens_center = QPointF(rect.center().x() + rect.width() * 0.08, mid)
-    radius = rect.width() * 0.27
-    p.setBrush(Qt.BrushStyle.NoBrush)
-    p.setPen(QPen(QColor("#ffb48a"), size * 0.045))
-    p.drawEllipse(lens_center, radius, radius)
-    handle_start = QPointF(lens_center.x() + radius * 0.72, lens_center.y() + radius * 0.72)
-    handle_end = QPointF(lens_center.x() + radius * 1.12, lens_center.y() + radius * 1.12)
-    pen = QPen(QColor("#ffb48a"), size * 0.07)
-    pen.setCapStyle(Qt.PenCapStyle.RoundCap)
-    p.setPen(pen)
-    p.drawLine(handle_start, handle_end)
+    mark = QImage(str(LOGO_PNG))
+    inset = rect.width() * 0.13
+    p.drawImage(rect.adjusted(inset, inset, -inset, -inset), mark)
     p.end()
     return image
 

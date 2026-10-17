@@ -13,10 +13,13 @@ The layout follows published conventions (sources in docs/REPORT_LAYOUT.md):
   1.47 times larger at the same point size (ก is 0.586 em against 0.400 em),
   so 11 pt here prints the same size as TH Sarabun New 16 pt.
 * English: Times New Roman 12 pt, 2.54 cm (1 inch) margins, block paragraphs.
-* Both: a running header (clinic, "confidential"), a footer with the child
-  code, session date and "page x of y", numbered sections, the identifying
-  details as a table, and a signature block. Unsigned reports carry a "DRAFT"
-  watermark on every page.
+* Both: three type sizes (title, body, small print); a letterhead with the
+  PasaScope logo on page one and a running header (clinic, "confidential")
+  on the others; a footer with the child code, session date and "page x of
+  y"; the logo faint behind the text of every page; numbered sections; the
+  identifying details as a table; bullets that line up with the paragraph
+  indent; and a signature block. An unsigned report carries a boxed "ร่าง" /
+  "DRAFT" stamp at the top of every page.
 """
 
 from __future__ import annotations
@@ -27,13 +30,14 @@ from datetime import date, datetime, timedelta, timezone
 from pathlib import Path
 import re
 
-from PySide6.QtCore import QMarginsF, QPointF, QRectF, Qt
+from PySide6.QtCore import QMarginsF, QPointF, QRectF, Qt, QUrl
 from PySide6.QtGui import (
     QBrush,
     QColor,
     QFont,
     QFontDatabase,
     QGuiApplication,
+    QImage,
     QPageLayout,
     QPageSize,
     QPagedPaintDevice,
@@ -45,8 +49,8 @@ from PySide6.QtGui import (
     QTextCursor,
     QTextDocument,
     QTextFormat,
+    QTextImageFormat,
     QTextLength,
-    QTextListFormat,
     QTextTableCellFormat,
     QTextTableFormat,
 )
@@ -65,8 +69,15 @@ ENGLISH_MONTHS = ("January", "February", "March", "April", "May", "June", "July"
 INK = QColor("#111111")
 RULE = QColor("#7a7a7a")
 TABLE_LINE = QColor("#9a9a9a")
-LABEL_FILL = QColor("#f2f2f2")
-WATERMARK = QColor(0, 0, 0, 20)
+LABEL_FILL = QColor(0, 0, 0, 13)  # see-through, so the background logo shows under shaded cells
+DRAFT_INK = QColor("#9b2c2c")
+LOGO = Path(__file__).resolve().parent / "assets" / "logo.png"
+LOGO_OPACITY = 0.06
+LETTERHEAD_MM = 18
+# Thai letters drawn inside Times New Roman text: Sarabun's Thai is 0.586 em
+# tall and Times' x-height 0.447 em; at 0.9 of the size the Thai sits with the
+# Latin lower case as it does within Sarabun itself.
+THAI_IN_LATIN = 0.9
 
 
 @dataclass(frozen=True)
@@ -74,27 +85,37 @@ class Layout:
     """Page and type settings for one report language. Sizes in points, margins in millimetres."""
 
     families: tuple[str, ...]
-    body_pt: float
+    # Three sizes only: title, everything in the body (headings, tables and
+    # notes included), and the small print of the running header, footer and
+    # signature note. A clinic name above the title sits between the two.
     title_pt: float
+    organization_pt: float
+    body_pt: float
     small_pt: float
-    running_pt: float
     line_height: int  # percent of the font's own line spacing
     margins_mm: tuple[float, float, float, float]  # left, top, right, bottom
     first_line_indent_mm: float
+    list_marker_mm: float  # bullet position, from the left margin
+    list_text_mm: float  # where a list item's text (and its wrapped lines) starts
     paragraph_after_pt: float
     heading_before_pt: float
     heading_after_pt: float
+    italic_notes: bool  # Thai has no true italic, so Thai notes stay upright
     words: dict[str, str] = field(default_factory=dict)
 
 
 LAYOUTS = {
     "th": Layout(
         families=("Sarabun",),
-        body_pt=11, title_pt=13.5, small_pt=10, running_pt=8.5,
+        # TH Sarabun New 20 / 18 / 16 / 14 pt, the sizes Thai official
+        # documents use, printed with Sarabun (11 pt Sarabun = 16 pt TH Sarabun New).
+        title_pt=13.5, organization_pt=12, body_pt=11, small_pt=9.5,
         line_height=112,
         margins_mm=(30, 25, 20, 20),
         first_line_indent_mm=25,
-        paragraph_after_pt=6, heading_before_pt=12, heading_after_pt=4,
+        list_marker_mm=25, list_text_mm=30,
+        paragraph_after_pt=6, heading_before_pt=12, heading_after_pt=6,
+        italic_notes=False,
         words={
             "confidential": "ข้อมูลสุขภาพส่วนบุคคล  เก็บเป็นความลับ",
             "page": "หน้า {page} จาก {pages}",
@@ -110,11 +131,13 @@ LAYOUTS = {
     ),
     "en": Layout(
         families=("Times New Roman", "Sarabun"),
-        body_pt=12, title_pt=14, small_pt=10.5, running_pt=9,
+        title_pt=14, organization_pt=12, body_pt=12, small_pt=10,
         line_height=115,
         margins_mm=(25.4, 25.4, 25.4, 25.4),
         first_line_indent_mm=0,
-        paragraph_after_pt=6, heading_before_pt=14, heading_after_pt=4,
+        list_marker_mm=6.35, list_text_mm=12.7,
+        paragraph_after_pt=6, heading_before_pt=12, heading_after_pt=6,
+        italic_notes=True,
         words={
             "confidential": "Confidential health information",
             "page": "Page {page} of {pages}",
@@ -136,7 +159,6 @@ DETAIL_SECTIONS = {
     "Session details", "Data sources", "Session Overview", "Data Sources",
 }
 SIGNOFF_SECTIONS = {"การลงนามของนักบำบัด", "Therapist sign-off", "Therapist Sign-off"}
-SMALL_SECTIONS = {"ข้อจำกัด", "Limitations"}
 # Lines the system writes into the sign-off section; the signature block replaces them.
 SIGNOFF_LINES = re.compile(
     r"^(- )?(ลงนามโดย|สถานะ|เวลาลงนาม|Signed by|Status|Signed at|Sign-off status|Export timestamp)\s*:"
@@ -395,19 +417,48 @@ class _Builder:
                 piece = piece[1:-1]
             elif piece.startswith("*") and piece.endswith("*") and len(piece) > 2:
                 piece = piece[1:-1]
-                fmt.setFontItalic(True)
-            self.cursor.insertText(breakable(piece), fmt)
+                fmt.setFontItalic(self.layout.italic_notes)
+            self.text(piece, fmt)
+
+    def text(self, text: str, fmt: QTextCharFormat) -> None:
+        """Insert text; in an English report Thai runs are set in Sarabun at a matching size."""
+        if self.language == "th" or not THAI_RUN.search(text):
+            self.cursor.insertText(breakable(text), fmt)
+            return
+        position = 0
+        for match in THAI_RUN.finditer(text):
+            if match.start() > position:
+                self.cursor.insertText(text[position:match.start()], fmt)
+            thai = QTextCharFormat(fmt)
+            thai.setFontFamilies(["Sarabun"])
+            thai.setFontPointSize(fmt.font().pointSizeF() * THAI_IN_LATIN)
+            thai.setFontItalic(False)
+            self.cursor.insertText(_thai_breaks(match.group(0)), thai)
+            position = match.end()
+        if position < len(text):
+            self.cursor.insertText(text[position:], fmt)
 
     def paragraph(self, text: str, *, size: float | None = None, indent: bool = True, **kwargs) -> None:
         self.new_block(self.block(indent_mm=self.layout.first_line_indent_mm if indent else 0, **kwargs), self.char(size))
         self.inline(text, self.char(size))
 
     def title(self, organization: str, title: str) -> None:
+        """The letterhead on page one: the logo, the clinic, and the report title, centred."""
+        center = Qt.AlignmentFlag.AlignHCenter
+        logo = QImage(str(LOGO))
+        if not logo.isNull():
+            self.document.addResource(QTextDocument.ResourceType.ImageResource, QUrl("pasascope-logo"), logo)
+            self.new_block(self.block(align=center, after=6), self.char())
+            image = QTextImageFormat()
+            image.setName("pasascope-logo")
+            image.setWidth(self.mm(LETTERHEAD_MM))
+            image.setHeight(self.mm(LETTERHEAD_MM))
+            self.cursor.insertImage(image)
         if organization:
-            self.new_block(self.block(align=Qt.AlignmentFlag.AlignHCenter, after=2), self.char(self.layout.body_pt, bold=True))
-            self.cursor.insertText(organization, self.char(self.layout.body_pt, bold=True))
-        self.new_block(self.block(align=Qt.AlignmentFlag.AlignHCenter, after=14), self.char(self.layout.title_pt, bold=True))
-        self.cursor.insertText(title, self.char(self.layout.title_pt, bold=True))
+            self.new_block(self.block(align=center, after=2), self.char(self.layout.organization_pt, bold=True))
+            self.text(organization, self.char(self.layout.organization_pt, bold=True))
+        self.new_block(self.block(align=center, after=12), self.char(self.layout.title_pt, bold=True))
+        self.text(title, self.char(self.layout.title_pt, bold=True))
 
     def heading(self, number: int | None, text: str) -> None:
         label = f"{number}. {text}" if number else text
@@ -415,24 +466,52 @@ class _Builder:
         fmt.setNonBreakableLines(True)
         self.new_block(fmt, self.char(bold=True))
         self.headings.append(self.cursor.block().blockNumber())
-        self.cursor.insertText(label, self.char(bold=True))
+        self.text(label, self.char(bold=True))
 
     def subheading(self, text: str) -> None:
         self.new_block(self.block(before=self.layout.paragraph_after_pt, after=2), self.char(bold=True))
-        self.cursor.insertText(text, self.char(bold=True))
+        self.text(text, self.char(bold=True))
 
-    def bullets(self, items: list[str], *, size: float | None = None) -> None:
-        for number, item in enumerate(items):
-            self.new_block(self.block(after=2 if number < len(items) - 1 else self.layout.paragraph_after_pt), self.char(size))
-            if number == 0:
-                list_format = QTextListFormat()
-                list_format.setStyle(QTextListFormat.Style.ListDisc)
-                list_format.setIndent(1)
-                self.cursor.createList(list_format)
-                current = self.cursor.currentList()
-            else:
-                current.add(self.cursor.block())
-            self.inline(item, self.char(size))
+    def bullets(self, items: list[str]) -> None:
+        """A bullet list with every line of an item starting at the same place.
+
+        Drawn as a borderless table: the bullet sits at ``list_marker_mm`` (the
+        paragraph indent in Thai) and the text, wrapped lines included, at
+        ``list_text_mm``.
+        """
+        marker = self.layout.list_marker_mm
+        gap = self.layout.list_text_mm - marker
+        fmt = QTextTableFormat()
+        fmt.setBorder(0)
+        fmt.setBorderStyle(QTextTableFormat.BorderStyle.BorderStyle_None)
+        fmt.setCellSpacing(0)
+        fmt.setCellPadding(0)
+        fmt.setLeftMargin(self.mm(marker))
+        fmt.setTopMargin(0)
+        fmt.setBottomMargin(self.pt(self.layout.paragraph_after_pt))
+        # Qt counts the left margin inside a table's fixed width.
+        fmt.setWidth(QTextLength(QTextLength.Type.FixedLength, self.from_device(self.body_width)))
+        fmt.setColumnWidthConstraints([
+            QTextLength(QTextLength.Type.FixedLength, self.mm(gap)),
+            QTextLength(QTextLength.Type.VariableLength, 0),
+        ])
+        if self.first_block:
+            self.first_block = False
+        table = self.cursor.insertTable(len(items), 2, fmt)
+        for row, item in enumerate(items):
+            for column, text in ((0, "•"), (1, item)):
+                cell = table.cellAt(row, column)
+                cell_format = QTextTableCellFormat(cell.format().toTableCellFormat())
+                cell_format.setBottomPadding(self.pt(2) if row < len(items) - 1 else 0)
+                cell.setFormat(cell_format)
+                cursor = cell.firstCursorPosition()
+                block = QTextBlockFormat()
+                block.setLineHeight(self.layout.line_height, QTextBlockFormat.LineHeightTypes.ProportionalHeight.value)
+                cursor.setBlockFormat(block)
+                saved, self.cursor = self.cursor, cursor
+                self.inline(text, self.char())
+                self.cursor = saved
+        self.cursor.movePosition(QTextCursor.MoveOperation.End)
 
     def _table(self, rows: int, columns: int, widths: list[float], *, header: bool) -> object:
         fmt = QTextTableFormat()
@@ -466,7 +545,7 @@ class _Builder:
         block.setLineHeight(self.layout.line_height, QTextBlockFormat.LineHeightTypes.ProportionalHeight.value)
         cursor.setBlockFormat(block)
         saved, self.cursor = self.cursor, cursor
-        self.inline(text, self.char(self.layout.body_pt - 0.5, bold=bold))
+        self.inline(text, self.char(bold=bold))
         self.cursor = saved
 
     def details(self, pairs: list[tuple[str, str]]) -> None:
@@ -502,12 +581,12 @@ class _Builder:
         self.new_block(self.block(align=center, before=self.layout.heading_before_pt * 2, after=2, left=left), self.char())
         first = self.cursor.block().blockNumber()
         if meta.signed:
-            self.cursor.insertText(f"{words['sign']}  ", self.char())
-            name = self.char(italic=True)
+            self.text(f"{words['sign']}  ", self.char())
+            name = self.char(italic=self.layout.italic_notes)
             name.setUnderlineStyle(QTextCharFormat.UnderlineStyle.DotLine)
-            self.cursor.insertText(f"  {meta.signed_by}  ", name)
+            self.text(f"  {meta.signed_by}  ", name)
         else:
-            self.cursor.insertText(f"{words['sign']} {dots}", self.char())
+            self.text(f"{words['sign']} {dots}", self.char())
         lines = [f"( {meta.signed_by} )" if meta.signed_by else f"( {dots} )", words["role"]]
         if meta.signed:
             lines.append(f"{words['date']} {formal_date(meta.signed_at, self.language, with_time=True)}")
@@ -515,10 +594,11 @@ class _Builder:
             lines.append(f"{words['date']} {'.' * 36}")
         for line in lines:
             self.new_block(self.block(align=center, after=2, left=left), self.char())
-            self.cursor.insertText(line, self.char())
+            self.text(line, self.char())
         note = words["e_signed"] if meta.signed else words["draft_note"]
-        self.new_block(self.block(align=center, before=4, after=0, left=left), self.char(self.layout.small_pt, italic=True))
-        self.cursor.insertText(note, self.char(self.layout.small_pt, italic=True))
+        note_format = self.char(self.layout.small_pt, italic=self.layout.italic_notes)
+        self.new_block(self.block(align=center, before=4, after=0, left=left), note_format)
+        self.text(note, note_format)
         return first
 
 
@@ -545,9 +625,8 @@ def build_document(device: QPagedPaintDevice, markdown: str, meta: ReportMeta, l
         if pairs is not None:
             builder.details(pairs)
             continue
-        size = layout.small_pt if section.heading in SMALL_SECTIONS else None
         for kind, value in _blocks(section.lines):
-            _add_block(builder, kind, value, size=size)
+            _add_block(builder, kind, value)
     for kind, value in _blocks(signoff_extra or []):
         _add_block(builder, kind, value)
     signature = builder.signature(meta)
@@ -570,11 +649,11 @@ def _detail_pairs(section: Section) -> list[tuple[str, str]] | None:
     return pairs or None
 
 
-def _add_block(builder: _Builder, kind: str, value, *, size: float | None = None) -> None:
+def _add_block(builder: _Builder, kind: str, value) -> None:
     if kind == "para":
-        builder.paragraph(value, size=size)
+        builder.paragraph(value)
     elif kind == "list":
-        builder.bullets(value, size=size)
+        builder.bullets(value)
     elif kind == "table":
         rows, aligns = value
         builder.data_table(rows, aligns)
@@ -623,18 +702,24 @@ def _paint_furniture(painter: QPainter, page: QRectF, body: QRectF, meta: Report
     words = layout.words
     small = QFont()
     small.setFamilies(list(layout.families))
-    small.setPointSizeF(layout.running_pt)
+    small.setPointSizeF(layout.small_pt)
     painter.setFont(small)
     painter.setPen(QPen(INK))
-    line_gap = mm(3)
-    text_height = pt(layout.running_pt * 1.6)
+    line_gap = mm(2.5)
+    text_height = pt(layout.small_pt * 1.6)
 
-    header_line = body.top() - mm(6)
-    header = QRectF(body.left(), header_line - line_gap - text_height, body.width(), text_height)
-    painter.drawText(header, Qt.AlignmentFlag.AlignLeft | Qt.AlignmentFlag.AlignBottom, meta.organization or meta.title)
-    painter.drawText(header, Qt.AlignmentFlag.AlignRight | Qt.AlignmentFlag.AlignBottom, words["confidential"])
-    painter.setPen(QPen(RULE, pt(0.5)))
-    painter.drawLine(QPointF(body.left(), header_line), QPointF(body.right(), header_line))
+    # Page one carries the letterhead instead of the running header.
+    if index > 0:
+        header_line = body.top() - mm(6)
+        header = QRectF(body.left(), header_line - line_gap - text_height, body.width(), text_height)
+        left_text = painter.fontMetrics().elidedText(meta.organization or meta.title, Qt.TextElideMode.ElideRight,
+                                                     int(body.width() * 0.4))
+        painter.drawText(header, Qt.AlignmentFlag.AlignLeft | Qt.AlignmentFlag.AlignBottom, left_text)
+        painter.drawText(header, Qt.AlignmentFlag.AlignRight | Qt.AlignmentFlag.AlignBottom, words["confidential"])
+        painter.setPen(QPen(RULE, pt(0.5)))
+        painter.drawLine(QPointF(body.left(), header_line), QPointF(body.right(), header_line))
+    else:
+        painter.setPen(QPen(RULE, pt(0.5)))
 
     footer_line = body.bottom() + mm(5)
     painter.drawLine(QPointF(body.left(), footer_line), QPointF(body.right(), footer_line))
@@ -648,20 +733,41 @@ def _paint_furniture(painter: QPainter, page: QRectF, body: QRectF, meta: Report
     painter.drawText(footer, Qt.AlignmentFlag.AlignLeft | Qt.AlignmentFlag.AlignTop, "   ·   ".join(bits))
     painter.drawText(footer, Qt.AlignmentFlag.AlignRight | Qt.AlignmentFlag.AlignTop,
                      words["page"].format(page=index + 1, pages=pages))
+    if index == 0:
+        confidential = QRectF(body.left(), footer.bottom(), body.width(), text_height)
+        painter.drawText(confidential, Qt.AlignmentFlag.AlignLeft | Qt.AlignmentFlag.AlignTop, words["confidential"])
 
 
-def _paint_watermark(painter: QPainter, page: QRectF, layout: Layout, pt) -> None:
+def _paint_logo(painter: QPainter, body: QRectF, mm) -> None:
+    """The PasaScope mark, faint and centred behind the text of every page."""
+    logo = QImage(str(LOGO))
+    if logo.isNull():
+        return
+    side = min(body.width(), mm(120))
+    target = QRectF(body.center().x() - side / 2, body.center().y() - side / 2, side, side)
+    painter.save()
+    painter.setOpacity(LOGO_OPACITY)
+    painter.setRenderHint(QPainter.RenderHint.SmoothPixmapTransform)
+    painter.drawImage(target, logo)
+    painter.restore()
+
+
+def _paint_draft_stamp(painter: QPainter, page: QRectF, body: QRectF, layout: Layout, mm, pt) -> None:
+    """A boxed "ร่าง" / "DRAFT" at the top centre of the page, as Thai draft documents are marked."""
     font = QFont()
     font.setFamilies(list(layout.families))
-    font.setPointSizeF(110)
+    font.setPointSizeF(layout.body_pt)
     font.setBold(True)
     painter.save()
     painter.setFont(font)
-    painter.setPen(QPen(WATERMARK))
-    painter.translate(page.center())
-    painter.rotate(-50)
-    box = QRectF(-page.height(), -pt(100), page.height() * 2, pt(200))
-    painter.drawText(box, Qt.AlignmentFlag.AlignCenter, layout.words["draft"])
+    text = layout.words["draft"]
+    width = painter.fontMetrics().horizontalAdvance(text) + mm(8)
+    height = mm(7.5)
+    box = QRectF(page.center().x() - width / 2, mm(9), width, height)
+    painter.setPen(QPen(DRAFT_INK, pt(0.9)))
+    painter.setBrush(Qt.BrushStyle.NoBrush)
+    painter.drawRoundedRect(box, mm(1), mm(1))
+    painter.drawText(box, Qt.AlignmentFlag.AlignCenter, text)
     painter.restore()
 
 
@@ -703,13 +809,14 @@ def paint_report(device: QPagedPaintDevice, markdown: str, meta: ReportMeta) -> 
     for index in range(pages):
         if index:
             device.newPage()
+        _paint_logo(painter, body, mm)
         _paint_furniture(painter, page, body, meta, layout, language, index, pages, mm, pt)
         painter.save()
         painter.translate(0, -index * page.height())
         document.drawContents(painter, QRectF(0, index * page.height(), page.width(), page.height()))
         painter.restore()
         if not meta.signed:
-            _paint_watermark(painter, page, layout, pt)
+            _paint_draft_stamp(painter, page, body, layout, mm, pt)
     painter.end()
     return pages
 

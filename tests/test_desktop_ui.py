@@ -334,9 +334,11 @@ def test_formal_pdf_layout_in_both_languages(window, tmp_path):
     from PySide6.QtGui import QPdfWriter
 
     from packages.desktop.ui.pdf import (
-        ZERO_WIDTH_SPACE, ReportMeta, a4_layout, breakable, build_document, formal_date, LAYOUTS, write_report_pdf,
+        THAI_IN_LATIN, ZERO_WIDTH_SPACE, ReportMeta, a4_layout, breakable, build_document, formal_date, LAYOUTS,
+        write_report_pdf,
     )
-    from PySide6.QtCore import QRectF
+    from PySide6.QtCore import QRectF, QUrl
+    from PySide6.QtGui import QTextDocument
 
     assert formal_date("2026-10-02", "th") == "2 ตุลาคม 2569"
     assert formal_date("2026-10-02", "en") == "2 October 2026"
@@ -366,6 +368,22 @@ def test_formal_pdf_layout_in_both_languages(window, tmp_path):
         assert report.signed_by in text
         assert ("ลงนามอิเล็กทรอนิกส์" if language == "th" else "Signed electronically") in text
         assert document.pageCount() >= 1
+        # Only the layout's sizes appear (Thai inside an English report is scaled to match Times).
+        layout = LAYOUTS[language]
+        allowed = {layout.title_pt, layout.organization_pt, layout.body_pt, layout.small_pt}
+        allowed |= {round(size * THAI_IN_LATIN, 3) for size in allowed}
+        sizes = set()
+        block = document.begin()
+        while block.isValid():
+            it = block.begin()
+            while not it.atEnd():
+                fragment = it.fragment()
+                if fragment.isValid() and fragment.text().strip(ZERO_WIDTH_SPACE + "\ufffc "):
+                    sizes.add(round(fragment.charFormat().font().pointSizeF(), 3))
+                it += 1
+            block = block.next()
+        assert sizes <= allowed, sizes
+        assert not document.resource(QTextDocument.ResourceType.ImageResource, QUrl("pasascope-logo")) is None
     assert "TimesNewRoman" in (tmp_path / "en.pdf").read_bytes().decode("latin-1")
     assert "Sarabun" in (tmp_path / "th.pdf").read_bytes().decode("latin-1")
 

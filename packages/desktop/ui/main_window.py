@@ -6,7 +6,7 @@ from datetime import datetime
 from pathlib import Path
 
 from PySide6.QtCore import QSettings, Qt, QUrl
-from PySide6.QtGui import QAction, QActionGroup, QColor, QDesktopServices, QKeySequence
+from PySide6.QtGui import QAction, QActionGroup, QColor, QDesktopServices, QKeySequence, QPixmap
 from PySide6.QtWidgets import (
     QComboBox,
     QFileDialog,
@@ -39,6 +39,7 @@ from packages.desktop.ui.pages.review import ReviewPage
 from packages.desktop.ui.tasks import TaskRunner
 from packages.desktop.ui.widgets import EmptyState, button, chip, label, set_chip
 
+LOGO = Path(__file__).resolve().parent / "assets" / "logo.png"
 OVERVIEW = "__overview__"  # session picker entry for the case overview
 NO_SESSION_PAGE, SESSION_PAGE, OVERVIEW_PAGE = range(3)
 HOME_PAGE, CASE_PAGE, KNOWLEDGE_PAGE = range(3)
@@ -112,9 +113,21 @@ class MainWindow(QMainWindow):
         layout = QVBoxLayout(side)
         layout.setContentsMargins(12, 16, 12, 12)
         layout.setSpacing(2)
-        brand = label("PasaScope", "Brand")
-        brand.setContentsMargins(8, 0, 0, 10)
-        layout.addWidget(brand)
+        brand_row = QHBoxLayout()
+        brand_row.setContentsMargins(8, 0, 0, 10)
+        brand_row.setSpacing(8)
+        mark = QLabel()
+        logo = QPixmap(str(LOGO))
+        if not logo.isNull():
+            ratio = self.devicePixelRatioF() or 1.0
+            logo = logo.scaled(int(22 * ratio), int(22 * ratio), Qt.AspectRatioMode.KeepAspectRatio,
+                               Qt.TransformationMode.SmoothTransformation)
+            logo.setDevicePixelRatio(ratio)
+            mark.setPixmap(logo)
+        brand_row.addWidget(mark)
+        brand_row.addWidget(label("PasaScope", "Brand"))
+        brand_row.addStretch(1)
+        layout.addLayout(brand_row)
         self.home_btn = button(tr("หน้าแรก", "Home"), "nav")
         self.home_btn.clicked.connect(self.show_home)
         self.knowledge_btn = button(tr("ความรู้", "Knowledge"), "nav")

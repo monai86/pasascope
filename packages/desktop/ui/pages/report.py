@@ -25,7 +25,7 @@ from PySide6.QtWidgets import (
 
 from packages.desktop.ui import theme
 from packages.desktop.ui.pages.base import SessionPage
-from packages.desktop.ui.pdf import ReportMeta, a4_layout, paint_report, write_report_pdf
+from packages.desktop.ui.pdf import ReportMeta, a4_layout, ensure_fonts, paint_report, write_report_pdf
 from packages.desktop.ui.widgets import EmptyState, button, chip, label, set_chip
 
 REPORT_LANGUAGES = [("en", "English"), ("th", "ไทย")]
@@ -157,7 +157,10 @@ class ReportPage(SessionPage):
         editor_layout.setContentsMargins(0, 0, 6, 0)
         editor_layout.addWidget(label(tr("แก้ไข (Markdown)", "Edit (Markdown)"), "Muted"))
         self.editor = QPlainTextEdit()
-        self.editor.setStyleSheet("font-family: Menlo, 'SF Mono', monospace; font-size: 13px;")
+        # Sarabun for Thai and Latin alike: a monospace font has no Thai, and the
+        # fallback set Thai smaller than the Latin around it.
+        ensure_fonts()
+        self.editor.setStyleSheet("font-family: 'Sarabun'; font-size: 15px;")
         self.editor.textChanged.connect(self._on_edit)
         editor_layout.addWidget(self.editor)
         split.addWidget(editor_box)
