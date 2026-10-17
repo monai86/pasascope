@@ -53,21 +53,26 @@ def main(argv: list[str] | None = None) -> int:
         home = demo_home()
         if not home.exists():
             QMessageBox.information(
-                None, "ยังไม่มีข้อมูลสาธิต",
-                "สร้างข้อมูลสาธิตก่อนด้วย\n.venv312/bin/python scripts/seed_desktop_demo.py",
+                None, "No demonstration data",
+                "Create it first with\n.venv312/bin/python scripts/seed_desktop_demo.py",
             )
             return 1
     try:
         service = DesktopService(open_workspace(home))
     except Exception as exc:  # noqa: BLE001 - nothing else can run without the workspace
-        QMessageBox.critical(None, "เปิดข้อมูลไม่ได้", f"เปิดโฟลเดอร์ข้อมูลไม่ได้\n{type(exc).__name__}: {exc}")
+        QMessageBox.critical(None, "Cannot open data", f"The data folder could not be opened.\n{type(exc).__name__}: {exc}")
         return 1
 
+    from packages.desktop.core.i18n import set_language
+
+    set_language(service.language)  # before the window's text is built
     from packages.desktop.ui.main_window import MainWindow
 
     window = MainWindow(service, version=_version())
     if args.demo:
-        window.setWindowTitle("PasaScope — ข้อมูลสาธิต (ไม่ใช่เด็กจริง)")
+        from packages.desktop.core.i18n import tr
+
+        window.setWindowTitle(tr("PasaScope — ข้อมูลสาธิต (ไม่ใช่เด็กจริง)", "PasaScope — demonstration data (not real children)"))
     window.show()
     if not service.therapist_name:
         window.ask_therapist_name(first_run=True)

@@ -1,0 +1,443 @@
+{
+ "by_age": {
+  "groups": {
+   "TD": {
+    "mlu_words": [
+     {
+      "year": 2,
+      "n": 180,
+      "q25": 1.788,
+      "median": 2.235,
+      "q75": 2.698
+     },
+     {
+      "year": 3,
+      "n": 102,
+      "q25": 2.819,
+      "median": 3.21,
+      "q75": 3.642
+     },
+     {
+      "year": 4,
+      "n": 77,
+      "q25": 3.362,
+      "median": 4.53,
+      "q75": 5.639
+     },
+     {
+      "year": 5,
+      "n": 57,
+      "q25": 3.43,
+      "median": 4.28,
+      "q75": 5.6
+     }
+    ],
+    "echolalia_ratio": [
+     {
+      "year": 2,
+      "n": 180,
+      "q25": 0.012,
+      "median": 0.023,
+      "q75": 0.04
+     },
+     {
+      "year": 3,
+      "n": 102,
+      "q25": 0.006,
+      "median": 0.013,
+      "q75": 0.024
+     },
+     {
+      "year": 4,
+      "n": 77,
+      "q25": 0.0,
+      "median": 0.007,
+      "q75": 0.015
+     },
+     {
+      "year": 5,
+      "n": 57,
+      "q25": 0.0,
+      "median": 0.005,
+      "q75": 0.011
+     }
+    ],
+    "question_ratio": [
+     {
+      "year": 2,
+      "n": 180,
+      "q25": 0.0,
+      "median": 0.012,
+      "q75": 0.032
+     },
+     {
+      "year": 3,
+      "n": 102,
+      "q25": 0.0,
+      "median": 0.006,
+      "q75": 0.041
+     },
+     {
+      "year": 4,
+      "n": 77,
+      "q25": 0.0,
+      "median": 0.005,
+      "q75": 0.016
+     },
+     {
+      "year": 5,
+      "n": 57,
+      "q25": 0.0,
+      "median": 0.014,
+      "q75": 0.027
+     }
+    ]
+   },
+   "LT": {
+    "mlu_words": [
+     {
+      "year": 2,
+      "n": 95,
+      "q25": 1.225,
+      "median": 1.561,
+      "q75": 1.851
+     },
+     {
+      "year": 3,
+      "n": 107,
+      "q25": 2.104,
+      "median": 2.4,
+      "q75": 2.84
+     },
+     {
+      "year": 4,
+      "n": 92,
+      "q25": 2.77,
+      "median": 3.351,
+      "q75": 4.592
+     },
+     {
+      "year": 5,
+      "n": 63,
+      "q25": 3.1,
+      "median": 3.77,
+      "q75": 5.24
+     }
+    ],
+    "echolalia_ratio": [
+     {
+      "year": 2,
+      "n": 95,
+      "q25": 0.011,
+      "median": 0.024,
+      "q75": 0.047
+     },
+     {
+      "year": 3,
+      "n": 107,
+      "q25": 0.007,
+      "median": 0.017,
+      "q75": 0.031
+     },
+     {
+      "year": 4,
+      "n": 92,
+      "q25": 0.0,
+      "median": 0.011,
+      "q75": 0.018
+     },
+     {
+      "year": 5,
+      "n": 63,
+      "q25": 0.0,
+      "median": 0.007,
+      "q75": 0.019
+     }
+    ],
+    "question_ratio": [
+     {
+      "year": 2,
+      "n": 95,
+      "q25": 0.0,
+      "median": 0.0,
+      "q75": 0.0
+     },
+     {
+      "year": 3,
+      "n": 107,
+      "q25": 0.0,
+      "median": 0.0,
+      "q75": 0.016
+     },
+     {
+      "year": 4,
+      "n": 92,
+      "q25": 0.0,
+      "median": 0.006,
+      "q75": 0.021
+     },
+     {
+      "year": 5,
+      "n": 63,
+      "q25": 0.0,
+      "median": 0.014,
+      "q75": 0.032
+     }
+    ]
+   },
+   "ASD": {
+    "mlu_words": [
+     {
+      "year": 2,
+      "n": 10,
+      "q25": 1.0,
+      "median": 1.0,
+      "q75": 1.052
+     },
+     {
+      "year": 3,
+      "n": 33,
+      "q25": 1.11,
+      "median": 1.254,
+      "q75": 1.85
+     },
+     {
+      "year": 4,
+      "n": 27,
+      "q25": 1.335,
+      "median": 2.13,
+      "q75": 2.765
+     },
+     {
+      "year": 5,
+      "n": 21,
+      "q25": 1.34,
+      "median": 2.6,
+      "q75": 2.79
+     },
+     {
+      "year": 6,
+      "n": 16,
+      "q25": 2.245,
+      "median": 2.656,
+      "q75": 3.102
+     },
+     {
+      "year": 7,
+      "n": 14,
+      "q25": 1.498,
+      "median": 2.12,
+      "q75": 2.707
+     },
+     {
+      "year": 8,
+      "n": 11,
+      "q25": 1.535,
+      "median": 1.8,
+      "q75": 2.07
+     }
+    ],
+    "echolalia_ratio": [
+     {
+      "year": 2,
+      "n": 10,
+      "q25": 0.0,
+      "median": 0.0,
+      "q75": 0.0
+     },
+     {
+      "year": 3,
+      "n": 33,
+      "q25": 0.0,
+      "median": 0.018,
+      "q75": 0.036
+     },
+     {
+      "year": 4,
+      "n": 27,
+      "q25": 0.014,
+      "median": 0.029,
+      "q75": 0.069
+     },
+     {
+      "year": 5,
+      "n": 21,
+      "q25": 0.005,
+      "median": 0.039,
+      "q75": 0.058
+     },
+     {
+      "year": 6,
+      "n": 16,
+      "q25": 0.035,
+      "median": 0.052,
+      "q75": 0.08
+     },
+     {
+      "year": 7,
+      "n": 14,
+      "q25": 0.029,
+      "median": 0.046,
+      "q75": 0.05
+     },
+     {
+      "year": 8,
+      "n": 11,
+      "q25": 0.032,
+      "median": 0.044,
+      "q75": 0.051
+     }
+    ],
+    "question_ratio": [
+     {
+      "year": 2,
+      "n": 10,
+      "q25": 0.0,
+      "median": 0.0,
+      "q75": 0.0
+     },
+     {
+      "year": 3,
+      "n": 33,
+      "q25": 0.0,
+      "median": 0.005,
+      "q75": 0.014
+     },
+     {
+      "year": 4,
+      "n": 27,
+      "q25": 0.003,
+      "median": 0.018,
+      "q75": 0.077
+     },
+     {
+      "year": 5,
+      "n": 21,
+      "q25": 0.005,
+      "median": 0.034,
+      "q75": 0.062
+     },
+     {
+      "year": 6,
+      "n": 16,
+      "q25": 0.052,
+      "median": 0.069,
+      "q75": 0.103
+     },
+     {
+      "year": 7,
+      "n": 14,
+      "q25": 0.018,
+      "median": 0.048,
+      "q75": 0.083
+     },
+     {
+      "year": 8,
+      "n": 11,
+      "q25": 0.023,
+      "median": 0.039,
+      "q75": 0.073
+     }
+    ]
+   }
+  },
+  "source": "TalkBank toy-play transcripts with 50+ child utterances",
+  "corpora": {
+   "TD": [
+    "Eigsti",
+    "EllisWeismer",
+    "Nadig",
+    "NewEngland",
+    "Rescorla"
+   ],
+   "LT": [
+    "EllisWeismer",
+    "Rescorla"
+   ],
+   "ASD": [
+    "Eigsti",
+    "Flusberg",
+    "NYU-Emerson",
+    "Nadig",
+    "Rollins"
+   ]
+  }
+ },
+ "screening": [
+  {
+   "check": "Nadig: as published",
+   "auc": 0.99,
+   "children": 38
+  },
+  {
+   "check": "Nadig: SMOTE inside training folds",
+   "auc": 0.982,
+   "children": 38
+  },
+  {
+   "check": "Nadig: language only (MLU, MLT ratio)",
+   "auc": 0.561,
+   "children": 38
+  },
+  {
+   "check": "Nadig: age only",
+   "auc": 0.973,
+   "children": 38
+  },
+  {
+   "check": "Nadig: sex only",
+   "auc": 0.542,
+   "children": 38
+  },
+  {
+   "check": "Eigsti: as published",
+   "auc": 0.784,
+   "children": 32
+  },
+  {
+   "check": "Eigsti: SMOTE inside training folds",
+   "auc": 0.787,
+   "children": 32
+  },
+  {
+   "check": "Eigsti: language only (MLU, MLT ratio)",
+   "auc": 0.53,
+   "children": 32
+  },
+  {
+   "check": "Eigsti: age only",
+   "auc": 0.86,
+   "children": 32
+  },
+  {
+   "check": "Eigsti: sex only",
+   "auc": 0.38,
+   "children": 32
+  },
+  {
+   "check": "Eigsti: language only, age-matched pairs",
+   "auc": 0.528,
+   "children": 14
+  },
+  {
+   "check": "trained on Eigsti, tested on Nadig: published features",
+   "auc": 0.994,
+   "children": 38
+  },
+  {
+   "check": "trained on Eigsti, tested on Nadig: language only",
+   "auc": 0.597,
+   "children": 38
+  },
+  {
+   "check": "trained on Nadig, tested on Eigsti: published features",
+   "auc": 0.844,
+   "children": 32
+  },
+  {
+   "check": "trained on Nadig, tested on Eigsti: language only",
+   "auc": 0.57,
+   "children": 32
+  }
+ ]
+}

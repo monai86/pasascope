@@ -20,6 +20,7 @@ import subprocess
 import threading
 from typing import Any
 
+from packages.desktop.core.i18n import tr
 from packages.desktop.core.workspace import LOCAL_ORGANIZATION_ID, LOCAL_USER_ID, Workspace
 
 ProgressCallback = Callable[[float, str], None]
@@ -42,7 +43,7 @@ class QaOverrideRequired(WorkflowError):
     """The transcript failed QA; attesting it needs a reason from the therapist."""
 
     def __init__(self, issues: list) -> None:
-        super().__init__("transcript ไม่ผ่านการตรวจรูปแบบ ต้องระบุเหตุผลจึงจะรับรองได้")
+        super().__init__(tr("transcript ไม่ผ่านการตรวจรูปแบบ ต้องระบุเหตุผลจึงจะรับรองได้", "The transcript failed the format check; give a reason to attest it."))
         self.issues = issues
 
 
@@ -92,11 +93,29 @@ class DesktopService:
     def set_therapist_name(self, name: str) -> None:
         name = name.strip()
         if not name:
-            raise WorkflowError("กรุณาใส่ชื่อนักบำบัด")
+            raise WorkflowError(tr("กรุณาใส่ชื่อนักบำบัด", "Enter the therapist's name."))
         if len(name) > 120:
-            raise WorkflowError("ชื่อยาวเกิน 120 ตัวอักษร")
+            raise WorkflowError(tr("ชื่อยาวเกิน 120 ตัวอักษร", "The name is longer than 120 characters."))
         profile = self.workspace.read_profile()
         profile["display_name"] = name
+        self.workspace.write_profile(profile)
+
+    @property
+    def language(self) -> str:
+        """The interface language saved for this workspace ("en" or "th"); English unless chosen."""
+        from packages.desktop.core.i18n import LANGUAGES
+
+        code = str(self.workspace.read_profile().get("language") or "en")
+        return code if code in LANGUAGES else "en"
+
+    def set_language(self, code: str) -> None:
+        """Remember the interface language; the window uses it from the next start."""
+        from packages.desktop.core.i18n import LANGUAGES
+
+        if code not in LANGUAGES:
+            raise WorkflowError(f"Unknown language {code}")
+        profile = self.workspace.read_profile()
+        profile["language"] = code
         self.workspace.write_profile(profile)
 
     # Transcription modes the therapist can pick. On six scripted Thai
@@ -114,7 +133,7 @@ class DesktopService:
 
     def set_transcription_mode(self, mode: str) -> None:
         if mode not in self.TRANSCRIPTION_MODES:
-            raise WorkflowError(f"ไม่รู้จักโหมด {mode}")
+            raise WorkflowError(tr(f"ไม่รู้จักโหมด {mode}", f"Unknown mode {mode}"))
         profile = self.workspace.read_profile()
         profile["transcription_mode"] = mode
         self.workspace.write_profile(profile)
@@ -228,7 +247,7 @@ class DesktopService:
         self._speaker_feature_cache.mkdir(parents=True, exist_ok=True)
         for index, s in enumerate(sessions, start=1):
             if progress is not None:
-                progress(index / (len(sessions) + 1), f"อ่านเสียง session {index}/{len(sessions)}")
+                progress(index / (len(sessions) + 1), tr(f"อ่านเสียง session {index}/{len(sessions)}", f"Reading session {index} of {len(sessions)}"))
             key = sha256(json.dumps([s["audio_file_id"], s["spans"]]).encode()).hexdigest()[:24]
             cached = self._speaker_feature_cache / f"{key}.npy"
             try:
@@ -244,7 +263,7 @@ class DesktopService:
                 np.save(cached, design)
             labelled.append(LabelledSession(s["session_id"], s["child_id"], design, np.asarray(s["labels"], int)))
         if progress is not None:
-            progress(len(sessions) / (len(sessions) + 1), "กำลังเทรนและทดสอบโมเดล")
+            progress(len(sessions) / (len(sessions) + 1), tr("กำลังเทรนและทดสอบโมเดล", "Training and testing the model"))
         result = train_clinic_head(labelled)
         names = [f"{s['name']} {int(start // 60):02d}:{int(start % 60):02d}" for s in sessions for start, _ in s["spans"]]
         result.examples = (np.vstack([item.design for item in labelled]), np.concatenate([item.is_child for item in labelled]), names)
@@ -371,7 +390,7 @@ class DesktopService:
     def _require_signer(self) -> str:
         name = self.therapist_name
         if not name:
-            raise WorkflowError("ตั้งชื่อนักบำบัดก่อน (เมนู ตั้งค่า) เพราะชื่อนี้จะอยู่ในการรับรองและการลงนาม")
+            raise WorkflowError(tr("ตั้งชื่อนักบำบัดก่อน (เมนู ตั้งค่า) เพราะชื่อนี้จะอยู่ในการรับรองและการลงนาม", "Set the therapist name first (Settings); it appears on attestations and signatures."))
         return name
 
     def _save(self) -> None:
@@ -394,7 +413,7 @@ class DesktopService:
     def get_case(self, case_id: str):
         case = self.repo.cases.get(case_id)
         if case is None or case.organization_id != LOCAL_ORGANIZATION_ID:
-            raise WorkflowError("ไม่พบเคสนี้")
+            raise WorkflowError(tr("ไม่พบเคสนี้", "Case not found."))
         return case
 
     def create_case(
@@ -412,7 +431,7 @@ class DesktopService:
 
         child_code = child_code.strip()
         if any(c.child_code == child_code for c in self.list_cases()):
-            raise WorkflowError(f"มีเคสรหัส {child_code} อยู่แล้ว")
+            raise WorkflowError(tr(f"มีเคสรหัส {child_code} อยู่แล้ว", f"A case with code {child_code} already exists."))
         try:
             payload = ChildCaseCreate(
                 child_code=child_code,
@@ -455,7 +474,7 @@ class DesktopService:
 
         self.get_case(case_id)
         if not reason.strip():
-            raise WorkflowError("กรุณาระบุเหตุผลที่ถอนความยินยอม")
+            raise WorkflowError(tr("กรุณาระบุเหตุผลที่ถอนความยินยอม", "Enter the reason for withdrawing consent."))
         result = withdraw_consent(
             self.repo, case_id, reason.strip(), True, actor_id=LOCAL_USER_ID, requester_role="therapist"
         )
@@ -470,15 +489,15 @@ class DesktopService:
         try:
             check(self.repo, *args)
         except ValueError as exc:
-            raise WorkflowError("ผู้ปกครองถอนความยินยอมของเคสนี้แล้ว จึงเพิ่มหรือแก้ข้อมูลไม่ได้") from exc
+            raise WorkflowError(tr("ผู้ปกครองถอนความยินยอมของเคสนี้แล้ว จึงเพิ่มหรือแก้ข้อมูลไม่ได้", "Consent for this case was withdrawn, so its data cannot be added to or changed.")) from exc
 
     def _require_granted(self, case_id: str) -> None:
         """New sessions and recordings need consent that was actually recorded, not just pending."""
         status = self.get_case(case_id).consent_status
         if status == "withdrawn":
-            raise WorkflowError("ผู้ปกครองถอนความยินยอมของเคสนี้แล้ว จึงเพิ่มหรือแก้ข้อมูลไม่ได้")
+            raise WorkflowError(tr("ผู้ปกครองถอนความยินยอมของเคสนี้แล้ว จึงเพิ่มหรือแก้ข้อมูลไม่ได้", "Consent for this case was withdrawn, so its data cannot be added to or changed."))
         if status != "granted":
-            raise WorkflowError("บันทึกความยินยอมของผู้ปกครองก่อน แล้วจึงเริ่ม session หรือบันทึกเสียง")
+            raise WorkflowError(tr("บันทึกความยินยอมของผู้ปกครองก่อน แล้วจึงเริ่ม session หรือบันทึกเสียง", "Record the parent's consent before starting a session or recording."))
 
     # ------------------------------------------------------------------
     # Sessions
@@ -491,7 +510,7 @@ class DesktopService:
     def get_session(self, session_id: str):
         session = self.repo.sessions.get(session_id)
         if session is None or session.organization_id != LOCAL_ORGANIZATION_ID:
-            raise WorkflowError("ไม่พบ session นี้")
+            raise WorkflowError(tr("ไม่พบ session นี้", "Session not found."))
         return session
 
     def create_session(self, case_id: str, session_date: date, *, session_type: str = "therapy_session", notes: str = ""):
@@ -530,7 +549,7 @@ class DesktopService:
         root = self.workspace.storage_root.resolve()
         path = (root / audio_file.object_key).resolve()
         if root not in path.parents or not path.is_file():
-            raise WorkflowError("ไม่พบไฟล์เสียงของ session นี้ในเครื่อง")
+            raise WorkflowError(tr("ไม่พบไฟล์เสียงของ session นี้ในเครื่อง", "This session's recording is not on this computer."))
         return path
 
     def playback_path(self, audio_file) -> Path:
@@ -546,7 +565,7 @@ class DesktopService:
             try:
                 decode_to_wav(source, target)
             except (OSError, subprocess.SubprocessError) as exc:
-                raise WorkflowError("แปลงไฟล์เสียงเพื่อเล่นไม่สำเร็จ (ต้องมี ffmpeg)") from exc
+                raise WorkflowError(tr("แปลงไฟล์เสียงเพื่อเล่นไม่สำเร็จ (ต้องมี ffmpeg)", "Could not convert the recording for playback (ffmpeg is needed).")) from exc
         return target
 
     def store_recording(self, session_id: str, source: Path):
@@ -559,7 +578,7 @@ class DesktopService:
         self._require_granted(self.get_session(session_id).case_id)
         self._ensure(ensure_session_consent_active, session_id)
         if not source.is_file():
-            raise WorkflowError(f"ไม่พบไฟล์ {source.name}")
+            raise WorkflowError(tr(f"ไม่พบไฟล์ {source.name}", f"File not found: {source.name}"))
         content_type = AUDIO_SUFFIXES.get(source.suffix.lower()) or mimetypes.guess_type(source.name)[0] or ""
         size = source.stat().st_size
         duration = _audio_duration(source)
@@ -582,7 +601,7 @@ class DesktopService:
         root = self.workspace.storage_root.resolve()
         destination = (root / audio_file.object_key).resolve()
         if root not in destination.parents:
-            raise WorkflowError("ตำแหน่งเก็บไฟล์เสียงไม่ถูกต้อง")
+            raise WorkflowError(tr("ตำแหน่งเก็บไฟล์เสียงไม่ถูกต้อง", "Invalid storage location for the recording."))
         destination.parent.mkdir(parents=True, exist_ok=True)
         digest = sha256()
         with source.open("rb") as reader, destination.open("wb") as writer:
@@ -618,7 +637,7 @@ class DesktopService:
         self._ensure(ensure_session_consent_active, session_id)
         available, reason = self.transcription_availability()
         if not available:
-            raise WorkflowError(f"ถอดเสียงบนเครื่องไม่ได้: {reason}")
+            raise WorkflowError(tr(f"ถอดเสียงบนเครื่องไม่ได้: {reason}", f"Transcription unavailable: {reason}"))
 
         def on_progress(fraction: float, stage: str) -> None:
             if cancel is not None and cancel.is_set():
@@ -651,10 +670,10 @@ class DesktopService:
             stored.message = "Transcription cancelled by therapist."
             append_job_status(stored, JobStatus.cancelled)
             self.repo.add_audit("job.cancel", job.job_id, "Transcription job cancelled by therapist.", actor_id=LOCAL_USER_ID)
-            raise WorkflowError("ยกเลิกการถอดเสียงแล้ว")
+            raise WorkflowError(tr("ยกเลิกการถอดเสียงแล้ว", "Transcription cancelled."))
         if _status_value(job.status) != "needs_review":
             self._save()
-            raise WorkflowError(f"ถอดเสียงไม่สำเร็จ: {job.message}")
+            raise WorkflowError(tr(f"ถอดเสียงไม่สำเร็จ: {job.message}", f"Transcription failed: {job.message}"))
         self._save()
         return self.get_transcript(session_id)
 
@@ -676,7 +695,7 @@ class DesktopService:
         self.get_session(session_id)
         self._ensure(ensure_session_consent_active, session_id)
         if not text.strip():
-            raise WorkflowError("ไม่มีข้อความให้นำเข้า")
+            raise WorkflowError(tr("ไม่มีข้อความให้นำเข้า", "There is no text to import."))
         replace = self.get_transcript(session_id) is not None
         try:
             if _looks_like_chat(text):
@@ -767,9 +786,9 @@ class DesktopService:
 
         transcript = self.get_transcript(session_id)
         if transcript is None:
-            raise WorkflowError("session นี้ยังไม่มี transcript")
+            raise WorkflowError(tr("session นี้ยังไม่มี transcript", "This session has no transcript yet."))
         if not transcript.therapist_attested:
-            raise WorkflowError("รับรอง transcript ก่อน แล้วจึงวิเคราะห์")
+            raise WorkflowError(tr("รับรอง transcript ก่อน แล้วจึงวิเคราะห์", "Attest the transcript before analysing."))
         self._ensure(ensure_transcript_consent_active, transcript.transcript_id)
         try:
             features = extract_features(
@@ -779,7 +798,7 @@ class DesktopService:
                 self.repo, transcript.transcript_id, MLReviewRequest(force_regenerate=True), actor_id=LOCAL_USER_ID
             )
         except MLReadinessError as exc:
-            raise WorkflowError("; ".join(exc.readiness.reasons) or "ยังสร้าง cue ไม่ได้") from exc
+            raise WorkflowError("; ".join(exc.readiness.reasons) or tr("ยังสร้าง cue ไม่ได้", "Cues could not be created yet.")) from exc
         except ValueError as exc:
             raise WorkflowError(str(exc)) from exc
         self._save()
@@ -801,7 +820,7 @@ class DesktopService:
         self._require_signer()
         result = self.repo.ml_results.get(result_id)
         if result is None:
-            raise WorkflowError("ไม่พบผลการทบทวนนี้")
+            raise WorkflowError(tr("ไม่พบผลการทบทวนนี้", "Review result not found."))
         self._ensure(ensure_session_consent_active, result.session_id)
         try:
             updated = patch_cue_state(
@@ -846,6 +865,30 @@ class DesktopService:
                 "schema_version": getattr(features, "schema_version", None),
             })
         return rows
+
+    def work_queue(self) -> list[dict]:
+        """Everything waiting for the therapist, most urgent first.
+
+        One row per unfinished session of a consented child (``step`` 0-3 as in
+        ``session_step``) and one per child still waiting for consent
+        (``step`` "consent"). ``waiting_days`` counts from the last change.
+        """
+        now = datetime.now(timezone.utc)
+        rows = []
+        for case in self.list_cases():
+            if case.consent_status == "pending":
+                rows.append({"case": case, "session": None, "step": "consent",
+                             "waiting_days": (now - _utc(case.updated_at)).days})
+                continue
+            if case.consent_status != "granted":
+                continue
+            for session in self.list_sessions(case.case_id):
+                step = self.session_step(session)
+                if step < 4:
+                    rows.append({"case": case, "session": session, "step": step,
+                                 "waiting_days": (now - _utc(session.updated_at)).days})
+        order = {"consent": 0, 1: 1, 3: 2, 2: 3, 0: 4}  # review and sign-off first; they block the rest
+        return sorted(rows, key=lambda r: (order[r["step"]], -r["waiting_days"]))
 
     def feature_trend(self, case_id: str, names: list[str]) -> list[tuple[str, dict[str, float]]]:
         """Each session's value for the named features, oldest session first."""
@@ -930,9 +973,9 @@ class DesktopService:
         self._ensure(ensure_report_consent_active, report_id)
         report = self.repo.reports.get(report_id)
         if report is None:
-            raise WorkflowError("ไม่พบรายงานนี้")
+            raise WorkflowError(tr("ไม่พบรายงานนี้", "Report not found."))
         if _status_value(report.status) == "stale":
-            raise WorkflowError("transcript หรือตัวชี้วัดเปลี่ยนหลังทำรายงานนี้ สร้างร่างใหม่ก่อน export")
+            raise WorkflowError(tr("transcript หรือตัวชี้วัดเปลี่ยนหลังทำรายงานนี้ สร้างร่างใหม่ก่อน export", "The transcript or findings changed after this report; redraft it before exporting."))
         return report
 
     def record_export(self, report_id: str, export_format: str) -> None:
@@ -953,7 +996,7 @@ class DesktopService:
         elif export_format == "markdown":
             destination.write_text(report.markdown, encoding="utf-8")
         else:
-            raise WorkflowError(f"ไม่รองรับรูปแบบ {export_format}")
+            raise WorkflowError(tr(f"ไม่รองรับรูปแบบ {export_format}", f"Unsupported format {export_format}"))
         self.record_export(report_id, export_format)
         return destination
 
@@ -1003,9 +1046,9 @@ def _audio_duration(path: Path) -> float | None:
 
 def _upload_message(reason: str) -> str:
     return {
-        "unsupported file": "ไฟล์ชนิดนี้ใช้ไม่ได้ ใช้ .wav .mp3 .m4a .mp4 .webm หรือ .ogg",
-        "audio too long or too large": "ไฟล์เสียงใหญ่เกิน 250 MB",
-        "unsafe filename": "ชื่อไฟล์ใช้ไม่ได้",
+        "unsupported file": tr("ไฟล์ชนิดนี้ใช้ไม่ได้ ใช้ .wav .mp3 .m4a .mp4 .webm หรือ .ogg", "This file type is not supported; use .wav .mp3 .m4a .mp4 .webm or .ogg."),
+        "audio too long or too large": tr("ไฟล์เสียงใหญ่เกิน 250 MB", "The recording is larger than 250 MB."),
+        "unsafe filename": tr("ชื่อไฟล์ใช้ไม่ได้", "Invalid file name."),
     }.get(reason, reason)
 
 
@@ -1015,4 +1058,4 @@ def _validation_message(exc: Exception) -> str:
         return str(exc)
     first = errors[0]
     field = ".".join(str(part) for part in first.get("loc", ()))
-    return f"{field}: {first.get('msg', 'ค่าไม่ถูกต้อง')}"
+    return tr(f"{field}: {first.get('msg', 'ค่าไม่ถูกต้อง')}", f"{field}: {first.get('msg', 'invalid value')}")

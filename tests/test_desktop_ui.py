@@ -88,7 +88,7 @@ def test_text_import_to_signed_report(window, qtbot):
     signed = window.service.get_report(session.session_id)
     assert signed.signed_by == "นักบำบัด ทดสอบ"
     assert "เด็กตอบคำถามได้ดีขึ้น" in signed.markdown
-    assert "✓" in window.tabs.tabText(3)
+    assert window.steps_done[3]
 
 
 def test_editing_after_attest_marks_findings_stale(window, qtbot):
@@ -227,7 +227,7 @@ def test_clinic_speaker_dialog_says_what_is_missing_and_what_is_in_use(window, q
 
     adopted = {"trained": True, "adopted": True, "enabled": True, "trained_sessions": 6, "trained_children": 4,
                "model_balanced": 0.93, "frame_balanced": 0.76, "eligible_sessions": 6, "stale": False}
-    assert labels.clinic_speaker_text(adopted).startswith("ใช้อยู่ · เรียนจาก 6 session (เด็ก 4 คน)")
+    assert labels.clinic_speaker_text(adopted).startswith("ใช้อยู่ เรียนจาก 6 session (เด็ก 4 คน)")
     assert "แยกถูกเฉลี่ยเด็กกับผู้ใหญ่ 93% เทียบโมเดลพื้นฐาน 76%" in labels.clinic_speaker_text(adopted)
     kept = dict(adopted, adopted=False, model_balanced=0.85, frame_balanced=0.85, stale=True, eligible_sessions=7)
     assert labels.clinic_speaker_text(kept).startswith("ยังใช้โมเดลพื้นฐาน")
@@ -266,11 +266,35 @@ def test_empty_pages_list_the_steps_and_the_chart_marks_short_samples(qtbot):
     empty = EmptyState("รับรอง transcript ก่อน")
     qtbot.addWidget(empty)
     empty.set_steps(1)
-    texts = [empty._steps.layout().itemAt(i).widget().text() for i in range(empty._steps.layout().count())]
-    assert len(texts) == 4 and texts[0].startswith("✓") and "ขั้นถัดไป" in texts[1] and texts[3].startswith("○")
+    rows = [empty._steps.layout().itemAt(i).widget() for i in range(empty._steps.layout().count())]
+    assert [r.text()[0] for r in rows] == ["1", "2", "3", "4"]
+    assert "line-through" in rows[0].styleSheet() and "font-weight: 600" in rows[1].styleSheet()
 
     chart = TrendChart()
     qtbot.addWidget(chart)
     chart.set_series("MLU-w", [("1", 2.5), ("2", 3.0)], samples=[12, 64], min_sample=50)
     assert chart._short(0) and not chart._short(1)
     assert _nice_ceiling(3.3) == 5 and _nice_ceiling(0.92) == 1 and _nice_ceiling(23) == 25
+
+
+def test_home_lists_waiting_work_and_opens_it(window):
+    case, session = _case_with_session(window)
+    window.show_home()
+    dashboard = window.dashboard
+    assert window.stack.currentWidget() is dashboard and window.home_btn.isChecked()
+    assert dashboard.queue.rowCount() == 1 and "เพิ่มเสียง" in dashboard.queue.item(0, 2).text()
+    dashboard._open_row(0, 0)
+    assert window.case.case_id == case.case_id and window.session.session_id == session.session_id
+
+
+def test_knowledge_opens_every_topic_with_its_charts(window):
+    from packages.desktop.ui.pages import knowledge
+
+    window.show_knowledge("autism")
+    page = window.knowledge
+    assert window.stack.currentWidget() is page and page.topics.currentItem().data(0x0100) == "autism"
+    for row in range(page.topics.count()):
+        page.topics.setCurrentRow(row)
+        assert page.article.toPlainText().strip()
+    assert not knowledge.age_chart("mlu_words", "MLU").isNull()
+    assert not knowledge.screening_chart().isNull() and not knowledge.boundary_weights_chart().isNull()

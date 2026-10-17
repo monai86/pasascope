@@ -12,6 +12,8 @@ and must be kept somewhere only the therapist can reach.
 
 from __future__ import annotations
 
+from packages.desktop.core.i18n import tr
+
 from contextlib import closing
 from dataclasses import dataclass
 from datetime import datetime
@@ -106,14 +108,14 @@ def restore_backup(workspace_root: Path, path: Path) -> Path:
                 with archive.open(name) as source, target.open("wb") as sink:
                     shutil.copyfileobj(source, sink)
                 if _sha256(target) != expected["sha256"]:
-                    raise BackupError(f"ไฟล์ {name} ในไฟล์สำรองเสียหาย (checksum ไม่ตรง)")
+                    raise BackupError(tr(f"ไฟล์ {name} ในไฟล์สำรองเสียหาย (checksum ไม่ตรง)", f"{name} in the backup is damaged (checksum mismatch)."))
         _check_database(staging / DATABASE)
     except BaseException:
         shutil.rmtree(staging, ignore_errors=True)
         raise
 
     stamp = datetime.now().strftime("%Y%m%d-%H%M%S")
-    previous = workspace_root.with_name(f"{workspace_root.name} ก่อนกู้คืน {stamp}")
+    previous = workspace_root.with_name(tr(f"{workspace_root.name} ก่อนกู้คืน {stamp}", f"{workspace_root.name} before restore {stamp}"))
     if workspace_root.exists():
         workspace_root.rename(previous)
     staging.rename(workspace_root)
@@ -124,7 +126,7 @@ def restore_backup(workspace_root: Path, path: Path) -> Path:
 
 def _snapshot_database(source: Path, target: Path) -> None:
     if not source.exists():
-        raise BackupError("ยังไม่มีฐานข้อมูลให้สำรอง")
+        raise BackupError(tr("ยังไม่มีฐานข้อมูลให้สำรอง", "There is no database to back up yet."))
     with closing(sqlite3.connect(f"file:{source}?mode=ro", uri=True)) as src, closing(sqlite3.connect(target)) as dst:
         src.backup(dst)
     _check_database(target)
@@ -135,9 +137,9 @@ def _check_database(path: Path) -> None:
         with closing(sqlite3.connect(f"file:{path}?mode=ro", uri=True)) as connection:
             result = connection.execute("PRAGMA integrity_check").fetchone()
     except sqlite3.Error as exc:
-        raise BackupError(f"ฐานข้อมูลในไฟล์สำรองเปิดไม่ได้: {exc}") from exc
+        raise BackupError(tr(f"ฐานข้อมูลในไฟล์สำรองเปิดไม่ได้: {exc}", f"The backup's database could not be opened: {exc}")) from exc
     if not result or result[0] != "ok":
-        raise BackupError("ฐานข้อมูลในไฟล์สำรองไม่สมบูรณ์")
+        raise BackupError(tr("ฐานข้อมูลในไฟล์สำรองไม่สมบูรณ์", "The backup's database is incomplete."))
 
 
 def _manifest(path: Path) -> dict:
@@ -145,18 +147,18 @@ def _manifest(path: Path) -> dict:
         with zipfile.ZipFile(path) as archive:
             names = set(archive.namelist())
             if MANIFEST not in names:
-                raise BackupError("ไฟล์นี้ไม่ใช่ไฟล์สำรองของ PasaScope")
+                raise BackupError(tr("ไฟล์นี้ไม่ใช่ไฟล์สำรองของ PasaScope", "This is not a PasaScope backup."))
             manifest = json.loads(archive.read(MANIFEST).decode("utf-8"))
     except (zipfile.BadZipFile, OSError, ValueError) as exc:
-        raise BackupError(f"เปิดไฟล์สำรองไม่ได้: {exc}") from exc
+        raise BackupError(tr(f"เปิดไฟล์สำรองไม่ได้: {exc}", f"The backup could not be opened: {exc}")) from exc
     if manifest.get("format") != BACKUP_FORMAT:
-        raise BackupError("ไฟล์สำรองนี้มาจากโปรแกรมรุ่นที่ไม่รองรับ")
+        raise BackupError(tr("ไฟล์สำรองนี้มาจากโปรแกรมรุ่นที่ไม่รองรับ", "This backup comes from an unsupported version."))
     files = manifest.get("files")
     if not isinstance(files, dict) or DATABASE not in files:
-        raise BackupError("ไฟล์สำรองไม่มีฐานข้อมูล")
+        raise BackupError(tr("ไฟล์สำรองไม่มีฐานข้อมูล", "The backup has no database."))
     for name in files:
         if not _safe_member(name) or name not in names:
-            raise BackupError(f"ไฟล์สำรองไม่สมบูรณ์หรือมีชื่อไฟล์ผิดปกติ: {name}")
+            raise BackupError(tr(f"ไฟล์สำรองไม่สมบูรณ์หรือมีชื่อไฟล์ผิดปกติ: {name}", f"The backup is incomplete or has an unexpected file name: {name}"))
     return manifest
 
 

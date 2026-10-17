@@ -6,6 +6,8 @@ dismisses each one, and each echo pair is shown so it can be judged in context.
 
 from __future__ import annotations
 
+from packages.desktop.core.i18n import tr
+
 import re
 
 from PySide6.QtCore import Qt
@@ -85,22 +87,22 @@ class CueCard(QFrame):
         for item in cue.evidence[:12]:
             layout.addWidget(self._evidence_row(item, utterances))
         if len(cue.evidence) > 12:
-            layout.addWidget(label(f"และอีก {len(cue.evidence) - 12} คู่", "Muted"))
+            layout.addWidget(label(tr(f"และอีก {len(cue.evidence) - 12} คู่", f"and {len(cue.evidence) - 12} more pairs"), "Muted"))
 
-        layout.addWidget(label(f"ขั้นต่อไป: {step}", "Muted", wrap=True))
+        layout.addWidget(label(tr(f"ขั้นต่อไป: {step}", f"Next: {step}"), "Muted", wrap=True))
 
         reviewed_by = getattr(cue.review_state, "reviewed_by_name", None)
         if state != "unreviewed" and reviewed_by:
             note = cue.review_state.therapist_note
-            layout.addWidget(label(f"{labels.CUE_STATE[state]}โดย {reviewed_by}" + (f" · {note}" if note else ""), "Muted", wrap=True))
+            layout.addWidget(label(tr(f"{labels.CUE_STATE[state]}โดย {reviewed_by}", f"{labels.CUE_STATE[state]} by {reviewed_by}") + (f" · {note}" if note else ""), "Muted", wrap=True))
 
         actions = QHBoxLayout()
         self.note = QLineEdit()
-        self.note.setPlaceholderText("บันทึกของนักบำบัด (ไม่บังคับ)")
+        self.note.setPlaceholderText(tr("บันทึกของนักบำบัด (ไม่บังคับ)", "Therapist note (optional)"))
         actions.addWidget(self.note, 1)
-        confirm = button("ยืนยัน", "primary" if state == "unreviewed" else "")
+        confirm = button(tr("ยืนยัน", "Confirm"), "primary" if state == "unreviewed" else "")
         confirm.clicked.connect(lambda: self.page.set_cue(self.result, self.cue, "acknowledged", self.note.text()))
-        dismiss = button("ปัดตก")
+        dismiss = button(tr("ปัดตก", "Dismiss"))
         dismiss.clicked.connect(lambda: self.page.set_cue(self.result, self.cue, "dismissed", self.note.text()))
         actions.addWidget(confirm)
         actions.addWidget(dismiss)
@@ -115,16 +117,16 @@ class CueCard(QFrame):
         adult = utterances.get(item.get("adult_utterance_id", ""))
         child = utterances.get(item.get("child_utterance_id", "") or item.get("utterance_id", ""))
         if adult is not None:
-            row.addWidget(label(f"ผู้ใหญ่: {_spoken(adult.text)}", "Hint", wrap=True))
+            row.addWidget(label(tr(f"ผู้ใหญ่: {_spoken(adult.text)}", f"Adult: {_spoken(adult.text)}"), "Hint", wrap=True))
         if child is not None:
-            text = label(f"เด็ก: {_spoken(child.text)}", wrap=True)
+            text = label(tr(f"เด็ก: {_spoken(child.text)}", f"Child: {_spoken(child.text)}"), wrap=True)
             text.setStyleSheet(f"color: {theme.PRIMARY_DARK}; font-weight: 600;")
             row.addWidget(text)
         category = labels.ECHO_CATEGORY.get(item.get("category", ""))
         if category:
             row.addWidget(label(category, "Muted"))
         if adult is None and child is None:
-            row.addWidget(label("ไม่พบประโยคนี้ใน transcript ปัจจุบัน", "Muted"))
+            row.addWidget(label(tr("ไม่พบประโยคนี้ใน transcript ปัจจุบัน", "This line is no longer in the transcript"), "Muted"))
         return box
 
 
@@ -152,9 +154,9 @@ class FindingsPage(SessionPage):
         self.status_text = label("", "Hint")
         top.addWidget(self.status_text)
         top.addStretch(1)
-        self.analyze_btn = button("วิเคราะห์ใหม่")
+        self.analyze_btn = button(tr("วิเคราะห์ใหม่", "Analyse again"))
         self.analyze_btn.clicked.connect(self.analyze)
-        self.report_btn = button("ไปทำรายงาน →", "primary")
+        self.report_btn = button(tr("ไปที่รายงาน", "Open report"), "primary")
         self.report_btn.clicked.connect(lambda: self.navigate.emit(3))
         top.addWidget(self.analyze_btn)
         top.addWidget(self.report_btn)
@@ -166,8 +168,8 @@ class FindingsPage(SessionPage):
         left = QWidget()
         left_layout = QVBoxLayout(left)
         left_layout.setContentsMargins(0, 0, 6, 0)
-        left_layout.addWidget(label("ตัวชี้วัดจากตัวอย่างภาษา", "SectionTitle"))
-        left_layout.addWidget(label("ค่าเชิงบรรยายของ session นี้ ยังไม่มีเกณฑ์อ้างอิงของเด็กไทย จึงไม่แปลว่าปกติหรือผิดปกติ", "Muted", wrap=True))
+        left_layout.addWidget(label(tr("ตัวชี้วัดจากตัวอย่างภาษา", "Language measures"), "SectionTitle"))
+        left_layout.addWidget(label(tr("ค่าเชิงบรรยายของ session นี้ ยังไม่มีเกณฑ์อ้างอิงของเด็กไทย จึงไม่แปลว่าปกติหรือผิดปกติ", "Descriptive values for this session. There are no Thai norms yet."), "Muted", wrap=True))
 
         cards = QGridLayout()
         cards.setSpacing(8)
@@ -180,7 +182,7 @@ class FindingsPage(SessionPage):
         self.sample_notice = notice()
         left_layout.addWidget(self.sample_notice)
         self.schema_notice = notice(
-            "คำนวณด้วยวิธีนับแบบเดิม · กด \"วิเคราะห์ใหม่\" เพื่อนับตามกติกา CLAN",
+            tr("คำนวณด้วยวิธีนับแบบเดิม · กด \"วิเคราะห์ใหม่\" เพื่อนับตามกติกา CLAN", "Counted with the earlier method. Analyse again to count with CLAN's rules."),
             "primary",
         )
         left_layout.addWidget(self.schema_notice)
@@ -189,7 +191,7 @@ class FindingsPage(SessionPage):
         self.left_tabs.setDocumentMode(True)
         left_layout.addWidget(self.left_tabs, 1)
         self.table = QTableWidget(0, 2)
-        self.table.setHorizontalHeaderLabels(["ตัวชี้วัด", "ค่า"])
+        self.table.setHorizontalHeaderLabels([tr("ตัวชี้วัด", "Measure"), tr("ค่า", "Value")])
         self.table.verticalHeader().hide()
         self.table.setEditTriggers(QTableWidget.EditTrigger.NoEditTriggers)
         self.table.setSelectionMode(QTableWidget.SelectionMode.NoSelection)
@@ -198,11 +200,11 @@ class FindingsPage(SessionPage):
         self.table.setHorizontalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAlwaysOff)
         self.table.setWordWrap(False)
         self.table.verticalHeader().setDefaultSectionSize(32)
-        self.left_tabs.addTab(self.table, "ตัวชี้วัดทั้งหมด")
+        self.left_tabs.addTab(self.table, tr("ตัวชี้วัดทั้งหมด", "All measures"))
 
         trend_card, trend = card()
         trow = QHBoxLayout()
-        trow.addWidget(label("แนวโน้มข้าม session", "SectionTitle"))
+        trow.addWidget(label(tr("แนวโน้มข้าม session", "Across sessions"), "SectionTitle"))
         trow.addStretch(1)
         self.trend_pick = QComboBox()
         for name in labels.TREND_FEATURES:
@@ -212,14 +214,14 @@ class FindingsPage(SessionPage):
         trend.addLayout(trow)
         self.chart = TrendChart()
         trend.addWidget(self.chart, 1)
-        self.left_tabs.addTab(trend_card, "แนวโน้มข้าม session")
+        self.left_tabs.addTab(trend_card, tr("แนวโน้มข้าม session", "Across sessions"))
         split.addWidget(left)
 
         right = QWidget()
         right_layout = QVBoxLayout(right)
         right_layout.setContentsMargins(6, 0, 0, 0)
-        right_layout.addWidget(label("Cue ที่ควรตรวจ", "SectionTitle"))
-        right_layout.addWidget(label("ระบบไม่วินิจฉัย cue เป็นเพียงจุดที่ควรกลับไปดูใน transcript ยืนยันหรือปัดตกทีละข้อ", "Muted", wrap=True))
+        right_layout.addWidget(label(tr("Cue ที่ควรตรวจ", "Cues"), "SectionTitle"))
+        right_layout.addWidget(label(tr("ระบบไม่วินิจฉัย cue เป็นเพียงจุดที่ควรกลับไปดูใน transcript ยืนยันหรือปัดตกทีละข้อ", "Places worth a second look in the transcript. Confirm or dismiss each."), "Muted", wrap=True))
         scroll = QScrollArea()
         scroll.setWidgetResizable(True)
         scroll.setFrameShape(QScrollArea.Shape.NoFrame)
@@ -245,14 +247,14 @@ class FindingsPage(SessionPage):
         transcript = self.service.get_transcript(self.session.session_id)
         features = self.service.get_features(self.session.session_id)
         if transcript is None:
-            self._show_empty("ยังไม่มี transcript", "บันทึกหรือนำเข้าเสียงก่อน", "ไปขั้นที่ 1 →", 0)
+            self._show_empty(tr("ยังไม่มี transcript", "No transcript yet"), tr("บันทึกหรือนำเข้าเสียงก่อน", "Record or import audio first."), tr("ไปที่ขั้นเสียง", "Go to Recording"), 0)
             return
         if features is None or self.session.findings_stale:
             if not transcript.therapist_attested:
-                self._show_empty("รับรอง transcript ก่อน", "ตัวชี้วัดคำนวณจาก transcript ที่นักบำบัดตรวจและรับรองแล้วเท่านั้น", "ไปตรวจ transcript →", 1)
+                self._show_empty(tr("รับรอง transcript ก่อน", "Attest the transcript first"), tr("ตัวชี้วัดคำนวณจาก transcript ที่นักบำบัดตรวจและรับรองแล้วเท่านั้น", "Measures are computed only from a transcript you have checked and attested."), tr("เปิด transcript", "Open transcript"), 1)
             else:
-                body = "transcript ถูกแก้หลังวิเคราะห์ครั้งก่อน ต้องวิเคราะห์ใหม่" if features else "transcript รับรองแล้ว พร้อมคำนวณตัวชี้วัดและ cue"
-                self._show_empty("ยังไม่ได้วิเคราะห์", body, "วิเคราะห์ตอนนี้", -1)
+                body = tr("transcript ถูกแก้หลังวิเคราะห์ครั้งก่อน ต้องวิเคราะห์ใหม่", "The transcript changed after the last analysis.") if features else tr("transcript รับรองแล้ว พร้อมคำนวณตัวชี้วัดและ cue", "The transcript is attested.")
+                self._show_empty(tr("ยังไม่ได้วิเคราะห์", "Not analysed yet"), body, tr("วิเคราะห์ตอนนี้", "Analyse"), -1)
             return
         self.empty.hide()
         self.body.show()
@@ -261,10 +263,10 @@ class FindingsPage(SessionPage):
         self._fill_cues(cues, transcript)
         pending = sum(1 for c in (cues.cues if cues else []) if (c.review_state.status if c.review_state else "unreviewed") == "unreviewed")
         if pending:
-            set_chip(self.status_chip, f"รอตรวจ cue {pending} ข้อ", "attention")
+            set_chip(self.status_chip, tr(f"รอตรวจ cue {pending} ข้อ", f"{pending} cues to review"), "attention")
         else:
-            set_chip(self.status_chip, "ตรวจ cue ครบแล้ว", "ok")
-        self.status_text.setText(f"วิเคราะห์เมื่อ {features.extracted_at:%d/%m/%Y %H:%M}")
+            set_chip(self.status_chip, tr("ตรวจ cue ครบแล้ว", "Cues reviewed"), "ok")
+        self.status_text.setText(tr(f"วิเคราะห์เมื่อ {features.extracted_at:%d/%m/%Y %H:%M}", f"Analysed {features.extracted_at:%d/%m/%Y %H:%M}"))
         self._draw_trend()
 
     def _show_empty(self, title: str, body: str, action: str, target: int) -> None:
@@ -294,8 +296,8 @@ class FindingsPage(SessionPage):
             if not present:
                 continue
             rows.append(("group", group))
-            if group == labels.CODED_GROUP and not any(values.get(f.name) for f in present):
-                rows.append(("note", "ยังไม่มีรหัส [/] [//] [*] ใน transcript นี้"))
+            if set(names) <= labels.CODED_GROUP_FEATURES and not any(values.get(f.name) for f in present):
+                rows.append(("note", tr("ยังไม่มีรหัส [/] [//] [*] ใน transcript นี้", "No [/] [//] [*] codes in this transcript yet")))
                 continue
             rows.extend(("feature", feature) for feature in present)
 
@@ -339,16 +341,16 @@ class FindingsPage(SessionPage):
     def _fill_cards(self, values: dict) -> None:
         details = {
             "mean_length_of_utterance_words": (
-                f"จาก {values['mlu_utterance_count']} ประโยค" if "mlu_utterance_count" in values else "คำต่อประโยค"
+                tr(f"จาก {values['mlu_utterance_count']} ประโยค", f"from {values['mlu_utterance_count']} utterances") if "mlu_utterance_count" in values else tr("คำต่อประโยค", "words per utterance")
             ),
             "number_of_different_words": (
-                f"จาก {values['total_word_count']} คำ" if values.get("total_word_count") is not None else ""
+                tr(f"จาก {values['total_word_count']} คำ", f"from {values['total_word_count']} words") if values.get("total_word_count") is not None else ""
             ),
             "type_token_ratio": (
                 f"MATTR {labels.feature_value_text('mattr_50', values['mattr_50'])}"
-                if values.get("mattr_50") is not None else "ขึ้นกับความยาวตัวอย่าง"
+                if values.get("mattr_50") is not None else tr("ขึ้นกับความยาวตัวอย่าง", "depends on sample length")
             ),
-            "mlu_utterance_count": f"แนะนำ ≥ {labels.RECOMMENDED_MLU_UTTERANCES}",
+            "mlu_utterance_count": tr(f"แนะนำ ≥ {labels.RECOMMENDED_MLU_UTTERANCES}", f"{labels.RECOMMENDED_MLU_UTTERANCES}+ recommended"),
         }
         for name, card_widget in self.metric_cards.items():
             value = values.get(name)
@@ -361,8 +363,8 @@ class FindingsPage(SessionPage):
         self.sample_notice.setVisible(short)
         if short:
             self.sample_notice.setText(
-                f"ตัวอย่างสั้น: {int(count)} ประโยค (CLAN แนะนำ ≥ {labels.RECOMMENDED_MLU_UTTERANCES}) "
-                "ค่าอาจยังไม่นิ่ง ระวังเมื่อเทียบข้าม session"
+                tr(f"ตัวอย่างสั้น: {int(count)} ประโยค (CLAN แนะนำ ≥ {labels.RECOMMENDED_MLU_UTTERANCES}) "
+                "ค่าอาจยังไม่นิ่ง ระวังเมื่อเทียบข้าม session", f"Short sample: {int(count)} utterances ({labels.RECOMMENDED_MLU_UTTERANCES}+ recommended). Values may not be stable across sessions.")
             )
         self.schema_notice.setVisible(features.schema_version != CURRENT_SCHEMA)
 
@@ -372,7 +374,7 @@ class FindingsPage(SessionPage):
             if item.widget():
                 item.widget().deleteLater()
         if result is None or not result.cues:
-            self.cue_layout.addWidget(label("ไม่มี cue จากกฎใน session นี้", "Muted"))
+            self.cue_layout.addWidget(label(tr("ไม่มี cue จากกฎใน session นี้", "No cues in this session"), "Muted"))
             self.cue_layout.addStretch(1)
             return
         utterances = {u.utterance_id: u for u in transcript.utterances}
@@ -403,10 +405,10 @@ class FindingsPage(SessionPage):
         def failed(exc: Exception) -> None:
             self.analyze_btn.setEnabled(True)
             self.empty_btn.setEnabled(True)
-            self.report_error(exc, "วิเคราะห์ไม่สำเร็จ")
+            self.report_error(exc, tr("วิเคราะห์ไม่สำเร็จ", "Analysis failed"))
 
         self.runner.run(lambda: self.service.analyze(session_id), on_done=done, on_error=failed)
 
     def set_cue(self, result, cue, status: str, note: str) -> None:
-        if self.attempt(self.service.set_cue_state, result.result_id, cue.cue_code, status, note, title="บันทึกไม่สำเร็จ") is not None:
+        if self.attempt(self.service.set_cue_state, result.result_id, cue.cue_code, status, note, title=tr("บันทึกไม่สำเร็จ", "Not saved")) is not None:
             self.changed.emit()

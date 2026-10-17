@@ -320,3 +320,19 @@ def test_clinic_speaker_model_learns_from_attested_sessions(service, tmp_path, m
 
     service.reset_clinic_speaker_model()
     assert not service.clinic_speaker_model_path.exists() and CLINIC_MODEL_ENV not in os.environ
+
+
+def test_work_queue_lists_what_waits_for_the_therapist(service):
+    consented = _case_with_consent(service)
+    waiting = service.create_case("TH-009", 40)
+    imported = service.create_session(consented.case_id, date(2026, 10, 10))
+    transcript = service.import_transcript_text(imported.session_id, CHAT)
+    empty = service.create_session(consented.case_id, date(2026, 10, 12))
+
+    queue = service.work_queue()
+    assert [(row["case"].child_code, row["step"]) for row in queue] == [("TH-009", "consent"), ("TH-001", 1), ("TH-001", 0)]
+    assert queue[1]["session"].session_id == imported.session_id and queue[2]["session"].session_id == empty.session_id
+
+    service.attest(transcript.transcript_id, override_reason="ตรวจกับเสียงแล้ว")
+    assert [row["step"] for row in service.work_queue()] == ["consent", 2, 0]
+    assert waiting.case_id == queue[0]["case"].case_id

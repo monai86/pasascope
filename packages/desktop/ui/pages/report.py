@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+from packages.desktop.core.i18n import tr
+
 from pathlib import Path
 
 from PySide6.QtCore import Qt, QTimer, QUrl
@@ -60,18 +62,18 @@ class ReportPage(SessionPage):
         self.status_text = label("", "Hint")
         top.addWidget(self.status_text)
         top.addStretch(1)
-        self.redraft_btn = button("สร้างร่างใหม่")
+        self.redraft_btn = button(tr("สร้างร่างใหม่", "Redraft"))
         self.redraft_btn.clicked.connect(self._redraft)
-        self.save_btn = button("บันทึกการแก้ไข", tooltip="Ctrl+S")
+        self.save_btn = button(tr("บันทึกการแก้ไข", "Save"), tooltip="Ctrl+S")
         self.save_btn.clicked.connect(self.save)
-        self.sign_btn = button("ลงนามรายงาน", "primary")
+        self.sign_btn = button(tr("ลงนามรายงาน", "Sign report"), "primary")
         self.sign_btn.clicked.connect(self._sign)
         self.export_btn = button("Export ▾")
         menu = QMenu(self.export_btn)
         for fmt, text, _, _ in EXPORTS:
-            menu.addAction(f"รายงานเป็น {text}", lambda f=fmt: self._export(f))
+            menu.addAction(tr(f"รายงานเป็น {text}", f"Report as {text}"), lambda f=fmt: self._export(f))
         menu.addSeparator()
-        menu.addAction("Transcript เป็น CHAT (.cha)", self._export_cha)
+        menu.addAction(tr("Transcript เป็น CHAT (.cha)", "Transcript as CHAT (.cha)"), self._export_cha)
         self.export_btn.setMenu(menu)
         for widget in (self.redraft_btn, self.save_btn, self.sign_btn, self.export_btn):
             top.addWidget(widget)
@@ -88,7 +90,7 @@ class ReportPage(SessionPage):
         editor_box = QWidget()
         editor_layout = QVBoxLayout(editor_box)
         editor_layout.setContentsMargins(0, 0, 6, 0)
-        editor_layout.addWidget(label("แก้ไข (Markdown)", "Muted"))
+        editor_layout.addWidget(label(tr("แก้ไข (Markdown)", "Edit (Markdown)"), "Muted"))
         self.editor = QPlainTextEdit()
         self.editor.setStyleSheet("font-family: Menlo, 'SF Mono', monospace; font-size: 13px;")
         self.editor.textChanged.connect(self._on_edit)
@@ -97,7 +99,7 @@ class ReportPage(SessionPage):
         preview_box = QWidget()
         preview_layout = QVBoxLayout(preview_box)
         preview_layout.setContentsMargins(6, 0, 0, 0)
-        preview_layout.addWidget(label("ตัวอย่าง", "Muted"))
+        preview_layout.addWidget(label(tr("ตัวอย่าง", "Preview"), "Muted"))
         self.preview = QTextBrowser()
         self.preview.setOpenExternalLinks(False)
         preview_layout.addWidget(self.preview)
@@ -119,9 +121,9 @@ class ReportPage(SessionPage):
         features = self.service.get_features(self.session.session_id)
         if self.report is None:
             if features is None or self.session.findings_stale:
-                self._show_empty("ยังไม่มีตัวชี้วัด", "วิเคราะห์ transcript ที่รับรองแล้วก่อนทำรายงาน", "ไปขั้นที่ 3 →", 2)
+                self._show_empty(tr("ยังไม่มีตัวชี้วัด", "No findings yet"), tr("วิเคราะห์ transcript ที่รับรองแล้วก่อนทำรายงาน", "Analyse the attested transcript first."), tr("ไปที่ตัวชี้วัด", "Go to Findings"), 2)
             else:
-                self._show_empty("ยังไม่มีร่างรายงาน", "ระบบร่างรายงานจากตัวชี้วัดและ cue ของ session นี้ แล้วให้คุณแก้และลงนาม", "สร้างร่างรายงาน", -1)
+                self._show_empty(tr("ยังไม่มีร่างรายงาน", "No report yet"), tr("ระบบร่างรายงานจากตัวชี้วัดและ cue ของ session นี้ แล้วให้คุณแก้และลงนาม", "Draft a report from this session's findings, then edit and sign it."), tr("สร้างร่างรายงาน", "Draft report"), -1)
             return
         self.empty.hide()
         self.body.show()
@@ -141,29 +143,29 @@ class ReportPage(SessionPage):
         signed = status == "Signed Off"
         stale = status == "stale" or bool(self.session and self.session.report_stale)
         if self.dirty:
-            set_chip(self.status_chip, "มีการแก้ไขที่ยังไม่บันทึก", "attention")
+            set_chip(self.status_chip, tr("มีการแก้ไขที่ยังไม่บันทึก", "Unsaved changes"), "attention")
         elif stale:
-            set_chip(self.status_chip, "ต้องสร้างใหม่", "danger")
+            set_chip(self.status_chip, tr("ต้องสร้างใหม่", "Out of date"), "danger")
         elif signed:
-            set_chip(self.status_chip, "ลงนามแล้ว", "ok")
+            set_chip(self.status_chip, tr("ลงนามแล้ว", "Signed"), "ok")
         else:
-            set_chip(self.status_chip, "ร่าง", "attention")
+            set_chip(self.status_chip, tr("ร่าง", "Draft"), "attention")
         if signed and self.report.signed_at:
-            self.status_text.setText(f"ลงนามโดย {self.report.signed_by} · {self.report.signed_at:%d/%m/%Y %H:%M}")
+            self.status_text.setText(tr(f"ลงนามโดย {self.report.signed_by} · {self.report.signed_at:%d/%m/%Y %H:%M}", f"Signed by {self.report.signed_by}, {self.report.signed_at:%d/%m/%Y %H:%M}"))
         else:
-            self.status_text.setText(f"ฉบับที่ {self.report.revision_number}")
+            self.status_text.setText(tr(f"ฉบับที่ {self.report.revision_number}", f"Revision {self.report.revision_number}"))
         self.save_btn.setEnabled(self.dirty)
         self.sign_btn.setEnabled(not signed and not stale)
         self.export_btn.setEnabled(not stale and not self.dirty)
         notes = []
         if stale:
-            notes.append("transcript หรือตัวชี้วัดเปลี่ยนหลังทำรายงานนี้ กด ‘สร้างร่างใหม่’ ก่อนลงนามหรือ export")
+            notes.append(tr("transcript หรือตัวชี้วัดเปลี่ยนหลังทำรายงานนี้ กด ‘สร้างร่างใหม่’ ก่อนลงนามหรือ export", "The transcript or findings changed after this draft. Redraft before signing or exporting."))
         if self.report.finalization_blocked and self.report.safety_validation_result is not None:
-            notes.append("ข้อความบางส่วนไม่ผ่านการตรวจความปลอดภัยของรายงาน (เช่น ถ้อยคำเชิงวินิจฉัย) แก้ก่อนลงนาม")
+            notes.append(tr("ข้อความบางส่วนไม่ผ่านการตรวจความปลอดภัยของรายงาน (เช่น ถ้อยคำเชิงวินิจฉัย) แก้ก่อนลงนาม", "Some wording failed the report check (diagnostic language, for example). Fix it before signing."))
         if signed and self.dirty:
-            notes.append("การแก้รายงานที่ลงนามแล้วจะสร้างฉบับแก้ไขใหม่ที่ต้องลงนามอีกครั้ง")
+            notes.append(tr("การแก้รายงานที่ลงนามแล้วจะสร้างฉบับแก้ไขใหม่ที่ต้องลงนามอีกครั้ง", "Editing a signed report creates a new revision to sign."))
         if not signed and not stale:
-            notes.append("รายงานยังเป็นร่าง export ได้แต่จะไม่มีลายเซ็น")
+            notes.append(tr("รายงานยังเป็นร่าง export ได้แต่จะไม่มีลายเซ็น", "Draft: exports will not carry a signature."))
         self.notice.setText("\n".join(notes))
         self.notice.setVisible(bool(notes))
 
@@ -194,12 +196,12 @@ class ReportPage(SessionPage):
 
     # ------------------------------------------------------------------
     def _draft(self) -> None:
-        if self.attempt(self.service.draft_report, self.session.session_id, title="สร้างรายงานไม่สำเร็จ") is not None:
+        if self.attempt(self.service.draft_report, self.session.session_id, title=tr("สร้างรายงานไม่สำเร็จ", "Report not drafted")) is not None:
             self.changed.emit()
 
     def _redraft(self) -> None:
         answer = QMessageBox.question(
-            self, "สร้างร่างใหม่", "ร่างใหม่จะแทนที่ข้อความที่แก้ไว้ในรายงานนี้ ดำเนินการต่อ?"
+            self, tr("สร้างร่างใหม่", "Redraft"), tr("ร่างใหม่จะแทนที่ข้อความที่แก้ไว้ในรายงานนี้ ดำเนินการต่อ?", "Redrafting replaces your edits to this report. Continue?")
         )
         if answer == QMessageBox.StandardButton.Yes:
             self.dirty = False
@@ -208,7 +210,7 @@ class ReportPage(SessionPage):
     def save(self) -> bool:
         if not self.dirty or self.report is None:
             return True
-        updated = self.attempt(self.service.update_report, self.report.report_id, self.editor.toPlainText(), title="บันทึกไม่สำเร็จ")
+        updated = self.attempt(self.service.update_report, self.report.report_id, self.editor.toPlainText(), title=tr("บันทึกไม่สำเร็จ", "Not saved"))
         if updated is None:
             return False
         self.dirty = False
@@ -219,18 +221,18 @@ class ReportPage(SessionPage):
         if not self.save():
             return
         if not self.service.therapist_name:
-            QMessageBox.warning(self, "ยังไม่ได้ตั้งชื่อ", "ตั้งชื่อนักบำบัดก่อน (เมนู ตั้งค่า → ชื่อนักบำบัด)")
+            QMessageBox.warning(self, tr("ยังไม่ได้ตั้งชื่อ", "No therapist name"), tr("ตั้งชื่อนักบำบัดก่อน (เมนู ตั้งค่า → ชื่อนักบำบัด)", "Set your name first (Settings, Therapist name)."))
             return
         answer = QMessageBox.question(
-            self, "ลงนามรายงาน",
-            f"ลงนามในชื่อ {self.service.therapist_name}\n\n"
+            self, tr("ลงนามรายงาน", "Sign report"),
+            tr(f"ลงนามในชื่อ {self.service.therapist_name}\n\n"
             "ยืนยันว่าได้อ่านและแก้ไขรายงานแล้ว ข้อความเป็นการบรรยายสิ่งที่สังเกต ไม่ใช่การวินิจฉัย "
-            "และตัวเลขทั้งหมดมาจาก transcript ที่รับรองแล้ว",
+            "และตัวเลขทั้งหมดมาจาก transcript ที่รับรองแล้ว", f"Sign as {self.service.therapist_name}\n\nI have read and edited this report. It describes what was observed, not a diagnosis, and every number comes from the attested transcript."),
         )
         if answer != QMessageBox.StandardButton.Yes:
             return
         report = self.service.get_report(self.session.session_id)
-        if self.attempt(self.service.sign_off, report.report_id, title="ลงนามไม่สำเร็จ") is not None:
+        if self.attempt(self.service.sign_off, report.report_id, title=tr("ลงนามไม่สำเร็จ", "Not signed")) is not None:
             self.changed.emit()
 
     def _default_path(self, suffix: str) -> str:
@@ -239,24 +241,24 @@ class ReportPage(SessionPage):
 
     def _export(self, fmt: str) -> None:
         _, text, file_filter, suffix = next(e for e in EXPORTS if e[0] == fmt)
-        path, _ = QFileDialog.getSaveFileName(self, f"Export รายงานเป็น {text}", self._default_path(suffix), file_filter)
+        path, _ = QFileDialog.getSaveFileName(self, tr(f"Export รายงานเป็น {text}", f"Export report as {text}"), self._default_path(suffix), file_filter)
         if not path:
             return
         report_id = self.report.report_id
         if fmt == "pdf":
             # Qt draws text on the UI thread; a report takes well under a second.
-            report = self.attempt(self.service.report_for_export, report_id, title="Export ไม่สำเร็จ")
+            report = self.attempt(self.service.report_for_export, report_id, title=tr("Export ไม่สำเร็จ", "Export failed"))
             if report is None:
                 return
             try:
                 written = write_report_pdf(report.markdown, Path(path), title=f"{self.case.child_code} {self.session.session_date}")
             except OSError as exc:
-                self.report_error(exc, "บันทึกไฟล์ไม่ได้")
+                self.report_error(exc, tr("บันทึกไฟล์ไม่ได้", "Could not save the file"))
                 return
             self.service.record_export(report_id, "pdf")
             self._exported(written)
             return
-        written = self.attempt(self.service.export_report, report_id, fmt, Path(path), title="Export ไม่สำเร็จ")
+        written = self.attempt(self.service.export_report, report_id, fmt, Path(path), title=tr("Export ไม่สำเร็จ", "Export failed"))
         if written is not None:
             self._exported(written)
 
@@ -264,19 +266,19 @@ class ReportPage(SessionPage):
         transcript = self.service.get_transcript(self.session.session_id)
         if transcript is None:
             return
-        path, _ = QFileDialog.getSaveFileName(self, "Export transcript เป็น CHAT", self._default_path(".cha"), "CHAT (*.cha)")
+        path, _ = QFileDialog.getSaveFileName(self, tr("Export transcript เป็น CHAT", "Export transcript as CHAT"), self._default_path(".cha"), "CHAT (*.cha)")
         if not path:
             return
-        text = self.attempt(self.service.export_cha, transcript.transcript_id, title="Export ไม่สำเร็จ")
+        text = self.attempt(self.service.export_cha, transcript.transcript_id, title=tr("Export ไม่สำเร็จ", "Export failed"))
         if text is None:
             return
         Path(path).write_text(text, encoding="utf-8")
         self._exported(Path(path))
 
     def _exported(self, path: Path) -> None:
-        box = QMessageBox(QMessageBox.Icon.Information, "Export แล้ว", f"บันทึกไฟล์ที่\n{path}", parent=self)
-        open_btn = box.addButton("เปิดไฟล์", QMessageBox.ButtonRole.AcceptRole)
-        box.addButton("ปิด", QMessageBox.ButtonRole.RejectRole)
+        box = QMessageBox(QMessageBox.Icon.Information, tr("Export แล้ว", "Exported"), tr(f"บันทึกไฟล์ที่\n{path}", f"Saved to\n{path}"), parent=self)
+        open_btn = box.addButton(tr("เปิดไฟล์", "Open"), QMessageBox.ButtonRole.AcceptRole)
+        box.addButton(tr("ปิด", "Close"), QMessageBox.ButtonRole.RejectRole)
         box.exec()
         if box.clickedButton() is open_btn:
             QDesktopServices.openUrl(QUrl.fromLocalFile(str(path)))

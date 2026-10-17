@@ -1,6 +1,11 @@
 from __future__ import annotations
 
+import os
+
 import pytest
+
+# Desktop UI tests read Thai wording; English is checked by tests that switch the language.
+os.environ.setdefault("PASASCOPE_LANGUAGE", "th")
 
 
 @pytest.fixture(autouse=True)

@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+from packages.desktop.core.i18n import tr
+
 from pathlib import Path
 import tempfile
 import threading
@@ -26,17 +28,17 @@ from packages.desktop.ui.audio import Recorder
 from packages.desktop.ui.pages.base import SessionPage
 from packages.desktop.ui.widgets import button, card, chip, label, set_chip
 
-AUDIO_FILTER = "ไฟล์เสียง (*.wav *.mp3 *.m4a *.mp4 *.webm *.ogg)"
+AUDIO_FILTER = tr("ไฟล์เสียง (*.wav *.mp3 *.m4a *.mp4 *.webm *.ogg)", "Audio (*.wav *.mp3 *.m4a *.mp4 *.webm *.ogg)")
 TEXT_FILTER = "Transcript (*.cha *.txt)"
 
 STAGES = [
-    ("Loading", "กำลังโหลดโมเดลถอดเสียง (ครั้งแรกใช้เวลานานกว่า)"),
-    ("Running Whisper", "กำลังถอดเสียง"),
-    ("ASR Transcribing", "กำลังถอดเสียง"),
-    ("diarization", "กำลังแยกเสียงเด็กกับผู้ใหญ่"),
-    ("Formatting", "กำลังจัดรูปแบบ transcript"),
-    ("acoustic", "กำลังวิเคราะห์ลักษณะเสียง"),
-    ("complete", "เสร็จแล้ว"),
+    ("Loading", tr("กำลังโหลดโมเดลถอดเสียง (ครั้งแรกใช้เวลานานกว่า)", "Loading the speech model (slower the first time)")),
+    ("Running Whisper", tr("กำลังถอดเสียง", "Transcribing")),
+    ("ASR Transcribing", tr("กำลังถอดเสียง", "Transcribing")),
+    ("diarization", tr("กำลังแยกเสียงเด็กกับผู้ใหญ่", "Telling child from adult voices")),
+    ("Formatting", tr("กำลังจัดรูปแบบ transcript", "Formatting the transcript")),
+    ("acoustic", tr("กำลังวิเคราะห์ลักษณะเสียง", "Measuring the recording")),
+    ("complete", tr("เสร็จแล้ว", "Done")),
 ]
 
 
@@ -78,9 +80,9 @@ class CapturePage(SessionPage):
         state.addLayout(row)
         self.state_body = label("", "Hint", wrap=True)
         state.addWidget(self.state_body)
-        self.retranscribe_btn = button("ถอดเสียงไฟล์นี้อีกครั้ง")
+        self.retranscribe_btn = button(tr("ถอดเสียงไฟล์นี้อีกครั้ง", "Transcribe again"))
         self.retranscribe_btn.clicked.connect(self._retranscribe)
-        self.open_review_btn = button("ไปตรวจ transcript →", "primary")
+        self.open_review_btn = button(tr("เปิด transcript", "Open transcript"), "primary")
         self.open_review_btn.clicked.connect(lambda: self.navigate.emit(1))
         actions = QHBoxLayout()
         actions.addWidget(self.retranscribe_btn)
@@ -91,7 +93,7 @@ class CapturePage(SessionPage):
 
         # Progress while transcribing
         self.progress_card, progress = card()
-        self.progress_title = label("กำลังถอดเสียง", "SectionTitle")
+        self.progress_title = label(tr("กำลังถอดเสียง", "Transcribing"), "SectionTitle")
         progress.addWidget(self.progress_title)
         self.progress_stage = label("", "Hint")
         progress.addWidget(self.progress_stage)
@@ -103,11 +105,11 @@ class CapturePage(SessionPage):
         self.progress_time = label("", "Muted")
         prow.addWidget(self.progress_time)
         prow.addStretch(1)
-        self.cancel_btn = button("ยกเลิก", "danger")
+        self.cancel_btn = button(tr("ยกเลิก", "Cancel"), "danger")
         self.cancel_btn.clicked.connect(self._cancel)
         prow.addWidget(self.cancel_btn)
         progress.addLayout(prow)
-        progress.addWidget(label("ถอดเสียงบนเครื่องนี้ทั้งหมด เสียงไม่ถูกส่งออกไปที่ใด ใช้งานส่วนอื่นของโปรแกรมระหว่างรอได้", "Muted", wrap=True))
+        progress.addWidget(label(tr("ถอดเสียงบนเครื่องนี้ทั้งหมด เสียงไม่ถูกส่งออกไปที่ใด ใช้งานส่วนอื่นของโปรแกรมระหว่างรอได้", "Runs on this computer; the recording is not sent anywhere. You can keep working meanwhile."), "Muted", wrap=True))
         self.progress_card.hide()
         layout.addWidget(self.progress_card)
 
@@ -116,8 +118,8 @@ class CapturePage(SessionPage):
         grid.setSpacing(14)
 
         rec_card, rec = card()
-        rec.addWidget(label("บันทึกเสียงจากไมโครโฟน", "SectionTitle"))
-        rec.addWidget(label("วางไมโครโฟนให้ใกล้เด็ก ลดเสียงรบกวน แล้วกดเริ่ม", "Muted", wrap=True))
+        rec.addWidget(label(tr("บันทึกเสียงจากไมโครโฟน", "Record"), "SectionTitle"))
+        rec.addWidget(label(tr("วางไมโครโฟนให้ใกล้เด็ก ลดเสียงรบกวน แล้วกดเริ่ม", "Place the microphone near the child and keep background noise down."), "Muted", wrap=True))
         self.rec_time = QLabel("00:00")
         self.rec_time.setStyleSheet(f"font-size: 28px; font-weight: 700; color: {theme.INK};")
         rec.addWidget(self.rec_time)
@@ -126,9 +128,9 @@ class CapturePage(SessionPage):
         self.level.setTextVisible(False)
         rec.addWidget(self.level)
         rrow = QHBoxLayout()
-        self.rec_btn = button("● เริ่มบันทึก", "primary")
+        self.rec_btn = button(tr("● เริ่มบันทึก", "● Record"), "primary")
         self.rec_btn.clicked.connect(self._toggle_recording)
-        self.rec_discard = button("ทิ้ง")
+        self.rec_discard = button(tr("ทิ้ง", "Discard"))
         self.rec_discard.clicked.connect(self._discard_recording)
         self.rec_discard.hide()
         rrow.addWidget(self.rec_btn)
@@ -139,25 +141,25 @@ class CapturePage(SessionPage):
         grid.addWidget(rec_card, 0, 0)
 
         file_card, files = card()
-        files.addWidget(label("นำเข้าไฟล์เสียง", "SectionTitle"))
-        files.addWidget(label("wav, mp3, m4a, mp4, webm หรือ ogg ไม่เกิน 250 MB ระบบเก็บสำเนาไว้ในโฟลเดอร์ข้อมูลของโปรแกรม", "Muted", wrap=True))
+        files.addWidget(label(tr("นำเข้าไฟล์เสียง", "Import audio"), "SectionTitle"))
+        files.addWidget(label(tr("wav, mp3, m4a, mp4, webm หรือ ogg ไม่เกิน 250 MB ระบบเก็บสำเนาไว้ในโฟลเดอร์ข้อมูลของโปรแกรม", "wav, mp3, m4a, mp4, webm or ogg, up to 250 MB. A copy is kept in PasaScope's data folder."), "Muted", wrap=True))
         files.addStretch(1)
-        self.file_btn = button("เลือกไฟล์เสียง…", "primary")
+        self.file_btn = button(tr("เลือกไฟล์เสียง…", "Choose file…"), "primary")
         self.file_btn.clicked.connect(self._choose_audio)
         files.addWidget(self.file_btn, alignment=Qt.AlignmentFlag.AlignLeft)
         grid.addWidget(file_card, 0, 1)
 
         text_card, text = card()
-        text.addWidget(label("นำเข้า transcript ที่มีอยู่แล้ว", "SectionTitle"))
-        text.addWidget(label("ไฟล์ CHAT (.cha) หรือวางข้อความทีละบรรทัด เช่น  CHI: เล่นรถ", "Muted", wrap=True))
+        text.addWidget(label(tr("นำเข้า transcript ที่มีอยู่แล้ว", "Import a transcript"), "SectionTitle"))
+        text.addWidget(label(tr("ไฟล์ CHAT (.cha) หรือวางข้อความทีละบรรทัด เช่น  CHI: เล่นรถ", "A CHAT file (.cha), or paste one line per utterance, such as  CHI: car go"), "Muted", wrap=True))
         self.paste = QPlainTextEdit()
-        self.paste.setPlaceholderText("INV: วันนี้เล่นอะไรดี\nCHI: เล่นรถ\nINV: รถสีอะไร\nCHI: สีแดง")
+        self.paste.setPlaceholderText(tr("INV: วันนี้เล่นอะไรดี\nCHI: เล่นรถ\nINV: รถสีอะไร\nCHI: สีแดง", "INV: what shall we play\nCHI: car\nINV: what colour is it\nCHI: red"))
         self.paste.setFixedHeight(110)
         text.addWidget(self.paste)
         trow = QHBoxLayout()
-        self.text_file_btn = button("เปิดไฟล์…")
+        self.text_file_btn = button(tr("เปิดไฟล์…", "Open file…"))
         self.text_file_btn.clicked.connect(self._choose_text)
-        self.paste_btn = button("นำเข้าข้อความ", "primary")
+        self.paste_btn = button(tr("นำเข้าข้อความ", "Import text"), "primary")
         self.paste_btn.clicked.connect(self._import_pasted)
         trow.addWidget(self.text_file_btn)
         trow.addStretch(1)
@@ -184,32 +186,32 @@ class CapturePage(SessionPage):
         audio = self.service.session_audio(self.session.session_id)
         available, reason = self.service.transcription_availability()
         self.asr_note.setText(
-            "ถอดเสียงด้วย Whisper บนเครื่องนี้ (โมเดลภาษาไทย)" if available
-            else f"ถอดเสียงบนเครื่องยังไม่พร้อม: {reason} ยังนำเข้า transcript ได้"
+            tr("ถอดเสียงด้วย Whisper บนเครื่องนี้ (โมเดลภาษาไทย)", "Transcribed with Whisper on this computer (Thai model)") if available
+            else tr(f"ถอดเสียงบนเครื่องยังไม่พร้อม: {reason} ยังนำเข้า transcript ได้", f"Transcription unavailable: {reason}. Transcripts can still be imported.")
         )
         self.retranscribe_btn.setVisible(audio is not None and available)
         self.open_review_btn.setVisible(transcript is not None)
         if transcript is not None:
             n = len(transcript.utterances)
-            self.state_title.setText("session นี้มี transcript แล้ว")
-            source = "ร่างจากการถอดเสียง" if str(transcript.source).startswith("asr") else "นำเข้า"
+            self.state_title.setText(tr("session นี้มี transcript แล้ว", "Transcript added"))
+            source = tr("ร่างจากการถอดเสียง", "Draft from the recording") if str(transcript.source).startswith("asr") else tr("นำเข้า", "Imported")
             self.state_body.setText(
-                f"{source} {n} ประโยค"
-                + (f" · ไฟล์เสียง {audio.original_filename}" if audio else "")
-                + "\nบันทึกหรือนำเข้าใหม่จะแทนที่ transcript เดิม"
+                tr(f"{source} {n} ประโยค", f"{source}, {n} lines")
+                + (tr(f" · ไฟล์เสียง {audio.original_filename}", f", recording {audio.original_filename}") if audio else "")
+                + tr("\nบันทึกหรือนำเข้าใหม่จะแทนที่ transcript เดิม", "\nRecording or importing again replaces it.")
             )
             if transcript.therapist_attested:
-                set_chip(self.state_chip, "รับรองแล้ว", "ok")
+                set_chip(self.state_chip, tr("รับรองแล้ว", "Attested"), "ok")
             else:
-                set_chip(self.state_chip, "รอตรวจ", "attention")
+                set_chip(self.state_chip, tr("รอตรวจ", "To review"), "attention")
         elif audio is not None:
-            self.state_title.setText("มีไฟล์เสียงแล้ว แต่ยังไม่มี transcript")
-            self.state_body.setText(f"{audio.original_filename} · กด ‘ถอดเสียงไฟล์นี้อีกครั้ง’ หรือนำเข้า transcript")
-            set_chip(self.state_chip, "ยังไม่ถอดเสียง", "attention")
+            self.state_title.setText(tr("มีไฟล์เสียงแล้ว แต่ยังไม่มี transcript", "Recording without a transcript"))
+            self.state_body.setText(tr(f"{audio.original_filename} · กด ‘ถอดเสียงไฟล์นี้อีกครั้ง’ หรือนำเข้า transcript", f"{audio.original_filename}. Transcribe it again or import a transcript."))
+            set_chip(self.state_chip, tr("ยังไม่ถอดเสียง", "Not transcribed"), "attention")
         else:
-            self.state_title.setText("เริ่มจากเก็บตัวอย่างภาษาของ session นี้")
-            self.state_body.setText("บันทึกเสียง นำเข้าไฟล์เสียง หรือนำเข้า transcript ที่ถอดไว้แล้ว")
-            set_chip(self.state_chip, "ยังไม่มีข้อมูล", "neutral")
+            self.state_title.setText(tr("เริ่มจากเก็บตัวอย่างภาษาของ session นี้", "Add this session's language sample"))
+            self.state_body.setText(tr("บันทึกเสียง นำเข้าไฟล์เสียง หรือนำเข้า transcript ที่ถอดไว้แล้ว", "Record, import audio, or import a transcript you already have."))
+            set_chip(self.state_chip, tr("ยังไม่มีข้อมูล", "Empty"), "neutral")
         self._set_inputs_enabled(not self.working)
 
     def _set_inputs_enabled(self, enabled: bool) -> None:
@@ -221,8 +223,8 @@ class CapturePage(SessionPage):
         if self.service.get_transcript(self.session.session_id) is None:
             return True
         answer = QMessageBox.question(
-            self, "แทนที่ transcript เดิม?",
-            "session นี้มี transcript อยู่แล้ว ข้อมูลใหม่จะแทนที่ transcript, ตัวชี้วัด และร่างรายงานเดิม ดำเนินการต่อ?",
+            self, tr("แทนที่ transcript เดิม?", "Replace the transcript?"),
+            tr("session นี้มี transcript อยู่แล้ว ข้อมูลใหม่จะแทนที่ transcript, ตัวชี้วัด และร่างรายงานเดิม ดำเนินการต่อ?", "This session already has a transcript. The new one replaces it, its findings and the report draft. Continue?"),
         )
         return answer == QMessageBox.StandardButton.Yes
 
@@ -238,9 +240,9 @@ class CapturePage(SessionPage):
         try:
             self.recorder.start()
         except Exception as exc:  # noqa: BLE001 - no microphone or no permission
-            self.report_error(exc, "เปิดไมโครโฟนไม่ได้ (ตรวจสิทธิ์ไมโครโฟนใน System Settings)")
+            self.report_error(exc, tr("เปิดไมโครโฟนไม่ได้ (ตรวจสิทธิ์ไมโครโฟนใน System Settings)", "Could not open the microphone (check microphone access in System Settings)"))
             return
-        self.rec_btn.setText("■ หยุดและถอดเสียง")
+        self.rec_btn.setText(tr("■ หยุดและถอดเสียง", "■ Stop and transcribe"))
         self.rec_discard.show()
         self.timer.start()
         self.busy_changed.emit(True)
@@ -251,7 +253,7 @@ class CapturePage(SessionPage):
 
     def _reset_recorder_ui(self) -> None:
         self.timer.stop()
-        self.rec_btn.setText("● เริ่มบันทึก")
+        self.rec_btn.setText(tr("● เริ่มบันทึก", "● Record"))
         self.rec_discard.hide()
         self.rec_time.setText("00:00")
         self.level.setValue(0)
@@ -263,7 +265,7 @@ class CapturePage(SessionPage):
         path = self.recorder.stop(target)
         self._reset_recorder_ui()
         if path is None:
-            QMessageBox.information(self, "ไม่มีเสียง", "ไม่ได้รับเสียงจากไมโครโฟน")
+            QMessageBox.information(self, tr("ไม่มีเสียง", "No audio"), tr("ไม่ได้รับเสียงจากไมโครโฟน", "Nothing was heard from the microphone."))
             return
         self._store_and_transcribe(path, delete_after=True)
 
@@ -271,18 +273,18 @@ class CapturePage(SessionPage):
     # Importing
     # ------------------------------------------------------------------
     def _choose_audio(self) -> None:
-        path, _ = QFileDialog.getOpenFileName(self, "เลือกไฟล์เสียง", str(Path.home()), AUDIO_FILTER)
+        path, _ = QFileDialog.getOpenFileName(self, tr("เลือกไฟล์เสียง", "Choose a recording"), str(Path.home()), AUDIO_FILTER)
         if path and self._confirm_replace():
             self._store_and_transcribe(Path(path))
 
     def _choose_text(self) -> None:
-        path, _ = QFileDialog.getOpenFileName(self, "เลือก transcript", str(Path.home()), TEXT_FILTER)
+        path, _ = QFileDialog.getOpenFileName(self, tr("เลือก transcript", "Choose a transcript"), str(Path.home()), TEXT_FILTER)
         if not path:
             return
         try:
             text = Path(path).read_text(encoding="utf-8")
         except (OSError, UnicodeDecodeError) as exc:
-            self.report_error(exc, "อ่านไฟล์ไม่ได้ (ต้องเป็น UTF-8)")
+            self.report_error(exc, tr("อ่านไฟล์ไม่ได้ (ต้องเป็น UTF-8)", "Could not read the file (it must be UTF-8)"))
             return
         self._import_text(text, Path(path).name)
 
@@ -291,7 +293,7 @@ class CapturePage(SessionPage):
 
     def _import_text(self, text: str, filename: str) -> None:
         if not text.strip():
-            QMessageBox.information(self, "ไม่มีข้อความ", "วางหรือเปิด transcript ก่อน")
+            QMessageBox.information(self, tr("ไม่มีข้อความ", "No text"), tr("วางหรือเปิด transcript ก่อน", "Paste or open a transcript first."))
             return
         if not self._confirm_replace():
             return
@@ -303,7 +305,7 @@ class CapturePage(SessionPage):
 
     def _store_and_transcribe(self, path: Path, delete_after: bool = False) -> None:
         session_id = self.session.session_id
-        self._begin_work("กำลังเก็บไฟล์เสียง")
+        self._begin_work(tr("กำลังเก็บไฟล์เสียง", "Saving the recording"))
 
         def store():
             try:
@@ -321,20 +323,20 @@ class CapturePage(SessionPage):
     def _retranscribe(self) -> None:
         audio = self.service.session_audio(self.session.session_id)
         if audio is not None and self._confirm_replace():
-            self._begin_work("กำลังเตรียมถอดเสียง")
+            self._begin_work(tr("กำลังเตรียมถอดเสียง", "Preparing to transcribe"))
             self._transcribe(audio.audio_file_id)
 
     def _transcribe(self, audio_file_id: str) -> None:
         available, reason = self.service.transcription_availability()
         if not available:
             self._end_work()
-            QMessageBox.warning(self, "ถอดเสียงไม่ได้", f"เก็บไฟล์เสียงแล้ว แต่ถอดเสียงบนเครื่องยังไม่พร้อม: {reason}")
+            QMessageBox.warning(self, tr("ถอดเสียงไม่ได้", "Cannot transcribe"), tr(f"เก็บไฟล์เสียงแล้ว แต่ถอดเสียงบนเครื่องยังไม่พร้อม: {reason}", f"The recording was saved, but transcription is unavailable: {reason}"))
             self.refresh()
             return
         session_id = self.session.session_id
         self.cancel_event = threading.Event()
         cancel = self.cancel_event
-        self.progress_title.setText(f"กำลังถอดเสียง · {self.case.child_code} · session {self.session.session_date}")
+        self.progress_title.setText(tr(f"กำลังถอดเสียง · {self.case.child_code} · session {self.session.session_date}", f"Transcribing {self.case.child_code}, session {self.session.session_date}"))
         self.cancel_btn.setEnabled(True)
 
         def work(progress):
@@ -373,7 +375,7 @@ class CapturePage(SessionPage):
     def _work_failed(self, exc: Exception) -> None:
         self._end_work()
         self.refresh()
-        self.report_error(exc, "ถอดเสียงไม่สำเร็จ")
+        self.report_error(exc, tr("ถอดเสียงไม่สำเร็จ", "Transcription failed"))
 
     def _on_progress(self, fraction: float, stage: str) -> None:
         self.progress_bar.setValue(int(max(0.0, min(1.0, fraction)) * 1000))
@@ -383,7 +385,7 @@ class CapturePage(SessionPage):
         if self.cancel_event is not None:
             self.cancel_event.set()
             self.cancel_btn.setEnabled(False)
-            self.progress_stage.setText("กำลังหยุด… (รอให้ขั้นตอนปัจจุบันจบ)")
+            self.progress_stage.setText(tr("กำลังหยุด… (รอให้ขั้นตอนปัจจุบันจบ)", "Stopping after the current step…"))
 
     def _tick(self) -> None:
         if self.recorder.recording:
@@ -392,7 +394,7 @@ class CapturePage(SessionPage):
             self.level.setValue(min(100, int(self.recorder.level * 400)))
         if self.working:
             secs = int(time.monotonic() - self.started_at)
-            self.progress_time.setText(f"ผ่านไป {secs // 60}:{secs % 60:02d} นาที")
+            self.progress_time.setText(tr(f"ผ่านไป {secs // 60}:{secs % 60:02d} นาที", f"{secs // 60}:{secs % 60:02d} elapsed"))
 
     def shutdown(self) -> None:
         if self.recorder.recording:

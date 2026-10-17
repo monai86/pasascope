@@ -52,6 +52,24 @@ FEATURE_LABELS_TH = {
     "starts_utterances": "คำถัดไปมักขึ้นต้นประโยค",
     "lengthening": "ลากเสียงคำสุดท้าย",
 }
+FEATURE_LABELS_EN = {
+    "pause": "pause",
+    "sentence_mark": "Whisper's sentence mark",
+    "comma": "Whisper's comma",
+    "capital_next": "next word capitalised",
+    "ends_utterances": "word often ends utterances",
+    "starts_utterances": "next word often starts utterances",
+    "lengthening": "final lengthening",
+}
+
+
+def _english() -> bool:
+    """Explanations follow the desktop app's language (packages/desktop/core/i18n.py)."""
+    import os
+
+    return os.environ.get("PASASCOPE_LANGUAGE", "th") == "en"
+
+
 FORMAT_VERSION = 1
 # Words seen fewer times than this get no word statistic (0 = average word).
 MIN_WORD_COUNT = 20
@@ -177,7 +195,8 @@ class BoundaryModel:
     def explain(self, features: dict, top: int = 3) -> str:
         """The strongest reasons for this decision, in Thai, e.g. 'ช่วงหยุด +2.1, เสียงตกท้ายคำ +0.6'."""
         parts = sorted(self.contributions(features).items(), key=lambda kv: -abs(kv[1]))[:top]
-        return ", ".join(f"{FEATURE_LABELS_TH[name]} {value:+.1f}" for name, value in parts)
+        names = FEATURE_LABELS_EN if _english() else FEATURE_LABELS_TH
+        return ", ".join(f"{names[name]} {value:+.1f}" for name, value in parts)
 
     def to_dict(self) -> dict:
         return {
@@ -238,7 +257,12 @@ def model_for(utterances) -> Optional[BoundaryModel]:
         return None
 
 
+BOUNDARY_MARKS = ("ขึ้นประโยคใหม่", "New utterance")
+
+
 def describe_boundary(model: BoundaryModel, features: dict, probability: float, pause: float) -> str:
+    if _english():
+        return f"New utterance ({probability:.0%}, {pause:.1f} s pause): {model.explain(features)}"
     return f"ขึ้นประโยคใหม่ (โอกาส {probability:.0%}, หยุด {pause:.1f} วินาที): {model.explain(features)}"
 
 

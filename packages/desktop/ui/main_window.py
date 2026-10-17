@@ -1,4 +1,4 @@
-"""The main window: cases on the left, the selected session's steps on the right."""
+"""The main window: navigation on the left; Home, a case, or Knowledge on the right."""
 
 from __future__ import annotations
 
@@ -6,7 +6,7 @@ from datetime import datetime
 from pathlib import Path
 
 from PySide6.QtCore import QSettings, Qt, QUrl
-from PySide6.QtGui import QAction, QDesktopServices, QKeySequence
+from PySide6.QtGui import QAction, QActionGroup, QColor, QDesktopServices, QKeySequence
 from PySide6.QtWidgets import (
     QComboBox,
     QFileDialog,
@@ -26,18 +26,26 @@ from PySide6.QtWidgets import (
 
 from packages.desktop.core import DesktopService
 from packages.desktop.core.backup import BackupError, read_backup, restore_backup
+from packages.desktop.core.i18n import LANGUAGES, language, tr
 from packages.desktop.ui import dialogs, labels, theme
 from packages.desktop.ui.pages.capture import CapturePage
+from packages.desktop.ui.pages.dashboard import Dashboard
 from packages.desktop.ui.pages.findings import FindingsPage
+from packages.desktop.ui.pages.knowledge import KnowledgePage
 from packages.desktop.ui.pages.overview import CaseOverview
 from packages.desktop.ui.pages.report import ReportPage
 from packages.desktop.ui.pages.review import ReviewPage
 from packages.desktop.ui.tasks import TaskRunner
 from packages.desktop.ui.widgets import EmptyState, button, chip, label, set_chip
 
-STEPS = ["1 · เสียง", "2 · ตรวจ transcript", "3 · ตัวชี้วัดและ cue", "4 · รายงาน"]
 OVERVIEW = "__overview__"  # session picker entry for the case overview
 NO_SESSION_PAGE, SESSION_PAGE, OVERVIEW_PAGE = range(3)
+HOME_PAGE, CASE_PAGE, KNOWLEDGE_PAGE = range(3)
+
+
+def step_titles() -> list[str]:
+    return [tr("1  เสียง", "1  Recording"), tr("2  Transcript", "2  Transcript"),
+            tr("3  ตัวชี้วัด", "3  Findings"), tr("4  รายงาน", "4  Report")]
 
 
 class MainWindow(QMainWindow):
@@ -50,6 +58,7 @@ class MainWindow(QMainWindow):
         self.session = None
         self.busy = False
         self._switching = False
+        self.steps_done = [False] * 4
         self.setWindowTitle("PasaScope")
         self.resize(1280, 820)
         self.setMinimumSize(980, 640)
@@ -63,12 +72,15 @@ class MainWindow(QMainWindow):
 
         self.stack = QStackedWidget()
         root.addWidget(self.stack, 1)
-        self.no_case = EmptyState("เลือกเคสทางซ้าย หรือเพิ่มเคสใหม่", "ข้อมูลทั้งหมดเก็บอยู่ในเครื่องนี้")
-        new_btn = button("+ เพิ่มเคสใหม่", "primary")
-        new_btn.clicked.connect(self.new_case)
-        self.no_case.actions.addWidget(new_btn)
-        self.stack.addWidget(self.no_case)
+        self.dashboard = Dashboard(self.service)
+        self.dashboard.open_case.connect(self._open_from_dashboard)
+        self.dashboard.new_case.connect(self.new_case)
+        self.dashboard.backup.connect(self.backup)
+        self.dashboard.speaker_settings.connect(self.show_speaker_model)
+        self.stack.addWidget(self.dashboard)
         self.stack.addWidget(self._build_case_view())
+        self.knowledge = KnowledgePage()
+        self.stack.addWidget(self.knowledge)
 
         self._build_menus()
         self.asr_label = QLabel("")
@@ -87,6 +99,7 @@ class MainWindow(QMainWindow):
         if geometry is not None:
             self.restoreGeometry(geometry)
         self.reload_cases()
+        self.show_home()
 
     # ------------------------------------------------------------------
     # Layout
@@ -94,23 +107,37 @@ class MainWindow(QMainWindow):
     def _build_sidebar(self) -> QWidget:
         side = QFrame()
         side.setObjectName("Sidebar")
-        side.setFixedWidth(280)
+        side.setFixedWidth(260)
         layout = QVBoxLayout(side)
-        layout.setContentsMargins(16, 18, 12, 12)
-        layout.setSpacing(10)
-        layout.addWidget(label("PasaScope", "Brand"))
-        layout.addWidget(label("ช่วยถอดเสียงและวิเคราะห์ตัวอย่างภาษาเด็ก", "BrandSub", wrap=True))
+        layout.setContentsMargins(12, 16, 12, 12)
+        layout.setSpacing(2)
+        brand = label("PasaScope", "Brand")
+        brand.setContentsMargins(8, 0, 0, 10)
+        layout.addWidget(brand)
+        self.home_btn = button(tr("หน้าแรก", "Home"), "nav")
+        self.home_btn.clicked.connect(self.show_home)
+        self.knowledge_btn = button(tr("ความรู้", "Knowledge"), "nav")
+        self.knowledge_btn.clicked.connect(self.show_knowledge)
+        for nav in (self.home_btn, self.knowledge_btn):
+            nav.setCheckable(True)
+            layout.addWidget(nav)
+        layout.addSpacing(14)
+        cases_title = label(tr("เคส", "Cases"), "SidebarHeading")
+        cases_title.setContentsMargins(8, 0, 0, 4)
+        layout.addWidget(cases_title)
         self.search = QLineEdit()
-        self.search.setPlaceholderText("ค้นหารหัสหรือชื่อเล่น")
+        self.search.setPlaceholderText(tr("ค้นหารหัสหรือชื่อเล่น", "Search code or nickname"))
         self.search.setClearButtonEnabled(True)
         self.search.textChanged.connect(lambda _: self.reload_cases())
         layout.addWidget(self.search)
+        layout.addSpacing(4)
         self.case_list = QListWidget()
         self.case_list.currentItemChanged.connect(self._on_case_item)
         layout.addWidget(self.case_list, 1)
         self.case_count = label("", "Muted")
+        self.case_count.setContentsMargins(8, 4, 0, 4)
         layout.addWidget(self.case_count)
-        add = button("+ เพิ่มเคสใหม่", "primary")
+        add = button(tr("+ เพิ่มเคส", "+ New case"), "nav")
         add.clicked.connect(self.new_case)
         layout.addWidget(add)
         return side
@@ -118,13 +145,14 @@ class MainWindow(QMainWindow):
     def _build_case_view(self) -> QWidget:
         view = QWidget()
         layout = QVBoxLayout(view)
-        layout.setContentsMargins(24, 18, 24, 10)
-        layout.setSpacing(10)
+        layout.setContentsMargins(32, 22, 32, 10)
+        layout.setSpacing(8)
 
         head = QHBoxLayout()
         title_box = QVBoxLayout()
+        title_box.setSpacing(2)
         self.case_title = label("", "CaseTitle")
-        self.case_meta = label("", "Hint")
+        self.case_meta = label("", "Muted")
         title_box.addWidget(self.case_title)
         title_box.addWidget(self.case_meta)
         head.addLayout(title_box)
@@ -137,15 +165,15 @@ class MainWindow(QMainWindow):
         layout.addLayout(head)
 
         session_row = QHBoxLayout()
-        session_row.addWidget(label("Session", "SectionTitle"))
         self.session_pick = QComboBox()
-        self.session_pick.setMinimumWidth(320)
+        self.session_pick.setMinimumWidth(300)
         self.session_pick.currentIndexChanged.connect(self._on_session_pick)
         session_row.addWidget(self.session_pick)
-        self.new_session_btn = button("+ session ใหม่")
+        self.new_session_btn = button(tr("+ Session ใหม่", "+ New session"))
         self.new_session_btn.clicked.connect(self.new_session)
         session_row.addWidget(self.new_session_btn)
         session_row.addStretch(1)
+        layout.addSpacing(6)
         layout.addLayout(session_row)
 
         self.session_stack = QStackedWidget()
@@ -163,7 +191,7 @@ class MainWindow(QMainWindow):
             FindingsPage(self.service, self.runner),
             ReportPage(self.service, self.runner),
         ]
-        for page, title in zip(self.pages, STEPS):
+        for page, title in zip(self.pages, step_titles()):
             self.tabs.addTab(page, title)
             page.changed.connect(self.refresh_session)
             page.navigate.connect(self.tabs.setCurrentIndex)
@@ -178,57 +206,101 @@ class MainWindow(QMainWindow):
 
     def _build_menus(self) -> None:
         bar = self.menuBar()
-        file_menu = bar.addMenu("ไฟล์")
-        new_case = QAction("เพิ่มเคสใหม่…", self)
+        file_menu = bar.addMenu(tr("ไฟล์", "File"))
+        new_case = QAction(tr("เพิ่มเคส…", "New case…"), self)
         new_case.setShortcut(QKeySequence("Ctrl+N"))
         new_case.triggered.connect(self.new_case)
         file_menu.addAction(new_case)
-        open_folder = QAction("เปิดโฟลเดอร์ข้อมูล", self)
+        open_folder = QAction(tr("เปิดโฟลเดอร์ข้อมูล", "Open data folder"), self)
         open_folder.triggered.connect(
             lambda: QDesktopServices.openUrl(QUrl.fromLocalFile(str(self.service.workspace.root)))
         )
         file_menu.addAction(open_folder)
         file_menu.addSeparator()
-        backup_action = QAction("สำรองข้อมูล…", self)
+        backup_action = QAction(tr("สำรองข้อมูล…", "Back up…"), self)
         backup_action.setShortcut(QKeySequence("Ctrl+Shift+S"))
         backup_action.triggered.connect(self.backup)
         file_menu.addAction(backup_action)
-        restore_action = QAction("กู้คืนจากไฟล์สำรอง…", self)
+        restore_action = QAction(tr("กู้คืนจากไฟล์สำรอง…", "Restore from backup…"), self)
         restore_action.triggered.connect(self.restore)
         file_menu.addAction(restore_action)
         file_menu.addSeparator()
-        quit_action = QAction("ออก", self)
+        quit_action = QAction(tr("ออก", "Quit"), self)
         quit_action.setShortcut(QKeySequence.StandardKey.Quit)
         quit_action.triggered.connect(self.close)
         file_menu.addAction(quit_action)
 
-        settings_menu = bar.addMenu("ตั้งค่า")
-        name_action = QAction("ชื่อนักบำบัด…", self)
+        settings_menu = bar.addMenu(tr("ตั้งค่า", "Settings"))
+        name_action = QAction(tr("ชื่อนักบำบัด…", "Therapist name…"), self)
         name_action.triggered.connect(lambda: self.ask_therapist_name(first_run=False))
         settings_menu.addAction(name_action)
         settings_menu.addSeparator()
-        mode_menu = settings_menu.addMenu("โหมดถอดเสียง")
+        mode_menu = settings_menu.addMenu(tr("โหมดถอดเสียง", "Transcription"))
         self.mode_actions = {}
         for mode, text in (
-            ("accurate", "แม่นยำ: โมเดลภาษาไทย (ช้ากว่า ราว 5 เท่าของความยาวเสียง)"),
-            ("fast", "เร็ว: โมเดลหลายภาษา (ราวเท่าความยาวเสียง แต่ผิดมากกว่า)"),
+            ("accurate", tr("แม่นยำ: โมเดลภาษาไทย (ราว 5 เท่าของความยาวเสียง)", "Accurate: Thai model (about 5x the recording length)")),
+            ("fast", tr("เร็ว: โมเดลหลายภาษา (ราวเท่าความยาวเสียง ผิดมากกว่า)", "Fast: multilingual model (about 1x, more errors)")),
         ):
             action = QAction(text, self, checkable=True)
             action.setChecked(self.service.transcription_mode == mode)
             action.triggered.connect(lambda _=False, m=mode: self._set_mode(m))
             mode_menu.addAction(action)
             self.mode_actions[mode] = action
-        speaker_action = QAction("การแยกเสียงเด็ก/ผู้ใหญ่ของคลินิก…", self)
+        speaker_action = QAction(tr("แยกเสียงเด็ก/ผู้ใหญ่ของคลินิก…", "Child/adult voices…"), self)
         speaker_action.triggered.connect(self.show_speaker_model)
         settings_menu.addAction(speaker_action)
+        language_menu = settings_menu.addMenu(tr("ภาษา / Language", "Language / ภาษา"))
+        group = QActionGroup(self)
+        for code, name in LANGUAGES.items():
+            action = QAction(name, self, checkable=True)
+            action.setChecked(code == language())
+            action.triggered.connect(lambda _=False, c=code: self._set_language(c))
+            group.addAction(action)
+            language_menu.addAction(action)
 
-        help_menu = bar.addMenu("ช่วยเหลือ")
-        audit = QAction("ประวัติการทำงาน (audit log)", self)
+        help_menu = bar.addMenu(tr("ช่วยเหลือ", "Help"))
+        knowledge = QAction(tr("ความรู้", "Knowledge"), self)
+        knowledge.setShortcut(QKeySequence("F1"))
+        knowledge.triggered.connect(self.show_knowledge)
+        help_menu.addAction(knowledge)
+        audit = QAction(tr("ประวัติการทำงาน (audit log)", "Audit log"), self)
         audit.triggered.connect(self.show_audit_log)
         help_menu.addAction(audit)
-        about = QAction("เกี่ยวกับ PasaScope", self)
+        about = QAction(tr("เกี่ยวกับ PasaScope", "About PasaScope"), self)
         about.triggered.connect(self.show_about)
         help_menu.addAction(about)
+
+    # ------------------------------------------------------------------
+    # Navigation
+    # ------------------------------------------------------------------
+    def _mark_nav(self, page: int) -> None:
+        self.home_btn.setChecked(page == HOME_PAGE)
+        self.knowledge_btn.setChecked(page == KNOWLEDGE_PAGE)
+
+    def show_home(self) -> None:
+        if self.stack.currentIndex() == CASE_PAGE and not self._confirm_leave():
+            self._mark_nav(CASE_PAGE)
+            return
+        self.stop_pages()
+        self.case = None
+        self.session = None
+        self._switching = True
+        self.case_list.setCurrentItem(None)
+        self.case_list.clearSelection()
+        self._switching = False
+        self.dashboard.refresh()
+        self.stack.setCurrentIndex(HOME_PAGE)
+        self._mark_nav(HOME_PAGE)
+
+    def show_knowledge(self, topic: str | None = None) -> None:
+        if isinstance(topic, str):
+            self.knowledge.open_topic(topic)
+        self.stack.setCurrentIndex(KNOWLEDGE_PAGE)
+        self._mark_nav(KNOWLEDGE_PAGE)
+
+    def _open_from_dashboard(self, case_id: str, session_id) -> None:
+        self.reload_cases(case_id)
+        self.open_case(case_id, session_id)
 
     # ------------------------------------------------------------------
     # Cases
@@ -239,30 +311,32 @@ class MainWindow(QMainWindow):
         self._switching = True
         self.case_list.clear()
         for case in cases:
-            consent_text, _ = labels.CONSENT.get(case.consent_status, (case.consent_status, ""))
-            name = f"{case.child_code}" + (f" · {case.nickname}" if case.nickname else "")
-            item = QListWidgetItem(f"{name}\n{labels.age_text(case.age_months)} · {consent_text}")
+            name = case.child_code + (f"  {case.nickname}" if case.nickname else "")
+            item = QListWidgetItem(name)
+            consent, _ = labels.CONSENT.get(case.consent_status, (case.consent_status, ""))
+            item.setToolTip(f"{labels.age_text(case.age_months)} · {consent}")
             item.setData(Qt.ItemDataRole.UserRole, case.case_id)
-            if case.consent_status == "withdrawn":
-                item.setForeground(Qt.GlobalColor.gray)
+            if case.consent_status != "granted":
+                item.setForeground(QColor(theme.ATTENTION if case.consent_status == "pending" else theme.FAINT))
             self.case_list.addItem(item)
             if case.case_id == select_id:
                 self.case_list.setCurrentItem(item)
         self._switching = False
         total = len(self.service.list_cases())
-        self.case_count.setText(f"{len(cases)} จาก {total} เคส" if self.search.text() else f"{total} เคส")
-        if self.case_list.currentItem() is None:
-            self.case = None
-            self.session = None
-            self.stack.setCurrentIndex(0)
+        self.case_count.setText(
+            tr(f"{len(cases)} จาก {total} เคส", f"{len(cases)} of {total} cases") if self.search.text()
+            else tr(f"{total} เคส", f"{total} cases" if total != 1 else "1 case")
+        )
+        if self.case_list.currentItem() is None and self.stack.currentIndex() == CASE_PAGE:
+            self.show_home()
 
     def _confirm_leave(self) -> bool:
         dirty = [p for p in self.pages if p.has_unsaved_changes()]
         if not dirty:
             return True
         answer = QMessageBox.question(
-            self, "มีการแก้ไขที่ยังไม่บันทึก",
-            "บันทึกการแก้ไขก่อนเปลี่ยนหน้า?",
+            self, tr("มีการแก้ไขที่ยังไม่บันทึก", "Unsaved changes"),
+            tr("บันทึกการแก้ไขก่อนเปลี่ยนหน้า?", "Save your changes first?"),
             QMessageBox.StandardButton.Save | QMessageBox.StandardButton.Discard | QMessageBox.StandardButton.Cancel,
         )
         if answer == QMessageBox.StandardButton.Cancel:
@@ -275,7 +349,7 @@ class MainWindow(QMainWindow):
         if self._switching or current is None:
             return
         case_id = current.data(Qt.ItemDataRole.UserRole)
-        if self.case and case_id == self.case.case_id:
+        if self.case and case_id == self.case.case_id and self.stack.currentIndex() == CASE_PAGE:
             return
         if not self._confirm_leave():
             self._switching = True
@@ -286,23 +360,26 @@ class MainWindow(QMainWindow):
 
     def open_case(self, case_id: str, session_id: str | None = None) -> None:
         self.case = self.service.get_case(case_id)
-        self.stack.setCurrentIndex(1)
+        self.stack.setCurrentIndex(CASE_PAGE)
+        self._mark_nav(CASE_PAGE)
         self._fill_case_header()
         self._fill_sessions(session_id)
 
     def _fill_case_header(self) -> None:
         case = self.case
-        self.case_title.setText(case.child_code + (f"  ·  {case.nickname}" if case.nickname else ""))
-        meta = [f"อายุ {labels.age_text(case.age_months)} (ตอนเปิดเคส)", f"ภาษา {case.language}"]
-        self.case_meta.setText(" · ".join(meta))
+        self.case_title.setText(case.child_code + (f"  {case.nickname}" if case.nickname else ""))
+        self.case_meta.setText(tr(
+            f"อายุ {labels.age_text(case.age_months)} ตอนเปิดเคส   ภาษา {case.language}",
+            f"{labels.age_text(case.age_months)} at intake   {case.language}",
+        ))
         text, kind = labels.CONSENT.get(case.consent_status, (case.consent_status, "neutral"))
         set_chip(self.consent_chip, text, kind)
         if case.consent_status == "granted":
-            self.consent_btn.setText("ถอนความยินยอม…")
+            self.consent_btn.setText(tr("ถอนความยินยอม…", "Withdraw consent…"))
             self.consent_btn.setProperty("role", "danger")
             self.consent_btn.setVisible(True)
         elif case.consent_status == "pending":
-            self.consent_btn.setText("บันทึกความยินยอม…")
+            self.consent_btn.setText(tr("บันทึกความยินยอม…", "Record consent…"))
             self.consent_btn.setProperty("role", "primary")
             self.consent_btn.setVisible(True)
         else:
@@ -331,15 +408,21 @@ class MainWindow(QMainWindow):
             self.session = None
             self.session_stack.setCurrentIndex(NO_SESSION_PAGE)
             if self.case.consent_status == "granted":
-                self.no_session.set_text("ยังไม่มี session", "สร้าง session แรกเพื่อบันทึกหรือนำเข้าเสียง")
-                self.no_session_btn.setText("+ สร้าง session แรก")
+                self.no_session.set_text(tr("ยังไม่มี session", "No sessions yet"),
+                                         tr("เพิ่ม session เพื่อบันทึกหรือนำเข้าเสียง", "Add a session to record or import audio."))
+                self.no_session_btn.setText(tr("เพิ่ม session", "Add session"))
                 self.no_session_btn.setVisible(True)
             elif self.case.consent_status == "pending":
-                self.no_session.set_text("บันทึกความยินยอมก่อน", "ต้องมีเอกสารยินยอมของผู้ปกครองก่อนบันทึกเสียงหรือเพิ่มข้อมูลของเด็ก")
-                self.no_session_btn.setText("บันทึกความยินยอม…")
+                self.no_session.set_text(
+                    tr("ต้องบันทึกความยินยอมก่อน", "Consent needed"),
+                    tr("ต้องมีเอกสารยินยอมของผู้ปกครองก่อนบันทึกเสียงหรือเพิ่มข้อมูลของเด็ก",
+                       "Record the parent's or guardian's consent before adding recordings or other data."),
+                )
+                self.no_session_btn.setText(tr("บันทึกความยินยอม…", "Record consent…"))
                 self.no_session_btn.setVisible(True)
             else:
-                self.no_session.set_text("ถอนความยินยอมแล้ว", "เคสนี้เพิ่มข้อมูลใหม่ไม่ได้")
+                self.no_session.set_text(tr("ถอนความยินยอมแล้ว", "Consent withdrawn"),
+                                         tr("เคสนี้เพิ่มข้อมูลใหม่ไม่ได้", "No new data can be added to this case."))
                 self.no_session_btn.setVisible(False)
 
     def _no_session_action(self) -> None:
@@ -353,9 +436,9 @@ class MainWindow(QMainWindow):
         self._switching = True
         self.session_pick.clear()
         if sessions:
-            self.session_pick.addItem(f"ภาพรวมเคส · {len(sessions)} session", OVERVIEW)
+            self.session_pick.addItem(tr(f"ภาพรวมเคส ({len(sessions)} session)", f"Case overview ({len(sessions)} sessions)"), OVERVIEW)
         for session in sessions:
-            self.session_pick.addItem(f"{session.session_date} · {labels.status_text(session.status)}", session.session_id)
+            self.session_pick.addItem(f"{session.session_date}   {labels.status_text(session.status)}", session.session_id)
         self._switching = False
         return sessions
 
@@ -405,19 +488,22 @@ class MainWindow(QMainWindow):
         return min(self.service.session_step(self.session), 3)
 
     def _update_tab_state(self) -> None:
+        """Finished steps are shown quieter, so the step still to do stands out."""
         if self.session is None:
             return
         transcript = self.service.get_transcript(self.session.session_id)
         features = self.service.get_features(self.session.session_id)
         report = self.service.get_report(self.session.session_id)
-        marks = [
+        self.steps_done = [
             transcript is not None,
             bool(transcript and transcript.therapist_attested),
             features is not None and not self.session.findings_stale,
             bool(report and (report.status.value if hasattr(report.status, "value") else report.status) == "Signed Off"),
         ]
-        for index, (title, done) in enumerate(zip(STEPS, marks)):
-            self.tabs.setTabText(index, f"{title}  ✓" if done else title)
+        done_tip = tr("เสร็จแล้ว", "Done")
+        for index, done in enumerate(self.steps_done):
+            self.tabs.tabBar().setTabTextColor(index, QColor(theme.OK if done else theme.MUTED))
+            self.tabs.setTabToolTip(index, done_tip if done else "")
 
     def refresh_session(self) -> None:
         """Reload everything after a page changed a record."""
@@ -490,7 +576,8 @@ class MainWindow(QMainWindow):
 
     def withdraw_consent(self) -> None:
         if self.busy:
-            QMessageBox.information(self, "รอสักครู่", "รอให้การถอดเสียงหรือการบันทึกเสียงเสร็จก่อน")
+            QMessageBox.information(self, tr("รอสักครู่", "Please wait"),
+                                    tr("รอให้การถอดเสียงหรือการบันทึกเสียงเสร็จก่อน", "Wait for the transcription or recording to finish."))
             return
         dialog = dialogs.WithdrawConsentDialog(self.case.child_code, self)
         while dialog.exec():
@@ -535,10 +622,19 @@ class MainWindow(QMainWindow):
         try:
             self.service.set_transcription_mode(mode)
         except Exception as exc:  # noqa: BLE001
-            QMessageBox.warning(self, "ตั้งค่าไม่สำเร็จ", str(exc))
+            QMessageBox.warning(self, tr("ตั้งค่าไม่สำเร็จ", "Setting not saved"), str(exc))
         for key, action in self.mode_actions.items():
             action.setChecked(key == self.service.transcription_mode)
         self._update_status_bar()
+
+    def _set_language(self, code: str) -> None:
+        if code == self.service.language:
+            return
+        self.service.set_language(code)
+        QMessageBox.information(
+            self, "PasaScope",
+            "Restart PasaScope to switch the language.\nเปิดโปรแกรมใหม่เพื่อเปลี่ยนภาษา",
+        )
 
     # ------------------------------------------------------------------
     # The clinic's own child/adult model
@@ -552,17 +648,18 @@ class MainWindow(QMainWindow):
             self.learn_speakers_in_background(force=True)
         elif dialog.choice == "reset":
             answer = QMessageBox.question(
-                self, "ล้างโมเดลประจำคลินิก",
-                "ล้างสิ่งที่โปรแกรมเรียนไว้ แล้วกลับไปใช้โมเดลพื้นฐาน? โปรแกรมจะเริ่มเรียนใหม่เมื่อรับรอง transcript ครั้งต่อไป",
+                self, tr("ล้างโมเดลประจำคลินิก", "Clear the clinic model"),
+                tr("ล้างสิ่งที่โปรแกรมเรียนไว้ แล้วกลับไปใช้โมเดลพื้นฐาน? โปรแกรมจะเริ่มเรียนใหม่เมื่อรับรอง transcript ครั้งต่อไป",
+                   "Clear what PasaScope has learned and go back to the base model? It learns again after the next attested transcript."),
             )
             if answer == QMessageBox.StandardButton.Yes:
                 self.service.reset_clinic_speaker_model()
-                self.statusBar().showMessage("ล้างโมเดลประจำคลินิกแล้ว", 8000)
+                self.statusBar().showMessage(tr("ล้างโมเดลประจำคลินิกแล้ว", "Clinic model cleared"), 8000)
+        if self.stack.currentIndex() == HOME_PAGE:
+            self.dashboard.refresh()
 
     def learn_speakers_in_background(self, force: bool = False) -> None:
         """After an attestation, retrain the clinic's child/adult model without blocking the window."""
-        from packages.desktop.ui import labels as wording
-
         if getattr(self, "_learning_speakers", False) or not (force or self.service.clinic_speaker_enabled):
             return
         sessions = self.service.clinic_speaker_training_sessions()
@@ -570,17 +667,19 @@ class MainWindow(QMainWindow):
         if status["sessions_needed"] or status["children_needed"]:
             return
         self._learning_speakers = True
-        self.statusBar().showMessage("กำลังเรียนเสียงจาก session ที่รับรองแล้ว (ทำงานเบื้องหลัง)…")
+        self.statusBar().showMessage(tr("กำลังเรียนเสียงจาก session ที่รับรองแล้ว…", "Learning voices from attested sessions…"))
 
         def done(result) -> None:
             self._learning_speakers = False
-            self.statusBar().showMessage(
-                "การแยกเสียงเด็ก/ผู้ใหญ่: " + wording.clinic_speaker_text(self.service.save_clinic_speaker_result(result)), 15000
-            )
+            text = labels.clinic_speaker_text(self.service.save_clinic_speaker_result(result))
+            self.statusBar().showMessage(tr("แยกเสียงเด็ก/ผู้ใหญ่: ", "Child/adult voices: ") + text, 15000)
 
         def failed(exc: Exception) -> None:
             self._learning_speakers = False
-            self.statusBar().showMessage(f"เรียนเสียงไม่สำเร็จ ({type(exc).__name__}) ยังใช้โมเดลเดิม", 15000)
+            self.statusBar().showMessage(
+                tr(f"เรียนเสียงไม่สำเร็จ ({type(exc).__name__}) ยังใช้โมเดลเดิม", f"Could not learn voices ({type(exc).__name__}); the model in use is unchanged"),
+                15000,
+            )
 
         self.runner.run(lambda: self.service.train_clinic_speaker_model(sessions), on_done=done, on_error=failed)
 
@@ -590,13 +689,16 @@ class MainWindow(QMainWindow):
     def show_about(self) -> None:
         QMessageBox.about(
             self,
-            "เกี่ยวกับ PasaScope",
+            tr("เกี่ยวกับ PasaScope", "About PasaScope"),
             f"<b>PasaScope</b> {self.version}<br><br>"
-            "โปรแกรมช่วยนักบำบัดถอดเสียงและวิเคราะห์ตัวอย่างภาษาของเด็ก<br>"
-            "ถอดเสียงด้วย Whisper บนเครื่องนี้ ข้อมูลไม่ออกจากเครื่อง<br><br>"
-            "เป็นเครื่องมือสนับสนุนการตัดสินใจทางคลินิก ไม่ใช่เครื่องมือวินิจฉัย "
-            "และยังไม่ได้ตรวจสอบความถูกต้องทางคลินิกกับเด็กไทย<br><br>"
-            f"โฟลเดอร์ข้อมูล: {self.service.workspace.root}",
+            + tr(
+                "ช่วยนักบำบัดถอดเสียงและวิเคราะห์ตัวอย่างภาษาของเด็ก ถอดเสียงด้วย Whisper บนเครื่องนี้ ข้อมูลไม่ออกจากเครื่อง<br><br>"
+                "เป็นเครื่องมือสนับสนุนการตัดสินใจทางคลินิก ไม่ใช่เครื่องมือวินิจฉัย และยังไม่ได้ตรวจสอบความถูกต้องทางคลินิกกับเด็กไทย<br><br>",
+                "Transcribes and analyses children's language samples for therapists. Whisper runs on this computer; "
+                "no data leaves it.<br><br>A clinical decision-support tool, not a diagnostic device. It has not been "
+                "clinically validated with Thai children.<br><br>",
+            )
+            + tr(f"โฟลเดอร์ข้อมูล: {self.service.workspace.root}", f"Data folder: {self.service.workspace.root}"),
         )
 
     # ------------------------------------------------------------------
@@ -606,46 +708,55 @@ class MainWindow(QMainWindow):
         self.busy = busy
         self.case_list.setEnabled(not busy)
         self.session_pick.setEnabled(not busy)
+        self.home_btn.setEnabled(not busy)
         self.new_session_btn.setEnabled(not busy and bool(self.case) and self.case.consent_status == "granted")
 
     def _update_status_bar(self) -> None:
         name = self.service.therapist_name
-        self.name_label.setText(f"นักบำบัด: {name}" if name else "ยังไม่ได้ตั้งชื่อนักบำบัด (เมนู ตั้งค่า)")
+        self.name_label.setText(name if name else tr("ยังไม่ได้ตั้งชื่อนักบำบัด (เมนูตั้งค่า)", "Therapist name not set (Settings)"))
         available, reason = self.service.transcription_availability()
-        mode = "แม่นยำ" if self.service.transcription_mode == "accurate" else "เร็ว"
-        self.asr_label.setText(f"ถอดเสียงบนเครื่อง: พร้อม · โหมด{mode}" if available else f"ถอดเสียงบนเครื่อง: ไม่พร้อม ({reason})")
-        self.asr_label.setStyleSheet(f"color: {theme.OK if available else theme.ATTENTION};")
+        mode = tr("แม่นยำ", "accurate") if self.service.transcription_mode == "accurate" else tr("เร็ว", "fast")
+        self.asr_label.setText(
+            tr(f"ถอดเสียง: พร้อม (โหมด{mode})", f"Transcription ready ({mode})") if available
+            else tr(f"ถอดเสียงไม่ได้: {reason}", f"Transcription unavailable: {reason}")
+        )
+        self.asr_label.setStyleSheet(f"color: {theme.MUTED if available else theme.ATTENTION};")
         self._update_backup_label()
 
     def _update_backup_label(self) -> None:
         last = self.service.last_backup_at
-        when = f"สำรองล่าสุด {last:%d/%m/%Y %H:%M}" if last else "ยังไม่เคยสำรองข้อมูล"
+        when = tr(f"สำรองล่าสุด {last:%d/%m/%Y %H:%M}", f"Backed up {last:%d/%m/%Y %H:%M}") if last else tr("ยังไม่เคยสำรองข้อมูล", "Never backed up")
         if self.service.backup_due():
-            self.backup_label.setText(f'· <span style="color:{theme.ATTENTION}">{when}</span> <a href="backup">สำรองตอนนี้</a>')
+            self.backup_label.setText(
+                f'   <span style="color:{theme.ATTENTION}">{when}</span>   <a href="backup">{tr("สำรองตอนนี้", "Back up now")}</a>'
+            )
         else:
-            self.backup_label.setText(f'· <span style="color:{theme.MUTED}">{when}</span>')
+            self.backup_label.setText(f'   <span style="color:{theme.MUTED}">{when}</span>')
 
     # ------------------------------------------------------------------
     # Backup and restore
     # ------------------------------------------------------------------
     def backup(self) -> None:
+        title = tr("สำรองข้อมูล", "Back up")
         if self.busy or self.runner.busy:
-            QMessageBox.information(self, "สำรองข้อมูล", "รอให้งานที่ทำอยู่เสร็จก่อน แล้วค่อยสำรองข้อมูล")
+            QMessageBox.information(self, title, tr("รอให้งานที่ทำอยู่เสร็จก่อน แล้วค่อยสำรองข้อมูล", "Wait for the current task to finish, then back up."))
             return
         if not self._confirm_leave():
             return
         last_dir = QSettings().value("backup/folder") or str(Path.home() / "Documents")
-        default = Path(last_dir) / f"PasaScope-สำรอง-{datetime.now():%Y-%m-%d-%H%M}.zip"
-        path, _ = QFileDialog.getSaveFileName(self, "สำรองข้อมูลไปที่", str(default), "ไฟล์สำรอง PasaScope (*.zip)")
+        default = Path(last_dir) / f"PasaScope-backup-{datetime.now():%Y-%m-%d-%H%M}.zip"
+        path, _ = QFileDialog.getSaveFileName(self, tr("สำรองข้อมูลไปที่", "Back up to"), str(default),
+                                              tr("ไฟล์สำรอง PasaScope (*.zip)", "PasaScope backup (*.zip)"))
         if not path:
             return
         target = Path(path) if path.lower().endswith(".zip") else Path(path + ".zip")
         if target.resolve().is_relative_to(self.service.workspace.root):
-            QMessageBox.warning(self, "สำรองข้อมูล", "เลือกที่เก็บนอกโฟลเดอร์ข้อมูลของโปรแกรม เช่น ไดรฟ์ภายนอก")
+            QMessageBox.warning(self, title, tr("เลือกที่เก็บนอกโฟลเดอร์ข้อมูลของโปรแกรม เช่น ไดรฟ์ภายนอก",
+                                                "Choose a place outside PasaScope's data folder, such as an external drive."))
             return
         QSettings().setValue("backup/folder", str(target.parent))
         self._set_busy(True)
-        self.statusBar().showMessage("กำลังสำรองข้อมูล…")
+        self.statusBar().showMessage(tr("กำลังสำรองข้อมูล…", "Backing up…"))
 
         def done(info) -> None:
             self._set_busy(False)
@@ -653,43 +764,58 @@ class MainWindow(QMainWindow):
             self._update_backup_label()
             counts = info.counts
             QMessageBox.information(
-                self, "สำรองข้อมูลแล้ว",
-                f"บันทึกที่ {info.path}\n"
-                f"{counts.get('cases', 0)} เคส · {counts.get('sessions', 0)} session · "
-                f"{counts.get('recordings', 0)} ไฟล์เสียง · {info.total_bytes / 1_048_576:.1f} MB\n\n"
-                "ไฟล์นี้ไม่เข้ารหัส และมีเสียงกับข้อความของเด็ก เก็บไว้ในที่ที่มีแต่นักบำบัดเข้าถึงได้",
+                self, tr("สำรองข้อมูลแล้ว", "Backup saved"),
+                tr(
+                    f"บันทึกที่ {info.path}\n{counts.get('cases', 0)} เคส, {counts.get('sessions', 0)} session, "
+                    f"{counts.get('recordings', 0)} ไฟล์เสียง, {info.total_bytes / 1_048_576:.1f} MB\n\n"
+                    "ไฟล์นี้ไม่เข้ารหัส และมีเสียงกับข้อความของเด็ก เก็บไว้ในที่ที่มีแต่นักบำบัดเข้าถึงได้",
+                    f"Saved to {info.path}\n{counts.get('cases', 0)} cases, {counts.get('sessions', 0)} sessions, "
+                    f"{counts.get('recordings', 0)} recordings, {info.total_bytes / 1_048_576:.1f} MB\n\n"
+                    "The file is not encrypted and holds children's recordings and transcripts. Keep it where only therapists can reach it.",
+                ),
             )
+            if self.stack.currentIndex() == HOME_PAGE:
+                self.dashboard.refresh()
 
         def failed(exc: Exception) -> None:
             self._set_busy(False)
             self.statusBar().clearMessage()
-            QMessageBox.critical(self, "สำรองข้อมูลไม่สำเร็จ", f"{type(exc).__name__}: {exc}")
+            QMessageBox.critical(self, tr("สำรองข้อมูลไม่สำเร็จ", "Backup failed"), f"{type(exc).__name__}: {exc}")
 
         self.runner.run(lambda: self.service.create_backup(target, self.version), on_done=done, on_error=failed)
 
     def restore(self) -> None:
+        title = tr("กู้คืนข้อมูล", "Restore")
         if self.busy or self.runner.busy:
-            QMessageBox.information(self, "กู้คืนข้อมูล", "รอให้งานที่ทำอยู่เสร็จก่อน")
+            QMessageBox.information(self, title, tr("รอให้งานที่ทำอยู่เสร็จก่อน", "Wait for the current task to finish."))
             return
         if not self._confirm_leave():
             return
         last_dir = QSettings().value("backup/folder") or str(Path.home() / "Documents")
-        path, _ = QFileDialog.getOpenFileName(self, "เลือกไฟล์สำรอง", str(last_dir), "ไฟล์สำรอง PasaScope (*.zip)")
+        path, _ = QFileDialog.getOpenFileName(self, tr("เลือกไฟล์สำรอง", "Choose a backup"), str(last_dir),
+                                              tr("ไฟล์สำรอง PasaScope (*.zip)", "PasaScope backup (*.zip)"))
         if not path:
             return
         try:
             info = read_backup(Path(path))
         except BackupError as exc:
-            QMessageBox.warning(self, "กู้คืนข้อมูล", str(exc))
+            QMessageBox.warning(self, title, str(exc))
             return
         counts = info.counts
-        demo = "\n\nไฟล์นี้สำรองมาจากข้อมูลสาธิต (Demo)" if info.demo else ""
+        when = info.created_at[:16].replace("T", " ")
+        demo = tr("\n\nไฟล์นี้สำรองมาจากข้อมูลสาธิต", "\n\nThis backup was made from demonstration data.") if info.demo else ""
         answer = QMessageBox.question(
-            self, "กู้คืนข้อมูล",
-            f"ไฟล์สำรองเมื่อ {info.created_at[:16].replace('T', ' ')}\n"
-            f"{counts.get('cases', 0)} เคส · {counts.get('sessions', 0)} session · {counts.get('recordings', 0)} ไฟล์เสียง{demo}\n\n"
-            "ข้อมูลปัจจุบันทั้งหมดจะถูกแทนที่ด้วยไฟล์สำรองนี้ ข้อมูลปัจจุบันไม่ถูกลบ "
-            "แต่จะย้ายไปไว้ในโฟลเดอร์ \"ก่อนกู้คืน\" ข้าง ๆ กัน\n\nกู้คืนแล้วโปรแกรมจะปิด ต้องเปิดใหม่ กู้คืนเลยไหม?",
+            self, title,
+            tr(
+                f"ไฟล์สำรองเมื่อ {when}\n{counts.get('cases', 0)} เคส, {counts.get('sessions', 0)} session, "
+                f"{counts.get('recordings', 0)} ไฟล์เสียง{demo}\n\n"
+                "ข้อมูลปัจจุบันทั้งหมดจะถูกแทนที่ด้วยไฟล์สำรองนี้ ข้อมูลปัจจุบันไม่ถูกลบ แต่จะย้ายไปไว้ในโฟลเดอร์ \"ก่อนกู้คืน\" ข้าง ๆ กัน\n\n"
+                "กู้คืนแล้วโปรแกรมจะปิด ต้องเปิดใหม่ กู้คืนเลยไหม?",
+                f"Backup from {when}\n{counts.get('cases', 0)} cases, {counts.get('sessions', 0)} sessions, "
+                f"{counts.get('recordings', 0)} recordings{demo}\n\n"
+                "Everything now in PasaScope will be replaced by this backup. The current data is not deleted; it is moved "
+                "to a \"before restore\" folder next to it.\n\nPasaScope closes after restoring. Restore now?",
+            ),
         )
         if answer != QMessageBox.StandardButton.Yes:
             return
@@ -697,11 +823,13 @@ class MainWindow(QMainWindow):
         try:
             previous = restore_backup(self.service.workspace.root, info.path)
         except (BackupError, OSError) as exc:
-            QMessageBox.critical(self, "กู้คืนไม่สำเร็จ", f"ข้อมูลปัจจุบันยังอยู่ครบ ไม่ได้เปลี่ยนแปลง\n\n{exc}")
+            QMessageBox.critical(self, tr("กู้คืนไม่สำเร็จ", "Restore failed"),
+                                 tr(f"ข้อมูลปัจจุบันยังอยู่ครบ ไม่ได้เปลี่ยนแปลง\n\n{exc}", f"Your current data is unchanged.\n\n{exc}"))
             return
         QMessageBox.information(
-            self, "กู้คืนแล้ว",
-            f"ข้อมูลเดิมย้ายไปที่ {previous}\nโปรแกรมจะปิดตอนนี้ เปิดใหม่เพื่อใช้ข้อมูลที่กู้คืน",
+            self, tr("กู้คืนแล้ว", "Restored"),
+            tr(f"ข้อมูลเดิมย้ายไปที่ {previous}\nโปรแกรมจะปิดตอนนี้ เปิดใหม่เพื่อใช้ข้อมูลที่กู้คืน",
+               f"The previous data was moved to {previous}\nPasaScope will close now; open it again to use the restored data."),
         )
         self._restored = True
         self.close()
@@ -712,7 +840,9 @@ class MainWindow(QMainWindow):
             return
         if self.busy or self.runner.busy:
             answer = QMessageBox.question(
-                self, "กำลังทำงานอยู่", "ยังถอดเสียงหรือบันทึกเสียงอยู่ ปิดโปรแกรมแล้วงานนี้จะหยุด ปิดเลยไหม?"
+                self, tr("กำลังทำงานอยู่", "Still working"),
+                tr("ยังถอดเสียงหรือบันทึกเสียงอยู่ ปิดโปรแกรมแล้วงานนี้จะหยุด ปิดเลยไหม?",
+                   "A transcription or recording is still running and will stop if you quit. Quit anyway?"),
             )
             if answer != QMessageBox.StandardButton.Yes:
                 event.ignore()

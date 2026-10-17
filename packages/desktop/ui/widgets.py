@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+from packages.desktop.core.i18n import tr
+
 from collections.abc import Sequence
 
 import numpy as np
@@ -65,10 +67,10 @@ class MetricCard(QFrame):
 
     def __init__(self, title: str, parent: QWidget | None = None) -> None:
         super().__init__(parent)
-        self.setObjectName("Card")
+        self.setObjectName("Metric")
         layout = QVBoxLayout(self)
-        layout.setContentsMargins(14, 10, 14, 10)
-        layout.setSpacing(2)
+        layout.setContentsMargins(12, 2, 12, 2)
+        layout.setSpacing(1)
         self.title = label(title, "MetricTitle", wrap=True)
         self.value = label("—", "MetricValue")
         self.detail = label("", "Muted", wrap=True)
@@ -102,21 +104,23 @@ class EmptyState(QWidget):
         self.title.setText(title)
         self.body.setText(body)
 
-    STEPS = (
-        "มี transcript (บันทึก นำเข้าเสียง หรือนำเข้า transcript)",
-        "ตรวจ transcript กับเสียง แล้วรับรอง",
-        "วิเคราะห์ตัวชี้วัดและตรวจ cue",
-        "ร่างรายงาน แก้ แล้วลงนาม",
-    )
+    @staticmethod
+    def steps() -> tuple[str, ...]:
+        return (
+            tr("เพิ่มเสียงหรือ transcript", "Add a recording or transcript"),
+            tr("ตรวจ transcript กับเสียง แล้วรับรอง", "Check the transcript against the recording and attest it"),
+            tr("วิเคราะห์ และตรวจ cue", "Analyse and review the cues"),
+            tr("ร่างรายงาน แก้ แล้วลงนาม", "Draft, edit and sign the report"),
+        )
 
     def set_steps(self, step: int) -> None:
-        """Show where the session stands: steps done, the next one, and those after it."""
+        """Where the session stands: finished steps quiet, the next one in ink, later ones faint."""
         if not hasattr(self, "_steps"):
             self._steps = QWidget()
             self._steps.setObjectName("Panel")
             self._steps.setAttribute(Qt.WidgetAttribute.WA_StyledBackground, True)
             self._steps.setFixedWidth(440)
-            QVBoxLayout(self._steps).setContentsMargins(16, 12, 16, 12)
+            QVBoxLayout(self._steps).setContentsMargins(18, 14, 18, 14)
             self.layout().insertWidget(1, self._steps, 0, Qt.AlignmentFlag.AlignHCenter)
             self.layout().insertSpacing(2, 14)
         rows = self._steps.layout()
@@ -124,15 +128,15 @@ class EmptyState(QWidget):
             item = rows.takeAt(0)
             if item.widget():
                 item.widget().deleteLater()
-        for index, name in enumerate(self.STEPS):
+        for index, name in enumerate(self.steps()):
             if index < step:
-                text, color = f"✓  {index + 1}. {name}", theme.MUTED
+                text, style = f"{index + 1}   {name}", f"color: {theme.FAINT}; text-decoration: line-through;"
             elif index == step:
-                text, color = f"→  {index + 1}. {name}  (ขั้นถัดไป)", theme.PRIMARY_DARK
+                text, style = f"{index + 1}   {name}", f"color: {theme.INK}; font-weight: 600;"
             else:
-                text, color = f"○  {index + 1}. {name}", theme.FAINT
+                text, style = f"{index + 1}   {name}", f"color: {theme.MUTED};"
             row = label(text, wrap=True)
-            row.setStyleSheet(f"color: {color};" + (" font-weight: 600;" if index == step else ""))
+            row.setStyleSheet(style)
             rows.addWidget(row)
 
 
@@ -153,7 +157,7 @@ class WaveformView(QWidget):
         self._regions: list[tuple[float, float, str]] = []
         self._selected: tuple[float, float] | None = None
         self._playhead: float | None = None
-        self._message = "ยังไม่มีไฟล์เสียง"
+        self._message = tr("ยังไม่มีไฟล์เสียง", "No recording")
 
     def set_message(self, text: str) -> None:
         self._peaks = np.zeros(0, dtype="float32")
@@ -164,7 +168,7 @@ class WaveformView(QWidget):
     def set_audio(self, peaks: np.ndarray, duration: float) -> None:
         self._peaks = peaks
         self._duration = duration
-        self._message = "" if duration > 0 else "ไฟล์เสียงว่าง"
+        self._message = "" if duration > 0 else tr("ไฟล์เสียงว่าง", "Empty recording")
         self.update()
 
     def set_regions(self, regions: Sequence[tuple[float, float, str]]) -> None:
@@ -274,7 +278,7 @@ class TrendChart(QWidget):
             painter.setPen(QColor(theme.MUTED))
             painter.drawText(
                 rect, Qt.AlignmentFlag.AlignCenter,
-                "ต้องมีอย่างน้อย 2 session ที่วิเคราะห์แล้ว จึงจะเห็นแนวโน้ม",
+                tr("ต้องมีอย่างน้อย 2 session ที่วิเคราะห์แล้ว จึงจะเห็นแนวโน้ม", "A trend needs at least 2 analysed sessions."),
             )
             return
         left, right, top, bottom = 44.0, 40.0, 30.0, 52.0
@@ -324,4 +328,4 @@ class TrendChart(QWidget):
             n = self._samples[i] if i < len(self._samples) else None
             if n is not None:
                 painter.setPen(QColor(theme.ATTENTION if short else theme.FAINT))
-                painter.drawText(QRectF(p.x() - 50, plot.bottom() + 22, 100, 16), Qt.AlignmentFlag.AlignCenter, f"{int(n)} ประโยค")
+                painter.drawText(QRectF(p.x() - 50, plot.bottom() + 22, 100, 16), Qt.AlignmentFlag.AlignCenter, tr(f"{int(n)} ประโยค", f"{int(n)} utts"))

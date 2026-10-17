@@ -11,6 +11,8 @@ typed. The code buttons insert those codes around the selected words.
 
 from __future__ import annotations
 
+from packages.desktop.core.i18n import tr
+
 from collections import Counter
 from functools import partial
 from pathlib import Path
@@ -49,13 +51,13 @@ ADULT = "INV"
 
 # (button text, what it does, action) for the CHAT code buttons.
 CHAT_CODES = [
-    ("ฟังไม่ออก xxx", "ใส่แทนคำที่ฟังไม่ออก ประโยคนี้จะไม่ถูกนับใน MLU", "xxx"),
-    ("พูดซ้ำ [/]", "เลือกคำที่พูดซ้ำครั้งแรกก่อน ส่วนที่เลือกจะไม่ถูกนับ", "[/]"),
-    ("พูดแก้ [//]", "เลือกคำที่พูดผิดแล้วพูดแก้ ส่วนที่เลือกจะไม่ถูกนับ", "[//]"),
-    ("คำเติม &-", "เช่น อือ เอ่อ ไม่นับเป็นคำ", "&-"),
-    ("ตั้งใจพูดว่า [: ]", "เลือกคำที่พูดเพี้ยน แล้วพิมพ์คำที่ตั้งใจพูดในวงเล็บ ระบบนับคำที่ตั้งใจพูด", "[: ]"),
-    ("คำผิด [*]", "ทำเครื่องหมายคำที่ใช้ผิด นับใน Word_Errors", "[*]"),
-    ("ไม่นับประโยค [+ exc]", "ตัดประโยคนี้ออกจากตัวชี้วัดทั้งหมด", "[+ exc]"),
+    (tr("ฟังไม่ออก xxx", "Unintelligible xxx"), tr("ใส่แทนคำที่ฟังไม่ออก ประโยคนี้จะไม่ถูกนับใน MLU", "Replaces a word you cannot make out; the utterance is left out of MLU"), "xxx"),
+    (tr("พูดซ้ำ [/]", "Repetition [/]"), tr("เลือกคำที่พูดซ้ำครั้งแรกก่อน ส่วนที่เลือกจะไม่ถูกนับ", "Select the first saying of the repeated words; they will not be counted"), "[/]"),
+    (tr("พูดแก้ [//]", "Retracing [//]"), tr("เลือกคำที่พูดผิดแล้วพูดแก้ ส่วนที่เลือกจะไม่ถูกนับ", "Select the words the child corrected; they will not be counted"), "[//]"),
+    (tr("คำเติม &-", "Filler &-"), tr("เช่น อือ เอ่อ ไม่นับเป็นคำ", "Such as um or uh; not counted as a word"), "&-"),
+    (tr("ตั้งใจพูดว่า [: ]", "Target [: ]"), tr("เลือกคำที่พูดเพี้ยน แล้วพิมพ์คำที่ตั้งใจพูดในวงเล็บ ระบบนับคำที่ตั้งใจพูด", "Select a mispronounced word, then type the intended word; the intended word is counted"), "[: ]"),
+    (tr("คำผิด [*]", "Error [*]"), tr("ทำเครื่องหมายคำที่ใช้ผิด นับใน Word_Errors", "Marks a word used in error; counted in word errors"), "[*]"),
+    (tr("ไม่นับประโยค [+ exc]", "Exclude [+ exc]"), tr("ตัดประโยคนี้ออกจากตัวชี้วัดทั้งหมด", "Leaves this utterance out of every measure"), "[+ exc]"),
 ]
 
 
@@ -90,34 +92,40 @@ def word_cell(utt) -> tuple[str, str, bool]:
     """(text, tooltip, counts for the child) for the words column."""
     problems = chat_code_problems(utt.text)
     if problems:
-        return "⚠ ตรวจรหัส", "รหัส CHAT อาจเขียนผิด ระบบจะนับคำผิด:\n" + "\n".join(f"• {p}" for p in problems), False
+        return tr("⚠ ตรวจรหัส", "⚠ Check codes"), tr("รหัส CHAT อาจเขียนผิด ระบบจะนับคำผิด:\n", "A CHAT code may be malformed, so words will be miscounted:\n") + "\n".join(f"• {p}" for p in problems), False
     if str(utt.speaker) != "CHI":
-        return "", "ผู้ใหญ่: ไม่ใช้คิดตัวชี้วัดของเด็ก", False
+        return "", tr("ผู้ใหญ่: ไม่ใช้คิดตัวชี้วัดของเด็ก", "Adult line: not used in the child's measures"), False
     analysis = analyze_main_tier(utt.text)
-    lines = [f"นับ {len(analysis.words)} คำ: {' '.join(analysis.words) or '—'}"]
+    lines = [tr(f"นับ {len(analysis.words)} คำ: {' '.join(analysis.words) or '—'}", f"{len(analysis.words)} counted: {' '.join(analysis.words) or '—'}")]
     if analysis.excluded:
-        lines.append("ประโยคนี้ไม่ถูกนับในตัวชี้วัดใด ([+ exc] หรือ www)")
-        return "ไม่นับ", "\n".join(lines), False
+        lines.append(tr("ประโยคนี้ไม่ถูกนับในตัวชี้วัดใด ([+ exc] หรือ www)", "Not counted in any measure ([+ exc] or www)"))
+        return tr("ไม่นับ", "Excluded"), "\n".join(lines), False
     dropped = Counter(analysis.spoken_words) - Counter(analysis.words)
     if dropped:
-        lines.append("ไม่นับส่วนที่พูดซ้ำหรือพูดแก้: " + " ".join(dropped.elements()))
+        lines.append(tr("ไม่นับส่วนที่พูดซ้ำหรือพูดแก้: ", "Not counted (repeated or retraced): ") + " ".join(dropped.elements()))
     if "&-" in utt.text or "&+" in utt.text:
-        lines.append("ไม่นับคำเติมและคำที่พูดไม่จบ (&-, &+)")
+        lines.append(tr("ไม่นับคำเติมและคำที่พูดไม่จบ (&-, &+)", "Fillers and fragments are not counted (&-, &+)"))
     if analysis.mlu_excluded:
-        lines.append("มีคำที่ฟังไม่ออก จึงไม่ใช้คิด MLU แต่ยังนับคำอื่นในจำนวนคำ")
-        return f"{len(analysis.words)} · ไม่คิด MLU", "\n".join(lines), True
+        lines.append(tr("มีคำที่ฟังไม่ออก จึงไม่ใช้คิด MLU แต่ยังนับคำอื่นในจำนวนคำ", "Has an unintelligible word, so it is left out of MLU; its other words still count"))
+        return tr(f"{len(analysis.words)} · ไม่คิด MLU", f"{len(analysis.words)}, not in MLU"), "\n".join(lines), True
     return str(len(analysis.words)), "\n".join(lines), True
 
 
-BOUNDARY_MARK = "ขึ้นประโยคใหม่"
-SPEAKER_MARK = "โมเดลประจำคลินิก"
+# How the pipeline's explanations begin, in either language (utterance_boundaries, clinic_speaker_model).
+BOUNDARY_MARKS = ("ขึ้นประโยคใหม่", "New utterance")
+SPEAKER_MARKS = ("โมเดลประจำคลินิก", "Clinic model")
+
+
+def _from_mark(notes: str, marks: tuple[str, ...]) -> str:
+    found = [notes.index(mark) for mark in marks if mark in notes]
+    return notes[min(found):].strip() if found else ""
 
 
 def note_parts(notes: str | None) -> tuple[str, str]:
     """(why the utterance starts here, why the clinic model chose the speaker), from the draft's notes."""
     notes = notes or ""
-    speaker = notes[notes.index(SPEAKER_MARK):].strip() if SPEAKER_MARK in notes else ""
-    boundary = notes[notes.index(BOUNDARY_MARK):].replace(speaker, "").strip() if BOUNDARY_MARK in notes else ""
+    speaker = _from_mark(notes, SPEAKER_MARKS)
+    boundary = _from_mark(notes, BOUNDARY_MARKS).replace(speaker, "").strip()
     return boundary, speaker
 
 
@@ -126,26 +134,26 @@ def explain_utterance(utt) -> list[tuple[str, str]]:
     boundary, speaker_note = note_parts(utt.notes)
     speaker = labels.SPEAKER_LABELS.get(str(utt.speaker), str(utt.speaker))
     if getattr(utt, "review_status", "") == "reviewed" and not utt.speaker_uncertain:
-        speaker_why = "นักบำบัดยืนยันแล้ว"
+        speaker_why = tr("นักบำบัดยืนยันแล้ว", "Confirmed by the therapist")
     elif utt.speaker_uncertain:
-        speaker_why = ("ระบบไม่แน่ใจ: เสียงสั้น ระดับเสียงก้ำกึ่ง หรืออายุเด็กอยู่นอกช่วงที่ระบบตรวจแล้ว (2;6–6;11 ปี)"
-                       " ฟังแล้วยืนยันก่อน")
+        speaker_why = (tr("ระบบไม่แน่ใจ: เสียงสั้น ระดับเสียงก้ำกึ่ง หรืออายุเด็กอยู่นอกช่วงที่ระบบตรวจแล้ว (2;6–6;11 ปี)"
+                       " ฟังแล้วยืนยันก่อน", "Uncertain: the line is short, the voice is borderline, or the child is outside the checked ages (2;6 to 6;11). Listen and confirm."))
     elif str(utt.source) == "asr":
-        speaker_why = "ระบบมั่นใจจากโมเดลแยกเสียงเด็ก/ผู้ใหญ่"
+        speaker_why = tr("ระบบมั่นใจจากโมเดลแยกเสียงเด็ก/ผู้ใหญ่", "Labelled with confidence by the child/adult voice model")
     else:
-        speaker_why = "มาจาก transcript ที่นำเข้าหรือพิมพ์เอง"
-    rows = [("ผู้พูด", f"{speaker} · {speaker_why}")]
+        speaker_why = tr("มาจาก transcript ที่นำเข้าหรือพิมพ์เอง", "From an imported or typed transcript")
+    rows = [(tr("ผู้พูด", "Speaker"), f"{speaker} · {speaker_why}")]
     if speaker_note:
-        rows.append(("เหตุผลของโมเดลประจำคลินิก", speaker_note))
+        rows.append((tr("เหตุผลของโมเดลประจำคลินิก", "Clinic model"), speaker_note))
     if boundary:
-        rows.append(("ทำไมขึ้นประโยคใหม่ตรงนี้", boundary))
+        rows.append((tr("ทำไมขึ้นประโยคใหม่ตรงนี้", "Why a new utterance starts here"), boundary))
     elif str(utt.source) == "asr":
-        rows.append(("ทำไมขึ้นประโยคใหม่ตรงนี้", "ผู้พูดเปลี่ยน หรือหยุดพูดนานกว่า 0.6 วินาที (ร่างภาษาไทยใช้กฎช่วงหยุด)"))
+        rows.append((tr("ทำไมขึ้นประโยคใหม่ตรงนี้", "Why a new utterance starts here"), tr("ผู้พูดเปลี่ยน หรือหยุดพูดนานกว่า 0.6 วินาที (ร่างภาษาไทยใช้กฎช่วงหยุด)", "The speaker changed, or paused for more than 0.6 s (Thai drafts use this pause rule)")))
     words, words_why, _ = word_cell(utt)
-    rows.append(("คำที่นับ", words_why if words_why else "—"))
+    rows.append((tr("คำที่นับ", "Counted"), words_why if words_why else "—"))
     if utt.confidence is not None:
-        sure = "ต่ำ ฟังทวนคำในประโยคนี้" if utt.confidence < LOW_CONFIDENCE else "ปกติ"
-        rows.append(("ความมั่นใจของการถอดเสียง", f"{utt.confidence * 100:.0f}% · {sure}"))
+        sure = tr("ต่ำ ฟังทวนคำในประโยคนี้", "low; listen to this line again") if utt.confidence < LOW_CONFIDENCE else tr("ปกติ", "normal")
+        rows.append((tr("ความมั่นใจของการถอดเสียง", "Transcription confidence"), f"{utt.confidence * 100:.0f}% · {sure}"))
     return rows
 
 
@@ -167,9 +175,9 @@ class UtteranceInspector(QWidget):
         outer = QVBoxLayout(self)
         outer.setContentsMargins(14, 12, 14, 12)
         outer.setSpacing(4)
-        self.title = label("รายละเอียดประโยค", "SectionTitle")
+        self.title = label(tr("รายละเอียดประโยค", "Line details"), "SectionTitle")
         outer.addWidget(self.title)
-        self.when = label("เลือกประโยคในตารางเพื่อดูว่าระบบตัดสินแต่ละส่วนอย่างไร", "Muted", wrap=True)
+        self.when = label(tr("เลือกประโยคในตารางเพื่อดูว่าระบบตัดสินแต่ละส่วนอย่างไร", "Select a line to see how it was labelled, cut and counted."), "Muted", wrap=True)
         outer.addWidget(self.when)
         self.rows = QVBoxLayout()
         self.rows.setSpacing(2)
@@ -182,10 +190,10 @@ class UtteranceInspector(QWidget):
             if item.widget():
                 item.widget().deleteLater()
         if utt is None:
-            self.title.setText("รายละเอียดประโยค")
-            self.when.setText("เลือกประโยคในตารางเพื่อดูว่าระบบตัดสินแต่ละส่วนอย่างไร")
+            self.title.setText(tr("รายละเอียดประโยค", "Line details"))
+            self.when.setText(tr("เลือกประโยคในตารางเพื่อดูว่าระบบตัดสินแต่ละส่วนอย่างไร", "Select a line to see how it was labelled, cut and counted."))
             return
-        self.title.setText(f"ประโยคที่ {number}")
+        self.title.setText(tr(f"ประโยคที่ {number}", f"Line {number}"))
         self.when.setText(f"{_fmt(utt.start_ms)} – {_fmt(utt.end_ms)}")
         for heading, text in explain_utterance(utt):
             key = label(heading, "InspectorKey")
@@ -230,8 +238,8 @@ class ReviewPage(SessionPage):
         layout.setContentsMargins(4, 12, 4, 8)
         layout.setSpacing(10)
 
-        self.empty = EmptyState("ยังไม่มี transcript", "บันทึกหรือนำเข้าเสียงในขั้นที่ 1 ก่อน")
-        go = button("ไปขั้นที่ 1 →", "primary")
+        self.empty = EmptyState(tr("ยังไม่มี transcript", "No transcript yet"), tr("บันทึกหรือนำเข้าเสียงในขั้นที่ 1 ก่อน", "Record or import audio first."))
+        go = button(tr("ไปที่ขั้นเสียง", "Go to Recording"), "primary")
         go.clicked.connect(lambda: self.navigate.emit(0))
         self.empty.actions.addWidget(go)
         layout.addWidget(self.empty)
@@ -248,9 +256,9 @@ class ReviewPage(SessionPage):
         self.summary = label("", "Hint")
         top.addWidget(self.summary)
         top.addStretch(1)
-        self.save_btn = button("บันทึกการแก้ไข", tooltip="Ctrl+S")
+        self.save_btn = button(tr("บันทึกการแก้ไข", "Save"), tooltip="Ctrl+S")
         self.save_btn.clicked.connect(self.save)
-        self.attest_btn = button("รับรอง transcript", "primary")
+        self.attest_btn = button(tr("รับรอง transcript", "Attest"), "primary")
         self.attest_btn.clicked.connect(self._attest)
         top.addWidget(self.save_btn)
         top.addWidget(self.attest_btn)
@@ -269,26 +277,26 @@ class ReviewPage(SessionPage):
         body.addWidget(self.wave)
 
         controls = QHBoxLayout()
-        self.play_btn = button("▶ เล่น", tooltip="เล่นประโยคที่เลือก (Space)")
+        self.play_btn = button(tr("▶ เล่น", "▶ Play"), tooltip=tr("เล่นประโยคที่เลือก (Space)", "Play the selected line (Space)"))
         self.play_btn.clicked.connect(self.play_selected)
-        self.stop_btn = button("■ หยุด")
+        self.stop_btn = button(tr("■ หยุด", "■ Stop"))
         self.stop_btn.clicked.connect(self.stop_playback)
-        self.autoplay = QCheckBox("เล่นเมื่อเลือก")
-        self.autoplay.setToolTip("เล่นเสียงทันทีเมื่อเลือกประโยค")
+        self.autoplay = QCheckBox(tr("เล่นเมื่อเลือก", "Play on select"))
+        self.autoplay.setToolTip(tr("เล่นเสียงทันทีเมื่อเลือกประโยค", "Play a line as soon as it is selected"))
         self.autoplay.setChecked(True)
         controls.addWidget(self.play_btn)
         controls.addWidget(self.stop_btn)
         controls.addWidget(self.autoplay)
         controls.addStretch(1)
-        self.child_btn = button("เป็นเด็ก", tooltip="Ctrl+1")
+        self.child_btn = button(tr("เป็นเด็ก", "Child"), tooltip="Ctrl+1")
         self.child_btn.clicked.connect(lambda: self.set_speaker("CHI"))
-        self.adult_btn = button("เป็นผู้ใหญ่", tooltip="Ctrl+2")
+        self.adult_btn = button(tr("เป็นผู้ใหญ่", "Adult"), tooltip="Ctrl+2")
         self.adult_btn.clicked.connect(lambda: self.set_speaker(ADULT))
-        self.swap_btn = button("สลับทั้งหมด", tooltip="สลับเด็กกับผู้ใหญ่ทุกประโยค")
+        self.swap_btn = button(tr("สลับทั้งหมด", "Swap all"), tooltip=tr("สลับเด็กกับผู้ใหญ่ทุกประโยค", "Swap child and adult on every line"))
         self.swap_btn.clicked.connect(self._swap_all)
-        self.insert_btn = button("+ แทรก", tooltip="แทรกประโยคใต้แถวที่เลือก")
+        self.insert_btn = button(tr("+ แทรก", "Insert"), tooltip=tr("แทรกประโยคใต้แถวที่เลือก", "Insert a line below the selected one"))
         self.insert_btn.clicked.connect(self._insert_row)
-        self.delete_btn = button("ลบ", "danger", tooltip="ลบประโยคที่เลือก")
+        self.delete_btn = button(tr("ลบ", "Delete"), "danger", tooltip=tr("ลบประโยคที่เลือก", "Delete the selected lines"))
         self.delete_btn.clicked.connect(self._delete_rows)
         for widget in (self.child_btn, self.adult_btn, self.swap_btn, self.insert_btn, self.delete_btn):
             controls.addWidget(widget)
@@ -296,7 +304,7 @@ class ReviewPage(SessionPage):
 
         codes = QHBoxLayout()
         codes.setSpacing(6)
-        codes.addWidget(label("รหัส CHAT", "Hint"))
+        codes.addWidget(label(tr("รหัส CHAT", "CHAT"), "Hint"))
         for text, tip, code in CHAT_CODES:
             code_btn = button(text.replace("&", "&&"), tooltip=tip)  # "&" alone marks a Qt mnemonic
             # Keep focus in the open text editor so the code lands at its cursor.
@@ -307,7 +315,7 @@ class ReviewPage(SessionPage):
         body.addLayout(codes)
 
         self.table = QTableWidget(0, 5)
-        self.table.setHorizontalHeaderLabels(["เวลา", "ผู้พูด", "ข้อความ", "คำที่นับ", "ความมั่นใจ"])
+        self.table.setHorizontalHeaderLabels([tr("เวลา", "Time"), tr("ผู้พูด", "Speaker"), tr("ข้อความ", "Text"), tr("คำที่นับ", "Counted"), tr("ความมั่นใจ", "Confidence")])
         self.table.verticalHeader().setDefaultSectionSize(34)
         self.table.verticalHeader().setVisible(True)
         header = self.table.horizontalHeader()
@@ -334,8 +342,7 @@ class ReviewPage(SessionPage):
         body.addLayout(table_row, 1)
 
         hint = label(
-            "Space เล่นเสียง · Enter แก้ข้อความ · Ctrl+1 เด็ก · Ctrl+2 ผู้ใหญ่ · Ctrl+S บันทึก · คลิกที่คลื่นเสียงเพื่อเล่นจากจุดนั้น · "
-            "แถวสีส้มคือคำที่ระบบไม่มั่นใจ · เลือกประโยคเพื่อดูทางขวาว่าระบบตัดสินผู้พูด ตัดประโยค และนับคำอย่างไร",
+            tr("Space เล่น    Enter แก้ข้อความ    Ctrl+1 เด็ก    Ctrl+2 ผู้ใหญ่    Ctrl+S บันทึก", "Space play    Enter edit    Ctrl+1 child    Ctrl+2 adult    Ctrl+S save"),
             "Muted", wrap=True,
         )
         body.addWidget(hint)
@@ -398,7 +405,7 @@ class ReviewPage(SessionPage):
         speaker_item.setForeground(QBrush(QColor(theme.ATTENTION if uncertain else theme.SPEAKER_COLORS.get(speaker, theme.INK))))
         speaker_tip = []
         if uncertain:
-            speaker_tip.append("ระบบไม่แน่ใจผู้พูด ฟังแล้วยืนยันก่อน")
+            speaker_tip.append(tr("ระบบไม่แน่ใจผู้พูด ฟังแล้วยืนยันก่อน", "Speaker uncertain; listen and confirm"))
         if speaker_note:  # the clinic model's reasons: its probability and similar attested utterances
             speaker_tip.append(speaker_note)
         if speaker_tip:
@@ -438,9 +445,9 @@ class ReviewPage(SessionPage):
         for widget in (self.play_btn, self.stop_btn, self.autoplay):
             widget.setEnabled(audio is not None and has_times)
         if audio is None:
-            self.wave.set_message("session นี้ไม่มีไฟล์เสียง (transcript นำเข้าจากข้อความ)")
+            self.wave.set_message(tr("session นี้ไม่มีไฟล์เสียง (transcript นำเข้าจากข้อความ)", "No recording for this session (imported transcript)"))
             return
-        self.wave.set_message("กำลังโหลดคลื่นเสียง…")
+        self.wave.set_message(tr("กำลังโหลดคลื่นเสียง…", "Loading waveform…"))
         session_id = self.session.session_id
 
         def load():
@@ -457,7 +464,7 @@ class ReviewPage(SessionPage):
             self._update_regions()
 
         def failed(exc: Exception) -> None:
-            self.wave.set_message(f"เปิดไฟล์เสียงไม่ได้: {exc}")
+            self.wave.set_message(tr(f"เปิดไฟล์เสียงไม่ได้: {exc}", f"Could not open the recording: {exc}"))
 
         self.runner.run(load, on_done=loaded, on_error=failed)
 
@@ -474,39 +481,39 @@ class ReviewPage(SessionPage):
         n_unknown = sum(1 for u in self.utterances if str(u.speaker) == "UNK")
         n_low = sum(1 for u in self.utterances if u.confidence is not None and u.confidence < LOW_CONFIDENCE)
         n_guessed = sum(1 for u in self.utterances if getattr(u, "speaker_uncertain", False))
-        parts = [f"{len(self.utterances)} ประโยค", f"เด็ก {n_child}"]
+        parts = [tr(f"{len(self.utterances)} ประโยค", f"{len(self.utterances)} lines"), tr(f"เด็ก {n_child}", f"child {n_child}")]
         analyses: list[MainTierAnalysis] = [
             analyze_main_tier(u.text) for u in self.utterances if str(u.speaker) == "CHI"
         ]
         if analyses:
             live = compute_language_sample_measures(analyses, include_vocd=False)
-            parts.append(f"คำของเด็ก {live.freq_tokens}")
+            parts.append(tr(f"คำของเด็ก {live.freq_tokens}", f"child words {live.freq_tokens}"))
             if live.mlu_words is not None:
                 parts.append(f"MLU {live.mlu_words:.2f}")
         if n_unknown:
-            parts.append(f"ยังไม่ระบุผู้พูด {n_unknown}")
+            parts.append(tr(f"ยังไม่ระบุผู้พูด {n_unknown}", f"no speaker {n_unknown}"))
         if n_low:
-            parts.append(f"ไม่มั่นใจ {n_low}")
+            parts.append(tr(f"ไม่มั่นใจ {n_low}", f"low confidence {n_low}"))
         if n_guessed:
-            parts.append(f"ผู้พูดที่ควรเช็ก {n_guessed}")
+            parts.append(tr(f"ผู้พูดที่ควรเช็ก {n_guessed}", f"speakers to check {n_guessed}"))
         self.summary.setText(" · ".join(parts))
         if self.dirty:
-            set_chip(self.status_chip, "มีการแก้ไขที่ยังไม่บันทึก", "attention")
+            set_chip(self.status_chip, tr("มีการแก้ไขที่ยังไม่บันทึก", "Unsaved changes"), "attention")
         elif attested:
-            set_chip(self.status_chip, "รับรองแล้ว", "ok")
+            set_chip(self.status_chip, tr("รับรองแล้ว", "Attested"), "ok")
         else:
-            set_chip(self.status_chip, "รอตรวจและรับรอง", "attention")
+            set_chip(self.status_chip, tr("รอตรวจและรับรอง", "To review"), "attention")
         self.save_btn.setEnabled(self.dirty)
         self.attest_btn.setEnabled(not attested)
-        self.attest_btn.setText("บันทึกและรับรอง" if self.dirty else "รับรอง transcript")
+        self.attest_btn.setText(tr("บันทึกและรับรอง", "Save and attest") if self.dirty else tr("รับรอง transcript", "Attest"))
         notes = []
         n_bad_codes = sum(1 for u in self.utterances if chat_code_problems(u.text))
         if n_bad_codes:
-            notes.append(f"มี {n_bad_codes} ประโยคที่รหัส CHAT อาจเขียนผิด (ดูช่อง \"คำที่นับ\" ที่ขึ้น ⚠) ระบบจะนับคำของประโยคนั้นผิด")
+            notes.append(tr(f"มี {n_bad_codes} ประโยคที่รหัส CHAT อาจเขียนผิด (ดูช่อง \"คำที่นับ\" ที่ขึ้น ⚠) ระบบจะนับคำของประโยคนั้นผิด", f"{n_bad_codes} lines may have malformed CHAT codes (marked ⚠ under Counted); their words will be miscounted."))
         if n_unknown:
-            notes.append(f"มี {n_unknown} ประโยคที่ยังไม่ระบุผู้พูด ระบุให้ครบก่อนรับรอง")
+            notes.append(tr(f"มี {n_unknown} ประโยคที่ยังไม่ระบุผู้พูด ระบุให้ครบก่อนรับรอง", f"{n_unknown} lines have no speaker. Set them before attesting."))
         if self.transcript and self.transcript.therapist_attested and self.dirty:
-            notes.append("การแก้ไขหลังรับรองจะยกเลิกการรับรอง และตัวชี้วัดกับร่างรายงานเดิมต้องทำใหม่")
+            notes.append(tr("การแก้ไขหลังรับรองจะยกเลิกการรับรอง และตัวชี้วัดกับร่างรายงานเดิมต้องทำใหม่", "Editing withdraws the attestation; the findings and report draft will need redoing."))
         self.notice.setText("\n".join(notes))
         self.notice.setVisible(bool(notes))
 
@@ -635,7 +642,7 @@ class ReviewPage(SessionPage):
         rows = self._selected_rows()
         if not rows:
             return
-        answer = QMessageBox.question(self, "ลบประโยค", f"ลบ {len(rows)} ประโยคที่เลือก?")
+        answer = QMessageBox.question(self, tr("ลบประโยค", "Delete lines"), tr(f"ลบ {len(rows)} ประโยคที่เลือก?", f"Delete {len(rows)} selected lines?"))
         if answer != QMessageBox.StandardButton.Yes:
             return
         for row in reversed(rows):
@@ -649,9 +656,9 @@ class ReviewPage(SessionPage):
             return True
         empty = [i + 1 for i, u in enumerate(self.utterances) if not u.text.strip()]
         if empty:
-            QMessageBox.warning(self, "มีประโยคว่าง", f"ใส่ข้อความหรือลบแถวที่ {', '.join(map(str, empty[:10]))} ก่อนบันทึก")
+            QMessageBox.warning(self, tr("มีประโยคว่าง", "Empty lines"), tr(f"ใส่ข้อความหรือลบแถวที่ {', '.join(map(str, empty[:10]))} ก่อนบันทึก", f"Fill in or delete line {', '.join(map(str, empty[:10]))} before saving."))
             return False
-        saved = self.attempt(self.service.save_utterances, self.transcript.transcript_id, self.utterances, title="บันทึกไม่สำเร็จ")
+        saved = self.attempt(self.service.save_utterances, self.transcript.transcript_id, self.utterances, title=tr("บันทึกไม่สำเร็จ", "Not saved"))
         if saved is None:
             return False
         selected = self._selected_rows()
@@ -665,14 +672,14 @@ class ReviewPage(SessionPage):
         if not self.save():
             return
         if any(str(u.speaker) == "UNK" for u in self.utterances):
-            QMessageBox.warning(self, "ยังรับรองไม่ได้", "ระบุผู้พูดให้ครบทุกประโยคก่อน (แถวที่เป็น ‘ยังไม่ระบุ’)")
+            QMessageBox.warning(self, tr("ยังรับรองไม่ได้", "Cannot attest yet"), tr("ระบุผู้พูดให้ครบทุกประโยคก่อน (แถวที่เป็น ‘ยังไม่ระบุ’)", "Set a speaker on every line first (lines marked Not set)."))
             return
         if not self.service.therapist_name:
-            QMessageBox.warning(self, "ยังไม่ได้ตั้งชื่อ", "ตั้งชื่อนักบำบัดก่อน (เมนู ตั้งค่า → ชื่อนักบำบัด)")
+            QMessageBox.warning(self, tr("ยังไม่ได้ตั้งชื่อ", "No therapist name"), tr("ตั้งชื่อนักบำบัดก่อน (เมนู ตั้งค่า → ชื่อนักบำบัด)", "Set your name first (Settings, Therapist name)."))
             return
         answer = QMessageBox.question(
-            self, "รับรอง transcript",
-            f"ยืนยันว่า {self.service.therapist_name} ตรวจ transcript นี้กับเสียงแล้ว และผู้พูดถูกต้อง?",
+            self, tr("รับรอง transcript", "Attest"),
+            tr(f"ยืนยันว่า {self.service.therapist_name} ตรวจ transcript นี้กับเสียงแล้ว และผู้พูดถูกต้อง?", f"Confirm that {self.service.therapist_name} has checked this transcript against the recording and the speakers are right?"),
         )
         if answer != QMessageBox.StandardButton.Yes:
             return
@@ -684,15 +691,15 @@ class ReviewPage(SessionPage):
                 f"• {i.message}" for i in exc.issues[:8]
             )
             reason, ok = QInputDialog.getMultiLineText(
-                self, "transcript ไม่ผ่านการตรวจรูปแบบ",
-                f"{issues}\n\nถ้าตรวจแล้วว่ายังใช้วิเคราะห์ได้ ระบุเหตุผลเพื่อรับรอง (บันทึกใน audit log):",
+                self, tr("transcript ไม่ผ่านการตรวจรูปแบบ", "Transcript failed the format check"),
+                tr(f"{issues}\n\nถ้าตรวจแล้วว่ายังใช้วิเคราะห์ได้ ระบุเหตุผลเพื่อรับรอง (บันทึกใน audit log):", f"{issues}\n\nIf it can still be analysed, give the reason for attesting (kept in the audit log):"),
             )
             if not ok or not reason.strip():
                 return
-            if self.attempt(self.service.attest, transcript_id, override_reason=reason, title="รับรองไม่สำเร็จ") is None:
+            if self.attempt(self.service.attest, transcript_id, override_reason=reason, title=tr("รับรองไม่สำเร็จ", "Not attested")) is None:
                 return
         except Exception as exc:  # noqa: BLE001
-            self.report_error(exc, "รับรองไม่สำเร็จ")
+            self.report_error(exc, tr("รับรองไม่สำเร็จ", "Not attested"))
             return
         self.attested.emit()
         self.changed.emit()
@@ -741,7 +748,7 @@ class ReviewPage(SessionPage):
         try:
             self.player.play(self.audio_wav, max(0.0, start - 0.05), end)
         except Exception as exc:  # noqa: BLE001 - no output device
-            self.report_error(exc, "เล่นเสียงไม่ได้")
+            self.report_error(exc, tr("เล่นเสียงไม่ได้", "Cannot play audio"))
             return
         self.timer.start()
 

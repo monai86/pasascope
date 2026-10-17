@@ -113,8 +113,16 @@ class ClinicSpeakerHead:
         child = float(self.child_probability(row[None, :])[0])
         probs = row[-5:-1]  # the frame model's mean class probabilities
         base = float(probs[CHILD] / max(probs[CHILD] + probs[ADULT], 1e-9))
-        text = f"โมเดลประจำคลินิก: เสียงเด็ก {child:.0%} (โมเดลพื้นฐาน {base:.0%})"
+        import os
+
+        english = os.environ.get("PASASCOPE_LANGUAGE", "th") == "en"  # follows the desktop app's language
         similar = self.nearest_examples(row)
+        if english:
+            text = f"Clinic model: child's voice {child:.0%} (base model {base:.0%})"
+            if similar:
+                text += "; sounds like attested lines: " + ", ".join(f"{label} ({'child' if is_child else 'adult'})" for label, is_child in similar)
+            return text
+        text = f"โมเดลประจำคลินิก: เสียงเด็ก {child:.0%} (โมเดลพื้นฐาน {base:.0%})"
         if similar:
             text += "; คล้ายประโยคที่รับรองแล้ว: " + ", ".join(f"{label} ({'เด็ก' if is_child else 'ผู้ใหญ่'})" for label, is_child in similar)
         return text

@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+from packages.desktop.core.i18n import tr
+
 from typing import Any
 
 from PySide6.QtCore import Signal
@@ -38,17 +40,17 @@ class SessionPage(QWidget):
     def has_unsaved_changes(self) -> bool:
         return False
 
-    def report_error(self, exc: Exception, title: str = "ทำรายการไม่สำเร็จ") -> None:
+    def report_error(self, exc: Exception, title: str = tr("ทำรายการไม่สำเร็จ", "Something went wrong")) -> None:
         if isinstance(exc, WorkflowError):
             QMessageBox.warning(self, title, str(exc))
             return
         detail = getattr(exc, "__traceback_text__", "")
-        box = QMessageBox(QMessageBox.Icon.Critical, title, f"เกิดข้อผิดพลาดที่ไม่คาดไว้: {type(exc).__name__}: {exc}", parent=self)
+        box = QMessageBox(QMessageBox.Icon.Critical, title, tr(f"เกิดข้อผิดพลาดที่ไม่คาดไว้: {type(exc).__name__}: {exc}", f"Unexpected error: {type(exc).__name__}: {exc}"), parent=self)
         if detail:
             box.setDetailedText(detail)
         box.exec()
 
-    def attempt(self, fn, *args, title: str = "ทำรายการไม่สำเร็จ", **kwargs):
+    def attempt(self, fn, *args, title: str = tr("ทำรายการไม่สำเร็จ", "Something went wrong"), **kwargs):
         """Run a quick service call on the UI thread; show the error and return None on failure."""
         try:
             return fn(*args, **kwargs)

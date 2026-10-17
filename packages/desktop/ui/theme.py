@@ -51,6 +51,8 @@ QMainWindow, QDialog {{ background: {CANVAS}; }}
 #Brand {{ font-size: 15px; font-weight: 600; color: {INK}; }}
 #BrandSub {{ color: {MUTED}; font-size: 12px; }}
 #Card {{ background: {SURFACE}; border: 1px solid {LINE}; border-radius: 6px; }}
+#Metric {{ background: transparent; border: none; border-left: 1px solid {LINE_STRONG}; }}
+#Article {{ border: none; background: {SURFACE}; }}
 #Panel {{ background: {SIDEBAR}; border: none; border-radius: 6px; }}
 #CaseTitle {{ font-size: 24px; font-weight: 700; }}
 #SectionTitle {{ font-size: 15px; font-weight: 600; }}
@@ -58,7 +60,7 @@ QMainWindow, QDialog {{ background: {CANVAS}; }}
 #Hint {{ color: {MUTED}; font-size: 13px; }}
 #EmptyTitle {{ font-size: 16px; font-weight: 600; color: {INK}; }}
 #MetricTitle {{ color: {MUTED}; font-size: 12px; }}
-#MetricValue {{ font-size: 24px; font-weight: 600; color: {INK}; }}
+#MetricValue {{ font-size: 22px; font-weight: 600; color: {INK}; }}
 #Notice {{ border-radius: 4px; padding: 8px 12px; background: {ATTENTION_SOFT}; color: {INK}; }}
 #Notice[kind="primary"] {{ background: {PRIMARY_SOFT}; color: {INK}; }}
 #InspectorKey {{ color: {MUTED}; font-size: 12px; }}
@@ -85,8 +87,12 @@ QPushButton[role="primary"]:hover {{ background: {PRIMARY_DARK}; border-color: {
 QPushButton[role="primary"]:disabled {{ background: #a7cdf2; border-color: #a7cdf2; color: white; }}
 QPushButton[role="danger"] {{ color: {DANGER}; }}
 QPushButton[role="danger"]:hover {{ background: {DANGER_SOFT}; border-color: {DANGER_SOFT}; }}
-QPushButton[role="ghost"] {{ background: transparent; border: 1px solid transparent; color: {INK_SOFT}; text-align: left; }}
+QPushButton[role="ghost"] {{ background: transparent; border: 1px solid transparent; color: {INK_SOFT}; text-align: left; padding: 5px 8px; }}
 QPushButton[role="ghost"]:hover {{ background: {HOVER}; }}
+QPushButton[role="nav"] {{ background: transparent; border: none; color: {INK_SOFT}; text-align: left; padding: 6px 8px; font-weight: 500; }}
+QPushButton[role="nav"]:hover {{ background: {HOVER}; }}
+QPushButton[role="nav"]:checked {{ background: {PRESSED}; color: {INK}; }}
+#SidebarHeading {{ color: {MUTED}; font-size: 12px; font-weight: 500; }}
 
 QListWidget {{ background: transparent; border: none; outline: none; }}
 QListWidget::item {{ padding: 4px 6px; border-radius: 4px; color: {INK}; }}
@@ -139,6 +145,7 @@ def apply_theme(app: QApplication) -> None:
     palette.setColor(QPalette.ColorRole.WindowText, QColor(INK))
     palette.setColor(QPalette.ColorRole.Highlight, QColor(PRIMARY_SOFT))
     palette.setColor(QPalette.ColorRole.HighlightedText, QColor(INK))
+    palette.setColor(QPalette.ColorRole.Link, QColor(PRIMARY))
     app.setPalette(palette)
     font = QFont()
     font.setPointSize(13)
