@@ -36,6 +36,7 @@ from PySide6.QtGui import (
     QColor,
     QFont,
     QFontDatabase,
+    QFontMetricsF,
     QGuiApplication,
     QImage,
     QPageLayout,
@@ -74,10 +75,13 @@ DRAFT_INK = QColor("#9b2c2c")
 LOGO = Path(__file__).resolve().parent / "assets" / "logo.png"
 LOGO_OPACITY = 0.06
 LETTERHEAD_MM = 18
-# Thai letters drawn inside Times New Roman text: Sarabun's Thai is 0.586 em
-# tall and Times' x-height 0.447 em; at 0.9 of the size the Thai sits with the
-# Latin lower case as it does within Sarabun itself.
-THAI_IN_LATIN = 0.9
+# Thai letters drawn inside Times New Roman text: TH Sarabun's Thai is 0.400 em
+# tall and Times' x-height 0.447 em; at 1.3 times the size the Thai sits with
+# the Latin lower case as it does within TH Sarabun itself (Thai 1.17 x-heights).
+THAI_IN_LATIN = 1.3
+# A character TH Sarabun lacks (the arrow →) is drawn in Sarabun, whose
+# letters are 1.47 times larger at the same size.
+FALLBACK_SCALE = 0.68
 
 
 @dataclass(frozen=True)
@@ -101,21 +105,25 @@ class Layout:
     heading_before_pt: float
     heading_after_pt: float
     italic_notes: bool  # Thai has no true italic, so Thai notes stay upright
+    bullet: str  # Thai documents mark list items with a dash; TH Sarabun's • also sits high
     words: dict[str, str] = field(default_factory=dict)
 
 
+THAI_FAMILIES = ("TH SarabunPSK", "TH Sarabun New", "Sarabun")
+
 LAYOUTS = {
     "th": Layout(
-        families=("Sarabun",),
-        # TH Sarabun New 20 / 18 / 16 / 14 pt, the sizes Thai official
-        # documents use, printed with Sarabun (11 pt Sarabun = 16 pt TH Sarabun New).
-        title_pt=13.5, organization_pt=12, body_pt=11, small_pt=9.5,
-        line_height=112,
+        # TH SarabunPSK when the computer has it, otherwise the bundled TH
+        # Sarabun New (its successor: same design and size, GPL with a font
+        # exception), at the sizes Thai official documents use.
+        families=THAI_FAMILIES,
+        title_pt=20, organization_pt=18, body_pt=16, small_pt=14,
+        line_height=92,  # about Word's single spacing for TH Sarabun
         margins_mm=(30, 25, 20, 20),
         first_line_indent_mm=25,
         list_marker_mm=25, list_text_mm=30,
         paragraph_after_pt=6, heading_before_pt=12, heading_after_pt=6,
-        italic_notes=False,
+        italic_notes=False, bullet="–",
         words={
             "confidential": "ข้อมูลสุขภาพส่วนบุคคล  เก็บเป็นความลับ",
             "page": "หน้า {page} จาก {pages}",
@@ -130,14 +138,14 @@ LAYOUTS = {
         },
     ),
     "en": Layout(
-        families=("Times New Roman", "Sarabun"),
+        families=("Times New Roman", *THAI_FAMILIES),
         title_pt=14, organization_pt=12, body_pt=12, small_pt=10,
         line_height=115,
         margins_mm=(25.4, 25.4, 25.4, 25.4),
         first_line_indent_mm=0,
         list_marker_mm=6.35, list_text_mm=12.7,
         paragraph_after_pt=6, heading_before_pt=12, heading_after_pt=6,
-        italic_notes=True,
+        italic_notes=True, bullet="•",
         words={
             "confidential": "Confidential health information",
             "page": "Page {page} of {pages}",
@@ -211,6 +219,29 @@ def breakable(text: str) -> str:
     line break between any two words; they print as nothing.
     """
     return THAI_RUN.sub(lambda match: _thai_breaks(match.group(0)), text)
+
+
+def thai_family() -> str:
+    """The TH Sarabun family this computer will print with (TH SarabunPSK if installed)."""
+    ensure_fonts()
+    available = set(QFontDatabase.families())
+    return next((family for family in THAI_FAMILIES if family in available), "Sarabun")
+
+
+@lru_cache(maxsize=8)
+def _font_has(family: str):
+    font = QFont(family)
+    metrics = QFontMetricsF(font)
+    return lru_cache(maxsize=1024)(lambda ch: metrics.inFontUcs4(ord(ch)))
+
+
+def _missing_from(family: str, text: str) -> set[str]:
+    """Characters of ``text`` (outside Thai and ASCII) that ``family`` has no glyph for."""
+    if not family:
+        return set()
+    has = _font_has(thai_family())
+    return {ch for ch in text if ord(ch) > 0x7f and not ("\u0e00" <= ch <= "\u0e7f") and ch != ZERO_WIDTH_SPACE
+            and not has(ch)}
 
 
 def layout_base_dpi() -> float:
@@ -421,22 +452,43 @@ class _Builder:
             self.text(piece, fmt)
 
     def text(self, text: str, fmt: QTextCharFormat) -> None:
-        """Insert text; in an English report Thai runs are set in Sarabun at a matching size."""
+        """Insert text; in an English report Thai runs are set in TH Sarabun at a matching size."""
         if self.language == "th" or not THAI_RUN.search(text):
-            self.cursor.insertText(breakable(text), fmt)
+            self._plain(breakable(text), fmt)
             return
         position = 0
         for match in THAI_RUN.finditer(text):
             if match.start() > position:
                 self.cursor.insertText(text[position:match.start()], fmt)
             thai = QTextCharFormat(fmt)
-            thai.setFontFamilies(["Sarabun"])
+            thai.setFontFamilies(list(THAI_FAMILIES))
             thai.setFontPointSize(fmt.font().pointSizeF() * THAI_IN_LATIN)
             thai.setFontItalic(False)
             self.cursor.insertText(_thai_breaks(match.group(0)), thai)
             position = match.end()
         if position < len(text):
             self.cursor.insertText(text[position:], fmt)
+
+    def _plain(self, text: str, fmt: QTextCharFormat) -> None:
+        """Insert text, drawing any character the TH Sarabun fonts lack in Sarabun at a matching size."""
+        missing = _missing_from(self.layout.families[0] if self.language == "th" else "", text)
+        if not missing:
+            self.cursor.insertText(text, fmt)
+            return
+        run = ""
+        for ch in text:
+            if ch in missing:
+                if run:
+                    self.cursor.insertText(run, fmt)
+                    run = ""
+                other = QTextCharFormat(fmt)
+                other.setFontFamilies(["Sarabun"])
+                other.setFontPointSize(fmt.font().pointSizeF() * FALLBACK_SCALE)
+                self.cursor.insertText(ch, other)
+            else:
+                run += ch
+        if run:
+            self.cursor.insertText(run, fmt)
 
     def paragraph(self, text: str, *, size: float | None = None, indent: bool = True, **kwargs) -> None:
         self.new_block(self.block(indent_mm=self.layout.first_line_indent_mm if indent else 0, **kwargs), self.char(size))
@@ -499,7 +551,7 @@ class _Builder:
             self.first_block = False
         table = self.cursor.insertTable(len(items), 2, fmt)
         for row, item in enumerate(items):
-            for column, text in ((0, "•"), (1, item)):
+            for column, text in ((0, self.layout.bullet), (1, item)):
                 cell = table.cellAt(row, column)
                 cell_format = QTextTableCellFormat(cell.format().toTableCellFormat())
                 cell_format.setBottomPadding(self.pt(2) if row < len(items) - 1 else 0)
@@ -521,6 +573,8 @@ class _Builder:
         fmt.setBorderCollapse(True)
         fmt.setCellSpacing(0)
         fmt.setCellPadding(self.pt(3))
+        self._cell_top_padding = self.pt(1 if self.language == "th" else 3)
+        self._cell_bottom_padding = self.pt(4 if self.language == "th" else 3)
         fmt.setWidth(QTextLength(QTextLength.Type.PercentageLength, 100))
         fmt.setColumnWidthConstraints([QTextLength(QTextLength.Type.PercentageLength, w) for w in widths])
         fmt.setTopMargin(self.pt(2))
@@ -535,10 +589,12 @@ class _Builder:
     def _cell(self, table, row: int, column: int, text: str, *, bold: bool = False, fill: QColor | None = None,
               align=Qt.AlignmentFlag.AlignLeft) -> None:
         cell = table.cellAt(row, column)
+        cell_format = QTextTableCellFormat(cell.format().toTableCellFormat())
+        cell_format.setTopPadding(self._cell_top_padding)
+        cell_format.setBottomPadding(self._cell_bottom_padding)
         if fill is not None:
-            cell_format = QTextTableCellFormat(cell.format().toTableCellFormat())
             cell_format.setBackground(QBrush(fill))
-            cell.setFormat(cell_format)
+        cell.setFormat(cell_format)
         cursor = cell.firstCursorPosition()
         block = QTextBlockFormat()
         block.setAlignment(align)
@@ -569,7 +625,7 @@ class _Builder:
                 align = {"right": Qt.AlignmentFlag.AlignRight, "center": Qt.AlignmentFlag.AlignHCenter}.get(
                     aligns[c] if c < len(aligns) else "left", Qt.AlignmentFlag.AlignLeft)
                 self._cell(table, r, c, text, bold=r == 0, fill=LABEL_FILL if r == 0 else None,
-                           align=Qt.AlignmentFlag.AlignLeft if r == 0 and c == 0 else align)
+                           align=Qt.AlignmentFlag.AlignHCenter if r == 0 else align)
         self.cursor.movePosition(QTextCursor.MoveOperation.End)
 
     def signature(self, meta: ReportMeta) -> int:

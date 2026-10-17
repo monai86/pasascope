@@ -17,17 +17,17 @@ report (`apps/api/app/services/providers/thai_template_provider.py`).
 | | Thai report | English report |
 |---|---|---|
 | Paper | A4 portrait | A4 portrait |
-| Font | Sarabun | Times New Roman; any Thai text in Sarabun at 0.9 of the size, so it sits with the Latin lower case |
-| Title | 13.5 pt bold (= TH Sarabun New 20 pt) | 14 pt bold |
-| Clinic name above the title | 12 pt bold (= 18 pt) | 12 pt bold |
-| Body: text, headings, tables, limitations | 11 pt (= 16 pt) | 12 pt |
-| Small print: header, footer, signature note | 9.5 pt (= 14 pt) | 10 pt |
+| Font | TH SarabunPSK if the computer has it, otherwise the bundled TH Sarabun New (its successor from SIPA, same design and size) | Times New Roman; any Thai text in TH Sarabun at 1.3 times the size, so it sits with the Latin lower case |
+| Title | 20 pt bold | 14 pt bold |
+| Clinic name above the title | 18 pt bold | 12 pt bold |
+| Body: text, headings, tables, limitations | 16 pt | 12 pt |
+| Small print: header, footer, signature note | 14 pt | 10 pt |
 | Margins (left, top, right, bottom) | 30, 25, 20, 20 mm | 25.4 mm (1 inch) on every side |
 | Paragraphs | first line indented 2.5 cm, 6 pt after | block paragraphs, 6 pt after |
-| Bullets | bullet at 2.5 cm (the paragraph indent), text at 3.0 cm | bullet at 0.635 cm, text at 1.27 cm |
-| Line spacing | 112% of the font's own spacing | 115% |
+| List items | dash (–) at 2.5 cm (the paragraph indent), text at 3.0 cm | bullet (•) at 0.635 cm, text at 1.27 cm |
+| Line spacing | 92% of the font's own spacing, about Word's single spacing for TH Sarabun | 115% |
 
-Each report uses only these sizes, and a test checks that no other size appears. Headings are bold at body size, as in Thai official documents. Notes are set upright in the Thai report, because Thai fonts have no true italic.
+Each report uses only these sizes, and a test checks that no other size appears. Column headings are centred. TH Sarabun has no arrow (→); that one character is drawn in Sarabun at 0.68 of the size, which prints at the same height. Headings are bold at body size, as in Thai official documents. Notes are set upright in the Thai report, because Thai fonts have no true italic.
 
 Both languages share the same page furniture:
 
@@ -61,9 +61,11 @@ The logo is used in these places:
   - first-line indent 2.5 cm.
 
   Sources: the Uthai Thani provincial health office manual (https://uthaihealth.moph.go.th/uthaihealth/uploadfile/318.pdf); the PSU Pattani office document (https://office.pn.psu.ac.th/files/docs/doc_000216_2026-04-02); the PSU library template (https://library.psu.ac.th/wp-content/uploads/2025/04/TemplatePSULINET2025.pdf).
-- **The font.** Sarabun from Google Fonts is the open (SIL OFL 1.1) release of TH Sarabun New by Cadson Demak (https://github.com/cadsondemak/Sarabun). The app bundles it in `packages/desktop/ui/assets/fonts/` together with its licence, `OFL.txt`, so reports look the same on every computer.
-  - The glyphs are drawn larger than in TH Sarabun New. I measured both fonts: ก is 0.586 em tall in Sarabun and 0.400 em in TH Sarabun New, and H is 0.700 em against 0.476 em.
-  - The ratio is therefore 1.47, so Sarabun at 11 pt prints the same size as TH Sarabun New at 16 pt.
+- **The font.** Thai official documents are set in TH SarabunPSK. The report uses it when the computer has it installed. Otherwise it uses TH Sarabun New, which the app bundles in `packages/desktop/ui/assets/fonts/` so that reports print the same on every computer.
+  - TH Sarabun New is SIPA's later release of the same design.
+  - Its licence is GPL v2 or later, with a font exception that lets documents embed it (`THSarabunNew-LICENSE.txt`, taken from the font's own licence field). I found no licence I could confirm for TH SarabunPSK itself, so it is not bundled.
+- **Sarabun for the interface.** Google's Sarabun (SIL OFL 1.1, https://github.com/cadsondemak/Sarabun) stays bundled for the app's report editor and for the one character TH Sarabun lacks.
+  - Its letters are drawn 1.47 times larger at the same point size. I measured both fonts: ก is 0.586 em tall in Sarabun and 0.400 em in TH Sarabun New.
 - **English body text.** Formal English documents commonly use a 12 pt serif with 1-inch margins and page numbers on every page (Open Polytechnic formatting guide, https://www.openpolytechnic.ac.nz/formatting-and-presenting-assignments; APA guide, https://mylibrary.openpolytechnic.ac.nz/apa-style-psychology-assessments).
 - **Report structure.** Speech-language evaluation reports are laid out in this order:
   1. identifying information;

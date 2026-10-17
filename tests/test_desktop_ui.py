@@ -334,7 +334,7 @@ def test_formal_pdf_layout_in_both_languages(window, tmp_path):
     from PySide6.QtGui import QPdfWriter
 
     from packages.desktop.ui.pdf import (
-        THAI_IN_LATIN, ZERO_WIDTH_SPACE, ReportMeta, a4_layout, breakable, build_document, formal_date, LAYOUTS,
+        FALLBACK_SCALE, THAI_IN_LATIN, ZERO_WIDTH_SPACE, ReportMeta, a4_layout, breakable, build_document, formal_date, LAYOUTS,
         write_report_pdf,
     )
     from PySide6.QtCore import QRectF, QUrl
@@ -371,7 +371,7 @@ def test_formal_pdf_layout_in_both_languages(window, tmp_path):
         # Only the layout's sizes appear (Thai inside an English report is scaled to match Times).
         layout = LAYOUTS[language]
         allowed = {layout.title_pt, layout.organization_pt, layout.body_pt, layout.small_pt}
-        allowed |= {round(size * THAI_IN_LATIN, 3) for size in allowed}
+        allowed |= {round(size * factor, 3) for size in allowed for factor in (THAI_IN_LATIN, FALLBACK_SCALE)}
         sizes = set()
         block = document.begin()
         while block.isValid():
@@ -385,7 +385,7 @@ def test_formal_pdf_layout_in_both_languages(window, tmp_path):
         assert sizes <= allowed, sizes
         assert not document.resource(QTextDocument.ResourceType.ImageResource, QUrl("pasascope-logo")) is None
     assert "TimesNewRoman" in (tmp_path / "en.pdf").read_bytes().decode("latin-1")
-    assert "Sarabun" in (tmp_path / "th.pdf").read_bytes().decode("latin-1")
+    assert "THSarabun" in (tmp_path / "th.pdf").read_bytes().decode("latin-1")
 
 
 def test_report_page_previews_pages_and_switches_language(window, qtbot):
