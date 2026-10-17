@@ -73,3 +73,15 @@ def test_the_thai_model_is_pinned_to_the_project_conversion():
     names = {f.name for f in models.THAI_WHISPER.files}
     assert {"model.bin", "config.json", "vocabulary.json", "tokenizer.json"} <= names
     assert all(len(f.sha256) == 64 and "/resolve/" in f.url and "/main/" not in f.url for f in models.THAI_WHISPER.files)
+
+
+def test_accurate_mode_without_the_thai_model_points_to_the_download(tmp_path, monkeypatch):
+    from packages.desktop.core import DesktopService, open_workspace
+
+    monkeypatch.setenv(models.MODELS_ENV, str(tmp_path / "models"))
+    monkeypatch.setenv("PASASCOPE_ASR_THAI_MODEL_PATH", str(tmp_path / "nowhere"))
+    service = DesktopService(open_workspace(tmp_path / "ws"))
+    service.set_transcription_mode("accurate")
+    available, reason = service.transcription_availability()
+    assert not available and ("Download" in reason or "ดาวน์โหลด" in reason)
+    assert not service.thai_model_status()["installed"]
