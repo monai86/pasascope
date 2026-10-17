@@ -238,3 +238,39 @@ def test_attesting_too_few_sessions_does_not_start_learning(window):
     case, session = _case_with_session(window)
     window.learn_speakers_in_background()
     assert not getattr(window, "_learning_speakers", False) and not window.runner.busy
+
+
+def test_review_inspector_explains_speaker_boundary_and_counted_words():
+    from app.schemas.clinical import Utterance
+
+    from packages.desktop.ui.pages.review import explain_utterance, note_parts
+
+    notes = ("ขึ้นประโยคใหม่ (โอกาส 84%, หยุด 0.9 วินาที): ช่วงหยุด +1.8, คำนี้มักอยู่ท้ายประโยค +0.9 "
+             "โมเดลประจำคลินิก: เสียงเด็ก 92% (โมเดลพื้นฐาน 12%)")
+    boundary, speaker = note_parts(notes)
+    assert boundary.startswith("ขึ้นประโยคใหม่") and "โมเดลประจำคลินิก" not in boundary
+    assert speaker.startswith("โมเดลประจำคลินิก")
+    utt = Utterance(utterance_id="u1", speaker="CHI", text="<เล่น รถ> [/] เล่น รถ ไหม", start_ms=0, end_ms=900,
+                    confidence=0.42, source="asr", notes=notes, speaker_uncertain=True)
+    rows = dict(explain_utterance(utt))
+    assert "ระบบไม่แน่ใจ" in rows["ผู้พูด"]
+    assert rows["ทำไมขึ้นประโยคใหม่ตรงนี้"] == boundary
+    assert rows["เหตุผลของโมเดลประจำคลินิก"] == speaker
+    assert rows["คำที่นับ"].startswith("นับ 3 คำ")
+    assert "ต่ำ" in rows["ความมั่นใจของการถอดเสียง"]
+
+
+def test_empty_pages_list_the_steps_and_the_chart_marks_short_samples(qtbot):
+    from packages.desktop.ui.widgets import EmptyState, TrendChart, _nice_ceiling
+
+    empty = EmptyState("รับรอง transcript ก่อน")
+    qtbot.addWidget(empty)
+    empty.set_steps(1)
+    texts = [empty._steps.layout().itemAt(i).widget().text() for i in range(empty._steps.layout().count())]
+    assert len(texts) == 4 and texts[0].startswith("✓") and "ขั้นถัดไป" in texts[1] and texts[3].startswith("○")
+
+    chart = TrendChart()
+    qtbot.addWidget(chart)
+    chart.set_series("MLU-w", [("1", 2.5), ("2", 3.0)], samples=[12, 64], min_sample=50)
+    assert chart._short(0) and not chart._short(1)
+    assert _nice_ceiling(3.3) == 5 and _nice_ceiling(0.92) == 1 and _nice_ceiling(23) == 25

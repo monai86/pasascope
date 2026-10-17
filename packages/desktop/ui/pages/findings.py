@@ -108,7 +108,7 @@ class CueCard(QFrame):
 
     def _evidence_row(self, item: dict, utterances: dict) -> QWidget:
         box = QFrame()
-        box.setStyleSheet(f"background: {theme.CANVAS}; border-radius: 6px;")
+        box.setStyleSheet(f"background: {theme.SIDEBAR}; border-radius: 4px;")
         row = QVBoxLayout(box)
         row.setContentsMargins(10, 6, 10, 6)
         row.setSpacing(2)
@@ -271,6 +271,8 @@ class FindingsPage(SessionPage):
         self.body.hide()
         self.empty.show()
         self.empty.set_text(title, body)
+        if self.session is not None:
+            self.empty.set_steps(self.service.session_step(self.session))
         self.empty_btn.setText(action)
         self._empty_target = target
 
@@ -327,7 +329,7 @@ class FindingsPage(SessionPage):
             font.setBold(True)
             item.setFont(font)
             item.setForeground(QBrush(QColor(theme.PRIMARY_DARK)))
-            item.setBackground(QBrush(QColor(theme.CANVAS)))
+            item.setBackground(QBrush(QColor(theme.SIDEBAR)))
         else:
             item.setForeground(QBrush(QColor(theme.MUTED)))
         self.table.setItem(row, 0, item)

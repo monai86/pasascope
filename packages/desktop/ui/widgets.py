@@ -102,6 +102,39 @@ class EmptyState(QWidget):
         self.title.setText(title)
         self.body.setText(body)
 
+    STEPS = (
+        "มี transcript (บันทึก นำเข้าเสียง หรือนำเข้า transcript)",
+        "ตรวจ transcript กับเสียง แล้วรับรอง",
+        "วิเคราะห์ตัวชี้วัดและตรวจ cue",
+        "ร่างรายงาน แก้ แล้วลงนาม",
+    )
+
+    def set_steps(self, step: int) -> None:
+        """Show where the session stands: steps done, the next one, and those after it."""
+        if not hasattr(self, "_steps"):
+            self._steps = QWidget()
+            self._steps.setObjectName("Panel")
+            self._steps.setAttribute(Qt.WidgetAttribute.WA_StyledBackground, True)
+            self._steps.setFixedWidth(440)
+            QVBoxLayout(self._steps).setContentsMargins(16, 12, 16, 12)
+            self.layout().insertWidget(1, self._steps, 0, Qt.AlignmentFlag.AlignHCenter)
+            self.layout().insertSpacing(2, 14)
+        rows = self._steps.layout()
+        while rows.count():
+            item = rows.takeAt(0)
+            if item.widget():
+                item.widget().deleteLater()
+        for index, name in enumerate(self.STEPS):
+            if index < step:
+                text, color = f"✓  {index + 1}. {name}", theme.MUTED
+            elif index == step:
+                text, color = f"→  {index + 1}. {name}  (ขั้นถัดไป)", theme.PRIMARY_DARK
+            else:
+                text, color = f"○  {index + 1}. {name}", theme.FAINT
+            row = label(text, wrap=True)
+            row.setStyleSheet(f"color: {color};" + (" font-weight: 600;" if index == step else ""))
+            rows.addWidget(row)
+
 
 class WaveformView(QWidget):
     """Peaks of a recording with utterance regions and a playhead.
@@ -194,21 +227,43 @@ class WaveformView(QWidget):
             painter.drawLine(QPointF(x, 0), QPointF(x, h))
 
 
+def _nice_ceiling(value: float) -> float:
+    """The next round number at or above ``value`` (1, 2, 2.5 or 5 times a power of ten), for tidy axis labels."""
+    import math
+
+    power = 10 ** math.floor(math.log10(value))
+    return next(step * power for step in (1, 2, 2.5, 5, 10) if step * power >= value)
+
+
 class TrendChart(QWidget):
-    """One feature across sessions: a line with labelled points."""
+    """One feature across sessions, drawn so that small changes do not look large.
+
+    The value axis starts at zero, and a session whose sample is shorter than
+    the recommended size is drawn as a hollow point with its utterance count,
+    so a therapist reads a jump between two short samples with caution.
+    """
 
     def __init__(self, parent: QWidget | None = None) -> None:
         super().__init__(parent)
         self.setMinimumHeight(180)
         self._points: list[tuple[str, float]] = []
+        self._samples: list[float | None] = []
+        self._min_sample = 0
         self._title = ""
         self._format = "{:.2f}"
 
-    def set_series(self, title: str, points: Sequence[tuple[str, float]], value_format: str = "{:.2f}") -> None:
+    def set_series(self, title: str, points: Sequence[tuple[str, float]], value_format: str = "{:.2f}",
+                   samples: Sequence[float | None] | None = None, min_sample: int = 0) -> None:
         self._title = title
         self._points = list(points)
+        self._samples = list(samples) if samples is not None else [None] * len(self._points)
+        self._min_sample = min_sample
         self._format = value_format
         self.update()
+
+    def _short(self, index: int) -> bool:
+        n = self._samples[index] if index < len(self._samples) else None
+        return bool(self._min_sample) and n is not None and n < self._min_sample
 
     def paintEvent(self, event) -> None:  # noqa: N802 - Qt override
         painter = QPainter(self)
@@ -222,14 +277,11 @@ class TrendChart(QWidget):
                 "ต้องมีอย่างน้อย 2 session ที่วิเคราะห์แล้ว จึงจะเห็นแนวโน้ม",
             )
             return
-        left, right, top, bottom = 52.0, 52.0, 30.0, 34.0
+        left, right, top, bottom = 44.0, 40.0, 30.0, 52.0
         plot = rect.adjusted(left, top, -right, -bottom)
         values = [v for _, v in self._points]
-        low, high = min(values), max(values)
-        if high == low:
-            low, high = low - 1, high + 1
-        pad = (high - low) * 0.15
-        low, high = low - pad, high + pad
+        low = 0.0 if min(values) >= 0 else min(values) * 1.15
+        high = _nice_ceiling(max(values) * 1.1) if max(values) > 0 else 1.0
 
         def point(i: int, v: float) -> QPointF:
             x = plot.left() + (plot.width() * i / (len(self._points) - 1))
@@ -237,34 +289,39 @@ class TrendChart(QWidget):
             return QPointF(x, y)
 
         title_font = QFont(self.font())
-        title_font.setBold(True)
+        title_font.setWeight(QFont.Weight.DemiBold)
         painter.setFont(title_font)
         painter.setPen(QColor(theme.INK))
         painter.drawText(QRectF(0, 4, rect.width(), 20), Qt.AlignmentFlag.AlignHCenter, self._title)
         painter.setFont(self.font())
 
-        painter.setPen(QPen(QColor(theme.LINE), 1))
         for frac in (0.0, 0.5, 1.0):
             y = plot.bottom() - frac * plot.height()
+            painter.setPen(QPen(QColor(theme.LINE), 1))
             painter.drawLine(QPointF(plot.left(), y), QPointF(plot.right(), y))
             painter.setPen(QColor(theme.MUTED))
             painter.drawText(QRectF(0, y - 9, left - 6, 18), Qt.AlignmentFlag.AlignRight | Qt.AlignmentFlag.AlignVCenter,
                              self._format.format(low + frac * (high - low)))
-            painter.setPen(QPen(QColor(theme.LINE), 1))
 
         path = QPainterPath()
         for i, (_, v) in enumerate(self._points):
             p = point(i, v)
             path.moveTo(p) if i == 0 else path.lineTo(p)
-        painter.setPen(QPen(QColor(theme.PRIMARY), 2.5))
+        painter.setPen(QPen(QColor(theme.PRIMARY), 2))
+        painter.setBrush(Qt.BrushStyle.NoBrush)
         painter.drawPath(path)
 
         for i, (when, v) in enumerate(self._points):
             p = point(i, v)
-            painter.setBrush(QColor(theme.PRIMARY))
-            painter.setPen(QPen(QColor(theme.SURFACE), 2))
-            painter.drawEllipse(p, 5, 5)
+            short = self._short(i)
+            painter.setBrush(QColor(theme.SURFACE) if short else QColor(theme.PRIMARY))
+            painter.setPen(QPen(QColor(theme.PRIMARY), 2))
+            painter.drawEllipse(p, 4.5, 4.5)
             painter.setPen(QColor(theme.INK))
             painter.drawText(QRectF(p.x() - 40, p.y() - 24, 80, 16), Qt.AlignmentFlag.AlignCenter, self._format.format(v))
             painter.setPen(QColor(theme.MUTED))
-            painter.drawText(QRectF(p.x() - 50, plot.bottom() + 8, 100, 18), Qt.AlignmentFlag.AlignCenter, when)
+            painter.drawText(QRectF(p.x() - 50, plot.bottom() + 6, 100, 18), Qt.AlignmentFlag.AlignCenter, when)
+            n = self._samples[i] if i < len(self._samples) else None
+            if n is not None:
+                painter.setPen(QColor(theme.ATTENTION if short else theme.FAINT))
+                painter.drawText(QRectF(p.x() - 50, plot.bottom() + 22, 100, 16), Qt.AlignmentFlag.AlignCenter, f"{int(n)} ประโยค")

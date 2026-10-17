@@ -31,6 +31,7 @@ STEP_TEXT = {
     3: ("รอลงนาม", theme.ATTENTION),
     4: ("ลงนามแล้ว", theme.OK),
 }
+SAMPLE_SIZE = "child_utterance_count"  # how many child utterances each session's measures rest on
 TABLE_FEATURES = [
     "child_utterance_count",
     "mean_length_of_utterance_words",
@@ -106,7 +107,8 @@ class CaseOverview(QWidget):
         self.chart = TrendChart()
         trend.addWidget(self.chart, 1)
         trend.addWidget(label(
-            "ค่าเชิงบรรยาย ยังไม่มีเกณฑ์อ้างอิงของเด็กไทย ตัวอย่างที่สั้นหรือกิจกรรมต่างกันทำให้ค่าแกว่งได้",
+            f"แกนเริ่มที่ 0 · จุดกลวงคือ session ที่เด็กพูดไม่ถึง {labels.RECOMMENDED_MLU_UTTERANCES} ประโยค ค่าอาจแกว่งได้มาก"
+            " · ค่าเชิงบรรยาย ยังไม่มีเกณฑ์อ้างอิงของเด็กไทย",
             "Muted", wrap=True,
         ))
         split.addWidget(trend_card)
@@ -177,6 +179,9 @@ class CaseOverview(QWidget):
         if self.case is None:
             return
         name = self.trend_pick.currentData()
-        series = [(when, values[name]) for when, values in self.service.feature_trend(self.case.case_id, [name]) if name in values]
+        rows = [(when, values) for when, values in self.service.feature_trend(self.case.case_id, [name, SAMPLE_SIZE]) if name in values]
         kind = labels.FEATURES[name][1]
-        self.chart.set_series(labels.FEATURES[name][0], series, "{:.0f}" if kind == "int" else "{:.2f}")
+        self.chart.set_series(
+            labels.FEATURES[name][0], [(when, values[name]) for when, values in rows], "{:.0f}" if kind == "int" else "{:.2f}",
+            samples=[values.get(SAMPLE_SIZE) for _, values in rows], min_sample=labels.RECOMMENDED_MLU_UTTERANCES,
+        )

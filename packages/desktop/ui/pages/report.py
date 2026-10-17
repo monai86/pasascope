@@ -174,6 +174,8 @@ class ReportPage(SessionPage):
         self.body.hide()
         self.empty.show()
         self.empty.set_text(title, body)
+        if self.session is not None:
+            self.empty.set_steps(self.service.session_step(self.session))
         self.empty_btn.setText(action)
         self._empty_target = target
 

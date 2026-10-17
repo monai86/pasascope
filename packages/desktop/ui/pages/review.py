@@ -109,11 +109,91 @@ def word_cell(utt) -> tuple[str, str, bool]:
     return str(len(analysis.words)), "\n".join(lines), True
 
 
+BOUNDARY_MARK = "ขึ้นประโยคใหม่"
+SPEAKER_MARK = "โมเดลประจำคลินิก"
+
+
+def note_parts(notes: str | None) -> tuple[str, str]:
+    """(why the utterance starts here, why the clinic model chose the speaker), from the draft's notes."""
+    notes = notes or ""
+    speaker = notes[notes.index(SPEAKER_MARK):].strip() if SPEAKER_MARK in notes else ""
+    boundary = notes[notes.index(BOUNDARY_MARK):].replace(speaker, "").strip() if BOUNDARY_MARK in notes else ""
+    return boundary, speaker
+
+
+def explain_utterance(utt) -> list[tuple[str, str]]:
+    """What the inspector shows for one utterance: (heading, text) pairs a therapist can check."""
+    boundary, speaker_note = note_parts(utt.notes)
+    speaker = labels.SPEAKER_LABELS.get(str(utt.speaker), str(utt.speaker))
+    if getattr(utt, "review_status", "") == "reviewed" and not utt.speaker_uncertain:
+        speaker_why = "นักบำบัดยืนยันแล้ว"
+    elif utt.speaker_uncertain:
+        speaker_why = ("ระบบไม่แน่ใจ: เสียงสั้น ระดับเสียงก้ำกึ่ง หรืออายุเด็กอยู่นอกช่วงที่ระบบตรวจแล้ว (2;6–6;11 ปี)"
+                       " ฟังแล้วยืนยันก่อน")
+    elif str(utt.source) == "asr":
+        speaker_why = "ระบบมั่นใจจากโมเดลแยกเสียงเด็ก/ผู้ใหญ่"
+    else:
+        speaker_why = "มาจาก transcript ที่นำเข้าหรือพิมพ์เอง"
+    rows = [("ผู้พูด", f"{speaker} · {speaker_why}")]
+    if speaker_note:
+        rows.append(("เหตุผลของโมเดลประจำคลินิก", speaker_note))
+    if boundary:
+        rows.append(("ทำไมขึ้นประโยคใหม่ตรงนี้", boundary))
+    elif str(utt.source) == "asr":
+        rows.append(("ทำไมขึ้นประโยคใหม่ตรงนี้", "ผู้พูดเปลี่ยน หรือหยุดพูดนานกว่า 0.6 วินาที (ร่างภาษาไทยใช้กฎช่วงหยุด)"))
+    words, words_why, _ = word_cell(utt)
+    rows.append(("คำที่นับ", words_why if words_why else "—"))
+    if utt.confidence is not None:
+        sure = "ต่ำ ฟังทวนคำในประโยคนี้" if utt.confidence < LOW_CONFIDENCE else "ปกติ"
+        rows.append(("ความมั่นใจของการถอดเสียง", f"{utt.confidence * 100:.0f}% · {sure}"))
+    return rows
+
+
 def _fmt(ms: int | None) -> str:
     if ms is None:
         return "—"
     seconds = ms / 1000
     return f"{int(seconds // 60):02d}:{seconds % 60:04.1f}"
+
+
+class UtteranceInspector(QWidget):
+    """Side panel: how the system reached each part of the selected utterance, in plain Thai."""
+
+    def __init__(self, parent: QWidget | None = None) -> None:
+        super().__init__(parent)
+        self.setObjectName("Panel")
+        self.setAttribute(Qt.WidgetAttribute.WA_StyledBackground, True)
+        self.setFixedWidth(300)
+        outer = QVBoxLayout(self)
+        outer.setContentsMargins(14, 12, 14, 12)
+        outer.setSpacing(4)
+        self.title = label("รายละเอียดประโยค", "SectionTitle")
+        outer.addWidget(self.title)
+        self.when = label("เลือกประโยคในตารางเพื่อดูว่าระบบตัดสินแต่ละส่วนอย่างไร", "Muted", wrap=True)
+        outer.addWidget(self.when)
+        self.rows = QVBoxLayout()
+        self.rows.setSpacing(2)
+        outer.addLayout(self.rows)
+        outer.addStretch(1)
+
+    def show_utterance(self, utt, number: int | None = None) -> None:
+        while self.rows.count():
+            item = self.rows.takeAt(0)
+            if item.widget():
+                item.widget().deleteLater()
+        if utt is None:
+            self.title.setText("รายละเอียดประโยค")
+            self.when.setText("เลือกประโยคในตารางเพื่อดูว่าระบบตัดสินแต่ละส่วนอย่างไร")
+            return
+        self.title.setText(f"ประโยคที่ {number}")
+        self.when.setText(f"{_fmt(utt.start_ms)} – {_fmt(utt.end_ms)}")
+        for heading, text in explain_utterance(utt):
+            key = label(heading, "InspectorKey")
+            key.setContentsMargins(0, 8, 0, 0)
+            value = label(text, "InspectorValue", wrap=True)
+            value.setTextInteractionFlags(Qt.TextInteractionFlag.TextSelectableByMouse)
+            self.rows.addWidget(key)
+            self.rows.addWidget(value)
 
 
 class SpeakerDelegate(QStyledItemDelegate):
@@ -246,11 +326,16 @@ class ReviewPage(SessionPage):
         self.table.setItemDelegateForColumn(COL_SPEAKER, SpeakerDelegate(self.table))
         self.table.itemChanged.connect(self._on_item_changed)
         self.table.itemSelectionChanged.connect(self._on_selection)
-        body.addWidget(self.table, 1)
+        table_row = QHBoxLayout()
+        table_row.setSpacing(10)
+        table_row.addWidget(self.table, 1)
+        self.inspector = UtteranceInspector()
+        table_row.addWidget(self.inspector)
+        body.addLayout(table_row, 1)
 
         hint = label(
             "Space เล่นเสียง · Enter แก้ข้อความ · Ctrl+1 เด็ก · Ctrl+2 ผู้ใหญ่ · Ctrl+S บันทึก · คลิกที่คลื่นเสียงเพื่อเล่นจากจุดนั้น · "
-            "แถวสีส้มคือคำที่ระบบไม่มั่นใจ · ชี้ที่ช่อง \"คำที่นับ\" เพื่อดูว่านับคำไหนบ้าง",
+            "แถวสีส้มคือคำที่ระบบไม่มั่นใจ · เลือกประโยคเพื่อดูทางขวาว่าระบบตัดสินผู้พูด ตัดประโยค และนับคำอย่างไร",
             "Muted", wrap=True,
         )
         body.addWidget(hint)
@@ -279,6 +364,8 @@ class ReviewPage(SessionPage):
         self.transcript = self.service.get_transcript(self.session.session_id) if self.session else None
         has = self.transcript is not None
         self.empty.setVisible(not has)
+        if not has and self.session is not None:
+            self.empty.set_steps(0)
         self.body.setVisible(has)
         if not has:
             self.utterances = []
@@ -301,10 +388,9 @@ class ReviewPage(SessionPage):
         time_item = QTableWidgetItem(_fmt(utt.start_ms))
         time_item.setFlags(time_item.flags() & ~Qt.ItemFlag.ItemIsEditable)
         time_item.setForeground(QBrush(QColor(theme.MUTED)))
-        notes = utt.notes or ""
-        speaker_note = notes[notes.index("โมเดลประจำคลินิก"):] if "โมเดลประจำคลินิก" in notes else ""
-        if "ขึ้นประโยคใหม่" in notes:  # why the draft started a new utterance here (boundary model)
-            time_item.setToolTip(notes[notes.index("ขึ้นประโยคใหม่"):].replace(speaker_note, "").strip())
+        boundary_note, speaker_note = note_parts(utt.notes)
+        if boundary_note:  # why the draft started a new utterance here (boundary model)
+            time_item.setToolTip(boundary_note)
         speaker = str(utt.speaker)
         uncertain = bool(getattr(utt, "speaker_uncertain", False))
         speaker_item = QTableWidgetItem(labels.SPEAKER_LABELS.get(speaker, speaker) + ("  ?" if uncertain else ""))
@@ -433,6 +519,13 @@ class ReviewPage(SessionPage):
     def _mark_dirty(self) -> None:
         self.dirty = True
         self._update_status()
+        self._refresh_inspector()
+
+    def _refresh_inspector(self) -> None:
+        """Show the selected utterance again after an edit, without playing it."""
+        rows = self._selected_rows()
+        if len(rows) == 1 and rows[0] < len(self.utterances):
+            self.inspector.show_utterance(self.utterances[rows[0]], rows[0] + 1)
 
     def _on_item_changed(self, item: QTableWidgetItem) -> None:
         if self._loading:
@@ -612,8 +705,10 @@ class ReviewPage(SessionPage):
         rows = self._selected_rows()
         if len(rows) != 1 or rows[0] >= len(self.utterances):
             self.wave.set_selected(None)
+            self.inspector.show_utterance(None)
             return
         utt = self.utterances[rows[0]]
+        self.inspector.show_utterance(utt, rows[0] + 1)
         if utt.start_ms is not None and utt.end_ms is not None:
             self.wave.set_selected((utt.start_ms / 1000, utt.end_ms / 1000))
             if self.autoplay.isChecked() and self.audio_wav is not None and not self._loading:
