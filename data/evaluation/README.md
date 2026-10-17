@@ -152,6 +152,22 @@ python scripts/evaluate_speaker_attribution.py --cha-dir .local/evaluation/crslp
 เด็กที่เล็กกว่าหรือโตกว่านี้ โปรแกรมจะติด ? ทุกประโยคให้นักบำบัดตรวจผู้พูดเอง
 ผลอยู่ที่ `reports/metrics/speaker_attribution_thai_toddlers.md` และ `reports/metrics/speaker_attribution_real_children.md`
 
+## จำลองโมเดลแยกเสียงประจำคลินิก
+
+`scripts/evaluate_clinic_speaker_model.py` จำลองการที่โปรแกรมเรียนจาก session ที่นักบำบัดรับรองแล้ว
+โดยใช้ป้ายผู้พูดจาก transcript เฉลยแทนการรับรอง: เรียนจาก N ไฟล์ของคลังเดียวกันแล้วทดสอบกับเด็กที่ไม่เคยเห็น,
+เรียนจากคลังอื่นแล้วทดสอบ และรันการตรวจก่อนใช้แบบเดียวกับในโปรแกรม
+feature ของแต่ละไฟล์เก็บไว้ที่ `.local/evaluation/speaker_features/` รอบต่อไปจึงเทรนอย่างเดียว
+
+```bash
+python scripts/evaluate_clinic_speaker_model.py \
+    --corpus enni=.local/evaluation/enni_media \
+    --corpus ellisweismer=.local/evaluation/ellisweismer_media \
+    --corpus crslp=.local/evaluation/crslp_media
+```
+
+ผลอยู่ที่ `reports/metrics/clinic_speaker_model.{md,csv}`
+
 ## วัดทั้งสาย: เสียง → ร่าง → MLU/NDW ของเด็ก
 
 `scripts/evaluate_end_to_end.py` รันไฟล์เสียงผ่านขั้นตอนเดียวกับโปรแกรม (Whisper, ตัดประโยคที่ช่วงเงียบ, แยกผู้พูด, ร่างแบบ CHAT)
