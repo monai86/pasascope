@@ -2,13 +2,6 @@
 
 ## [Unreleased]
 
-### Desktop app
-- **Turn-taking measures** (`features-basic-v3`): the child's response rate, response count and turn-length ratio, checked on 1,120 TalkBank toy-play transcripts (`reports/metrics/turn_taking_reference.md`). Older analyses ask to be run again.
-- **Main measures first**: the Findings tab and the report lead with 11 main measures; "Show all measures" shows the rest. Knowledge → "Each measure" explains what each measure is, how it helps and what to watch for, and double-clicking a measure opens its entry (`docs/FEATURE_GUIDE.md`).
-- **Speech models download on first use**: the Thai Whisper model (1.5 GB) and the smaller models download from Hugging Face, and every file is checked by SHA-256. They are kept out of backups.
-- **Updates from inside the app**: Help → Check for updates finds a newer release on GitHub. The app backs up the data first, then downloads the disk image and checks it before opening. It also checks once a day unless switched off.
-- **Installable disk image**: `scripts/build_macos_dmg.py` builds a self-contained `PasaScope.app` and `.dmg` with its own Python, and smoke-tests the bundle before packaging (`docs/DESKTOP_RELEASE.md`).
-
 Public app mode on `feat/public-app`: opt-in settings that turn PasaScope into a sign-up-and-use web app. The defaults keep the invitation-only, gated behaviour.
 
 ### Added
@@ -77,6 +70,20 @@ Public app mode on `feat/public-app`: opt-in settings that turn PasaScope into a
 - Waveforms are decoded with PyAV directly, so they are drawn on a host that does not install Whisper.
 - The public sign-in note no longer says a case can be deleted; it says that withdrawing a case's consent removes its recordings, which is what the app does.
 - In public sign-up mode the sign-in form drops the role tabs and the invitation-only notice, lands on Today, and states what the account stores; the organization switcher is hidden; the caregiver consent form is the confirmation tick alone.
+
+## [v1.7.3] - 2026-10-18
+
+Desktop app release: the first that installs from a disk image and updates itself.
+
+### Desktop app
+- **Turn-taking measures** (`features-basic-v3`): the child's response rate, response count and turn-length ratio, checked on 1,120 TalkBank toy-play transcripts (`reports/metrics/turn_taking_reference.md`). Older analyses ask to be run again.
+- **Main measures first**: the Findings tab and the report lead with 11 main measures; "Show all measures" shows the rest. Knowledge → "Each measure" explains what each measure is, how it helps and what to watch for, and double-clicking a measure opens its entry (`docs/FEATURE_GUIDE.md`).
+- **Speech models download on first use**: the Thai Whisper model (1.5 GB) and the smaller models download from Hugging Face, and every file is checked by SHA-256. They are kept out of backups.
+- **Updates from inside the app**: Help → Check for updates finds a newer release on GitHub. The app backs up the data first, then downloads the disk image and checks it before opening. It also checks once a day unless switched off.
+- **Installable disk image**: `scripts/build_macos_dmg.py` builds a self-contained `PasaScope.app` and `.dmg` with its own Python, and smoke-tests the bundle before packaging (`docs/DESKTOP_RELEASE.md`).
+- **Formal reports**: A4 PDF reports in Thai (TH Sarabun 16 pt) or English (Times 12 pt), with a print preview that is the PDF. Each report has a letterhead with the logo, running headers, "page x of y", a signature block and a draft stamp. Tables are kept whole on one page, and the signature stays with the text. A form fills in the interpretation, goals and recommendations, and the preview updates as you type.
+- **English and Thai interface**, a Home dashboard with the work waiting, a Knowledge library with age charts, the new logo, and a quiet workspace styled after Notion.
+- **Explainable speech models**: an utterance-boundary model for English drafts and a clinic-trained child/adult voice model, each decision shown with its reasons.
 
 ## [v1.7.2] - 2026-10-12
 
