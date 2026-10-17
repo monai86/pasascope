@@ -16,7 +16,7 @@ from functools import partial
 from pathlib import Path
 import uuid
 
-from PySide6.QtCore import QModelIndex, Qt, QTimer
+from PySide6.QtCore import QModelIndex, Qt, QTimer, Signal
 from PySide6.QtGui import QBrush, QColor, QKeySequence, QShortcut
 from PySide6.QtWidgets import (
     QAbstractItemView,
@@ -135,6 +135,8 @@ class SpeakerDelegate(QStyledItemDelegate):
 
 
 class ReviewPage(SessionPage):
+    attested = Signal()  # the therapist attested a transcript; the clinic speaker model may learn from it
+
     def __init__(self, service, runner, parent=None) -> None:
         super().__init__(service, runner, parent)
         self.transcript = None
@@ -590,6 +592,7 @@ class ReviewPage(SessionPage):
         except Exception as exc:  # noqa: BLE001
             self.report_error(exc, "รับรองไม่สำเร็จ")
             return
+        self.attested.emit()
         self.changed.emit()
         self.navigate.emit(2)
 

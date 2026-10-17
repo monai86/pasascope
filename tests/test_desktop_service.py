@@ -242,3 +242,75 @@ def test_transcription_mode_switches_the_strategy_and_is_remembered(tmp_path):
     assert reopened.transcription_mode == "fast"
     reopened.set_transcription_mode("accurate")
     assert get_settings().asr_language_strategy == "thai_specialized"
+
+
+def _attested_asr_session(svc: DesktopService, case_id: str, tmp_path, index: int) -> None:
+    """A recording with the child speaking (a tone) in every other second, attested as if Whisper drafted it."""
+    import numpy as np
+    import soundfile
+
+    rate = 16000
+    audio = np.zeros(6 * rate, dtype="float32")
+    lines = []
+    for second in range(6):
+        child = second % 2 == 1
+        if child:
+            t = np.arange(rate) / rate
+            audio[second * rate:(second + 1) * rate] = 0.3 * np.sin(2 * np.pi * 300 * t)
+        lines.append(f"*{'CHI' if child else 'INV'}:\tคำ{second} . \x15{second * 1000 + 100}_{second * 1000 + 900}\x15")
+    wav = tmp_path / f"rec{index}.wav"
+    soundfile.write(wav, audio, rate)
+    session = svc.create_session(case_id, date(2026, 10, index + 1))
+    svc.store_recording(session.session_id, wav)
+    chat = "@Begin\n@Languages:\ttha\n@Participants:\tCHI Target_Child, INV Investigator\n" + "\n".join(lines) + "\n@End\n"
+    transcript = svc.import_transcript_text(session.session_id, chat)
+    svc.attest(transcript.transcript_id, override_reason="ตรวจกับเสียงแล้ว")
+    svc.repo.transcripts[transcript.transcript_id].source = "asr_draft:local_whisper"
+
+
+class _LoudnessFrames:
+    """Stands in for the USC model: hears every frame as adult; its features carry the loudness."""
+
+    def frame_outputs(self, audio):
+        import numpy as np
+
+        frames = len(audio) // 320
+        loud = np.sqrt((audio[: frames * 320].reshape(frames, 320) ** 2).mean(axis=1))
+        return np.repeat(loud[:, None], 4, axis=1), np.tile([0.1, 0.1, 0.7, 0.1], (frames, 1))
+
+
+def test_clinic_speaker_model_learns_from_attested_sessions(service, tmp_path, monkeypatch):
+    import os
+
+    from src.audio_pipeline import child_adult_frames
+    from src.audio_pipeline.clinic_speaker_model import CLINIC_MODEL_ENV, load_adopted_head
+
+    monkeypatch.setattr(child_adult_frames, "ChildAdultFrameModel", _LoudnessFrames)
+    monkeypatch.delenv(CLINIC_MODEL_ENV, raising=False)
+    first = _case_with_consent(service)
+    second = service.create_case("TH-002", 60)
+    service.grant_consent(second.case_id, "ผู้ปกครอง", date(2026, 10, 1))
+    for index, case in enumerate((first, second, first)):
+        _attested_asr_session(service, case.case_id, tmp_path, index)
+
+    status = service.update_clinic_speaker_model()
+    assert status["sessions_needed"] == 1 and not status["trained"] and not status["in_use"]
+
+    _attested_asr_session(service, second.case_id, tmp_path, 3)
+    status = service.update_clinic_speaker_model()
+    assert status["in_use"] and status["eligible_sessions"] == 4 and status["eligible_children"] == 2
+    assert status["model_accuracy"] == 1.0 and status["frame_accuracy"] == 0.5
+    assert os.environ[CLINIC_MODEL_ENV] == str(service.clinic_speaker_model_path)
+    assert load_adopted_head() is not None
+    assert any(e["action"] == "speaker_model.train" for e in service.audit_events())
+
+    service.set_clinic_speaker_enabled(False)
+    assert CLINIC_MODEL_ENV not in os.environ and not service.clinic_speaker_status()["in_use"]
+    service.set_clinic_speaker_enabled(True)
+    assert os.environ[CLINIC_MODEL_ENV]
+
+    service.withdraw_consent(second.case_id, "ผู้ปกครองขอถอน")
+    assert service.clinic_speaker_status()["eligible_children"] == 1  # withdrawn children are not trained on again
+
+    service.reset_clinic_speaker_model()
+    assert not service.clinic_speaker_model_path.exists() and CLINIC_MODEL_ENV not in os.environ

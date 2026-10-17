@@ -44,6 +44,7 @@ FRAME_SECONDS = 0.02
 WINDOW_SECONDS = 10.0
 HOP_SECONDS = 5.0
 SILENCE, CHILD, ADULT, OVERLAP = range(4)
+FEATURE_SIZE = 512  # encoder width
 LORA_SCALE = 1.0 / 8  # loralib.Linear default lora_alpha=1 over rank 8
 # An utterance's label is flagged for the therapist to check when the model's
 # mean child-minus-adult probability is closer to zero than this, or the
@@ -130,7 +131,7 @@ def _build_network(state: dict):
                 nn.Conv1d(256, 256, 1), nn.ReLU(), nn.Conv1d(256, 4, 1),
             )
 
-        def forward(self, mel):  # mel: (B, 80, frames)
+        def features_and_logits(self, mel):  # mel: (B, 80, frames)
             x = F.gelu(self.conv2(F.gelu(self.conv1(mel)))).transpose(1, 2)
             x = x + self.positions[: x.shape[1]]
             outputs = []
@@ -138,8 +139,11 @@ def _build_network(state: dict):
                 x = layer(x)
                 outputs.append(self.final_norm(x) if index == len(self.layers) - 1 else x)
             weights = F.softmax(self.layer_weights, dim=-1)
-            mixed = sum(w * h for w, h in zip(weights, outputs))
-            return self.head(mixed.transpose(1, 2)).transpose(1, 2)  # (B, T, 4)
+            mixed = sum(w * h for w, h in zip(weights, outputs))  # (B, T, 512)
+            return mixed, self.head(mixed.transpose(1, 2)).transpose(1, 2)  # (B, T, 4)
+
+        def forward(self, mel):
+            return self.features_and_logits(mel)[1]
 
     net = Network()
     p = "backbone_model.encoder."
@@ -187,11 +191,21 @@ class ChildAdultFrameModel:
 
     def frame_probabilities(self, audio: np.ndarray) -> np.ndarray:
         """(frames, 4) class probabilities, averaged over overlapping 10 s windows."""
+        return self.frame_outputs(audio)[1]
+
+    def frame_outputs(self, audio: np.ndarray) -> tuple[np.ndarray, np.ndarray]:
+        """(frames, 512) encoder features and (frames, 4) class probabilities.
+
+        Both are averaged over the overlapping 10 s windows. The features are
+        what a clinic's own speaker model is trained on
+        (``clinic_speaker_model``).
+        """
         import torch
 
         audio = np.asarray(audio, dtype="float32")
         frames = int(len(audio) / SAMPLE_RATE / FRAME_SECONDS)
         totals = np.zeros((max(frames, 1), 4), dtype="float64")
+        features = np.zeros((max(frames, 1), FEATURE_SIZE), dtype="float32")
         counts = np.zeros(max(frames, 1), dtype="float64")
         window = int(WINDOW_SECONDS * SAMPLE_RATE)
         hop = int(HOP_SECONDS * SAMPLE_RATE)
@@ -205,14 +219,15 @@ class ChildAdultFrameModel:
                     continue
                 mel = self._mel(chunk, padding=0)
                 mel = mel[:, : 2 * (mel.shape[1] // 2)]
-                logits = self.net(torch.from_numpy(mel).unsqueeze(0))[0]
-                probs = torch.softmax(logits, dim=-1).numpy()
+                hidden, logits = self.net.features_and_logits(torch.from_numpy(mel).unsqueeze(0))
+                probs = torch.softmax(logits[0], dim=-1).numpy()
                 first = int(round(start / SAMPLE_RATE / FRAME_SECONDS))
                 last = min(first + len(probs), len(totals))
                 totals[first:last] += probs[: last - first]
+                features[first:last] += hidden[0, : last - first].numpy()
                 counts[first:last] += 1
         counts[counts == 0] = 1
-        return totals / counts[:, None]
+        return features / counts[:, None].astype("float32"), totals / counts[:, None]
 
 
 def utterance_margins(probs: np.ndarray, utterances: Sequence[UtteranceSegment]) -> list[float]:
@@ -224,6 +239,28 @@ def utterance_margins(probs: np.ndarray, utterances: Sequence[UtteranceSegment])
         span = probs[first:last]
         margins.append(float((span[:, CHILD] - span[:, ADULT]).mean()) if len(span) else 0.0)
     return margins
+
+
+_FROM_ENVIRONMENT = object()
+
+
+def _clinic_head(choice):
+    if choice is not _FROM_ENVIRONMENT:
+        return choice
+    from .clinic_speaker_model import load_adopted_head
+
+    return load_adopted_head()
+
+
+def speaker_margins(model: "ChildAdultFrameModel", audio: np.ndarray, utterances: Sequence[UtteranceSegment], clinic_head=None) -> list[float]:
+    """Child-minus-adult margin per utterance, from the clinic's model when it has one."""
+    if clinic_head is None:
+        return utterance_margins(model.frame_probabilities(audio), utterances)
+    from .clinic_speaker_model import utterance_features
+
+    features, probs = model.frame_outputs(audio)
+    design = utterance_features(features, probs, [(u.start, u.end) for u in utterances])
+    return [float(m) for m in clinic_head.margins(design)]
 
 
 def frame_basis(margin: float, utterance: UtteranceSegment, child_age_months: Optional[float] = None) -> str:
@@ -244,16 +281,19 @@ class FrameRoleDiarizer(BaseDiarizer):
     embedding diarizer, with no setting tuned to the data.
     """
 
-    def __init__(self, model: Optional[ChildAdultFrameModel] = None, child_age_months: Optional[float] = None) -> None:
+    def __init__(
+        self, model: Optional[ChildAdultFrameModel] = None, child_age_months: Optional[float] = None, clinic_head=_FROM_ENVIRONMENT,
+    ) -> None:
         super().__init__()
         self.model = model or ChildAdultFrameModel()
         self.child_age_months = child_age_months
+        self.clinic_head = _clinic_head(clinic_head)
 
     def assign(self, audio_path, utterances: Sequence[UtteranceSegment]) -> List[UtteranceSegment]:
         import librosa
 
         audio, _ = librosa.load(str(audio_path), sr=SAMPLE_RATE, mono=True)
-        margins = utterance_margins(self.model.frame_probabilities(audio), utterances)
+        margins = speaker_margins(self.model, audio, utterances, self.clinic_head)
         for utt, margin in zip(utterances, margins):
             utt.speaker = CHILD_LABEL if margin > 0 else ADULT_LABEL
             utt.speaker_basis = frame_basis(margin, utt, self.child_age_months)
@@ -281,15 +321,16 @@ class HybridChildAdultDiarizer:
         from .diarization import EmbeddingDiarizer
 
         class _Hybrid(EmbeddingDiarizer):
-            def __init__(self, config=None, model: Optional[ChildAdultFrameModel] = None) -> None:
+            def __init__(self, config=None, model: Optional[ChildAdultFrameModel] = None, clinic_head=_FROM_ENVIRONMENT) -> None:
                 super().__init__(config or hybrid_config())
                 self.frame_model = model or ChildAdultFrameModel()
+                self.clinic_head = _clinic_head(clinic_head)
 
             def assign(self, audio_path, utterances):
                 import librosa
 
                 audio, _ = librosa.load(str(audio_path), sr=SAMPLE_RATE, mono=True)
-                margins = utterance_margins(self.frame_model.frame_probabilities(audio), utterances)
+                margins = speaker_margins(self.frame_model, audio, utterances, self.clinic_head)
                 try:
                     labelled = super().assign(audio_path, utterances)
                 except Exception as exc:  # noqa: BLE001 - adults just stay unnamed

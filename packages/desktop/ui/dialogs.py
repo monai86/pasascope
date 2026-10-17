@@ -249,3 +249,53 @@ class AuditLogDialog(QDialog):
         close.button(QDialogButtonBox.StandardButton.Close).setText("ปิด")
         close.rejected.connect(self.reject)
         layout.addWidget(close)
+
+
+class ClinicSpeakerDialog(QDialog):
+    """Status of the clinic's own child/adult model; the caller acts on ``choice``."""
+
+    def __init__(self, status: dict, parent: QWidget | None = None) -> None:
+        from packages.desktop.ui import labels
+        from packages.desktop.ui.widgets import button
+
+        super().__init__(parent)
+        self.choice = ""
+        self.setWindowTitle("การแยกเสียงเด็ก/ผู้ใหญ่ของคลินิก")
+        self.resize(560, 300)
+        layout = QVBoxLayout(self)
+        layout.setContentsMargins(18, 16, 18, 16)
+        layout.addWidget(label("การแยกเสียงเด็ก/ผู้ใหญ่ของคลินิก", "SectionTitle"))
+        about = label(
+            "โปรแกรมเรียนเสียงของผู้ใหญ่และเด็กจาก transcript ที่คุณรับรองแล้วในเครื่องนี้ "
+            "แล้วใช้แยกผู้พูดในร่างครั้งต่อไป ใช้ก็ต่อเมื่อทดสอบกับ session ของคลินิกแล้วแม่นกว่าโมเดลพื้นฐาน "
+            "ข้อมูลไม่ออกจากเครื่อง ประโยคที่ไม่แน่ใจยังติด ? และต้องตรวจร่างทุกครั้ง",
+            "Muted",
+        )
+        about.setWordWrap(True)
+        layout.addWidget(about)
+        self.status_label = label(labels.clinic_speaker_text(status))
+        self.status_label.setWordWrap(True)
+        layout.addWidget(self.status_label)
+        self.enabled = QCheckBox("ใช้โมเดลประจำคลินิกเมื่อแม่นกว่า")
+        self.enabled.setChecked(bool(status.get("enabled")))
+        layout.addWidget(self.enabled)
+        layout.addStretch(1)
+        row = QHBoxLayout()
+        self.train_btn = button("เรียนตอนนี้", "secondary")
+        self.train_btn.setEnabled(not status.get("sessions_needed") and not status.get("children_needed"))
+        self.train_btn.clicked.connect(lambda: self._finish("train"))
+        self.reset_btn = button("ล้างและเริ่มเรียนใหม่", "secondary")
+        self.reset_btn.setEnabled(bool(status.get("trained")))
+        self.reset_btn.clicked.connect(lambda: self._finish("reset"))
+        row.addWidget(self.train_btn)
+        row.addWidget(self.reset_btn)
+        row.addStretch(1)
+        close = QDialogButtonBox(QDialogButtonBox.StandardButton.Close)
+        close.button(QDialogButtonBox.StandardButton.Close).setText("ปิด")
+        close.rejected.connect(self.reject)
+        row.addWidget(close)
+        layout.addLayout(row)
+
+    def _finish(self, choice: str) -> None:
+        self.choice = choice
+        self.accept()

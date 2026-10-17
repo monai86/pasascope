@@ -27,11 +27,15 @@ def service(tmp_path):
 
 
 def test_backup_holds_database_recordings_and_manifest(service, tmp_path):
+    cache = service.workspace.root / ".cache" / "speaker_features" / "x.npy"  # rebuilt from the recordings when needed
+    cache.parent.mkdir(parents=True)
+    cache.write_bytes(b"x")
     info = service.create_backup(tmp_path / "backup.zip", "1.0")
     assert info.counts == {"cases": 1, "sessions": 1, "recordings": 1}
     with zipfile.ZipFile(info.path) as archive:
         names = set(archive.namelist())
     assert {"pasascope.db", "profile.json", "storage/audio/rec.wav", MANIFEST} <= names
+    assert not any(name.startswith(".cache/") for name in names)
     assert read_backup(info.path).counts == info.counts
     assert service.last_backup_at is not None
     assert not (tmp_path / "backup.zip.partial").exists()

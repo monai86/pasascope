@@ -213,3 +213,33 @@ def age_text(months: int) -> str:
     if years:
         return f"{years} ปี"
     return f"{rem} เดือน"
+
+
+def clinic_speaker_text(status: dict) -> str:
+    """One paragraph on whether the clinic's own child/adult model is in use, and why."""
+    def pct(value: Any) -> str:
+        return f"{value * 100:.0f}%" if isinstance(value, (int, float)) else "-"
+
+    if not status.get("trained"):
+        needed = []
+        if status.get("sessions_needed"):
+            needed.append(f"session ที่รับรองแล้วและมีไฟล์เสียงอีก {status['sessions_needed']} session")
+        if status.get("children_needed"):
+            needed.append(f"เด็กอีก {status['children_needed']} คน")
+        text = "ยังเรียนไม่ได้: ต้องการ" + " และ".join(needed) if needed else "ยังไม่ได้เรียน กด ‘เรียนตอนนี้’"
+    elif status.get("adopted"):
+        text = (
+            f"เรียนจาก {status.get('trained_sessions')} session (เด็ก {status.get('trained_children')} คน). "
+            f"ทดสอบกับ session ของคลินิกโดยกันเด็กทีละคน: แยกถูกเฉลี่ยเด็กกับผู้ใหญ่ {pct(status.get('model_balanced'))} "
+            f"เทียบโมเดลพื้นฐาน {pct(status.get('frame_balanced'))}"
+        )
+        text = ("ใช้อยู่ · " if status.get("enabled") else "ปิดอยู่ (ใช้โมเดลพื้นฐาน) · ") + text
+    else:
+        text = (
+            f"ยังใช้โมเดลพื้นฐาน: โมเดลประจำคลินิกแยกถูกเฉลี่ยเด็กกับผู้ใหญ่ {pct(status.get('model_balanced'))} "
+            f"ไม่ดีกว่าโมเดลพื้นฐาน ({pct(status.get('frame_balanced'))}) "
+            f"จาก {status.get('trained_sessions')} session"
+        )
+    if status.get("trained") and status.get("stale"):
+        text += f" · มี session ที่รับรองแล้ว {status.get('eligible_sessions')} session ยังไม่ได้เรียนรอบล่าสุด"
+    return text

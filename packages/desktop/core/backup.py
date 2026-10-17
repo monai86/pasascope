@@ -58,7 +58,8 @@ def create_backup(workspace: Workspace, destination: Path, *, counts: dict, app_
         sources = [(DATABASE, snapshot)] + [
             (path.relative_to(workspace.root).as_posix(), path)
             for path in sorted(workspace.root.rglob("*"))
-            if path.is_file() and path.name != DATABASE and not path.name.startswith(".")
+            if path.is_file() and path.name != DATABASE
+            and not any(part.startswith(".") for part in path.relative_to(workspace.root).parts)
             and not path.name.endswith((".db-journal", ".db-wal", ".db-shm"))
         ]
         with zipfile.ZipFile(partial, "w") as archive:

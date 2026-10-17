@@ -168,6 +168,7 @@ class MainWindow(QMainWindow):
             page.changed.connect(self.refresh_session)
             page.navigate.connect(self.tabs.setCurrentIndex)
             page.busy_changed.connect(self._set_busy)
+        self.pages[1].attested.connect(self.learn_speakers_in_background)
         self.session_stack.addWidget(self.tabs)
         self.overview = CaseOverview(self.service)
         self.overview.open_session.connect(self._pick_session)
@@ -217,6 +218,9 @@ class MainWindow(QMainWindow):
             action.triggered.connect(lambda _=False, m=mode: self._set_mode(m))
             mode_menu.addAction(action)
             self.mode_actions[mode] = action
+        speaker_action = QAction("การแยกเสียงเด็ก/ผู้ใหญ่ของคลินิก…", self)
+        speaker_action.triggered.connect(self.show_speaker_model)
+        settings_menu.addAction(speaker_action)
 
         help_menu = bar.addMenu("ช่วยเหลือ")
         audit = QAction("ประวัติการทำงาน (audit log)", self)
@@ -535,6 +539,50 @@ class MainWindow(QMainWindow):
         for key, action in self.mode_actions.items():
             action.setChecked(key == self.service.transcription_mode)
         self._update_status_bar()
+
+    # ------------------------------------------------------------------
+    # The clinic's own child/adult model
+    # ------------------------------------------------------------------
+    def show_speaker_model(self) -> None:
+        dialog = dialogs.ClinicSpeakerDialog(self.service.clinic_speaker_status(), self)
+        dialog.exec()
+        if dialog.enabled.isChecked() != self.service.clinic_speaker_enabled:
+            self.service.set_clinic_speaker_enabled(dialog.enabled.isChecked())
+        if dialog.choice == "train":
+            self.learn_speakers_in_background(force=True)
+        elif dialog.choice == "reset":
+            answer = QMessageBox.question(
+                self, "ล้างโมเดลประจำคลินิก",
+                "ล้างสิ่งที่โปรแกรมเรียนไว้ แล้วกลับไปใช้โมเดลพื้นฐาน? โปรแกรมจะเริ่มเรียนใหม่เมื่อรับรอง transcript ครั้งต่อไป",
+            )
+            if answer == QMessageBox.StandardButton.Yes:
+                self.service.reset_clinic_speaker_model()
+                self.statusBar().showMessage("ล้างโมเดลประจำคลินิกแล้ว", 8000)
+
+    def learn_speakers_in_background(self, force: bool = False) -> None:
+        """After an attestation, retrain the clinic's child/adult model without blocking the window."""
+        from packages.desktop.ui import labels as wording
+
+        if getattr(self, "_learning_speakers", False) or not (force or self.service.clinic_speaker_enabled):
+            return
+        sessions = self.service.clinic_speaker_training_sessions()
+        status = self.service.clinic_speaker_status()
+        if status["sessions_needed"] or status["children_needed"]:
+            return
+        self._learning_speakers = True
+        self.statusBar().showMessage("กำลังเรียนเสียงจาก session ที่รับรองแล้ว (ทำงานเบื้องหลัง)…")
+
+        def done(result) -> None:
+            self._learning_speakers = False
+            self.statusBar().showMessage(
+                "การแยกเสียงเด็ก/ผู้ใหญ่: " + wording.clinic_speaker_text(self.service.save_clinic_speaker_result(result)), 15000
+            )
+
+        def failed(exc: Exception) -> None:
+            self._learning_speakers = False
+            self.statusBar().showMessage(f"เรียนเสียงไม่สำเร็จ ({type(exc).__name__}) ยังใช้โมเดลเดิม", 15000)
+
+        self.runner.run(lambda: self.service.train_clinic_speaker_model(sessions), on_done=done, on_error=failed)
 
     def show_audit_log(self) -> None:
         dialogs.AuditLogDialog(self.service.audit_events(500), self).exec()

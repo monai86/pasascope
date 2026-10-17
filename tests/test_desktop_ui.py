@@ -213,3 +213,28 @@ def test_guessed_speakers_are_marked_until_the_therapist_sets_them(window):
     review.set_speaker("CHI")
     assert review.utterances[0].speaker_uncertain is False
     assert not review.table.item(0, COL_SPEAKER).text().endswith("?")
+
+
+def test_clinic_speaker_dialog_says_what_is_missing_and_what_is_in_use(window, qtbot):
+    from packages.desktop.ui import dialogs, labels
+
+    empty = window.service.clinic_speaker_status()
+    assert empty["sessions_needed"] == 4 and not empty["in_use"]
+    dialog = dialogs.ClinicSpeakerDialog(empty, window)
+    qtbot.addWidget(dialog)
+    assert "อีก 4 session" in dialog.status_label.text() and "เด็กอีก 2 คน" in dialog.status_label.text()
+    assert not dialog.train_btn.isEnabled() and not dialog.reset_btn.isEnabled()
+
+    adopted = {"trained": True, "adopted": True, "enabled": True, "trained_sessions": 6, "trained_children": 4,
+               "model_balanced": 0.93, "frame_balanced": 0.76, "eligible_sessions": 6, "stale": False}
+    assert labels.clinic_speaker_text(adopted).startswith("ใช้อยู่ · เรียนจาก 6 session (เด็ก 4 คน)")
+    assert "แยกถูกเฉลี่ยเด็กกับผู้ใหญ่ 93% เทียบโมเดลพื้นฐาน 76%" in labels.clinic_speaker_text(adopted)
+    kept = dict(adopted, adopted=False, model_balanced=0.85, frame_balanced=0.85, stale=True, eligible_sessions=7)
+    assert labels.clinic_speaker_text(kept).startswith("ยังใช้โมเดลพื้นฐาน")
+    assert "7 session ยังไม่ได้เรียน" in labels.clinic_speaker_text(kept)
+
+
+def test_attesting_too_few_sessions_does_not_start_learning(window):
+    case, session = _case_with_session(window)
+    window.learn_speakers_in_background()
+    assert not getattr(window, "_learning_speakers", False) and not window.runner.busy
