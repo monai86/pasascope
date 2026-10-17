@@ -314,6 +314,9 @@ class UtteranceSegment:
     # or "rule" (a dialogue rule overrode it). Only the first two are confident.
     speaker_basis: Optional[str] = None
     language: Optional[str] = None  # detected language: "en" / "th" / None
+    # Why this utterance starts here, when the boundary model decided it
+    # (utterance_boundaries.segment_by_model), for the therapist to read.
+    boundary_reason: Optional[str] = None
 
 
 class WhisperTranscriber:

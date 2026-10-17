@@ -28,6 +28,7 @@ from .chat_formatter import utterances_to_chat, write_chat
 from .chatter_validator import ValidationReport, validate_chat_file
 from .diarization import BaseDiarizer, get_diarizer
 from .segmentation import clean_segments, drop_short_segments, spell_out_thai_numbers, split_at_pauses
+from .utterance_boundaries import model_for, segment_by_model
 from .whisper_transcribe import LanguageStrategy, WhisperTranscriber
 
 
@@ -172,9 +173,14 @@ def audio_to_cha(
     utterances = diarizer.assign(audio_path, utterances)
 
     # ---- 3. Clean / re-segment -------------------------------------------
-    # Pieces were already filtered for noise above; a short piece here is a
-    # short utterance ("ไม่", "เอา") and must be kept.
-    utterances = clean_segments(utterances, min_duration=0.0)
+    # English drafts are cut by the explainable boundary model; Thai keeps the
+    # pause rule until there is a Thai model. Pieces were already filtered for
+    # noise above; a short piece here is a short utterance ("ไม่", "เอา").
+    boundary_model = model_for(utterances)
+    if boundary_model is not None:
+        utterances = segment_by_model(utterances, boundary_model)
+    else:
+        utterances = clean_segments(utterances, min_duration=0.0)
 
     # ---- 4. CHAT formatting ----------------------------------------------
     if progress_callback:

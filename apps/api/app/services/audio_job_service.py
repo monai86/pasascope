@@ -508,7 +508,10 @@ def create_draft_transcript_from_result(
             unintelligible=line.unclear,
             speaker_uncertain=getattr(line, "speaker_uncertain", False),
             source=line.source,
-            notes="ASR draft — therapist review required." if (line.unclear or speaker_code == "UNK") else "",
+            notes=" ".join(part for part in (
+                "ASR draft — therapist review required." if (line.unclear or speaker_code == "UNK") else "",
+                getattr(line, "boundary_reason", ""),
+            ) if part),
             review_status="draft",
         )
         utterances.append(utt)

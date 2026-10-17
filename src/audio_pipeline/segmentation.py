@@ -44,11 +44,14 @@ PRE_DIARIZATION_SPLIT_GAP = 0.25
 _CONFIDENT_BASES = ("voice", "frame")
 
 
+def least_certain_basis(bases: Sequence[Optional[str]]) -> Optional[str]:
+    """An utterance made of several pieces is only as certain as its least certain piece."""
+    unsure = [basis for basis in bases if basis not in _CONFIDENT_BASES]
+    return unsure[0] if unsure else (bases[0] if bases else None)
+
+
 def _merged_basis(a: UtteranceSegment, b: UtteranceSegment) -> Optional[str]:
-    """A merged utterance is only as certain as its less certain half."""
-    if a.speaker_basis in _CONFIDENT_BASES and b.speaker_basis in _CONFIDENT_BASES:
-        return a.speaker_basis
-    return a.speaker_basis if a.speaker_basis not in _CONFIDENT_BASES else b.speaker_basis
+    return least_certain_basis([a.speaker_basis, b.speaker_basis])
 
 
 def _merge_segments(a: UtteranceSegment, b: UtteranceSegment) -> UtteranceSegment:

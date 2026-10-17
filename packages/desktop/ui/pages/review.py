@@ -301,6 +301,9 @@ class ReviewPage(SessionPage):
         time_item = QTableWidgetItem(_fmt(utt.start_ms))
         time_item.setFlags(time_item.flags() & ~Qt.ItemFlag.ItemIsEditable)
         time_item.setForeground(QBrush(QColor(theme.MUTED)))
+        notes = utt.notes or ""
+        if "ขึ้นประโยคใหม่" in notes:  # why the draft started a new utterance here (boundary model)
+            time_item.setToolTip(notes[notes.index("ขึ้นประโยคใหม่"):])
         speaker = str(utt.speaker)
         uncertain = bool(getattr(utt, "speaker_uncertain", False))
         speaker_item = QTableWidgetItem(labels.SPEAKER_LABELS.get(speaker, speaker) + ("  ?" if uncertain else ""))

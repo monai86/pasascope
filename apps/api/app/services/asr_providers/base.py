@@ -40,6 +40,8 @@ class TranscriptLine:
     # The speaker label was guessed (pitch, neighbours or a dialogue rule)
     # rather than recognised from the voice: check it first.
     speaker_uncertain: bool = False
+    # Why the utterance was started here (the boundary model's reasons), shown to the therapist.
+    boundary_reason: str = ""
 
 
 @dataclass
