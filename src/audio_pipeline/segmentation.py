@@ -16,7 +16,7 @@ from __future__ import annotations
 
 import re
 from dataclasses import replace
-from typing import List, Sequence, Tuple
+from typing import List, Optional, Sequence, Tuple
 
 from .whisper_transcribe import UtteranceSegment, WordSegment
 
@@ -40,6 +40,17 @@ MIN_GAP_FOR_SPLIT = 0.6             # seconds — split same-speaker if gap > th
 PRE_DIARIZATION_SPLIT_GAP = 0.25
 
 
+# Speaker labels the app shows without a "?" (local_whisper_provider).
+_CONFIDENT_BASES = ("voice", "frame")
+
+
+def _merged_basis(a: UtteranceSegment, b: UtteranceSegment) -> Optional[str]:
+    """A merged utterance is only as certain as its less certain half."""
+    if a.speaker_basis in _CONFIDENT_BASES and b.speaker_basis in _CONFIDENT_BASES:
+        return a.speaker_basis
+    return a.speaker_basis if a.speaker_basis not in _CONFIDENT_BASES else b.speaker_basis
+
+
 def _merge_segments(a: UtteranceSegment, b: UtteranceSegment) -> UtteranceSegment:
     """Merge two same-speaker UtteranceSegments into one."""
     return UtteranceSegment(
@@ -50,6 +61,7 @@ def _merge_segments(a: UtteranceSegment, b: UtteranceSegment) -> UtteranceSegmen
         avg_logprob=(a.avg_logprob + b.avg_logprob) / 2,
         no_speech_prob=max(a.no_speech_prob, b.no_speech_prob),
         speaker=a.speaker,
+        speaker_basis=_merged_basis(a, b),
         language=a.language or b.language,
     )
 
@@ -154,6 +166,7 @@ def _split_at_long_silences(
             avg_logprob=seg.avg_logprob,
             no_speech_prob=seg.no_speech_prob,
             speaker=seg.speaker,
+            speaker_basis=seg.speaker_basis,
             language=seg.language,
         ))
     return out

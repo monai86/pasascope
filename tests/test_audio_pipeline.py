@@ -1006,3 +1006,21 @@ def test_quiet_audio_is_brought_to_a_fixed_level_for_vad(tmp_path):
     silent = tmp_path / "silent.wav"
     soundfile.write(silent, np.zeros(16000, dtype="float32"), 16000)
     assert not wt._level_normalized(str(silent)).any()  # silence is not amplified
+
+
+def test_merging_and_splitting_keep_how_sure_the_speaker_label_is():
+    from src.audio_pipeline.segmentation import clean_segments
+    from src.audio_pipeline.whisper_transcribe import UtteranceSegment, WordSegment
+
+    def piece(start, end, basis):
+        return UtteranceSegment(start=start, end=end, text="w", speaker="CHI", speaker_basis=basis,
+                                words=[WordSegment("w", start, end, 0.9)])
+
+    sure = clean_segments([piece(0.0, 1.0, "frame"), piece(1.2, 2.0, "frame")], min_duration=0.0)
+    assert [u.speaker_basis for u in sure] == ["frame"]  # was None, which the app shows as "?"
+    mixed = clean_segments([piece(0.0, 1.0, "frame"), piece(1.2, 2.0, "frame_unsure")], min_duration=0.0)
+    assert [u.speaker_basis for u in mixed] == ["frame_unsure"]
+
+    words = [WordSegment("a", 0.0, 0.3, 0.9), WordSegment("b", 2.0, 2.3, 0.9)]
+    long_pause = UtteranceSegment(start=0.0, end=2.3, text="a b", speaker="CHI", speaker_basis="frame", words=words)
+    assert [u.speaker_basis for u in clean_segments([long_pause], min_duration=0.0)] == ["frame", "frame"]
