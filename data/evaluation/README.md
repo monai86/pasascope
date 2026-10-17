@@ -111,7 +111,7 @@ python scripts/report_transcript_review_time.py
 ### เสียงเด็กจริงจาก TalkBank (ภาษาอังกฤษ)
 
 transcript ใน `data/curated/english_child_transcripts/` ของ EllisWeismer (เด็ก 2.5–5 ปีคุยกับผู้ตรวจ)
-และ ENNI มีเวลาทุกประโยค แต่ไฟล์เสียงต้องล็อกอิน TalkBank (สมัครฟรี) ดาวน์โหลดเอง:
+และ ENNI (เด็ก 4–9 ปี เล่านิทานจากภาพ กลุ่ม SLI และ TD) มีเวลาทุกประโยค แต่ไฟล์เสียงต้องล็อกอิน TalkBank (สมัครฟรี) ดาวน์โหลดเอง:
 
 1. ล็อกอินที่ https://talkbank.org แล้วเปิด https://media.talkbank.org/childes/Clinical-Eng/EllisWeismer/
 2. ดาวน์โหลดไฟล์เสียงที่ชื่อตรงกับ `@Media` ของ transcript สัก 10–20 ไฟล์ ใส่โฟลเดอร์เดียวกัน
@@ -132,8 +132,43 @@ python scripts/evaluate_speaker_attribution.py \
 
 ### เสียงภาษาไทย
 
-อัดคลิปที่รู้ว่าใครพูดช่วงไหน แล้วทำ CHAT ที่มีเวลาทุกประโยค (ส่งออกจากหน้าตรวจ transcript ของโปรแกรมหลังแก้ผู้พูดให้ถูก)
+CHILDES มีคลัง CRSLP (เด็กไทย 1;8–2;0 ปี เล่นของเล่นกับพ่อแม่ วิดีโอ) ที่ media.talkbank.org/childes/EastAsian/Thai/CRSLP/
+transcript ของ CRSLP เขียนเป็นภาษาไทยเว้นวรรคระหว่างคำและมีเวลาทุกประโยค
+วาง transcript ไว้ที่ `chat/<โฟลเดอร์เด็ก>/` และวิดีโอที่ `<โฟลเดอร์เด็ก>/` ให้ชื่อโฟลเดอร์ตรงกัน
+(CRSLP ใช้ชื่อไฟล์ซ้ำข้ามเด็ก สคริปต์จะจับคู่ไฟล์ในโฟลเดอร์ชื่อเดียวกันก่อน):
+
+```bash
+python scripts/evaluate_speaker_attribution.py --cha-dir .local/evaluation/crslp_media/chat \
+    --audio-dir .local/evaluation/crslp_media --backend hybrid --text none --max-minutes 10 \
+    --report-dir reports/metrics/crslp
+```
+
+หรืออัดคลิปเองที่รู้ว่าใครพูดช่วงไหน แล้วทำ CHAT ที่มีเวลาทุกประโยค (ส่งออกจากหน้าตรวจ transcript ของโปรแกรมหลังแก้ผู้พูดให้ถูก)
 ใส่ไฟล์ `.cha` กับไฟล์เสียงชื่อเดียวกับ `@Media` แล้วรันคำสั่งเดียวกัน
+
+### ช่วงอายุที่ใช้ได้
+
+ป้ายผู้พูดเชื่อได้เฉพาะเด็กอายุ 30–83 เดือน ซึ่งเป็นช่วงที่ตรวจแล้ว (EllisWeismer, ENNI)
+เด็กที่เล็กกว่าหรือโตกว่านี้ โปรแกรมจะติด ? ทุกประโยคให้นักบำบัดตรวจผู้พูดเอง
+ผลอยู่ที่ `reports/metrics/speaker_attribution_thai_toddlers.md` และ `reports/metrics/speaker_attribution_real_children.md`
+
+## วัดทั้งสาย: เสียง → ร่าง → MLU/NDW ของเด็ก
+
+`scripts/evaluate_end_to_end.py` รันไฟล์เสียงผ่านขั้นตอนเดียวกับโปรแกรม (Whisper, ตัดประโยคที่ช่วงเงียบ, แยกผู้พูด, ร่างแบบ CHAT)
+แล้วคำนวณตัวชี้วัดของเด็กจากร่างที่ยังไม่แก้ เทียบกับ transcript เฉลย
+นับเฉพาะช่วงเวลาตั้งแต่ก่อนประโยคแรกที่ถอดไว้ 2 วินาที ไปอีก `--minutes` นาที
+ถ้าแบ่ง transcript ไว้ในโฟลเดอร์ย่อยเป็นกลุ่ม (เช่น `SLI/` กับ `TD/`) และแต่ละกลุ่มมีอย่างน้อย 3 ไฟล์
+รายงานจะเทียบค่าเฉลี่ยและขนาดผล (Cohen's d) ระหว่างกลุ่ม ทั้งจากเฉลยและจากร่าง
+
+```bash
+python scripts/evaluate_end_to_end.py --cha-dir .local/evaluation/enni_media/chat \
+    --audio-dir .local/evaluation/enni_media --minutes 10 --name enni
+python scripts/evaluate_end_to_end.py --cha-dir .local/evaluation/crslp_media/chat \
+    --audio-dir .local/evaluation/crslp_media --minutes 3 --limit 8 --strategy thai_specialized --name crslp
+```
+
+ผลอยู่ที่ `reports/metrics/end_to_end_<name>.{md,csv}` ส่วนร่างแต่ละไฟล์อยู่ที่ `.local/evaluation/end_to_end_drafts/<name>/`
+`--report-only` เขียนรายงานใหม่จาก CSV เดิมโดยไม่ต้องรันเสียงซ้ำ
 
 ### อ่านค่าอย่างไร
 
