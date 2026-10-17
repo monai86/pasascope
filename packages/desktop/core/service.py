@@ -554,12 +554,12 @@ class DesktopService:
         """Whether on-device Whisper can run, and why not when it cannot."""
         from app.services.asr_providers.registry import asr_provider_registry
 
-        # Checked first: the provider's own message about a missing Thai model
-        # names a developer script, not the download a therapist can start.
-        if self.transcription_mode == "accurate" and not self.thai_model_status()["installed"]:
+        availability = asr_provider_registry.get("local_whisper").check_availability()
+        # The provider's own message about a missing Thai model names a
+        # developer script; point the therapist to the download instead.
+        if not availability and self.transcription_mode == "accurate" and not self.thai_model_status()["installed"]:
             return False, tr("ต้องดาวน์โหลดโมเดลภาษาไทยก่อน (ตั้งค่า → ดาวน์โหลดโมเดลถอดเสียง)",
                              "Download the Thai model first (Settings, Download speech models)")
-        availability = asr_provider_registry.get("local_whisper").check_availability()
         return bool(availability), availability.reason or ""
 
     # ------------------------------------------------------------------
