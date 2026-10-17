@@ -152,6 +152,17 @@ python scripts/evaluate_speaker_attribution.py --cha-dir .local/evaluation/crslp
 เด็กที่เล็กกว่าหรือโตกว่านี้ โปรแกรมจะติด ? ทุกประโยคให้นักบำบัดตรวจผู้พูดเอง
 ผลอยู่ที่ `reports/metrics/speaker_attribution_thai_toddlers.md` และ `reports/metrics/speaker_attribution_real_children.md`
 
+## ตรวจการตัดคำภาษาไทย
+
+MLU-w และ NDW ภาษาไทยขึ้นกับการตัดคำ transcript CHAT ภาษาไทยเว้นวรรคระหว่างคำไว้แล้ว
+`scripts/evaluate_thai_word_segmentation.py` จึงเอาคำในแต่ละประโยคมาต่อกัน ให้โปรแกรมตัดใหม่ แล้วเทียบกับที่นักถอดเสียงตัดไว้
+
+```bash
+python scripts/evaluate_thai_word_segmentation.py --cha-dir .local/evaluation/crslp_media/chat
+```
+
+ผลอยู่ที่ `reports/metrics/thai_word_segmentation.{md,csv}`
+
 ## จำลองโมเดลแยกเสียงประจำคลินิก
 
 `scripts/evaluate_clinic_speaker_model.py` จำลองการที่โปรแกรมเรียนจาก session ที่นักบำบัดรับรองแล้ว

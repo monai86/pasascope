@@ -37,11 +37,15 @@ Cohen's d between the groups, from the gold transcripts and from the uncorrected
 | ENNI (SLI − typical) | MLU-w | −0.74 | −0.39 |
 | | NDW | −0.54 | +0.25 |
 
+With 8 children per group none of these differences is statistically significant, even from the
+gold transcripts (EllisWeismer MLU-w t-test p = 0.19; ENNI MLU-w p = 0.16 from gold, 0.45 from the
+drafts). The table shows whether a draft moves the effect size, not that the groups differ.
+
 ## Reading these numbers
 
 - **2;6 to 5;6 (EllisWeismer).** Child MLU from the drafts follows the gold closely: it ranks the
-  children nearly in the same order (r 0.94) and keeps the gap between late talkers and typical
-  children. NDW is less reliable, because transcription errors add and remove different words.
+  children nearly in the same order (r 0.94, 95% bootstrap interval 0.81–0.98; mean distance 0.59
+  words, 0.33–0.93) and gives the same late-talker effect size as the gold. NDW is less reliable, because transcription errors add and remove different words.
 - **Older children (ENNI).** For children under 7 the words are mostly right (child WER 34%, NDW
   within 7%), but MLU depends on where utterances are cut. The gold transcripts cut stories into
   grammatical units; the app can only cut at pauses, and no pause length matched them for every
