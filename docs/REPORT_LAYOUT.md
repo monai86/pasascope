@@ -44,7 +44,7 @@ The measures, cues and limitations come from the session's data.
 | Margins (left, top, right, bottom) | 30, 25, 20, 20 mm | 25.4 mm (1 inch) on every side |
 | Paragraphs | first line indented 1.25 cm, 6 pt after | block paragraphs, 6 pt after |
 | List items | dash (–) at 1.25 cm (the paragraph indent), text at 1.8 cm | bullet (•) at 0.635 cm, text at 1.27 cm |
-| Line spacing | 92% of the font's own spacing, about Word's single spacing for TH Sarabun | 115% |
+| Line spacing | 92% of the font's own spacing, about Word's single spacing for TH Sarabun; 78% between the clinic name and the title | 115% |
 
 Each report uses only these sizes, and a test checks that no other size appears. Column headings are centred. TH Sarabun has no arrow (→); that one character is drawn in Sarabun at 0.68 of the size, which prints at the same height. Headings are bold at body size, as in Thai official documents. Notes are set upright in the Thai report, because Thai fonts have no true italic.
 
@@ -59,7 +59,13 @@ Both languages share the same page furniture:
   - signature line, then the name in parentheses, then "Responsible therapist" (นักบำบัดผู้รับผิดชอบ), then the date;
   - a signed report adds "signed electronically in PasaScope", with the signing time in Thai time.
 - **Draft stamp.** An unsigned report carries a boxed "ร่าง" ("DRAFT") stamp at the top centre of every page, where Thai draft documents are marked.
-- **Page breaks.** A section heading never sits alone at the foot of a page, and the signature block is never split across pages.
+- **Page breaks.** Every page reads as whole pieces:
+  - a section heading never sits alone at the foot of a page;
+  - a table that fits on one page is never split: it moves to the next page with its section heading;
+  - the signature block stays on the page where the report text ends, and when it has to move, the last section (the limitations) moves with it;
+  - no blank page is printed when the text ends low on a page.
+
+  Breaks are added one at a time, earliest first, and the layout is rebuilt after each one. A test checks these rules for both languages and for several lengths of the therapist's text.
 
 ## The logo
 

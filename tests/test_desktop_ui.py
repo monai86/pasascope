@@ -462,3 +462,26 @@ def test_report_form_writes_the_report_and_previews_its_page(window, qtbot):
     page.editor.setPlainText(page.editor.toPlainText().replace("อ่านนิทานวันละ 10 นาที", "เล่นบทบาทสมมติ"))
     page.edit_tabs.setCurrentWidget(page.form)
     assert page.form.boxes["recommendations"].toPlainText() == "เล่นบทบาทสมมติ"
+
+
+def test_report_pages_keep_tables_whole_and_the_signature_with_the_text(window, tmp_path):
+    from PySide6.QtGui import QPdfWriter
+
+    from packages.desktop.ui.pdf import ReportMeta, a4_layout, paint_report
+    from packages.desktop.ui.report_form import INTERPRETATION, RECOMMENDATIONS, write_field
+
+    _, session = _analysed_session(window)
+    svc = window.service
+    for language in ("th", "en"):
+        markdown = svc.draft_report(session.session_id, language=language).markdown
+        # Longer therapist text moves the page breaks about; the rules must hold every time.
+        for extra in range(0, 12, 3):
+            text = write_field(markdown, INTERPRETATION, "\n\n".join(["ข้อสังเกตจากการบำบัด " * 12] * extra) or "สั้น")
+            text = write_field(text, RECOMMENDATIONS, "ข้อหนึ่ง\nข้อสอง")
+            writer = QPdfWriter(str(tmp_path / f"{language}{extra}.pdf"))
+            writer.setPageLayout(a4_layout())
+            outline: dict = {}
+            pages = paint_report(writer, text, ReportMeta(organization="คลินิก", child_code="TH-010"), outline=outline)
+            assert all(first == last for first, last in outline["__tables__"]), (language, extra, outline["__tables__"])
+            first, last, before = outline["__signature__"]
+            assert first == last == before == pages, (language, extra, outline["__signature__"], pages)

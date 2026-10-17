@@ -106,6 +106,8 @@ class Layout:
     heading_after_pt: float
     italic_notes: bool  # Thai has no true italic, so Thai notes stay upright
     bullet: str  # Thai documents mark list items with a dash; TH Sarabun's • also sits high
+    title_line_height: int  # percent, for the clinic name and title lines
+    cell_padding_pt: tuple[float, float]  # top, bottom
     words: dict[str, str] = field(default_factory=dict)
 
 
@@ -125,7 +127,7 @@ LAYOUTS = {
         first_line_indent_mm=12.5,
         list_marker_mm=12.5, list_text_mm=18,
         paragraph_after_pt=6, heading_before_pt=12, heading_after_pt=6,
-        italic_notes=False, bullet="–",
+        italic_notes=False, bullet="–", title_line_height=78, cell_padding_pt=(0.5, 2.5),
         words={
             "confidential": "ข้อมูลสุขภาพส่วนบุคคล  เก็บเป็นความลับ",
             "page": "หน้า {page} จาก {pages}",
@@ -147,7 +149,7 @@ LAYOUTS = {
         first_line_indent_mm=0,
         list_marker_mm=6.35, list_text_mm=12.7,
         paragraph_after_pt=6, heading_before_pt=12, heading_after_pt=6,
-        italic_notes=True, bullet="•",
+        italic_notes=True, bullet="•", title_line_height=100, cell_padding_pt=(2, 2),
         words={
             "confidential": "Confidential health information",
             "page": "Page {page} of {pages}",
@@ -389,6 +391,7 @@ class _Builder:
         self.first_block = True
         self.headings: list[int] = []  # block numbers of section headings
         self.heading_names: dict[str, int] = {}  # section heading text → block number
+        self.tables: list = []  # bordered tables, kept on one page with their heading
 
     # units ---------------------------------------------------------
     # Qt's text layout reads margins, padding, borders and indents as pixels
@@ -503,16 +506,23 @@ class _Builder:
         logo = QImage(str(LOGO))
         if not logo.isNull():
             self.document.addResource(QTextDocument.ResourceType.ImageResource, QUrl("pasascope-logo"), logo)
-            self.new_block(self.block(align=center, after=6), self.char())
+            self.new_block(self.block(align=center, after=4), self.char())
             image = QTextImageFormat()
             image.setName("pasascope-logo")
             image.setWidth(self.mm(LETTERHEAD_MM))
             image.setHeight(self.mm(LETTERHEAD_MM))
             self.cursor.insertImage(image)
+        # The letterhead lines sit close together; the font's own spacing leaves
+        # room for stacked Thai marks that a one-line heading does not need.
+        tight = self.layout.title_line_height
         if organization:
-            self.new_block(self.block(align=center, after=2), self.char(self.layout.organization_pt, bold=True))
+            block = self.block(align=center, after=0)
+            block.setLineHeight(tight, QTextBlockFormat.LineHeightTypes.ProportionalHeight.value)
+            self.new_block(block, self.char(self.layout.organization_pt, bold=True))
             self.text(organization, self.char(self.layout.organization_pt, bold=True))
-        self.new_block(self.block(align=center, after=12), self.char(self.layout.title_pt, bold=True))
+        block = self.block(align=center, after=10)
+        block.setLineHeight(tight, QTextBlockFormat.LineHeightTypes.ProportionalHeight.value)
+        self.new_block(block, self.char(self.layout.title_pt, bold=True))
         self.text(title, self.char(self.layout.title_pt, bold=True))
 
     def heading(self, number: int | None, text: str) -> None:
@@ -577,8 +587,8 @@ class _Builder:
         fmt.setBorderCollapse(True)
         fmt.setCellSpacing(0)
         fmt.setCellPadding(self.pt(3))
-        self._cell_top_padding = self.pt(1 if self.language == "th" else 3)
-        self._cell_bottom_padding = self.pt(4 if self.language == "th" else 3)
+        self._cell_top_padding = self.pt(self.layout.cell_padding_pt[0])
+        self._cell_bottom_padding = self.pt(self.layout.cell_padding_pt[1])
         fmt.setWidth(QTextLength(QTextLength.Type.PercentageLength, 100))
         fmt.setColumnWidthConstraints([QTextLength(QTextLength.Type.PercentageLength, w) for w in widths])
         fmt.setTopMargin(self.pt(2))
@@ -588,6 +598,7 @@ class _Builder:
         if self.first_block:
             self.first_block = False
         table = self.cursor.insertTable(rows, columns, fmt)
+        self.tables.append(table)
         return table
 
     def _cell(self, table, row: int, column: int, text: str, *, bold: bool = False, fill: QColor | None = None,
@@ -691,6 +702,10 @@ def build_document(device: QPagedPaintDevice, markdown: str, meta: ReportMeta, l
         _add_block(builder, kind, value)
     signature = builder.signature(meta)
     builder.document.setProperty("heading_names", builder.heading_names)
+    builder.document.setProperty("table_spans", [
+        (table.firstCursorPosition().block().blockNumber(), table.lastCursorPosition().block().blockNumber())
+        for table in builder.tables
+    ])
     return builder.document, builder.headings, signature
 
 
@@ -733,19 +748,50 @@ def _block_page(document: QTextDocument, block_number: int, page_height: float) 
 
 
 def breaks_needed(document: QTextDocument, headings: list[int], signature: int | None, page: QRectF, body: QRectF,
-                  min_after_heading: float) -> set[int]:
-    """Blocks to start a new page at: a heading stranded at a page's foot, and a split signature block."""
+                  min_after_heading: float, breaks: set[int] = frozenset()) -> set[int]:
+    """Blocks to start a new page at, so that pages read as whole pieces.
+
+    * a heading never sits alone at the foot of a page;
+    * a table that fits on one page is not split: it moves, with its
+      section heading, to the next page;
+    * the signature block stays on the page where the report text ends,
+      taking the last section (the limitations) with it when it has to move.
+    """
     needed = set()
     page_height = page.height()
+
+    def page_of(number: int) -> int:
+        return _block_page(document, number, page_height)[0]
+
+    def heading_before(number: int) -> int | None:
+        earlier = [h for h in headings if h < number]
+        return earlier[-1] if earlier else None
+
     for number in headings:
         _, offset = _block_page(document, number, page_height)
         if body.bottom() - offset < min_after_heading and offset > body.top() + 1:
             needed.add(number)
+
+    layout = document.documentLayout()
+    for first, last in document.property("table_spans") or []:
+        if page_of(first) == page_of(last):
+            continue
+        top = layout.blockBoundingRect(document.findBlockByNumber(first)).top()
+        bottom = layout.blockBoundingRect(document.findBlockByNumber(last)).bottom()
+        anchor = heading_before(first)
+        if bottom - top < body.height() * 0.9 and anchor is not None:
+            needed.add(anchor)
+
     if signature is not None:
-        first_page, _ = _block_page(document, signature, page_height)
-        last_page, _ = _block_page(document, document.blockCount() - 1, page_height)
-        if last_page != first_page:
-            needed.add(signature)
+        signature_page = page_of(signature)
+        text_page = page_of(signature - 1) if signature > 0 else signature_page
+        split = page_of(document.blockCount() - 1) != signature_page
+        if split or signature_page != text_page:
+            last_heading = heading_before(signature)
+            if last_heading is not None and last_heading not in breaks:
+                needed.add(last_heading)
+            else:
+                needed.add(signature)
     return needed
 
 
@@ -835,7 +881,10 @@ def _paint_draft_stamp(painter: QPainter, page: QRectF, body: QRectF, layout: La
 def paint_report(device: QPagedPaintDevice, markdown: str, meta: ReportMeta, *, outline: dict | None = None) -> int:
     """Draw the report on ``device`` (zero page margins, A4); returns the number of pages.
 
-    ``outline``, when given, is filled with each section heading's page number (from 1).
+    ``outline``, when given, is filled with each section heading's page number
+    (from 1), the first and last page of each table (``"__tables__"``) and the
+    signature block's first and last page with the page of the text before it
+    (``"__signature__"``).
     """
     ensure_fonts()
     if not meta.title:
@@ -856,19 +905,31 @@ def paint_report(device: QPagedPaintDevice, markdown: str, meta: ReportMeta, *, 
 
     # Qt lays text out lazily and loses track when a format changes after a
     # query, so page breaks are found on one build and applied to a fresh one.
+    # One break at a time, earliest first: a break moves everything after it,
+    # so later problems are judged again on the new layout.
     breaks: set[int] = set()
-    for _ in range(4):
+    for _ in range(12):
         document, headings, signature = build_document(device, markdown, meta, layout, page, body, language)
         for number in sorted(breaks):
             _break_before(document, number)
-        needed = breaks_needed(document, headings, signature, page, body, pt(layout.body_pt * 4))
-        if needed <= breaks:
+        needed = breaks_needed(document, headings, signature, page, body, pt(layout.body_pt * 4), breaks) - breaks
+        if not needed:
             break
-        breaks |= needed
-    pages = document.pageCount()
+        breaks.add(min(needed))
+    # Count pages from where the text ends: Qt's own count includes the last
+    # page's bottom margin and can add a blank page when the text ends low.
+    last = document.documentLayout().blockBoundingRect(document.lastBlock())
+    pages = max(1, min(document.pageCount(), int((last.bottom() - 1) // page.height()) + 1))
     if outline is not None:
+        def page_of(number: int) -> int:
+            return _block_page(document, number, page.height())[0] + 1
+
         for name, number in (document.property("heading_names") or {}).items():
-            outline[name] = _block_page(document, number, page.height())[0] + 1
+            outline[name] = page_of(number)
+        # Where the pieces that must not break landed, for checks and tests.
+        outline["__tables__"] = [(page_of(a), page_of(b)) for a, b in document.property("table_spans") or []]
+        if signature is not None:
+            outline["__signature__"] = (page_of(signature), page_of(document.blockCount() - 1), page_of(signature - 1))
 
     painter = QPainter(device)
     painter.setRenderHint(QPainter.RenderHint.Antialiasing)
