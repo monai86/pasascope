@@ -12,6 +12,25 @@ the same order, with the same rules: descriptive values only, no norms, every
 cue shown with the therapist's decision, and the limitations stated in the
 report (`apps/api/app/services/providers/thai_template_provider.py`).
 
+## Filling in the report
+
+The Report tab has two editing tabs on the left:
+
+- **Fill in.** It has four fields:
+  - the clinic name for the letterhead;
+  - the therapist's interpretation;
+  - therapy goals, one per line;
+  - recommendations, one per line.
+
+  Each field is one section of the report (`packages/desktop/ui/report_form.py`):
+  - typing rewrites only that section;
+  - the print preview redraws after a pause of about a third of a second, and turns to the page where that section is;
+  - emptying a field restores the template's placeholder;
+  - recommendations become a section, placed before the limitations, once something is written in them.
+- **Whole report (Markdown).** The full text, for editing the template's own sections. The form reads it back whenever its tab is opened.
+
+The measures, cues and limitations come from the session's data.
+
 ## Page settings
 
 | | Thai report | English report |
@@ -23,8 +42,8 @@ report (`apps/api/app/services/providers/thai_template_provider.py`).
 | Body: text, headings, tables, limitations | 16 pt | 12 pt |
 | Small print: header, footer, signature note | 14 pt | 10 pt |
 | Margins (left, top, right, bottom) | 30, 25, 20, 20 mm | 25.4 mm (1 inch) on every side |
-| Paragraphs | first line indented 2.5 cm, 6 pt after | block paragraphs, 6 pt after |
-| List items | dash (–) at 2.5 cm (the paragraph indent), text at 3.0 cm | bullet (•) at 0.635 cm, text at 1.27 cm |
+| Paragraphs | first line indented 1.25 cm, 6 pt after | block paragraphs, 6 pt after |
+| List items | dash (–) at 1.25 cm (the paragraph indent), text at 1.8 cm | bullet (•) at 0.635 cm, text at 1.27 cm |
 | Line spacing | 92% of the font's own spacing, about Word's single spacing for TH Sarabun | 115% |
 
 Each report uses only these sizes, and a test checks that no other size appears. Column headings are centred. TH Sarabun has no arrow (→); that one character is drawn in Sarabun at 0.68 of the size, which prints at the same height. Headings are bold at body size, as in Thai official documents. Notes are set upright in the Thai report, because Thai fonts have no true italic.
@@ -59,6 +78,8 @@ The logo is used in these places:
   - TH SarabunPSK or TH Sarabun New at 16 pt;
   - left margin 3 cm, right margin 2 cm;
   - first-line indent 2.5 cm.
+
+  The report keeps the font, sizes and margins, but uses a 1.25 cm first-line indent (Word's default), because 2.5 cm pushed short paragraphs and lists too far into the page.
 
   Sources: the Uthai Thani provincial health office manual (https://uthaihealth.moph.go.th/uthaihealth/uploadfile/318.pdf); the PSU Pattani office document (https://office.pn.psu.ac.th/files/docs/doc_000216_2026-04-02); the PSU library template (https://library.psu.ac.th/wp-content/uploads/2025/04/TemplatePSULINET2025.pdf).
 - **The font.** Thai official documents are set in TH SarabunPSK. The report uses it when the computer has it installed. Otherwise it uses TH Sarabun New, which the app bundles in `packages/desktop/ui/assets/fonts/` so that reports print the same on every computer.

@@ -407,3 +407,58 @@ def test_report_page_previews_pages_and_switches_language(window, qtbot):
     page.refresh()
     assert window.service.get_report(session.session_id).markdown.startswith("# Language Sample Review Report")
     assert page.language_box.currentData() == "en"
+
+
+def test_report_form_fields_round_trip_through_the_markdown():
+    from packages.desktop.ui.report_form import GOALS, INTERPRETATION, RECOMMENDATIONS, read_field, write_field
+
+    markdown = (
+        "# รายงานการทบทวนตัวอย่างภาษา\n\n## การแปลผลของนักบำบัด\n"
+        "- (นักบำบัดเขียนการแปลผลและข้อสังเกตจากการบำบัดที่นี่ ก่อนลงนาม)\n\n"
+        "## เป้าหมายการบำบัด\n- ยังไม่ได้บันทึกเป้าหมายการบำบัดของเคสนี้\n\n"
+        "## ข้อจำกัด\nข้อความ\n\n## การลงนามของนักบำบัด\nรอนักบำบัดแก้ไขและลงนาม\n"
+    )
+    assert read_field(markdown, INTERPRETATION) == "" and read_field(markdown, GOALS) == ""
+    filled = write_field(markdown, INTERPRETATION, "ย่อหน้าหนึ่ง\n\nย่อหน้าสอง")
+    filled = write_field(filled, GOALS, "พูด 2 คำ\nชี้ขอของ")
+    filled = write_field(filled, RECOMMENDATIONS, "อ่านนิทานทุกวัน")
+    assert read_field(filled, INTERPRETATION) == "ย่อหน้าหนึ่ง\n\nย่อหน้าสอง"
+    assert read_field(filled, GOALS) == "พูด 2 คำ\nชี้ขอของ"
+    assert "## เป้าหมายการบำบัด\n- พูด 2 คำ\n- ชี้ขอของ" in filled
+    # A new section goes before the limitations; emptying it removes it, emptying a template field restores its placeholder.
+    assert filled.index("## ข้อเสนอแนะ") < filled.index("## ข้อจำกัด")
+    assert "## ข้อเสนอแนะ" not in write_field(filled, RECOMMENDATIONS, "")
+    assert "- ยังไม่ได้บันทึกเป้าหมายการบำบัดของเคสนี้" in write_field(filled, GOALS, "")
+    assert "\n\n\n" not in filled
+
+
+def test_report_form_writes_the_report_and_previews_its_page(window, qtbot):
+    case, session = _analysed_session(window)
+    window.service.draft_report(session.session_id)
+    window.open_case(case.case_id, session.session_id)
+    window.tabs.setCurrentIndex(3)
+    page = window.pages[3]
+    page.refresh()
+    assert page.edit_tabs.currentWidget() is page.form
+
+    page.form.boxes["interpretation"].setPlainText("เด็กตอบคำถามง่าย ๆ ได้")
+    page.form.boxes["recommendations"].setPlainText("อ่านนิทานวันละ 10 นาที")
+    assert page.dirty
+    text = page.editor.toPlainText()
+    assert "## การแปลผลของนักบำบัด\nเด็กตอบคำถามง่าย ๆ ได้" in text and "## ข้อเสนอแนะ\n- อ่านนิทานวันละ 10 นาที" in text
+    qtbot.waitUntil(lambda: "ข้อเสนอแนะ" in page.preview.outline, timeout=5000)
+    assert page.preview.view.currentPage() == page.preview.outline["ข้อเสนอแนะ"]
+
+    page.form.organization.setText("คลินิกทดสอบ")
+    assert page.report_meta().organization == "คลินิกทดสอบ"
+    page.form.organization.editingFinished.emit()
+    assert window.service.organization == "คลินิกทดสอบ"
+
+    assert page.save()
+    saved = window.service.get_report(session.session_id).markdown
+    assert "อ่านนิทานวันละ 10 นาที" in saved
+    # Editing the whole report shows up in the form when it is opened again.
+    page.edit_tabs.setCurrentWidget(page.editor)
+    page.editor.setPlainText(page.editor.toPlainText().replace("อ่านนิทานวันละ 10 นาที", "เล่นบทบาทสมมติ"))
+    page.edit_tabs.setCurrentWidget(page.form)
+    assert page.form.boxes["recommendations"].toPlainText() == "เล่นบทบาทสมมติ"

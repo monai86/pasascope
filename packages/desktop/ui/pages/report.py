@@ -2,13 +2,13 @@
 
 from __future__ import annotations
 
-from packages.desktop.core.i18n import tr
+from packages.desktop.core.i18n import report_language, tr
 
 from datetime import datetime
 from pathlib import Path
 import tempfile
 
-from PySide6.QtCore import Qt, QTimer, QUrl
+from PySide6.QtCore import Qt, QTimer, QUrl, Signal
 from PySide6.QtGui import QDesktopServices
 from PySide6.QtPrintSupport import QPrinter, QPrintPreviewWidget
 from PySide6.QtWidgets import (
@@ -18,7 +18,10 @@ from PySide6.QtWidgets import (
     QMenu,
     QMessageBox,
     QPlainTextEdit,
+    QLineEdit,
+    QScrollArea,
     QSplitter,
+    QTabWidget,
     QVBoxLayout,
     QWidget,
 )
@@ -26,6 +29,7 @@ from PySide6.QtWidgets import (
 from packages.desktop.ui import theme
 from packages.desktop.ui.pages.base import SessionPage
 from packages.desktop.ui.pdf import ReportMeta, a4_layout, ensure_fonts, paint_report, write_report_pdf
+from packages.desktop.ui.report_form import FIELDS, GOALS, INTERPRETATION, RECOMMENDATIONS, read_field, write_field
 from packages.desktop.ui.widgets import EmptyState, button, chip, label, set_chip
 
 REPORT_LANGUAGES = [("en", "English"), ("th", "ไทย")]
@@ -37,6 +41,91 @@ EXPORTS = [
 ]
 
 
+def form_text() -> dict[str, tuple[str, str, str]]:
+    """(title, hint, example) of each form field, in the interface language."""
+    return {
+    INTERPRETATION.key: (
+        tr("การแปลผลของนักบำบัด", "Therapist's interpretation"),
+        tr("สิ่งที่สังเกตได้ในการบำบัดครั้งนี้และความหมายทางคลินิก เขียนเป็นย่อหน้า เว้นบรรทัดเพื่อขึ้นย่อหน้าใหม่",
+           "What you observed in this session and what it means clinically. Leave a blank line between paragraphs."),
+        tr("เช่น เด็กเล่นของเล่นร่วมกับผู้ปกครองได้ดี ตอบคำถามง่าย ๆ ได้ ...", "e.g. Played well alongside the parent and answered simple questions ..."),
+    ),
+    GOALS.key: (
+        tr("เป้าหมายการบำบัด", "Therapy goals"),
+        tr("หนึ่งบรรทัดต่อหนึ่งเป้าหมาย", "One goal per line."),
+        tr("เช่น พูดประโยค 2–3 คำเพื่อขอสิ่งของ", "e.g. Uses 2–3 word phrases to request objects"),
+    ),
+    RECOMMENDATIONS.key: (
+        tr("ข้อเสนอแนะ", "Recommendations"),
+        tr("หนึ่งบรรทัดต่อหนึ่งข้อ จะเป็นหัวข้อใหม่ในรายงานเมื่อกรอก", "One per line. Adds a section to the report when filled in."),
+        tr("เช่น ผู้ปกครองอ่านนิทานร่วมกับเด็กวันละ 10 นาที", "e.g. Caregiver shares a picture book with the child for 10 minutes a day"),
+    ),
+    }
+
+
+class ReportForm(QScrollArea):
+    """The parts of the report the therapist writes, as plain fields."""
+
+    field_changed = Signal(object, str)  # Field, text
+    organization_changed = Signal(str)
+    organization_done = Signal(str)
+
+    def __init__(self, parent: QWidget | None = None) -> None:
+        super().__init__(parent)
+        self.setWidgetResizable(True)
+        self.setFrameShape(QScrollArea.Shape.NoFrame)
+        inner = QWidget()
+        layout = QVBoxLayout(inner)
+        layout.setContentsMargins(2, 10, 10, 10)
+        layout.setSpacing(6)
+        self._loading = False
+
+        layout.addWidget(label(tr("ชื่อหน่วยงาน (หัวกระดาษ)", "Clinic name (letterhead)"), "SectionTitle"))
+        self.organization = QLineEdit()
+        self.organization.setPlaceholderText(tr("เช่น คลินิกแก้ไขการพูด โรงพยาบาล...", "e.g. Speech Clinic, ... Hospital"))
+        self.organization.textChanged.connect(lambda text: None if self._loading else self.organization_changed.emit(text))
+        self.organization.editingFinished.connect(lambda: self.organization_done.emit(self.organization.text()))
+        layout.addWidget(self.organization)
+        self.signer = label("", "Hint", wrap=True)
+        layout.addWidget(self.signer)
+
+        self.boxes: dict[str, QPlainTextEdit] = {}
+        for field in FIELDS:
+            title, hint, example = form_text()[field.key]
+            layout.addSpacing(10)
+            layout.addWidget(label(title, "SectionTitle"))
+            layout.addWidget(label(hint, "Hint", wrap=True))
+            box = QPlainTextEdit()
+            box.setPlaceholderText(example)
+            box.setMinimumHeight(120 if field.kind == "text" else 90)
+            box.setStyleSheet("font-family: 'Sarabun'; font-size: 15px;")
+            box.textChanged.connect(lambda f=field, b=box: None if self._loading else self.field_changed.emit(f, b.toPlainText()))
+            layout.addWidget(box)
+            self.boxes[field.key] = box
+        layout.addSpacing(8)
+        layout.addWidget(label(tr("ตัวชี้วัด cue และข้อจำกัด ระบบเติมจากข้อมูลของ session แก้เพิ่มได้ในแท็บ ‘ทั้งฉบับ’",
+                                  "Measures, cues and limitations come from the session's data; edit them in the ‘Whole report’ tab."),
+                               "Hint", wrap=True))
+        layout.addStretch(1)
+        self.setWidget(inner)
+
+    def load(self, markdown: str, organization: str, signer: str) -> None:
+        """Show the report's current text without sending change signals."""
+        self._loading = True
+        if self.organization.text() != organization:
+            self.organization.setText(organization)
+        for field in FIELDS:
+            text = read_field(markdown, field)
+            box = self.boxes[field.key]
+            if box.toPlainText() != text:
+                box.setPlainText(text)
+        self.signer.setText(
+            tr(f"ผู้ลงนาม: {signer} (เปลี่ยนได้ที่ ตั้งค่า → ชื่อนักบำบัด)", f"Signed by: {signer} (change in Settings, Therapist name)")
+            if signer else tr("ยังไม่ได้ตั้งชื่อผู้ลงนาม (ตั้งค่า → ชื่อนักบำบัด)", "No signer name yet (Settings, Therapist name)")
+        )
+        self._loading = False
+
+
 class PagePreview(QWidget):
     """The report as printed A4 pages, drawn by the same code that writes the PDF."""
 
@@ -45,6 +134,7 @@ class PagePreview(QWidget):
         self.markdown = ""
         self.meta = ReportMeta()
         self.pages = 0
+        self.outline: dict[str, int] = {}
         layout = QVBoxLayout(self)
         layout.setContentsMargins(0, 0, 0, 0)
         layout.setSpacing(4)
@@ -79,14 +169,18 @@ class PagePreview(QWidget):
         self.view.setZoomMode(QPrintPreviewWidget.ZoomMode.FitToWidth)
         self.view.setStyleSheet(f"background: {theme.SIDEBAR};")
 
-    def show_report(self, markdown: str, meta: ReportMeta) -> None:
+    def show_report(self, markdown: str, meta: ReportMeta, focus: str | None = None) -> None:
+        """Redraw the pages; with ``focus`` (a section heading), show the page that section starts on."""
         self.markdown, self.meta = markdown, meta
         self.view.updatePreview()
+        if focus and focus in self.outline:
+            self.view.setCurrentPage(self.outline[focus])
 
     def _paint(self, printer: QPrinter) -> None:
         if not self.markdown:
             return
-        self.pages = paint_report(printer, self.markdown, self.meta)
+        self.outline = {}
+        self.pages = paint_report(printer, self.markdown, self.meta, outline=self.outline)
         self.page_count.setText(tr(f"{self.pages} หน้า", f"{self.pages} page{'s' if self.pages != 1 else ''}"))
 
 
@@ -96,6 +190,8 @@ class ReportPage(SessionPage):
         self.report = None
         self.dirty = False
         self._loading = False
+        self._syncing = False
+        self._focus_field = None
 
         layout = QVBoxLayout(self)
         layout.setContentsMargins(4, 12, 4, 8)
@@ -152,17 +248,25 @@ class ReportPage(SessionPage):
         body.addWidget(self.notice)
 
         split = QSplitter(Qt.Orientation.Horizontal)
-        editor_box = QWidget()
-        editor_layout = QVBoxLayout(editor_box)
-        editor_layout.setContentsMargins(0, 0, 6, 0)
-        editor_layout.addWidget(label(tr("แก้ไข (Markdown)", "Edit (Markdown)"), "Muted"))
+        self.edit_tabs = QTabWidget()
+        self.edit_tabs.setDocumentMode(True)
+        self.form = ReportForm()
+        self.form.field_changed.connect(self._form_changed)
+        self.form.organization_changed.connect(lambda _: self.preview_timer.start())
+        self.form.organization_done.connect(self._save_organization)
+        self.edit_tabs.addTab(self.form, tr("กรอกข้อมูล", "Fill in"))
         self.editor = QPlainTextEdit()
         # Sarabun for Thai and Latin alike: a monospace font has no Thai, and the
         # fallback set Thai smaller than the Latin around it.
         ensure_fonts()
         self.editor.setStyleSheet("font-family: 'Sarabun'; font-size: 15px;")
         self.editor.textChanged.connect(self._on_edit)
-        editor_layout.addWidget(self.editor)
+        self.edit_tabs.addTab(self.editor, tr("ทั้งฉบับ (Markdown)", "Whole report (Markdown)"))
+        self.edit_tabs.currentChanged.connect(self._edit_tab_changed)
+        editor_box = QWidget()
+        editor_layout = QVBoxLayout(editor_box)
+        editor_layout.setContentsMargins(0, 0, 6, 0)
+        editor_layout.addWidget(self.edit_tabs)
         split.addWidget(editor_box)
         self.preview = PagePreview()
         self.preview.layout().setContentsMargins(6, 0, 0, 0)
@@ -171,10 +275,10 @@ class ReportPage(SessionPage):
         split.setSizes([440, 620])
         body.addWidget(split, 1)
 
-        # Laying out the pages takes a moment, so wait for a pause in typing.
+        # Laying out the pages takes a moment, so redraw after a short pause in typing.
         self.preview_timer = QTimer(self)
         self.preview_timer.setSingleShot(True)
-        self.preview_timer.setInterval(600)
+        self.preview_timer.setInterval(350)
         self.preview_timer.timeout.connect(self._update_preview)
 
     # ------------------------------------------------------------------
@@ -196,6 +300,7 @@ class ReportPage(SessionPage):
         self.editor.setPlainText(self.report.markdown)
         self._loading = False
         self.dirty = False
+        self.form.load(self.report.markdown, self.service.organization, self.service.therapist_name)
         index = self.language_box.findData(self.service.report_language(self.report))
         self.language_box.setCurrentIndex(max(index, 0))
         self._update_status()
@@ -244,7 +349,7 @@ class ReportPage(SessionPage):
         if isinstance(signed_at, str):
             signed_at = datetime.fromisoformat(signed_at)
         return ReportMeta(
-            organization=self.service.organization,
+            organization=self.form.organization.text().strip(),
             child_code=self.case.child_code if self.case else "",
             session_date=str(self.session.session_date) if self.session else "",
             signed_by=(report.signed_by or "") if signed else "",
@@ -259,7 +364,29 @@ class ReportPage(SessionPage):
     def _update_preview(self) -> None:
         if self.report is None:
             return
-        self.preview.show_report(self.editor.toPlainText(), self.report_meta())
+        markdown = self.editor.toPlainText()
+        focus = self._focus_field.headings[report_language(markdown)] if self._focus_field else None
+        self._focus_field = None
+        self.preview.show_report(markdown, self.report_meta(), focus)
+
+    def _form_changed(self, field, value: str) -> None:
+        """A form field changed: rewrite its section in the report text (the preview follows)."""
+        if self.report is None:
+            return
+        self._focus_field = field
+        markdown = write_field(self.editor.toPlainText(), field, value)
+        if markdown != self.editor.toPlainText():
+            self._syncing = True
+            self.editor.setPlainText(markdown)
+            self._syncing = False
+
+    def _edit_tab_changed(self, index: int) -> None:
+        if self.edit_tabs.widget(index) is self.form and self.report is not None:
+            self.form.load(self.editor.toPlainText(), self.form.organization.text(), self.service.therapist_name)
+
+    def _save_organization(self, name: str) -> None:
+        if name.strip() != self.service.organization:
+            self.attempt(self.service.set_organization, name, title=tr("ตั้งค่าไม่สำเร็จ", "Setting not saved"))
 
     def _open_pdf(self) -> None:
         if self.report is None:

@@ -120,8 +120,10 @@ LAYOUTS = {
         title_pt=20, organization_pt=18, body_pt=16, small_pt=14,
         line_height=92,  # about Word's single spacing for TH Sarabun
         margins_mm=(30, 25, 20, 20),
-        first_line_indent_mm=25,
-        list_marker_mm=25, list_text_mm=30,
+        # A 1.25 cm first-line indent (Word's default): the 2.5 cm of official
+        # letters pushed short paragraphs and lists too far into the page.
+        first_line_indent_mm=12.5,
+        list_marker_mm=12.5, list_text_mm=18,
         paragraph_after_pt=6, heading_before_pt=12, heading_after_pt=6,
         italic_notes=False, bullet="–",
         words={
@@ -386,6 +388,7 @@ class _Builder:
         self.cursor = QTextCursor(self.document)
         self.first_block = True
         self.headings: list[int] = []  # block numbers of section headings
+        self.heading_names: dict[str, int] = {}  # section heading text → block number
 
     # units ---------------------------------------------------------
     # Qt's text layout reads margins, padding, borders and indents as pixels
@@ -518,6 +521,7 @@ class _Builder:
         fmt.setNonBreakableLines(True)
         self.new_block(fmt, self.char(bold=True))
         self.headings.append(self.cursor.block().blockNumber())
+        self.heading_names[text] = self.cursor.block().blockNumber()
         self.text(label, self.char(bold=True))
 
     def subheading(self, text: str) -> None:
@@ -686,6 +690,7 @@ def build_document(device: QPagedPaintDevice, markdown: str, meta: ReportMeta, l
     for kind, value in _blocks(signoff_extra or []):
         _add_block(builder, kind, value)
     signature = builder.signature(meta)
+    builder.document.setProperty("heading_names", builder.heading_names)
     return builder.document, builder.headings, signature
 
 
@@ -827,8 +832,11 @@ def _paint_draft_stamp(painter: QPainter, page: QRectF, body: QRectF, layout: La
     painter.restore()
 
 
-def paint_report(device: QPagedPaintDevice, markdown: str, meta: ReportMeta) -> int:
-    """Draw the report on ``device`` (zero page margins, A4); returns the number of pages."""
+def paint_report(device: QPagedPaintDevice, markdown: str, meta: ReportMeta, *, outline: dict | None = None) -> int:
+    """Draw the report on ``device`` (zero page margins, A4); returns the number of pages.
+
+    ``outline``, when given, is filled with each section heading's page number (from 1).
+    """
     ensure_fonts()
     if not meta.title:
         meta = replace(meta, title=split_sections(markdown)[0])
@@ -858,6 +866,9 @@ def paint_report(device: QPagedPaintDevice, markdown: str, meta: ReportMeta) -> 
             break
         breaks |= needed
     pages = document.pageCount()
+    if outline is not None:
+        for name, number in (document.property("heading_names") or {}).items():
+            outline[name] = _block_page(document, number, page.height())[0] + 1
 
     painter = QPainter(device)
     painter.setRenderHint(QPainter.RenderHint.Antialiasing)
