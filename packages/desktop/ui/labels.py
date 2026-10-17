@@ -34,6 +34,9 @@ SESSION_STATUS = TrDict({
     "stale": T("ต้องทำใหม่", "Out of date"),
 })
 
+# The feature schema the app's analysis writes; older feature sets ask to be analysed again.
+CURRENT_SCHEMA = "features-basic-v3"
+
 # Feature name → (label, how to show the value, what it counts)
 FEATURES = TrDict({
     "child_utterance_count": (T("จำนวนประโยคของเด็ก", "Child utterances"), "int", T("นับเฉพาะผู้พูด CHI", "Lines spoken by CHI")),
@@ -77,6 +80,13 @@ FEATURES = TrDict({
                            T("รวมคำถาม เช่น อะไร ไหน ยังไม่ได้ตรวจกับเสียงเด็ก", "Includes question words; not checked on child speech")),
     "thai_particle_count": (T("คำลงท้าย ครับ/ค่ะ/นะ (ทดลอง)", "Sentence particles (experimental)"), "int", T("ยังไม่ได้ตรวจกับเสียงเด็ก", "Not checked on child speech")),
     "thai_negator_count": (T("คำปฏิเสธ (ทดลอง)", "Negators (experimental)"), "int", T("เช่น ไม่ ยังไม่ได้ตรวจกับเสียงเด็ก", "Such as ไม่; not checked on child speech")),
+    "child_response_rate": (T("อัตราที่เด็กตอบต่อจากผู้ใหญ่", "Child response rate"), "percent",
+                            T("ประโยคของผู้ใหญ่ที่เด็กพูดต่อทันที หารด้วยประโยคของผู้ใหญ่ทั้งหมด",
+                              "Share of adult utterances the child follows straight away")),
+    "child_response_count": (T("จำนวนครั้งที่เด็กตอบต่อจากผู้ใหญ่", "Child responses to adults"), "int",
+                             T("นับคู่ (ผู้ใหญ่พูด → เด็กพูดต่อ) ขึ้นกับความยาวตัวอย่าง", "Adult line then child line; grows with sample length")),
+    "mlt_ratio": (T("ความยาวรอบพูดของเด็กเทียบผู้ใหญ่ (MLT ratio)", "Turn length ratio, child / adult (MLT)"), "ratio",
+                  T("คำต่อรอบของเด็กหารด้วยคำต่อรอบของผู้ใหญ่ ไปด้วยกันกับ MLU", "Child words per turn over the adults'; moves with MLU")),
     "pronoun_reversal_cue_count": (T("cue การใช้สรรพนามสลับ", "Pronoun reversal cues"), "int", T("ต้องตรวจในบริบท", "Check each in context")),
     "echolalia_cue_count": (T("cue การพูดตาม (echolalia)", "Echolalia cues"), "int",
                             T("เด็กพูดซ้ำคำของผู้ใหญ่ที่เพิ่งพูด ต้องยืนยันทีละคู่", "The child repeats what an adult just said; confirm each pair")),
@@ -88,22 +98,33 @@ FEATURES = TrDict({
 HEADLINE_FEATURES = TrDict({
     "mean_length_of_utterance_words": T("ความยาวประโยค (MLU-w)", "MLU-w"),
     "number_of_different_words": T("คำไม่ซ้ำ (NDW)", "Different words (NDW)"),
-    "type_token_ratio": T("ความหลากหลายของคำ (TTR)", "TTR"),
+    "child_response_rate": T("เด็กตอบต่อจากผู้ใหญ่", "Child response rate"),
     "mlu_utterance_count": T("ประโยคที่ใช้คิด MLU", "Utterances in MLU"),
 })
 
+# The measures a therapist reads first (docs/FEATURE_GUIDE.md explains the choice);
+# the rest appear with "Show all measures".
+CORE_FEATURES = {
+    "child_utterance_count", "mlu_utterance_count", "total_word_count", "unintelligible_ratio",
+    "mean_length_of_utterance_words",
+    "number_of_different_words", "ndw_100", "mattr_50", "vocd_d",
+    "child_response_rate",
+    "echolalia_cue_count",
+}
+
 FEATURE_GROUPS = TrList([
     (T("ขนาดตัวอย่าง", "Sample size"), [
-        "child_utterance_count", "adult_utterance_count", "analyzable_utterance_count",
-        "mlu_utterance_count", "total_word_count", "unintelligible_ratio", "unknown_speaker_ratio",
+        "child_utterance_count", "mlu_utterance_count", "total_word_count", "unintelligible_ratio",
+        "adult_utterance_count", "analyzable_utterance_count", "unknown_speaker_ratio",
     ]),
     (T("ความยาวประโยค", "Utterance length"), [
-        "mean_length_of_utterance_words", "mlu_words_sd", "mlu50_words", "mean_length_of_utterance_morphemes",
+        "mean_length_of_utterance_words", "mlu50_words", "mlu_words_sd", "mean_length_of_utterance_morphemes",
     ]),
-    (T("คลังคำ", "Vocabulary"), ["number_of_different_words", "ndw_100", "type_token_ratio", "mattr_50", "vocd_d"]),
-    (T("การโต้ตอบและ cue", "Interaction and cues"), [
-        "question_ratio", "repetition_marker_count", "echolalia_cue_count", "pronoun_reversal_cue_count",
-        "limited_reciprocal_question_cue", "repetitive_phrase_cue", "atypical_response_cue",
+    (T("คลังคำ", "Vocabulary"), ["number_of_different_words", "ndw_100", "mattr_50", "vocd_d", "type_token_ratio"]),
+    (T("การผลัดกันพูด", "Turn-taking"), ["child_response_rate", "child_response_count", "mlt_ratio"]),
+    (T("cue ที่ควรตรวจ", "Review cues"), [
+        "echolalia_cue_count", "pronoun_reversal_cue_count", "question_ratio", "limited_reciprocal_question_cue",
+        "repetition_marker_count", "repetitive_phrase_cue", "atypical_response_cue",
     ]),
     (T("ชนิดคำภาษาไทย (ทดลอง)", "Thai word classes (experimental)"), [
         "thai_verbs_per_utterance", "thai_pronoun_count", "thai_particle_count", "thai_negator_count",
@@ -140,6 +161,7 @@ def missing_reason(name: str, values: dict[str, Any]) -> str:
 
 TREND_FEATURES = [
     "mean_length_of_utterance_words",
+    "child_response_rate",
     "type_token_ratio",
     "mattr_50",
     "number_of_different_words",

@@ -12,7 +12,7 @@ All features are labelled as "review cues" or "descriptive counts";
 none carry a diagnostic interpretation.  Clinical interpretation requires
 a qualified therapist.
 
-Feature schema version: features-basic-v2
+Feature schema version: features-basic-v3 (v3 adds the turn-taking measures)
 """
 
 from __future__ import annotations
@@ -34,6 +34,7 @@ from app.services.providers.base import (
 )
 from packages.cha.clan_words import analyze_main_tier
 from packages.features.thai_pos import ThaiPosCounts, thai_pos_counts
+from packages.features.turn_taking import speaker_side, turn_taking
 from packages.features.language_sample import (
     MATTR_WINDOW,
     RECOMMENDED_UTTERANCES,
@@ -46,10 +47,10 @@ _CAUTION = (
     "automated prototype. It must not be used for diagnosis. Therapist "
     "interpretation is required."
 )
-_SCHEMA_VERSION = "features-basic-v2"
+_SCHEMA_VERSION = "features-basic-v3"
 _PROVIDER_ID = "basic_feature_provider"
 _PROVIDER_NAME = "BasicFeatureProvider"
-_PROVIDER_VERSION = "v2.0.0"
+_PROVIDER_VERSION = "v3.0.0"
 
 # Minimum child utterances below which we set insufficient_data=True
 _MIN_CHILD_UTTS = 3
@@ -397,6 +398,48 @@ _DEFINITIONS: list[FeatureDefinition] = [
         clinical_interpretation_caution=_CAUTION,
     ),
     FeatureDefinition(
+        feature_name="child_response_count",
+        display_name="Child Responses to Adults",
+        description="Adult utterances directly followed by a child utterance: the child taking up a turn.",
+        value_type="integer",
+        unit="turns",
+        calculation_method=(
+            "Count of adjacent (adult line, CHI line) pairs in transcript order; UNK lines are skipped. "
+            "Like LENA's adult-child conversational turn count, on transcript lines."
+        ),
+        required_inputs=["utterances"],
+        limitations=[
+            "Counts adjacency only; whether the child's line answers the adult needs the therapist.",
+            "Depends on correct speaker labels.",
+        ],
+        clinical_interpretation_caution=_CAUTION,
+    ),
+    FeatureDefinition(
+        feature_name="child_response_rate",
+        display_name="Child Response Rate",
+        description="Share of adult utterances directly followed by a child utterance.",
+        value_type="ratio",
+        unit="ratio",
+        calculation_method="child_response_count / adult utterances (UNK lines skipped).",
+        required_inputs=["utterances"],
+        limitations=["Lower when the adult says several lines in a row, as in story telling."],
+        clinical_interpretation_caution=_CAUTION,
+    ),
+    FeatureDefinition(
+        feature_name="mlt_ratio",
+        display_name="Turn Length Ratio (child / adult)",
+        description="The child's mean words per turn over the adults' (MLT ratio, Assaf et al. 2025).",
+        value_type="ratio",
+        unit="ratio",
+        calculation_method=(
+            "A turn is a run of consecutive lines by the child or by the adults; words are counted "
+            "with CLAN's rules on every speaker's lines."
+        ),
+        required_inputs=["utterances"],
+        limitations=["Depends on how much the adult talks as well as on the child."],
+        clinical_interpretation_caution=_CAUTION,
+    ),
+    FeatureDefinition(
         feature_name="pronoun_reversal_cue_count",
         display_name="Pronoun Reversal Cue Count",
         description="Review cue count for atypical pronoun usage patterns in CHI utterances.",
@@ -466,6 +509,15 @@ _DEFINITIONS: list[FeatureDefinition] = [
         clinical_interpretation_caution="Requires therapist qualitative assessment.",
     ),
 ]
+
+
+def _with_child_analyses(all_utts, child_analyses):
+    """(utterance, side, analysis) in transcript order, reusing the child lines' analyses."""
+    remaining = iter(child_analyses)
+    for utterance in all_utts:
+        side = speaker_side(utterance.speaker)
+        analysis = next(remaining) if str(utterance.speaker).upper() == "CHI" else None
+        yield utterance, side, analysis
 
 
 # ---------------------------------------------------------------------------
@@ -586,6 +638,10 @@ class BasicFeatureProvider(BaseFeatureProvider):
         pronoun_evidence = _pronoun_cue_evidence(child)
         pronoun_cues = None if pronoun_evidence is None else sum(count for _, count in pronoun_evidence)
         echolalia_pairs = _echolalia_pairs(all_utts)
+        turns = turn_taking(
+            (speaker_side(u.speaker), len(analysis.words) if side == "CHI" else len(analyze_main_tier(u.text).words))
+            for u, side, analysis in _with_child_analyses(all_utts, analyses)
+        )
 
         # ---- Build FeatureValue list ----------------------------------------
         def fv(
@@ -715,6 +771,13 @@ class BasicFeatureProvider(BaseFeatureProvider):
                 value_type="integer",
                 hint="Review cue only; not diagnostic.",
             ),
+            fv("child_response_count", turns.child_responses, unit="turns", value_type="integer",
+               numerator=turns.child_responses, denominator=turns.adult_utterances),
+            _optional(fv, "child_response_rate",
+                      None if turns.child_response_rate is None else round(turns.child_response_rate, 4),
+                      "ratio", "ratio", "No adult utterances."),
+            _optional(fv, "mlt_ratio", None if turns.mlt_ratio is None else round(turns.mlt_ratio, 4),
+                      "ratio", "ratio", "Needs words from both the child and an adult."),
             fv(
                 "pronoun_reversal_cue_count",
                 pronoun_cues,

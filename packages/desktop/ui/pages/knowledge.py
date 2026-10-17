@@ -199,6 +199,7 @@ def boundary_weights_chart() -> QImage:
 def _topics() -> list[tuple[str, str]]:
     return [
         ("session", tr("ขั้นตอนของ session", "Working through a session")),
+        ("measures", tr("ตัวชี้วัดแต่ละตัว คืออะไร ช่วยอย่างไร", "Each measure: what it is, how it helps")),
         ("review", tr("ตรวจร่าง transcript", "Checking the draft transcript")),
         ("codes", tr("รหัส CHAT", "CHAT codes")),
         ("mlu", tr("ความยาวประโยค (MLU)", "Utterance length (MLU)")),
@@ -214,6 +215,10 @@ def _topics() -> list[tuple[str, str]]:
 
 def _article(topic: str) -> str:
     """The article body as simple HTML."""
+    if topic == "measures":
+        from packages.desktop.ui.feature_guide import guide_html
+
+        return guide_html()
     if topic == "session":
         return tr(
             """<h1>ขั้นตอนของ session</h1>
@@ -372,6 +377,7 @@ ARTICLE_STYLE = f"""
 body {{ color: {theme.INK}; font-size: 14px; }}
 h1 {{ font-size: 24px; font-weight: 700; margin: 4px 0 12px 0; }}
 h2 {{ font-size: 16px; font-weight: 600; margin: 18px 0 6px 0; }}
+h3 {{ font-size: 14px; font-weight: 600; margin: 12px 0 2px 0; }}
 p, li {{ line-height: 150%; }}
 td {{ padding: 6px 14px 6px 0; border-bottom: 1px solid {theme.LINE}; }}
 code {{ background: {theme.HOVER}; }}
@@ -430,6 +436,14 @@ class KnowledgePage(QWidget):
         if topic in ("mlu", "echolalia", "autism", "decisions"):
             self._add_charts()
         self.article.setHtml(_article(topic).replace("{WIDTH}", str(WIDTH)).replace("{HEIGHT}", str(HEIGHT)))
+
+    def open_feature(self, name: str) -> None:
+        """Open the measure guide at one measure's entry (or at its top for "")."""
+        from packages.desktop.ui.feature_guide import anchor
+
+        self.open_topic("measures")
+        if name:
+            self.article.scrollToAnchor(anchor(name))
 
     def open_topic(self, topic: str) -> None:
         for row in range(self.topics.count()):

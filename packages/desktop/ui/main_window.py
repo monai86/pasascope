@@ -18,6 +18,7 @@ from PySide6.QtWidgets import (
     QListWidget,
     QListWidgetItem,
     QMainWindow,
+    QProgressDialog,
     QMessageBox,
     QStackedWidget,
     QTabWidget,
@@ -79,6 +80,7 @@ class MainWindow(QMainWindow):
         self.dashboard.new_case.connect(self.new_case)
         self.dashboard.backup.connect(self.backup)
         self.dashboard.speaker_settings.connect(self.show_speaker_model)
+        self.dashboard.download_models.connect(self.download_models)
         self.stack.addWidget(self.dashboard)
         self.stack.addWidget(self._build_case_view())
         self.knowledge = KnowledgePage()
@@ -93,6 +95,12 @@ class MainWindow(QMainWindow):
         self.statusBar().setContentsMargins(12, 0, 12, 0)
         self.statusBar().addWidget(self.name_label)
         self.statusBar().addWidget(self.backup_label)
+        self.update_label = QLabel("")
+        self.update_label.setTextFormat(Qt.TextFormat.RichText)
+        self.update_label.linkActivated.connect(lambda _: self._offer_update(self._available_update))
+        self.update_label.hide()
+        self._available_update = None
+        self.statusBar().addPermanentWidget(self.update_label)
         self.statusBar().addPermanentWidget(self.asr_label)
         self._update_status_bar()
 
@@ -211,6 +219,7 @@ class MainWindow(QMainWindow):
             page.navigate.connect(self.tabs.setCurrentIndex)
             page.busy_changed.connect(self._set_busy)
         self.pages[1].attested.connect(self.learn_speakers_in_background)
+        self.pages[2].open_guide.connect(self.show_feature_guide)
         self.session_stack.addWidget(self.tabs)
         self.overview = CaseOverview(self.service)
         self.overview.open_session.connect(self._pick_session)
@@ -248,6 +257,9 @@ class MainWindow(QMainWindow):
         name_action = QAction(tr("ชื่อนักบำบัด…", "Therapist name…"), self)
         name_action.triggered.connect(lambda: self.ask_therapist_name(first_run=False))
         settings_menu.addAction(name_action)
+        models_action = QAction(tr("ดาวน์โหลดโมเดลถอดเสียง…", "Download speech models…"), self)
+        models_action.triggered.connect(self.download_models)
+        settings_menu.addAction(models_action)
         organization_action = QAction(tr("ชื่อหน่วยงานบนรายงาน…", "Clinic name on reports…"), self)
         organization_action.triggered.connect(self.ask_organization)
         settings_menu.addAction(organization_action)
@@ -283,6 +295,13 @@ class MainWindow(QMainWindow):
         audit = QAction(tr("ประวัติการทำงาน (audit log)", "Audit log"), self)
         audit.triggered.connect(self.show_audit_log)
         help_menu.addAction(audit)
+        update = QAction(tr("ตรวจหาอัปเดต…", "Check for updates…"), self)
+        update.triggered.connect(lambda: self.check_for_updates(quiet=False))
+        help_menu.addAction(update)
+        auto_update = QAction(tr("ตรวจหาอัปเดตอัตโนมัติวันละครั้ง", "Check for updates once a day"), self, checkable=True)
+        auto_update.setChecked(self.service.auto_update_check)
+        auto_update.toggled.connect(self.service.set_auto_update_check)
+        help_menu.addAction(auto_update)
         about = QAction(tr("เกี่ยวกับ PasaScope", "About PasaScope"), self)
         about.triggered.connect(self.show_about)
         help_menu.addAction(about)
@@ -314,6 +333,12 @@ class MainWindow(QMainWindow):
             self.knowledge.open_topic(topic)
         self.stack.setCurrentIndex(KNOWLEDGE_PAGE)
         self._mark_nav(KNOWLEDGE_PAGE)
+
+    def show_feature_guide(self, name: str = "") -> None:
+        """The Knowledge page's measure guide, at one measure when given."""
+        self.stack.setCurrentIndex(KNOWLEDGE_PAGE)
+        self._mark_nav(KNOWLEDGE_PAGE)
+        self.knowledge.open_feature(name)
 
     def _open_from_dashboard(self, case_id: str, session_id) -> None:
         self.reload_cases(case_id)
@@ -634,6 +659,148 @@ class MainWindow(QMainWindow):
                 continue
             break
         self._update_status_bar()
+
+    # ------------------------------------------------------------------
+    # Updates
+    # ------------------------------------------------------------------
+    def check_for_updates(self, quiet: bool = True) -> None:
+        """Ask GitHub for a newer release in the background; ``quiet`` says nothing when there is none."""
+        if not self.version:
+            if not quiet:
+                QMessageBox.information(self, tr("ตรวจหาอัปเดต", "Check for updates"),
+                                        tr("ไม่ทราบรุ่นของโปรแกรมนี้", "This copy's version is unknown."))
+            return
+
+        def done(release) -> None:
+            self._available_update = release
+            if release is None:
+                self.update_label.hide()
+                if not quiet:
+                    QMessageBox.information(self, tr("ตรวจหาอัปเดต", "Check for updates"),
+                                            tr(f"รุ่น {self.version} เป็นรุ่นล่าสุดแล้ว", f"Version {self.version} is the latest."))
+                return
+            self.update_label.setText(f'<a href="update">{tr(f"มีรุ่นใหม่ {release.version}", f"Version {release.version} is available")}</a>')
+            self.update_label.show()
+            if not quiet:
+                self._offer_update(release)
+
+        def failed(exc: Exception) -> None:
+            if not quiet:
+                QMessageBox.warning(self, tr("ตรวจหาอัปเดตไม่ได้", "Could not check for updates"),
+                                    tr(f"เชื่อมต่อ GitHub ไม่ได้ ลองใหม่เมื่อมีอินเทอร์เน็ต\n\n{exc}",
+                                       f"GitHub could not be reached; try again when online.\n\n{exc}"))
+
+        self.runner.run(lambda: self.service.check_for_update(self.version), on_done=done, on_error=failed)
+
+    def _offer_update(self, release) -> None:
+        if release is None or self.busy or self.runner.busy:
+            return
+        notes = release.notes[:1200] + ("…" if len(release.notes) > 1200 else "")
+        box = QMessageBox(self)
+        box.setIcon(QMessageBox.Icon.Information)
+        box.setWindowTitle(tr("มีรุ่นใหม่", "New version"))
+        box.setText(tr(f"PasaScope {release.version} พร้อมให้ติดตั้ง (รุ่นที่ใช้อยู่ {self.version})",
+                       f"PasaScope {release.version} is available (this is {self.version})."))
+        box.setInformativeText(tr(
+            f"ขนาด {release.size / 1_000_000:.0f} MB ระบบจะสำรองข้อมูลก่อน แล้วดาวน์โหลดไปที่โฟลเดอร์ Downloads "
+            "และตรวจ SHA-256 ก่อนเปิด ข้อมูลเคสอยู่แยกจากตัวโปรแกรม การอัปเดตจึงไม่ลบข้อมูล",
+            f"{release.size / 1_000_000:.0f} MB. PasaScope backs up your data first, downloads to the Downloads folder "
+            "and checks the SHA-256 before opening it. Your cases are kept apart from the app, so updating does not remove them.",
+        ))
+        if notes:
+            box.setDetailedText(notes)
+        install = box.addButton(tr("สำรองข้อมูลแล้วดาวน์โหลด", "Back up and download"), QMessageBox.ButtonRole.AcceptRole)
+        box.addButton(tr("ไว้ทีหลัง", "Later"), QMessageBox.ButtonRole.RejectRole)
+        box.exec()
+        if box.clickedButton() is install:
+            self._backup_then_download(release)
+
+    def _backup_then_download(self, release) -> None:
+        folder = Path.home() / "Documents" / "PasaScope backups"
+        target = folder / f"PasaScope-before-{release.version}-{datetime.now():%Y-%m-%d-%H%M}.zip"
+        dialog = QProgressDialog(tr("กำลังสำรองข้อมูล…", "Backing up…"), tr("ยกเลิก", "Cancel"), 0, 1000, self)
+        dialog.setWindowTitle(tr("อัปเดต PasaScope", "Update PasaScope"))
+        dialog.setWindowModality(Qt.WindowModality.WindowModal)
+        dialog.setMinimumDuration(0)
+        self._set_busy(True)
+
+        def work(report):
+            folder.mkdir(parents=True, exist_ok=True)
+            report(0.0, tr("กำลังสำรองข้อมูล", "Backing up"))
+            backup = self.service.create_backup(target, self.version)
+            path = self.service.download_update(release, report, dialog.wasCanceled)
+            return backup, path
+
+        def progress(fraction: float, stage: str) -> None:
+            dialog.setLabelText(stage)
+            dialog.setValue(int(fraction * 1000))
+
+        def done(result) -> None:
+            self._set_busy(False)
+            dialog.close()
+            backup, path = result
+            self._update_backup_label()
+            QDesktopServices.openUrl(QUrl.fromLocalFile(str(path)))
+            QMessageBox.information(self, tr("พร้อมติดตั้ง", "Ready to install"), tr(
+                f"สำรองข้อมูลไว้ที่ {backup.path}\nดาวน์โหลดและตรวจ {path.name} แล้ว\n\n"
+                "ขั้นต่อไป: ปิด PasaScope แล้วลากไอคอน PasaScope ในหน้าต่างที่เปิดขึ้นไปที่ Applications "
+                "เลือก 'แทนที่' แล้วเปิดโปรแกรมใหม่",
+                f"Backed up to {backup.path}\nDownloaded and checked {path.name}.\n\n"
+                "Next: quit PasaScope, drag PasaScope from the window that opened onto Applications, "
+                "choose Replace, then open it again.",
+            ))
+
+        def failed(exc: Exception) -> None:
+            self._set_busy(False)
+            dialog.close()
+            QMessageBox.warning(self, tr("อัปเดตไม่สำเร็จ", "Update failed"), f"{exc}")
+
+        self.runner.run(work, on_done=done, on_error=failed, on_progress=progress)
+
+    def download_models(self) -> None:
+        """Download the speech models with a progress window; the work runs off the UI thread."""
+        if self.busy or self.runner.busy:
+            return
+        status = self.service.thai_model_status()
+        size_gb = status["size"] / 1_000_000_000
+        if status["installed"]:
+            text = tr("โมเดลภาษาไทยอยู่ในเครื่องแล้ว ตรวจและดาวน์โหลดโมเดลเล็กที่เหลือ?",
+                      "The Thai model is already here. Check and fetch the smaller models?")
+        else:
+            text = tr(f"ดาวน์โหลดโมเดลถอดเสียงภาษาไทย ประมาณ {size_gb:.1f} GB จาก Hugging Face "
+                      "ระบบตรวจทุกไฟล์ด้วย SHA-256 ก่อนใช้ ไม่ส่งข้อมูลของเด็กออกจากเครื่อง ดำเนินการต่อ?",
+                      f"Download the Thai speech model, about {size_gb:.1f} GB, from Hugging Face? Every file is checked "
+                      "against its SHA-256 before use. No children's data leaves this computer.")
+        if QMessageBox.question(self, tr("ดาวน์โหลดโมเดลถอดเสียง", "Download speech models"), text) != QMessageBox.StandardButton.Yes:
+            return
+        dialog = QProgressDialog(tr("กำลังดาวน์โหลด…", "Downloading…"), tr("ยกเลิก", "Cancel"), 0, 1000, self)
+        dialog.setWindowTitle(tr("ดาวน์โหลดโมเดลถอดเสียง", "Download speech models"))
+        dialog.setWindowModality(Qt.WindowModality.WindowModal)
+        dialog.setMinimumDuration(0)
+        dialog.setValue(0)
+        self._set_busy(True)
+
+        def progress(fraction: float, stage: str) -> None:
+            dialog.setLabelText(stage)
+            dialog.setValue(int(fraction * 1000))
+
+        def done(_folder) -> None:
+            self._set_busy(False)
+            dialog.close()
+            self.dashboard.refresh()
+            self._update_status_bar()
+            QMessageBox.information(self, tr("พร้อมถอดเสียง", "Ready to transcribe"),
+                                    tr("ดาวน์โหลดและตรวจโมเดลครบแล้ว", "The models are downloaded and checked."))
+
+        def failed(exc: Exception) -> None:
+            self._set_busy(False)
+            dialog.close()
+            QMessageBox.warning(self, tr("ดาวน์โหลดไม่สำเร็จ", "Download failed"),
+                                tr(f"{exc}\n\nลองใหม่ได้ ส่วนที่ดาวน์โหลดครบแล้วจะไม่ต้องโหลดซ้ำ",
+                                   f"{exc}\n\nYou can try again; files already downloaded are kept."))
+
+        self.runner.run(lambda report: self.service.download_speech_models(report, dialog.wasCanceled),
+                        on_done=done, on_error=failed, on_progress=progress)
 
     def ask_organization(self) -> None:
         name, ok = QInputDialog.getText(

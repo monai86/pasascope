@@ -10,9 +10,10 @@ from packages.desktop.core.i18n import tr
 
 import re
 
-from PySide6.QtCore import Qt
+from PySide6.QtCore import Qt, Signal
 from PySide6.QtGui import QBrush, QColor, QFont
 from PySide6.QtWidgets import (
+    QCheckBox,
     QComboBox,
     QFrame,
     QGridLayout,
@@ -42,7 +43,7 @@ from packages.desktop.ui.widgets import (
     set_chip,
 )
 
-CURRENT_SCHEMA = "features-basic-v2"
+CURRENT_SCHEMA = labels.CURRENT_SCHEMA
 
 
 _CHAT_TERMINATOR = re.compile(r"\s*[.?!]+$")
@@ -131,8 +132,11 @@ class CueCard(QFrame):
 
 
 class FindingsPage(SessionPage):
+    open_guide = Signal(str)  # a feature name, or "" for the guide's first page
+
     def __init__(self, service, runner, parent=None) -> None:
         super().__init__(service, runner, parent)
+        self._features = None
         layout = QVBoxLayout(self)
         layout.setContentsMargins(4, 12, 4, 8)
         layout.setSpacing(10)
@@ -200,7 +204,25 @@ class FindingsPage(SessionPage):
         self.table.setHorizontalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAlwaysOff)
         self.table.setWordWrap(False)
         self.table.verticalHeader().setDefaultSectionSize(32)
-        self.left_tabs.addTab(self.table, tr("ตัวชี้วัดทั้งหมด", "All measures"))
+        measures_box = QWidget()
+        measures_layout = QVBoxLayout(measures_box)
+        measures_layout.setContentsMargins(0, 6, 0, 0)
+        measures_layout.setSpacing(4)
+        measures_bar = QHBoxLayout()
+        self.show_all = QCheckBox(tr("แสดงตัวชี้วัดทั้งหมด", "Show all measures"))
+        self.show_all.setToolTip(tr("ตัวชี้วัดหลักคือชุดที่ช่วยนักบำบัดมากที่สุด ตัวอื่นเป็นข้อมูลเสริมหรือเบื้องหลัง",
+                                    "The main measures help most; the rest are supporting or background figures."))
+        self.show_all.toggled.connect(lambda _: self._features and self._fill_features(self._features))
+        measures_bar.addWidget(self.show_all)
+        measures_bar.addStretch(1)
+        guide = label(f'<a href="guide">{tr("แต่ละตัวคืออะไร", "What each one means")}</a>', "Muted")
+        guide.setTextFormat(Qt.TextFormat.RichText)
+        guide.linkActivated.connect(lambda _: self.open_guide.emit(""))
+        measures_bar.addWidget(guide)
+        measures_layout.addLayout(measures_bar)
+        measures_layout.addWidget(self.table, 1)
+        self.table.cellDoubleClicked.connect(self._open_row_guide)
+        self.left_tabs.addTab(measures_box, tr("ตัวชี้วัด", "Measures"))
 
         trend_card, trend = card()
         trow = QHBoxLayout()
@@ -285,14 +307,17 @@ class FindingsPage(SessionPage):
             self.navigate.emit(self._empty_target)
 
     def _fill_features(self, features) -> None:
+        self._features = features
         values = {f.name: f.value for f in features.features}
         by_name = {f.name: f for f in features.features}
         self._fill_cards(values)
         self._fill_notices(features, values)
 
+        show_all = self.show_all.isChecked()
         rows: list[tuple[str, object]] = []
         for group, names in labels.FEATURE_GROUPS:
-            present = [by_name[name] for name in names if name in by_name and name in labels.FEATURES]
+            present = [by_name[name] for name in names
+                       if name in by_name and name in labels.FEATURES and (show_all or name in labels.CORE_FEATURES)]
             if not present:
                 continue
             rows.append(("group", group))
@@ -309,9 +334,17 @@ class FindingsPage(SessionPage):
             else:
                 self._span_row(row, item, heading=kind == "group")
 
+    def _open_row_guide(self, row: int, _column: int) -> None:
+        item = self.table.item(row, 0)
+        name = item.data(Qt.ItemDataRole.UserRole) if item is not None else None
+        if name:
+            self.open_guide.emit(name)
+
     def _feature_row(self, row: int, feature, values: dict) -> None:
         title, _, hint = labels.FEATURES[feature.name]
         name_item = QTableWidgetItem(f"   {title}")
+        name_item.setData(Qt.ItemDataRole.UserRole, feature.name)
+        hint = f"{hint}\n{tr('ดับเบิลคลิกเพื่ออ่านว่าตัวชี้วัดนี้ช่วยอะไร', 'Double-click to read what this measure tells you')}"
         name_item.setToolTip(hint)
         if feature.value is None or feature.value == "not_available":
             reason = labels.missing_reason(feature.name, values)

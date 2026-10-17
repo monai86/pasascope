@@ -21,6 +21,8 @@ def _input(**overrides) -> ReportGenerationInput:
         features=[
             FeatureValue(name="child_utterance_count", value=12, session_id="s2"),
             FeatureValue(name="type_token_ratio", value=0.6125, session_id="s2"),
+            FeatureValue(name="mattr_50", value=0.7125, session_id="s2"),
+            FeatureValue(name="child_response_rate", value=0.55, session_id="s2"),
             FeatureValue(name="mean_length_of_utterance_words", value=3.5, session_id="s2"),
             FeatureValue(name="mean_length_of_utterance_morphemes", value="not_available", session_id="s2"),
         ],
@@ -46,8 +48,10 @@ def _markdown(**overrides) -> str:
 def test_thai_report_reads_in_thai_with_named_values():
     markdown = _markdown()
     assert markdown.startswith("# รายงานการทบทวนตัวอย่างภาษา")
-    assert "| ความหลากหลายของคำ (TTR) | 0.61 |" in markdown
-    assert "type_token_ratio" not in markdown
+    assert "| TTR เฉลี่ยหน้าต่าง 50 คำ (MATTR) | 0.71 |" in markdown
+    assert "| อัตราที่เด็กตอบต่อจากผู้ใหญ่ | 55% |" in markdown
+    # The report lists the main measures only; TTR (length-sensitive) stays in the Findings tab.
+    assert "(TTR)" not in markdown and "type_token_ratio" not in markdown
     assert "MLU-m" not in markdown  # a value that could not be computed is left out
     assert "2.5 → 3.5 (เพิ่มขึ้น 1 จากครั้งก่อน)" in markdown
     assert "นักบำบัดปัดตก — เป็นคำตอบ ไม่ใช่การพูดตาม" in markdown

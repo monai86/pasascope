@@ -45,6 +45,7 @@ class Dashboard(QWidget):
     new_case = Signal()
     backup = Signal()
     speaker_settings = Signal()
+    download_models = Signal()
 
     def __init__(self, service, parent: QWidget | None = None) -> None:
         super().__init__(parent)
@@ -166,6 +167,17 @@ class Dashboard(QWidget):
         holder.setLayout(row)
         self.facts.addWidget(holder)
 
+        if not self.service.thai_model_status()["installed"]:
+            size = self.service.thai_model_status()["size"] / 1_000_000_000
+            models = label(
+                tr(f"ยังไม่มีโมเดลถอดเสียงภาษาไทยในเครื่อง  <a href=\"download\">ดาวน์โหลด ({size:.1f} GB)</a>",
+                   f"The Thai speech model is not on this computer.  <a href=\"download\">Download ({size:.1f} GB)</a>"),
+                wrap=True,
+            )
+            models.setTextFormat(Qt.TextFormat.RichText)
+            models.setStyleSheet(f"color: {theme.ATTENTION};")
+            models.linkActivated.connect(lambda _: self.download_models.emit())
+            self.facts.addWidget(models)
         available, reason = self.service.transcription_availability()
         mode = tr("แม่นยำ", "accurate") if self.service.transcription_mode == "accurate" else tr("เร็ว", "fast")
         self.facts.addWidget(label(

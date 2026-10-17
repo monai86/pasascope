@@ -237,6 +237,12 @@ persistence layer หลักของ pasascope.
     ด้วยถ้อยคำคงที่ หัวข้อเดียวกัน; PDF และตัวอย่างก่อนพิมพ์วาดด้วย `paint_report` ตัวเดียว
     ตามรูปแบบใน `docs/REPORT_LAYOUT.md`; ฟอนต์ TH Sarabun New (GPL + font exception) และ Sarabun (OFL) ใน `packages/desktop/ui/assets/fonts/`
     และโลโก้ `logo.png` ต้องรวมไปกับแอปตอน build พร้อมไฟล์ไลเซนส์ของฟอนต์
+36b. Feature schema `features-basic-v3` เพิ่มตัวชี้วัดการผลัดกันพูด (`packages/features/turn_taking.py`);
+    หน้าตัวชี้วัดและรายงานแสดงเฉพาะตัวหลักใน `labels.CORE_FEATURES` ตามหลักฐานใน `docs/FEATURE_GUIDE.md`
+    และทุกตัวชี้วัดต้องมีคำอธิบายใน `packages/desktop/ui/feature_guide.py` (มีเทสต์บังคับ)
+36c. แอป desktop แจกเป็น `.dmg` จาก `scripts/build_macos_dmg.py` และอัปเดตจาก GitHub Releases
+    ตาม `docs/DESKTOP_RELEASE.md`; โมเดลเสียงดาวน์โหลดตอนใช้ครั้งแรกและตรวจ SHA-256 ทุกไฟล์
+    (`packages/desktop/core/models.py`); การสร้าง release ต้องได้รับอนุญาตจากเจ้าของโครงการ
 37. ขอบเขต term paper อยู่ใน `SCOPE_AND_DELIVERABLES.md` และการจับคู่หัวข้อกับหลักฐาน
     อยู่ใน `docs/TERM_PAPER_MAPPING.md`
 38. ชื่อโครงการในโค้ด config และเอกสารที่ใช้งานอยู่คือ PasaScope เท่านั้น:

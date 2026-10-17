@@ -31,7 +31,7 @@ ARTIFACT_TYPE = "ml_reference_evidence"
 FEATURE_SCHEMA_VERSION = "reference-core-14-v1"
 SUPPORTED_LANGUAGE = "eng"
 # v2 counts words with CLAN's rules; the same feature names keep their meaning.
-SUPPORTED_RUNTIME_FEATURE_SCHEMAS = {"features-basic-v1", "features-basic-v2"}
+SUPPORTED_RUNTIME_FEATURE_SCHEMAS = {"features-basic-v1", "features-basic-v2", "features-basic-v3"}
 SUPPORTED_PROFILE_CODES = {"TD", "DD", "ASD", "LT", "STI", "HL"}
 SESSION_TYPE_TO_TASK_TYPE = {
     "free_play": "toyplay",

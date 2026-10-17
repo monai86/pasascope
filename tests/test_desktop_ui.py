@@ -11,6 +11,7 @@ os.environ.setdefault("QT_QPA_PLATFORM", "offscreen")
 pytest.importorskip("PySide6")
 pytest.importorskip("pytestqt")
 
+from PySide6.QtCore import Qt  # noqa: E402
 from PySide6.QtWidgets import QMessageBox  # noqa: E402
 
 from packages.desktop.core import DesktopService, open_workspace  # noqa: E402
@@ -485,3 +486,40 @@ def test_report_pages_keep_tables_whole_and_the_signature_with_the_text(window, 
             assert all(first == last for first, last in outline["__tables__"]), (language, extra, outline["__tables__"])
             first, last, before = outline["__signature__"]
             assert first == last == before == pages, (language, extra, outline["__signature__"], pages)
+
+
+def test_findings_show_main_measures_and_open_their_guide(window, qtbot):
+    from packages.desktop.ui import labels
+    from packages.desktop.ui.feature_guide import GUIDE, MAIN, guide_html
+
+    # Every measure the app computes has a guide entry; the main ones match the Findings tab's core set.
+    from app.services.providers.basic_provider import BasicFeatureProvider
+
+    computed = {d.feature_name for d in BasicFeatureProvider().get_feature_definitions()} - {"total_utterance_count"}
+    assert computed <= set(GUIDE), computed - set(GUIDE)
+    assert {name for name, entry in GUIDE.items() if entry[0] == MAIN} == labels.CORE_FEATURES
+    assert "feature-child_response_rate" in guide_html()
+
+    case, session = _analysed_session(window)
+    window.open_case(case.case_id, session.session_id)
+    window.tabs.setCurrentIndex(2)
+    page = window.pages[2]
+    page.refresh()
+
+    def shown() -> set[str]:
+        names = set()
+        for row in range(page.table.rowCount()):
+            item = page.table.item(row, 0)
+            if item is not None and item.data(Qt.ItemDataRole.UserRole):
+                names.add(item.data(Qt.ItemDataRole.UserRole))
+        return names
+
+    assert shown() <= labels.CORE_FEATURES and "child_response_rate" in shown()
+    page.show_all.setChecked(True)
+    assert "mlt_ratio" in shown() and "type_token_ratio" in shown()
+
+    row = next(r for r in range(page.table.rowCount())
+               if page.table.item(r, 0) and page.table.item(r, 0).data(Qt.ItemDataRole.UserRole) == "child_response_rate")
+    page.table.cellDoubleClicked.emit(row, 0)
+    assert window.stack.currentIndex() == 2  # the Knowledge page
+    assert window.knowledge.topics.currentItem().data(Qt.ItemDataRole.UserRole) == "measures"

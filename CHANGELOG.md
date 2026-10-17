@@ -2,6 +2,13 @@
 
 ## [Unreleased]
 
+### Desktop app
+- **Turn-taking measures** (`features-basic-v3`): the child's response rate, response count and turn-length ratio, checked on 1,120 TalkBank toy-play transcripts (`reports/metrics/turn_taking_reference.md`). Older analyses ask to be run again.
+- **Main measures first**: the Findings tab and the report lead with 11 main measures; "Show all measures" shows the rest. Knowledge → "Each measure" explains what each measure is, how it helps and what to watch for, and double-clicking a measure opens its entry (`docs/FEATURE_GUIDE.md`).
+- **Speech models download on first use**: the Thai Whisper model (1.5 GB) and the smaller models download from Hugging Face, and every file is checked by SHA-256. They are kept out of backups.
+- **Updates from inside the app**: Help → Check for updates finds a newer release on GitHub. The app backs up the data first, then downloads the disk image and checks it before opening. It also checks once a day unless switched off.
+- **Installable disk image**: `scripts/build_macos_dmg.py` builds a self-contained `PasaScope.app` and `.dmg` with its own Python, and smoke-tests the bundle before packaging (`docs/DESKTOP_RELEASE.md`).
+
 Public app mode on `feat/public-app`: opt-in settings that turn PasaScope into a sign-up-and-use web app. The defaults keep the invitation-only, gated behaviour.
 
 ### Added

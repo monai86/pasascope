@@ -76,6 +76,8 @@ def main(argv: list[str] | None = None) -> int:
     window.show()
     if not service.therapist_name:
         window.ask_therapist_name(first_run=True)
+    if service.update_check_due():
+        window.check_for_updates(quiet=True)
     return app.exec()
 
 

@@ -28,23 +28,20 @@ THAI_LIMITATION_TEXT = (
     "ต้องให้นักบำบัดตรวจและลงนามก่อนนำรายงานไปใช้"
 )
 
-# Feature name → (Thai label, value kind)
+# Feature name → (Thai label, value kind). The report lists the main measures
+# (docs/FEATURE_GUIDE.md); every measure is still in the app's Findings tab.
 FEATURES: list[tuple[str, str, str]] = [
     ("child_utterance_count", "จำนวนประโยคของเด็ก", "int"),
-    ("adult_utterance_count", "จำนวนประโยคของผู้ใหญ่", "int"),
     ("mlu_utterance_count", "จำนวนประโยคที่ใช้คิด MLU", "int"),
     ("total_word_count", "จำนวนคำของเด็ก", "int"),
+    ("mean_length_of_utterance_words", "ความยาวประโยคเฉลี่ย (MLU-w, คำ)", "float"),
     ("number_of_different_words", "จำนวนคำที่ไม่ซ้ำ (NDW)", "int"),
     ("ndw_100", "คำไม่ซ้ำใน 100 คำแรก (NDW-100)", "int"),
-    ("type_token_ratio", "ความหลากหลายของคำ (TTR)", "ratio"),
     ("mattr_50", "TTR เฉลี่ยหน้าต่าง 50 คำ (MATTR)", "ratio"),
     ("vocd_d", "ความหลากหลายของคำ (VOCD D)", "float"),
-    ("mean_length_of_utterance_words", "ความยาวประโยคเฉลี่ย (MLU-w, คำ)", "float"),
+    ("child_response_rate", "อัตราที่เด็กตอบต่อจากผู้ใหญ่", "percent"),
     ("unintelligible_ratio", "สัดส่วนประโยคที่ฟังไม่ออก", "percent"),
-    ("question_ratio", "สัดส่วนประโยคคำถามของเด็ก", "percent"),
-    ("repetition_marker_count", "จำนวนการพูดซ้ำในประโยค", "int"),
     ("echolalia_cue_count", "cue การพูดตาม (echolalia)", "int"),
-    ("pronoun_reversal_cue_count", "cue การใช้สรรพนามสลับ", "int"),
 ]
 FEATURE_LABELS = {name: label for name, label, _ in FEATURES}
 FEATURE_KINDS = {name: kind for name, _, kind in FEATURES}
@@ -53,8 +50,8 @@ TRACKED = [
     "child_utterance_count",
     "total_word_count",
     "number_of_different_words",
-    "type_token_ratio",
     "mean_length_of_utterance_words",
+    "child_response_rate",
 ]
 
 CONSENT = {"granted": "ได้รับแล้ว", "pending": "ยังไม่บันทึก", "withdrawn": "ถอนแล้ว"}
@@ -81,20 +78,16 @@ ENGLISH_LIMITATION_TEXT = (
 
 ENGLISH_FEATURE_LABELS = {
     "child_utterance_count": "Child utterances",
-    "adult_utterance_count": "Adult utterances",
     "mlu_utterance_count": "Utterances used for MLU",
     "total_word_count": "Child words",
+    "mean_length_of_utterance_words": "Mean length of utterance (MLU-w, words)",
     "number_of_different_words": "Number of different words (NDW)",
     "ndw_100": "Different words in the first 100 (NDW-100)",
-    "type_token_ratio": "Type-token ratio (TTR)",
     "mattr_50": "Moving-average TTR, 50-word window (MATTR)",
     "vocd_d": "Lexical diversity (VOCD D)",
-    "mean_length_of_utterance_words": "Mean length of utterance (MLU-w, words)",
+    "child_response_rate": "Child response rate",
     "unintelligible_ratio": "Unintelligible utterances",
-    "question_ratio": "Child questions",
-    "repetition_marker_count": "Within-utterance repetitions",
     "echolalia_cue_count": "Echolalia cues",
-    "pronoun_reversal_cue_count": "Pronoun reversal cues",
 }
 
 WORDING: dict[str, dict[str, Any]] = {

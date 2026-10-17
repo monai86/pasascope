@@ -156,7 +156,7 @@ class CaseOverview(QWidget):
         for index, row in enumerate(rows):
             session = row["session"]
             step_text, color = STEP_TEXT[row["step"]]
-            if row["values"] and row["schema_version"] != "features-basic-v2":
+            if row["values"] and row["schema_version"] != labels.CURRENT_SCHEMA:
                 step_text += tr(" · วิเคราะห์ใหม่", ", analyse again")
             cells = [str(session.session_date), step_text]
             cells.extend(_number(name, row["values"].get(name)) for name in TABLE_FEATURES)
