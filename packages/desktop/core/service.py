@@ -57,6 +57,16 @@ def _utc(value: datetime | None) -> datetime:
     return value if value.tzinfo else value.replace(tzinfo=timezone.utc)
 
 
+def _day(value: Any) -> str:
+    """A session date as 17/10/2026, whether it is stored as a date or as text."""
+    if isinstance(value, str):
+        try:
+            value = date.fromisoformat(value[:10])
+        except ValueError:
+            return value
+    return value.strftime("%d/%m/%Y") if hasattr(value, "strftime") else str(value)
+
+
 def _status_value(status: Any) -> str:
     return status.value if hasattr(status, "value") else str(status)
 
@@ -193,6 +203,7 @@ class DesktopService:
                     sessions.append({
                         "session_id": session.session_id, "child_id": case.case_id, "audio_file_id": audio.audio_file_id,
                         "audio_path": str(path), "spans": spans, "labels": labels,
+                        "name": f"{case.child_code} {_day(session.session_date)}",
                     })
         return sessions
 
@@ -234,15 +245,22 @@ class DesktopService:
             labelled.append(LabelledSession(s["session_id"], s["child_id"], design, np.asarray(s["labels"], int)))
         if progress is not None:
             progress(len(sessions) / (len(sessions) + 1), "กำลังเทรนและทดสอบโมเดล")
-        return train_clinic_head(labelled)
+        result = train_clinic_head(labelled)
+        names = [f"{s['name']} {int(start // 60):02d}:{int(start % 60):02d}" for s in sessions for start, _ in s["spans"]]
+        result.examples = (np.vstack([item.design for item in labelled]), np.concatenate([item.is_child for item in labelled]), names)
+        return result
 
     def save_clinic_speaker_result(self, result) -> dict:
         """Keep the newest result, record it in the audit log, and use the model if it was adopted."""
-        from src.audio_pipeline.clinic_speaker_model import save_result
+        from src.audio_pipeline.clinic_speaker_model import examples_path, save_examples, save_result
 
         if result.reason == "not_enough_sessions":
             return self.clinic_speaker_status()
         save_result(self.clinic_speaker_model_path, result, trained_at=datetime.now().astimezone().isoformat(timespec="seconds"))
+        if result.head is not None and result.examples is not None:
+            save_examples(self.clinic_speaker_model_path, result.head, *result.examples)
+        else:
+            examples_path(self.clinic_speaker_model_path).unlink(missing_ok=True)
         if result.model_accuracy is not None:
             outcome = "adopted" if result.adopted else "kept the frame model"
             message = (
@@ -261,7 +279,10 @@ class DesktopService:
         return self.save_clinic_speaker_result(self.train_clinic_speaker_model(self.clinic_speaker_training_sessions(), progress))
 
     def reset_clinic_speaker_model(self) -> None:
+        from src.audio_pipeline.clinic_speaker_model import examples_path
+
         self.clinic_speaker_model_path.unlink(missing_ok=True)
+        examples_path(self.clinic_speaker_model_path).unlink(missing_ok=True)
         shutil.rmtree(self._speaker_feature_cache, ignore_errors=True)
         self._apply_clinic_speaker_model()
         self.repo.add_audit("speaker_model.reset", "clinic_speaker_model", "Therapist cleared the clinic speaker model.", actor_id=LOCAL_USER_ID)

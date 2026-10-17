@@ -302,15 +302,21 @@ class ReviewPage(SessionPage):
         time_item.setFlags(time_item.flags() & ~Qt.ItemFlag.ItemIsEditable)
         time_item.setForeground(QBrush(QColor(theme.MUTED)))
         notes = utt.notes or ""
+        speaker_note = notes[notes.index("โมเดลประจำคลินิก"):] if "โมเดลประจำคลินิก" in notes else ""
         if "ขึ้นประโยคใหม่" in notes:  # why the draft started a new utterance here (boundary model)
-            time_item.setToolTip(notes[notes.index("ขึ้นประโยคใหม่"):])
+            time_item.setToolTip(notes[notes.index("ขึ้นประโยคใหม่"):].replace(speaker_note, "").strip())
         speaker = str(utt.speaker)
         uncertain = bool(getattr(utt, "speaker_uncertain", False))
         speaker_item = QTableWidgetItem(labels.SPEAKER_LABELS.get(speaker, speaker) + ("  ?" if uncertain else ""))
         speaker_item.setData(Qt.ItemDataRole.UserRole, speaker)
         speaker_item.setForeground(QBrush(QColor(theme.ATTENTION if uncertain else theme.SPEAKER_COLORS.get(speaker, theme.INK))))
+        speaker_tip = []
         if uncertain:
-            speaker_item.setToolTip("ระบบเดาผู้พูดจากระดับเสียงหรือประโยครอบข้าง ไม่ได้จำจากเสียง ฟังแล้วยืนยันก่อน")
+            speaker_tip.append("ระบบไม่แน่ใจผู้พูด ฟังแล้วยืนยันก่อน")
+        if speaker_note:  # the clinic model's reasons: its probability and similar attested utterances
+            speaker_tip.append(speaker_note)
+        if speaker_tip:
+            speaker_item.setToolTip("\n".join(speaker_tip))
         text_item = QTableWidgetItem(utt.text)
         conf = utt.confidence
         conf_item = QTableWidgetItem("—" if conf is None else f"{conf * 100:.0f}%")

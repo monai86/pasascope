@@ -282,6 +282,8 @@ class _LoudnessFrames:
 def test_clinic_speaker_model_learns_from_attested_sessions(service, tmp_path, monkeypatch):
     import os
 
+    import numpy as np
+
     from src.audio_pipeline import child_adult_frames
     from src.audio_pipeline.clinic_speaker_model import CLINIC_MODEL_ENV, load_adopted_head
 
@@ -301,7 +303,11 @@ def test_clinic_speaker_model_learns_from_attested_sessions(service, tmp_path, m
     assert status["in_use"] and status["eligible_sessions"] == 4 and status["eligible_children"] == 2
     assert status["model_accuracy"] == 1.0 and status["frame_accuracy"] == 0.5
     assert os.environ[CLINIC_MODEL_ENV] == str(service.clinic_speaker_model_path)
-    assert load_adopted_head() is not None
+    head = load_adopted_head()
+    assert head is not None and head.examples is not None and len(head.examples.labels) == 24
+    child_row = np.r_[np.full(4, 0.2), [0.1, 0.1, 0.7, 0.1], np.log(0.8)]  # loud like the child's lines
+    reason = head.explain(child_row)
+    assert reason.startswith("โมเดลประจำคลินิก: เสียงเด็ก") and "(เด็ก)" in reason and "TH-00" in reason
     assert any(e["action"] == "speaker_model.train" for e in service.audit_events())
 
     service.set_clinic_speaker_enabled(False)

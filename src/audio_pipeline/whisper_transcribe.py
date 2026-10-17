@@ -317,6 +317,8 @@ class UtteranceSegment:
     # Why this utterance starts here, when the boundary model decided it
     # (utterance_boundaries.segment_by_model), for the therapist to read.
     boundary_reason: Optional[str] = None
+    # Why the clinic's own speaker model chose child or adult (clinic_speaker_model).
+    speaker_reason: Optional[str] = None
 
 
 class WhisperTranscriber:

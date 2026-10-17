@@ -42,6 +42,8 @@ class TranscriptLine:
     speaker_uncertain: bool = False
     # Why the utterance was started here (the boundary model's reasons), shown to the therapist.
     boundary_reason: str = ""
+    # Why the clinic's speaker model chose child or adult, shown to the therapist.
+    speaker_reason: str = ""
 
 
 @dataclass

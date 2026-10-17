@@ -73,11 +73,21 @@ def frame_margins(design: np.ndarray) -> np.ndarray:
 
 
 @dataclass
+class ClinicExamples:
+    """The attested utterances the model learned from, to show which ones a new utterance sounds like."""
+
+    rows: np.ndarray  # standardised feature rows, as the model sees them
+    is_child: np.ndarray
+    labels: list  # e.g. "TH-001 12/10/2026 03:12"
+
+
+@dataclass
 class ClinicSpeakerHead:
     mean: np.ndarray
     scale: np.ndarray
     coef: np.ndarray
     intercept: float
+    examples: Optional[ClinicExamples] = None
 
     def child_probability(self, design: np.ndarray) -> np.ndarray:
         z = ((design - self.mean) / self.scale) @ self.coef + self.intercept
@@ -86,6 +96,28 @@ class ClinicSpeakerHead:
     def margins(self, design: np.ndarray) -> np.ndarray:
         """On the frame model's scale: -1 surely adult, +1 surely child."""
         return 2.0 * self.child_probability(design) - 1.0
+
+    def nearest_examples(self, row: np.ndarray, count: int = 3) -> list[tuple[str, bool]]:
+        """The attested utterances closest to ``row`` in the features the model weighs most."""
+        if self.examples is None or not len(self.examples.rows):
+            return []
+        weight = np.abs(self.coef)
+        query = (row - self.mean) / self.scale * weight
+        bank = self.examples.rows * weight
+        similarity = bank @ query / (np.linalg.norm(bank, axis=1) * np.linalg.norm(query) + 1e-9)
+        order = np.argsort(-similarity)[:count]
+        return [(self.examples.labels[i], bool(self.examples.is_child[i])) for i in order]
+
+    def explain(self, row: np.ndarray) -> str:
+        """Why the clinic model called this utterance child or adult, in Thai."""
+        child = float(self.child_probability(row[None, :])[0])
+        probs = row[-5:-1]  # the frame model's mean class probabilities
+        base = float(probs[CHILD] / max(probs[CHILD] + probs[ADULT], 1e-9))
+        text = f"โมเดลประจำคลินิก: เสียงเด็ก {child:.0%} (โมเดลพื้นฐาน {base:.0%})"
+        similar = self.nearest_examples(row)
+        if similar:
+            text += "; คล้ายประโยคที่รับรองแล้ว: " + ", ".join(f"{label} ({'เด็ก' if is_child else 'ผู้ใหญ่'})" for label, is_child in similar)
+        return text
 
     def to_dict(self) -> dict:
         return {"mean": self.mean.tolist(), "scale": self.scale.tolist(), "coef": self.coef.tolist(), "intercept": self.intercept}
@@ -130,6 +162,8 @@ class TrainingResult:
     sessions_needed: int = 0
     children_needed: int = 0
     per_child: dict = field(default_factory=dict)
+    # Every training utterance (feature rows, child or not, a label to show), for explanations.
+    examples: Optional[tuple] = None
 
 
 def train_clinic_head(sessions: Iterable[LabelledSession]) -> TrainingResult:
@@ -177,6 +211,16 @@ def train_clinic_head(sessions: Iterable[LabelledSession]) -> TrainingResult:
     )
 
 
+def examples_path(path: Path) -> Path:
+    return Path(path).with_suffix(".examples.npz")
+
+
+def save_examples(path: Path, head: ClinicSpeakerHead, design: np.ndarray, is_child: np.ndarray, labels: list) -> None:
+    """Keep the training utterances beside the model, standardised as the model sees them."""
+    rows = ((design - head.mean) / head.scale).astype("float16")
+    np.savez_compressed(examples_path(path), rows=rows, is_child=is_child.astype("int8"), labels=np.array(labels))
+
+
 def save_result(path: Path, result: TrainingResult, *, trained_at: str) -> None:
     data = {
         "format": FORMAT_VERSION,
@@ -218,6 +262,12 @@ def load_adopted_head(path: Optional[Path | str] = None) -> Optional[ClinicSpeak
     if not data or not data.get("adopted") or not data.get("head"):
         return None
     try:
-        return ClinicSpeakerHead.from_dict(data["head"])
+        head = ClinicSpeakerHead.from_dict(data["head"])
     except (KeyError, TypeError, ValueError):
         return None
+    try:
+        with np.load(examples_path(Path(path))) as stored:
+            head.examples = ClinicExamples(stored["rows"].astype("float32"), stored["is_child"], list(stored["labels"]))
+    except (OSError, KeyError, ValueError):
+        pass  # explanations then give the probabilities only
+    return head

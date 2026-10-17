@@ -260,6 +260,8 @@ def speaker_margins(model: "ChildAdultFrameModel", audio: np.ndarray, utterances
 
     features, probs = model.frame_outputs(audio)
     design = utterance_features(features, probs, [(u.start, u.end) for u in utterances])
+    for utt, row in zip(utterances, design):
+        utt.speaker_reason = clinic_head.explain(row)
     return [float(m) for m in clinic_head.margins(design)]
 
 

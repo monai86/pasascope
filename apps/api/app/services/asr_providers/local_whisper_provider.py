@@ -164,6 +164,7 @@ class LocalWhisperProvider(BaseTranscriptionProvider):
                     unclear=confidence is not None and confidence < UNCLEAR_CONFIDENCE_THRESHOLD,
                     speaker_uncertain=getattr(segment, "speaker_basis", None) not in ("voice", "frame"),
                     boundary_reason=getattr(segment, "boundary_reason", None) or "",
+                    speaker_reason=getattr(segment, "speaker_reason", None) or "",
                 )
             )
 

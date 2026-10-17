@@ -66,6 +66,7 @@ def _merge_segments(a: UtteranceSegment, b: UtteranceSegment) -> UtteranceSegmen
         speaker=a.speaker,
         speaker_basis=_merged_basis(a, b),
         language=a.language or b.language,
+        speaker_reason=a.speaker_reason or b.speaker_reason,
     )
 
 
@@ -171,6 +172,7 @@ def _split_at_long_silences(
             speaker=seg.speaker,
             speaker_basis=seg.speaker_basis,
             language=seg.language,
+            speaker_reason=seg.speaker_reason,
         ))
     return out
 

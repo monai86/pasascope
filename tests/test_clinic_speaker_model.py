@@ -100,6 +100,8 @@ def test_the_diarizer_takes_child_or_adult_from_the_clinic_model(tmp_path):
 
     with_clinic = caf.FrameRoleDiarizer(FrameModelHearsOnlyAdults(), clinic_head=head).assign(wav, utts)
     assert [u.speaker for u in with_clinic] == ["MOT", "CHI"]
+    assert with_clinic[1].speaker_reason.startswith("โมเดลประจำคลินิก: เสียงเด็ก")  # and the base model said adult
+    assert "(โมเดลพื้นฐาน 12%)" in with_clinic[1].speaker_reason  # 0.1 / (0.1 + 0.7)
     without = caf.FrameRoleDiarizer(FrameModelHearsOnlyAdults(), clinic_head=None).assign(wav, utts)
     assert [u.speaker for u in without] == ["MOT", "MOT"]
 
@@ -118,3 +120,18 @@ def test_calling_everyone_adult_is_not_adopted_however_accurate():
     result = csm.train_clinic_head(sessions)
     assert result.model_accuracy > result.frame_accuracy  # it learned "adult" ...
     assert not result.adopted  # ... and is not used
+
+
+def test_explanations_name_the_most_similar_attested_utterances(tmp_path):
+    result = csm.train_clinic_head(_sessions(6, 3, frame_right=False))
+    design = np.vstack([s.design for s in _sessions(6, 3, frame_right=False)])
+    is_child = np.concatenate([s.is_child for s in _sessions(6, 3, frame_right=False)])
+    labels = [f"TH-{i:03d} 01/10/2026 00:{i % 60:02d}" for i in range(len(is_child))]
+    path = tmp_path / "model.json"
+    csm.save_result(path, result, trained_at="2026-10-17T12:00:00+07:00")
+    csm.save_examples(path, result.head, design, is_child, labels)
+    head = csm.load_adopted_head(path)
+    child_like = _design(np.array([1]), frame_right=False, rng=np.random.default_rng(5))[0]
+    similar = head.nearest_examples(child_like)
+    assert len(similar) == 3 and all(is_child for _, is_child in similar)
+    assert "คล้ายประโยคที่รับรองแล้ว: TH-" in head.explain(child_like)
