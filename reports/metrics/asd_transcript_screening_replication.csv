@@ -1,0 +1,16 @@
+check,children,asd,features,auc,auc_low,auc_high,p_permutation,coefficients
+Nadig: as published,38,13,mlu+mlt_ratio+age_months+male,0.99,0.983,0.995,0.005,"mlu -0.70, mlt_ratio -0.47, age_months +2.56, male +0.18"
+Nadig: SMOTE inside training folds,38,13,mlu+mlt_ratio+age_months+male,0.982,0.961,0.991,0.005,"mlu -0.78, mlt_ratio -0.58, age_months +2.55, male -0.01"
+"Nadig: language only (MLU, MLT ratio)",38,13,mlu+mlt_ratio,0.561,0.463,0.624,0.229,"mlu -0.17, mlt_ratio -0.31"
+Nadig: age only,38,13,age_months,0.973,0.969,0.981,0.005,age_months +2.24
+Nadig: sex only,38,13,male,0.542,0.485,0.587,0.114,male +0.52
+Eigsti: as published,32,16,mlu+mlt_ratio+age_months+male,0.784,0.724,0.824,0.03,"mlu -0.47, mlt_ratio +0.07, age_months +1.58, male +0.14"
+Eigsti: SMOTE inside training folds,32,16,mlu+mlt_ratio+age_months+male,0.787,0.726,0.839,0.015,"mlu -0.47, mlt_ratio +0.07, age_months +1.58, male +0.14"
+"Eigsti: language only (MLU, MLT ratio)",32,16,mlu+mlt_ratio,0.53,0.435,0.615,0.378,"mlu -0.58, mlt_ratio +0.20"
+Eigsti: age only,32,16,age_months,0.86,0.836,0.886,0.005,age_months +1.57
+Eigsti: sex only,32,16,male,0.38,0.236,0.492,0.741,male -0.12
+"Eigsti: language only, age-matched pairs",14,7,mlu+mlt_ratio,0.528,0.388,0.633,0.308,"mlu -0.46, mlt_ratio -0.26"
+"trained on Eigsti, tested on Nadig: published features",38,13,mlu+mlt_ratio+age_months+male,0.994,,,,"mlu -0.47, mlt_ratio +0.07, age_months +1.58, male +0.14"
+"trained on Eigsti, tested on Nadig: language only",38,13,mlu+mlt_ratio,0.597,,,,"mlu -0.58, mlt_ratio +0.20"
+"trained on Nadig, tested on Eigsti: published features",32,16,mlu+mlt_ratio+age_months+male,0.844,,,,"mlu -0.66, mlt_ratio -0.42, age_months +2.24, male +0.20"
+"trained on Nadig, tested on Eigsti: language only",32,16,mlu+mlt_ratio,0.57,,,,"mlu -0.17, mlt_ratio -0.31"
