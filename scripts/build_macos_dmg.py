@@ -15,8 +15,9 @@ without an Apple Developer ID it is not notarised, so the first launch on
 another Mac needs right-click, Open.
 
 Steps: fetch Python, install packages, copy code, write Info.plist and the
-icon, sign, run the headless smoke test with the bundled Python, then make
-``PasaScope-<version>.dmg`` and its ``.sha256`` (the files a GitHub release
+icon, run the headless smoke test with the bundled Python, sign last and
+verify the signature, then make ``PasaScope-<version>.dmg``, check the
+signature again inside the mounted image, and write its ``.sha256`` (the files a GitHub release
 carries for the in-app updater).
 
 Usage:
@@ -65,6 +66,8 @@ APP="$CONTENTS/Resources/app"
 export PYTHONNOUSERSITE=1
 export PYTHONDONTWRITEBYTECODE=1
 export OBJC_DISABLE_INITIALIZE_FORK_SAFETY=YES
+# Caches go outside the app: a file written inside it breaks its signature.
+export NUMBA_CACHE_DIR="$HOME/Library/Caches/PasaScope/numba"
 LOGS="$HOME/Library/Logs/PasaScope"
 mkdir -p "$LOGS"
 cd "$APP"
@@ -174,16 +177,22 @@ def build_app(out: Path) -> Path:
     launcher.chmod(0o755)
     write_info_plist(contents, app_version)
     build_icns(resources / "PasaScope.icns")
-    for cache in resources.rglob("__pycache__"):
+    return bundle
+
+
+def sign(bundle: Path) -> None:
+    """Sign ad hoc, last: any file written into the bundle afterwards breaks the seal."""
+    for cache in bundle.rglob("__pycache__"):
         shutil.rmtree(cache, ignore_errors=True)
     run("codesign", "--force", "--deep", "--sign", "-", str(bundle))
-    return bundle
+    run("codesign", "--verify", "--deep", "--strict", str(bundle))
 
 
 def smoke_test(bundle: Path) -> None:
     resources = bundle / "Contents" / "Resources"
     env = {key: value for key, value in os.environ.items() if not key.startswith(("PYTHON", "VIRTUAL_ENV"))}
-    env.update({"PYTHONNOUSERSITE": "1", "QT_QPA_PLATFORM": "offscreen"})
+    env.update({"PYTHONNOUSERSITE": "1", "PYTHONDONTWRITEBYTECODE": "1", "QT_QPA_PLATFORM": "offscreen",
+                "NUMBA_CACHE_DIR": str(Path(tempfile.gettempdir()) / "pasascope-numba")})
     run(str(resources / "python" / "bin" / "python3"), "-s", "scripts/desktop_bundle/smoke_test.py",
         cwd=resources / "app", env=env)
 
@@ -192,6 +201,8 @@ def build_dmg(bundle: Path, out: Path) -> Path:
     app_version = version()
     image = out / f"PasaScope-{app_version}.dmg"
     image.unlink(missing_ok=True)
+    stale = image.with_name(image.name + ".sha256")
+    stale.unlink(missing_ok=True)
     with tempfile.TemporaryDirectory() as tmp:
         staging = Path(tmp) / "PasaScope"
         staging.mkdir()
@@ -199,6 +210,12 @@ def build_dmg(bundle: Path, out: Path) -> Path:
         (staging / "Applications").symlink_to("/Applications")
         run("hdiutil", "create", "-volname", f"PasaScope {app_version}", "-srcfolder", str(staging),
             "-fs", "HFS+", "-format", "ULFO", "-ov", str(image))
+    mount = Path(tempfile.mkdtemp())
+    run("hdiutil", "attach", "-nobrowse", "-readonly", "-mountpoint", str(mount), str(image))
+    try:
+        run("codesign", "--verify", "--deep", "--strict", str(mount / "PasaScope.app"))
+    finally:
+        run("hdiutil", "detach", str(mount), "-quiet")
     checksum = image.with_name(image.name + ".sha256")
     checksum.write_text(f"{sha256(image)}  {image.name}\n", encoding="utf-8")
     return image
@@ -216,6 +233,7 @@ def main() -> int:
     bundle = build_app(args.out)
     if not args.skip_smoke_test:
         smoke_test(bundle)
+    sign(bundle)
     print(f"App: {bundle} ({sum(f.stat().st_size for f in bundle.rglob('*') if f.is_file()) / 1e9:.2f} GB)")
     if not args.no_dmg:
         image = build_dmg(bundle, args.out)
