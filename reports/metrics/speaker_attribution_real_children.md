@@ -58,9 +58,29 @@ zero or the utterance is shorter than 0.5 s. Chosen on the tuning half; on the h
 utterances were flagged, they held 78% of the errors, and unflagged labels were 95% right. The review
 page marks these rows with "?".
 
+## Younger and older children
+
+The same measurement on two more corpora shows where the labels stop holding:
+
+| Corpus | Children | Ages | Utterances right | Unflagged labels right |
+|---|---|---|---|---|
+| CRSLP (Thai, toy play with parents) | 10 children, 16 recordings | 1;8–2;0 | 61% | 67% |
+| EllisWeismer (above) | 16 | 2;6–5;6 | 87% | 95% |
+| ENNI (story retelling to an examiner), younger | 8 | 4;9–6;10 | 89% | 95% |
+| ENNI, older | 8 | 7;6–9;6 | 48% | 47% |
+
+The ENNI children were 8 with SLI and 8 typically developing, chosen so the two groups have the
+same ages, from the A story set. The older ENNI children were mostly heard as adults: in 6 of 8
+recordings, fewer than half the child's utterances were labelled as the child's. Every label is
+now flagged for children younger than 30 or older than 83 months (`MIN_CHECKED_AGE_MONTHS`,
+`MAX_CHECKED_AGE_MONTHS` in `src/audio_pipeline/child_adult_frames.py`).
+Details: `speaker_attribution_thai_toddlers.md`, `enni/speaker_attribution_hybrid_audio_only.md`.
+
 ## Limits
 
-- English recordings of North American children; Thai child recordings are still needed.
-- Speaker attribution only: real drafts add transcription and segmentation errors.
+- Labels were checked from 2;6 to 6;10 only, and in English. Thai children of those ages have not
+  been tested (CRSLP covers only 1;8–2;0).
+- Speaker attribution only: real drafts add transcription and segmentation errors
+  (`end_to_end_*.md`).
 - The frame model (USC SAIL, CC-BY-SA-4.0 weights) is downloaded on first use; without it the app
   falls back to the previous default.

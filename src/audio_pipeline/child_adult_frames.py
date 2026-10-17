@@ -52,6 +52,14 @@ LORA_SCALE = 1.0 / 8  # loralib.Linear default lora_alpha=1 over rank 8
 # about three quarters of the errors, and unflagged labels are ~95% right.
 UNSURE_MARGIN = 0.3
 UNSURE_SECONDS = 0.5
+# Labels are trusted only between these ages; outside them every label is
+# flagged. On 16 CRSLP recordings of Thai children aged 20-24 months 61% were
+# right and unflagged labels were wrong a third of the time; from 2;6
+# (EllisWeismer, 84%) to 6;10 (ENNI, 88%) unflagged labels were ~95% right.
+# On ENNI children aged 7;6 to 9;6 (mostly heard as adults) 48%
+# were right and the flags no longer singled out the errors.
+MIN_CHECKED_AGE_MONTHS = 30
+MAX_CHECKED_AGE_MONTHS = 84
 
 
 def default_model_path() -> Path:
@@ -218,9 +226,13 @@ def utterance_margins(probs: np.ndarray, utterances: Sequence[UtteranceSegment])
     return margins
 
 
-def frame_basis(margin: float, utterance: UtteranceSegment) -> str:
+def frame_basis(margin: float, utterance: UtteranceSegment, child_age_months: Optional[float] = None) -> str:
     """"frame" when the model is sure, "frame_unsure" when the therapist should check."""
-    unsure = abs(margin) < UNSURE_MARGIN or (utterance.end - utterance.start) < UNSURE_SECONDS
+    unsure = (
+        abs(margin) < UNSURE_MARGIN
+        or (utterance.end - utterance.start) < UNSURE_SECONDS
+        or (child_age_months is not None and not MIN_CHECKED_AGE_MONTHS <= child_age_months < MAX_CHECKED_AGE_MONTHS)
+    )
     return "frame_unsure" if unsure else "frame"
 
 
@@ -232,9 +244,10 @@ class FrameRoleDiarizer(BaseDiarizer):
     embedding diarizer, with no setting tuned to the data.
     """
 
-    def __init__(self, model: Optional[ChildAdultFrameModel] = None) -> None:
+    def __init__(self, model: Optional[ChildAdultFrameModel] = None, child_age_months: Optional[float] = None) -> None:
         super().__init__()
         self.model = model or ChildAdultFrameModel()
+        self.child_age_months = child_age_months
 
     def assign(self, audio_path, utterances: Sequence[UtteranceSegment]) -> List[UtteranceSegment]:
         import librosa
@@ -243,7 +256,7 @@ class FrameRoleDiarizer(BaseDiarizer):
         margins = utterance_margins(self.model.frame_probabilities(audio), utterances)
         for utt, margin in zip(utterances, margins):
             utt.speaker = CHILD_LABEL if margin > 0 else ADULT_LABEL
-            utt.speaker_basis = frame_basis(margin, utt)
+            utt.speaker_basis = frame_basis(margin, utt, self.child_age_months)
         return list(utterances)
 
 
@@ -287,7 +300,7 @@ class HybridChildAdultDiarizer:
                         utt.speaker = CHILD_LABEL
                     elif utt.speaker in (None, CHILD_LABEL):
                         utt.speaker = ADULT_LABEL
-                    utt.speaker_basis = frame_basis(margin, utt)
+                    utt.speaker_basis = frame_basis(margin, utt, self.config.child_age_months)
                 return labelled
 
         return _Hybrid(*args, **kwargs)

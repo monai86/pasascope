@@ -104,3 +104,15 @@ def test_audio_claimed_by_two_transcripts_is_not_used(tmp_path, capsys):
     assert main(["--cha-dir", str(tmp_path / "chat"), "--audio-dir", str(tmp_path / "media"),
                  "--backend", "pitch", "--report-dir", str(tmp_path / "out")]) == 1
     assert "also matches 1 other transcript" in capsys.readouterr().out
+
+
+def test_same_named_recordings_are_matched_by_folder(tmp_path):
+    from scripts.evaluate_speaker_attribution import find_audio
+
+    for child in ("05", "10"):
+        (tmp_path / "audio" / child).mkdir(parents=True)
+        (tmp_path / "audio" / child / "011126b.mp4").write_bytes(b"x")
+        (tmp_path / "chat" / child).mkdir(parents=True)
+        (tmp_path / "chat" / child / "011126b.cha").write_text("", encoding="utf-8")
+    found = find_audio(tmp_path / "audio", "011126b", tmp_path / "chat" / "10" / "011126b.cha", tmp_path / "chat")
+    assert found == tmp_path / "audio" / "10" / "011126b.mp4"

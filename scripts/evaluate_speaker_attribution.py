@@ -107,13 +107,25 @@ def _child_age(ids: list[str]) -> float | None:
     return None
 
 
-def find_audio(audio_dir: Path, media: str, cha_path: Path) -> Path | None:
+def find_audio(audio_dir: Path, media: str, cha_path: Path, cha_dir: Path | None = None) -> Path | None:
+    """The recording named like the transcript's @Media (or the file itself).
+
+    When several files share the name (corpora reuse names across children),
+    the one in the same relative folder as the transcript wins.
+    """
     names = [n for n in (media, cha_path.stem) if n]
+    relative = cha_path.parent.relative_to(cha_dir) if cha_dir and cha_path.is_relative_to(cha_dir) else None
     for name in names:
         for suffix in AUDIO_SUFFIXES:
-            hits = list(audio_dir.rglob(f"{name}{suffix}"))
-            if hits:
+            hits = sorted(audio_dir.rglob(f"{name}{suffix}"))
+            if relative is not None:
+                same_folder = [h for h in hits if h.parent.relative_to(audio_dir) == relative]
+                if same_folder:
+                    return same_folder[0]
+            if len(hits) == 1:
                 return hits[0]
+            if hits:
+                return None if relative is not None else hits[0]
     return None
 
 
@@ -135,7 +147,7 @@ def collect_recordings(cha_dir: Path, audio_dir: Path, *, max_minutes: float | N
         if not any(u.role == CHILD for u in utterances):
             skipped.append(f"{cha_path.name}: no timed child utterances")
             continue
-        audio = find_audio(audio_dir, media, cha_path)
+        audio = find_audio(audio_dir, media, cha_path, cha_dir)
         if audio is None:
             skipped.append(f"{cha_path.name}: no audio named {media or cha_path.stem}")
             continue
@@ -167,7 +179,7 @@ def make_backend(name: str, age_months: float | None):
     if name == "usc":
         from src.audio_pipeline.child_adult_frames import FrameRoleDiarizer
 
-        return FrameRoleDiarizer(_frame_model())
+        return FrameRoleDiarizer(_frame_model(), child_age_months=age_months)
     if name == "hybrid":
         from src.audio_pipeline.child_adult_frames import HybridChildAdultDiarizer, hybrid_config
 

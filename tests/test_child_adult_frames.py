@@ -108,3 +108,20 @@ def test_unsure_or_short_labels_are_flagged():
     assert caf.frame_basis(0.8, sure) == "frame"
     assert caf.frame_basis(-0.1, sure) == "frame_unsure"  # model undecided
     assert caf.frame_basis(0.9, UtteranceSegment(0, 0.3, "")) == "frame_unsure"  # too short
+
+
+def test_every_label_outside_the_checked_ages_is_flagged(tmp_path, monkeypatch):
+    """Labels held up from 30 to 83 months; younger and older children's labels all need a look."""
+    sure = UtteranceSegment(0, 1.0, "")
+    assert caf.frame_basis(0.8, sure, child_age_months=24) == "frame_unsure"
+    assert caf.frame_basis(0.8, sure, child_age_months=30) == "frame"
+    assert caf.frame_basis(0.8, sure, child_age_months=83) == "frame"
+    assert caf.frame_basis(0.8, sure, child_age_months=90) == "frame_unsure"
+
+    from src.audio_pipeline.diarization import EmbeddingDiarizer
+
+    monkeypatch.setattr(EmbeddingDiarizer, "assign", lambda self, audio_path, utterances: list(utterances))
+    hybrid = caf.HybridChildAdultDiarizer(caf.hybrid_config(22), model=_FakeFrames())
+    labelled = hybrid.assign(_wav(tmp_path), [UtteranceSegment(1.1, 1.9, ""), UtteranceSegment(2.1, 2.9, "")])
+    assert [u.speaker for u in labelled] == ["CHI", "MOT"]
+    assert all(u.speaker_basis == "frame_unsure" for u in labelled)
