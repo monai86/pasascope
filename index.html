@@ -1,12 +1,12 @@
 <!doctype html>
-<html lang="th">
+<html lang="en">
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>PasaScope (ภาษา-สโคป)</title>
-  <meta name="description" content="PasaScope: โปรแกรมบน Mac ช่วยนักแก้ไขการพูดถอดเสียงและวัดตัวอย่างภาษาของเด็ก ทำงานบนเครื่องของคุณเอง ไม่ใช่เครื่องมือวินิจฉัย">
-  <meta property="og:title" content="PasaScope (ภาษา-สโคป)">
-  <meta property="og:description" content="ถอดเสียงและวัดตัวอย่างภาษาของเด็ก บน Mac ของคุณเอง">
+  <title>PasaScope</title>
+  <meta name="description" content="PasaScope: a desktop app that helps speech-language therapists transcribe and measure a child's language sample, on their own computer. Not a diagnostic tool.">
+  <meta property="og:title" content="PasaScope">
+  <meta property="og:description" content="Transcribe and measure a child's language sample, on your own computer.">
   <meta property="og:image" content="https://monai86.github.io/pasascope/assets/overview.png">
   <link rel="icon" type="image/png" href="assets/favicon.png">
   <link rel="apple-touch-icon" href="assets/icon.png">
@@ -77,9 +77,10 @@
     .wrap { width: 100%; max-width: 1080px; margin: 0 auto; padding: 0 16px; }
 
     /* Language: one page, both languages; the toggle hides one. */
-    [data-lang="en"] { display: none; }
-    html[lang="en"] [data-lang="th"] { display: none; }
-    html[lang="en"] [data-lang="en"] { display: revert; }
+    [data-lang="th"] { display: none; }
+    html[lang="th"] [data-lang="en"] { display: none; }
+    html[lang="th"] [data-lang="th"] { display: revert; }
+    [data-windows][hidden] { display: none !important; }
 
     header.top {
       position: sticky; top: 0; z-index: 10;
@@ -195,7 +196,7 @@
         <a class="optional" href="#install"><span data-lang="th">ติดตั้ง</span><span data-lang="en">Install</span></a>
         <a class="optional" href="#faq"><span data-lang="th">คำถาม</span><span data-lang="en">FAQ</span></a>
         <a href="https://github.com/monai86/pasascope">GitHub</a>
-        <button class="lang-toggle" type="button" id="lang" aria-label="Switch language">EN</button>
+        <button class="lang-toggle" type="button" id="lang" aria-label="Switch language">ไทย</button>
       </nav>
     </div>
   </header>
@@ -204,28 +205,32 @@
     <div class="wrap hero">
       <img class="icon" src="assets/icon.png" alt="PasaScope">
       <h1>
-        <span data-lang="th">ถอดเสียงและวัดตัวอย่างภาษาของเด็ก<br>บน Mac ของคุณเอง</span>
-        <span data-lang="en">Transcribe and measure a child's language sample, on your own Mac</span>
+        <span data-lang="en">Transcribe and measure a child's language sample, on your own computer</span>
+        <span data-lang="th">ถอดเสียงและวัดตัวอย่างภาษาของเด็ก<br>บนเครื่องของคุณเอง</span>
       </h1>
       <p class="lead">
-        <span data-lang="th">PasaScope (ภาษา-สโคป) ช่วยนักแก้ไขการพูดถอดเสียงภาษาไทย ตรวจ transcript คำนวณตัวชี้วัด และร่างรายงาน โดยเสียงและข้อมูลเด็กไม่ออกจากเครื่อง</span>
         <span data-lang="en">PasaScope helps speech-language therapists draft a Thai transcript, check it, compute language measures and write the report, without recordings ever leaving the computer.</span>
+        <span data-lang="th">PasaScope (ภาษา-สโคป) ช่วยนักแก้ไขการพูดถอดเสียงภาษาไทย ตรวจ transcript คำนวณตัวชี้วัด และร่างรายงาน โดยเสียงและข้อมูลเด็กไม่ออกจากเครื่อง</span>
       </p>
       <div class="cta">
         <a class="btn btn-primary" id="download" href="https://github.com/monai86/pasascope/releases/latest">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 4v11"/><path d="m7 10 5 5 5-5"/><path d="M5 20h14"/></svg>
-          <span data-lang="th">ดาวน์โหลดสำหรับ Mac</span><span data-lang="en">Download for Mac</span>
+          <span data-lang="en">Download for Mac</span><span data-lang="th">ดาวน์โหลดสำหรับ Mac</span>
+        </a>
+        <a class="btn btn-primary" id="download-windows" data-windows hidden href="https://github.com/monai86/pasascope/releases/latest">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 4v11"/><path d="m7 10 5 5 5-5"/><path d="M5 20h14"/></svg>
+          <span data-lang="en">Download for Windows</span><span data-lang="th">ดาวน์โหลดสำหรับ Windows</span>
         </a>
         <a class="btn btn-ghost" href="#install"><span data-lang="th">วิธีติดตั้ง</span><span data-lang="en">How to install</span></a>
       </div>
       <p class="fine">
         <span id="release-line"></span>
-        <span data-lang="th">Mac ชิป Apple (M1 ขึ้นไป) · macOS 12 ขึ้นไป · ไม่มีค่าใช้จ่าย</span>
-        <span data-lang="en">Apple silicon Mac (M1 or later) · macOS 12 or later · free</span>
+        <span data-lang="en">Mac with Apple silicon, macOS 12+<span data-windows hidden> · Windows 10 or 11, 64-bit</span> · free</span>
+        <span data-lang="th">Mac ชิป Apple, macOS 12 ขึ้นไป<span data-windows hidden> · Windows 10 หรือ 11 แบบ 64 บิต</span> · ไม่มีค่าใช้จ่าย</span>
       </p>
       <div class="shot">
         <div class="bar"><i></i><i></i><i></i></div>
-        <img src="assets/overview.png" alt="ภาพรวมเคส: ตัวชี้วัดของแต่ละ session และกราฟแนวโน้ม" width="1600" height="1018">
+        <img src="assets/overview.png" alt="Case overview: measures for each session and a trend chart" width="1600" height="1018">
       </div>
     </div>
 
@@ -370,6 +375,7 @@
               </li>
             </ol>
           </div>
+          <div>
           <figure>
             <img src="assets/install.png" alt="หน้าต่างติดตั้ง: ลาก PasaScope ไปวางบน Applications" loading="lazy" width="1000" height="672">
             <figcaption>
@@ -377,6 +383,22 @@
               <span data-lang="en">The window that opens with the .dmg</span>
             </figcaption>
           </figure>
+          <div class="req" data-windows hidden style="margin-top: 28px">
+            <h3>Windows</h3>
+            <ol data-lang="en" style="margin: 0; padding-left: 20px; color: var(--ink-soft); font-size: 16px">
+              <li>Click <a href="#" data-download-windows>Download for Windows</a> to get <code>PasaScope-x.y.z-windows-x64-setup.exe</code>.</li>
+              <li>Open it. The installer is not signed yet, so Windows SmartScreen may say it protected your PC: click <span class="path">More info</span>, then <span class="path">Run anyway</span>.</li>
+              <li>Follow the installer. It installs for your user only, without administrator rights, and adds PasaScope to the Start menu.</li>
+              <li>First setup is the same as on a Mac: your name, then <span class="path">Settings → Download speech models…</span></li>
+            </ol>
+            <ol data-lang="th" style="margin: 0; padding-left: 20px; color: var(--ink-soft); font-size: 16px">
+              <li>กด <a href="#" data-download-windows>ดาวน์โหลดสำหรับ Windows</a> จะได้ไฟล์ <code>PasaScope-x.y.z-windows-x64-setup.exe</code></li>
+              <li>เปิดไฟล์ ตัวติดตั้งยังไม่ได้ลงนามดิจิทัล Windows SmartScreen อาจแจ้งเตือน ให้กดลิงก์ <span class="path">More info</span> (ข้อมูลเพิ่มเติม) แล้วกด <span class="path">Run anyway</span></li>
+              <li>ทำตามตัวติดตั้ง ติดตั้งให้ผู้ใช้คนนี้โดยไม่ต้องใช้สิทธิ์ผู้ดูแลระบบ และเพิ่ม PasaScope ในเมนู Start</li>
+              <li>ตั้งค่าครั้งแรกเหมือนบน Mac: ใส่ชื่อ แล้วไปที่ <span class="path">Settings → Download speech models…</span></li>
+            </ol>
+          </div>
+          </div>
         </div>
       </div>
     </section>
@@ -396,9 +418,9 @@
             <p data-lang="en">On this computer only, in <code>~/Library/Application Support/PasaScope</code> (File → Open data folder). Back it up with File → Back up…. Every change is recorded in an audit log that cannot be edited.</p>
           </details>
           <details>
-            <summary><span data-lang="th">ใช้กับ Windows หรือ Mac ชิป Intel ได้ไหม</span><span data-lang="en">Windows or an Intel Mac?</span></summary>
-            <p data-lang="th">ยังไม่ได้ ตอนนี้รองรับเฉพาะ Mac ชิป Apple</p>
-            <p data-lang="en">Not yet: only Macs with Apple silicon.</p>
+            <summary><span data-lang="en">Which computers does it run on?</span><span data-lang="th">ใช้กับเครื่องไหนได้บ้าง</span></summary>
+            <p data-lang="en">Macs with Apple silicon (M1 or later) on macOS 12 or later<span data-windows hidden>, and 64-bit Windows 10 or 11</span>. Intel Macs are not supported yet.</p>
+            <p data-lang="th">Mac ชิป Apple (M1 ขึ้นไป) macOS 12 ขึ้นไป<span data-windows hidden> และ Windows 10 หรือ 11 แบบ 64 บิต</span> ยังไม่รองรับ Mac ชิป Intel</p>
           </details>
           <details>
             <summary><span data-lang="th">ถอดเสียงแม่นแค่ไหน</span><span data-lang="en">How accurate is the transcription?</span></summary>
@@ -434,17 +456,17 @@
     (function () {
       var LATEST = "https://github.com/monai86/pasascope/releases/latest";
 
-      // Language: remembered per browser; falls back to Thai.
+      // Language: remembered per browser; English unless Thai was chosen.
       var root = document.documentElement, toggle = document.getElementById("lang");
       function setLang(code) {
         root.lang = code;
-        toggle.textContent = code === "th" ? "EN" : "ไทย";
+        toggle.textContent = code === "en" ? "ไทย" : "EN";
         try { localStorage.setItem("pasascope-lang", code); } catch (e) {}
       }
       var saved = null;
       try { saved = localStorage.getItem("pasascope-lang"); } catch (e) {}
-      setLang(saved === "en" ? "en" : "th");
-      toggle.addEventListener("click", function () { setLang(root.lang === "th" ? "en" : "th"); });
+      setLang(saved === "th" ? "th" : "en");
+      toggle.addEventListener("click", function () { setLang(root.lang === "en" ? "th" : "en"); });
 
       // Point the download buttons at the newest disk image; the releases page if the API is unreachable.
       var buttons = [document.getElementById("download")].concat([].slice.call(document.querySelectorAll("[data-download]")));
@@ -454,11 +476,15 @@
         .then(function (release) {
           if (!release || !release.assets) return;
           var dmg = release.assets.filter(function (a) { return /\.dmg$/.test(a.name); })[0];
-          if (!dmg) return;
-          buttons.forEach(function (a) { a.href = dmg.browser_download_url; });
-          var size = Math.round(dmg.size / 1e6);
-          document.getElementById("release-line").textContent =
-            (release.tag_name || "") + " · " + size + " MB · ";
+          var exe = release.assets.filter(function (a) { return /-windows-x64-setup\.exe$/.test(a.name); })[0];
+          if (dmg) buttons.forEach(function (a) { a.href = dmg.browser_download_url; });
+          if (exe) {
+            // Windows appears only once the release carries its installer.
+            [].slice.call(document.querySelectorAll("[data-windows]")).forEach(function (el) { el.hidden = false; });
+            [document.getElementById("download-windows")].concat([].slice.call(document.querySelectorAll("[data-download-windows]")))
+              .forEach(function (a) { a.href = exe.browser_download_url; });
+          }
+          document.getElementById("release-line").textContent = (release.tag_name || "") + " · ";
         })
         .catch(function () {});
     })();
