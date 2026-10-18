@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 from datetime import datetime
+from html import escape
 from pathlib import Path
 
 from PySide6.QtCore import QSettings, Qt, QUrl
@@ -89,6 +90,8 @@ class MainWindow(QMainWindow):
         self._build_menus()
         self.asr_label = QLabel("")
         self.name_label = QLabel("")
+        self.name_label.setTextFormat(Qt.TextFormat.RichText)
+        self.name_label.linkActivated.connect(lambda _: self.ask_therapist_name(first_run=False))
         self.backup_label = QLabel("")
         self.backup_label.setTextFormat(Qt.TextFormat.RichText)
         self.backup_label.linkActivated.connect(lambda _: self.backup())
@@ -162,6 +165,25 @@ class MainWindow(QMainWindow):
         add = button(tr("+ เพิ่มเคส", "+ New case"), "nav")
         add.clicked.connect(self.new_case)
         layout.addWidget(add)
+        layout.addSpacing(10)
+        line = QFrame()
+        line.setObjectName("SidebarRule")
+        line.setFixedHeight(1)
+        layout.addWidget(line)
+        layout.addSpacing(8)
+        therapist_title = label(tr("นักบำบัดในเครื่องนี้", "Therapist on this computer"), "SidebarHeading")
+        therapist_title.setContentsMargins(8, 0, 0, 2)
+        layout.addWidget(therapist_title)
+        # The name signs attestations and reports, so it is one click away.
+        therapist_row = QHBoxLayout()
+        therapist_row.setContentsMargins(8, 0, 0, 0)
+        therapist_row.setSpacing(6)
+        self.therapist_label = label("", "TherapistName")
+        therapist_row.addWidget(self.therapist_label, 1)
+        self.therapist_btn = button(tr("เปลี่ยน", "Change"), "ghost", tr("เปลี่ยนชื่อนักบำบัด", "Change the therapist name"))
+        self.therapist_btn.clicked.connect(lambda: self.ask_therapist_name(first_run=False))
+        therapist_row.addWidget(self.therapist_btn)
+        layout.addLayout(therapist_row)
         return side
 
     def _build_case_view(self) -> QWidget:
@@ -218,6 +240,7 @@ class MainWindow(QMainWindow):
             page.changed.connect(self.refresh_session)
             page.navigate.connect(self.tabs.setCurrentIndex)
             page.busy_changed.connect(self._set_busy)
+            page.ask_name.connect(lambda: self.ask_therapist_name(first_run=False))
         self.pages[1].attested.connect(self.learn_speakers_in_background)
         self.pages[2].open_guide.connect(self.show_feature_guide)
         self.session_stack.addWidget(self.tabs)
@@ -659,6 +682,7 @@ class MainWindow(QMainWindow):
                 continue
             break
         self._update_status_bar()
+        self.pages[3].form.set_signer(self.service.therapist_name)
 
     # ------------------------------------------------------------------
     # Updates
@@ -914,7 +938,16 @@ class MainWindow(QMainWindow):
 
     def _update_status_bar(self) -> None:
         name = self.service.therapist_name
-        self.name_label.setText(name if name else tr("ยังไม่ได้ตั้งชื่อนักบำบัด (เมนูตั้งค่า)", "Therapist name not set (Settings)"))
+        self.name_label.setText(
+            f"{escape(name)} · <a href='name'>{tr('เปลี่ยนชื่อ', 'Change')}</a>" if name
+            else f"<a href='name'>{tr('ตั้งชื่อนักบำบัด', 'Set the therapist name')}</a>"
+        )
+        self.therapist_label.setText(
+            self.therapist_label.fontMetrics().elidedText(name, Qt.TextElideMode.ElideRight, 170) if name
+            else tr("ยังไม่ได้ตั้งชื่อ", "No name yet")
+        )
+        self.therapist_label.setToolTip(name)
+        self.therapist_btn.setText(tr("เปลี่ยน", "Change") if name else tr("ตั้งชื่อ", "Set name"))
         available, reason = self.service.transcription_availability()
         mode = tr("แม่นยำ", "accurate") if self.service.transcription_mode == "accurate" else tr("เร็ว", "fast")
         self.asr_label.setText(

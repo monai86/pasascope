@@ -675,8 +675,9 @@ class ReviewPage(SessionPage):
             QMessageBox.warning(self, tr("ยังรับรองไม่ได้", "Cannot attest yet"), tr("ระบุผู้พูดให้ครบทุกประโยคก่อน (แถวที่เป็น ‘ยังไม่ระบุ’)", "Set a speaker on every line first (lines marked Not set)."))
             return
         if not self.service.therapist_name:
-            QMessageBox.warning(self, tr("ยังไม่ได้ตั้งชื่อ", "No therapist name"), tr("ตั้งชื่อนักบำบัดก่อน (เมนู ตั้งค่า → ชื่อนักบำบัด)", "Set your name first (Settings, Therapist name)."))
-            return
+            self.ask_name.emit()
+            if not self.service.therapist_name:
+                return
         answer = QMessageBox.question(
             self, tr("รับรอง transcript", "Attest"),
             tr(f"ยืนยันว่า {self.service.therapist_name} ตรวจ transcript นี้กับเสียงแล้ว และผู้พูดถูกต้อง?", f"Confirm that {self.service.therapist_name} has checked this transcript against the recording and the speakers are right?"),

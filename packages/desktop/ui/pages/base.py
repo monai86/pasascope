@@ -21,6 +21,7 @@ class SessionPage(QWidget):
     changed = Signal()
     navigate = Signal(int)
     busy_changed = Signal(bool)
+    ask_name = Signal()  # open the therapist-name dialog (connected directly, so it returns after the dialog)
 
     def __init__(self, service: DesktopService, runner: TaskRunner, parent: QWidget | None = None) -> None:
         super().__init__(parent)

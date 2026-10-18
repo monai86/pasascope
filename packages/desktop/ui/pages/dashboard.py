@@ -90,6 +90,10 @@ class Dashboard(QWidget):
         main.addWidget(self.queue, 1)
         self.queue_empty = label(tr("ไม่มีงานค้าง", "Nothing waiting."), "Muted")
         main.addWidget(self.queue_empty)
+        # Takes the free height when the table is hidden, so the heading and the
+        # empty line stay at the top instead of spreading down the page.
+        main.addStretch(0)
+        self._main = main
         columns.addLayout(main, 3)
 
         side = QVBoxLayout()
@@ -128,6 +132,7 @@ class Dashboard(QWidget):
                 self.queue.setItem(index, column, item)
         self.queue.setVisible(bool(rows))
         self.queue_empty.setVisible(not rows)
+        self._main.setStretch(self._main.count() - 1, 0 if rows else 1)
         self._fill_recent()
         self._fill_facts()
 

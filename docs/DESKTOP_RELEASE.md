@@ -22,6 +22,12 @@ The therapist then quits the app and drags it onto Applications. Cases, recordin
 
 This builds `dist/PasaScope.app` and `dist/PasaScope-<version>.dmg` with its `.sha256`.
 
+The disk image opens as an install window: PasaScope and Applications side by side over a drawn background (an arrow, and how to open the app the first time). Finder lays this window out, so:
+- run the build in a logged-in session, and allow the terminal to control Finder when macOS asks (System Settings → Privacy & Security → Automation);
+- eject any mounted `PasaScope <version>` volume first.
+
+Applications in the image is a Finder alias with the folder's icon. On macOS 26 a symlink there shows as a blank tile.
+
 The app carries:
 - a standalone CPython 3.12, pinned by SHA-256;
 - the packages in `scripts/desktop_bundle/requirements.txt`, at `.venv312`'s exact versions;

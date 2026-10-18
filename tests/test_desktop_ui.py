@@ -523,3 +523,25 @@ def test_findings_show_main_measures_and_open_their_guide(window, qtbot):
     page.table.cellDoubleClicked.emit(row, 0)
     assert window.stack.currentIndex() == 2  # the Knowledge page
     assert window.knowledge.topics.currentItem().data(Qt.ItemDataRole.UserRole) == "measures"
+
+
+def test_therapist_name_changes_from_the_sidebar_and_the_report(window, qtbot, monkeypatch):
+    from packages.desktop.ui import dialogs
+
+    names = iter(["กานดา ใจดี", "Kanda & Co"])
+
+    def answer(dialog):
+        dialog.name.setText(next(names))
+        return True
+
+    monkeypatch.setattr(dialogs.TherapistDialog, "exec", answer)
+    assert window.therapist_label.text() == "นักบำบัด ทดสอบ"
+    qtbot.mouseClick(window.therapist_btn, Qt.MouseButton.LeftButton)
+    assert window.service.therapist_name == "กานดา ใจดี"
+    assert window.therapist_label.text() == "กานดา ใจดี" and "กานดา ใจดี" in window.name_label.text()
+
+    # The report's signer line opens the same dialog and shows the new name.
+    window.pages[3].form.signer.linkActivated.emit("name")
+    assert window.service.therapist_name == "Kanda & Co"
+    assert "Kanda &amp; Co" in window.pages[3].form.signer.text()
+    assert window.therapist_label.text() == "Kanda & Co"

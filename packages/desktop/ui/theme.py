@@ -93,6 +93,9 @@ QPushButton[role="nav"] {{ background: transparent; border: none; color: {INK_SO
 QPushButton[role="nav"]:hover {{ background: {HOVER}; }}
 QPushButton[role="nav"]:checked {{ background: {PRESSED}; color: {INK}; }}
 #SidebarHeading {{ color: {MUTED}; font-size: 12px; font-weight: 500; }}
+#SidebarRule {{ background: {LINE}; border: none; }}
+#TherapistName {{ color: {INK}; font-weight: 500; }}
+#Sidebar QPushButton[role="ghost"] {{ color: {PRIMARY}; padding: 4px 8px; }}
 
 QListWidget {{ background: transparent; border: none; outline: none; }}
 QListWidget::item {{ padding: 4px 6px; border-radius: 4px; color: {INK}; }}

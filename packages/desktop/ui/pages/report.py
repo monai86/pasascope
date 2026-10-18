@@ -5,6 +5,7 @@ from __future__ import annotations
 from packages.desktop.core.i18n import report_language, tr
 
 from datetime import datetime
+from html import escape
 from pathlib import Path
 import tempfile
 
@@ -69,6 +70,7 @@ class ReportForm(QScrollArea):
     field_changed = Signal(object, str)  # Field, text
     organization_changed = Signal(str)
     organization_done = Signal(str)
+    change_signer = Signal()
 
     def __init__(self, parent: QWidget | None = None) -> None:
         super().__init__(parent)
@@ -87,6 +89,8 @@ class ReportForm(QScrollArea):
         self.organization.editingFinished.connect(lambda: self.organization_done.emit(self.organization.text()))
         layout.addWidget(self.organization)
         self.signer = label("", "Hint", wrap=True)
+        self.signer.setTextFormat(Qt.TextFormat.RichText)
+        self.signer.linkActivated.connect(lambda _: self.change_signer.emit())
         layout.addWidget(self.signer)
 
         self.boxes: dict[str, QPlainTextEdit] = {}
@@ -119,11 +123,16 @@ class ReportForm(QScrollArea):
             box = self.boxes[field.key]
             if box.toPlainText() != text:
                 box.setPlainText(text)
-        self.signer.setText(
-            tr(f"ผู้ลงนาม: {signer} (เปลี่ยนได้ที่ ตั้งค่า → ชื่อนักบำบัด)", f"Signed by: {signer} (change in Settings, Therapist name)")
-            if signer else tr("ยังไม่ได้ตั้งชื่อผู้ลงนาม (ตั้งค่า → ชื่อนักบำบัด)", "No signer name yet (Settings, Therapist name)")
-        )
+        self.set_signer(signer)
         self._loading = False
+
+    def set_signer(self, signer: str) -> None:
+        if signer:
+            self.signer.setText(tr(f"ผู้ลงนาม: {escape(signer)} · <a href='name'>เปลี่ยนชื่อ</a>",
+                                   f"Signed by: {escape(signer)} · <a href='name'>Change</a>"))
+        else:
+            self.signer.setText(tr("ยังไม่ได้ตั้งชื่อผู้ลงนาม · <a href='name'>ตั้งชื่อ</a>",
+                                   "No signer name yet · <a href='name'>Set the name</a>"))
 
 
 class PagePreview(QWidget):
@@ -254,6 +263,7 @@ class ReportPage(SessionPage):
         self.form.field_changed.connect(self._form_changed)
         self.form.organization_changed.connect(lambda _: self.preview_timer.start())
         self.form.organization_done.connect(self._save_organization)
+        self.form.change_signer.connect(self.ask_name.emit)
         self.edit_tabs.addTab(self.form, tr("กรอกข้อมูล", "Fill in"))
         self.editor = QPlainTextEdit()
         # Sarabun for Thai and Latin alike: a monospace font has no Thai, and the
@@ -470,8 +480,9 @@ class ReportPage(SessionPage):
         if not self.save():
             return
         if not self.service.therapist_name:
-            QMessageBox.warning(self, tr("ยังไม่ได้ตั้งชื่อ", "No therapist name"), tr("ตั้งชื่อนักบำบัดก่อน (เมนู ตั้งค่า → ชื่อนักบำบัด)", "Set your name first (Settings, Therapist name)."))
-            return
+            self.ask_name.emit()
+            if not self.service.therapist_name:
+                return
         answer = QMessageBox.question(
             self, tr("ลงนามรายงาน", "Sign report"),
             tr(f"ลงนามในชื่อ {self.service.therapist_name}\n\n"

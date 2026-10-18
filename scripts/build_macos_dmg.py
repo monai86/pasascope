@@ -20,6 +20,17 @@ verify the signature, then make ``PasaScope-<version>.dmg``, check the
 signature again inside the mounted image, and write its ``.sha256`` (the files a GitHub release
 carries for the in-app updater).
 
+The disk image opens as a fixed install window: the app and Applications side
+by side over a drawn background with an arrow and the first-launch hint.
+Finder itself lays the window out (AppleScript on a writable copy), because
+the Finder of macOS 26 ignores a background written into ``.DS_Store`` by
+other tools. The build therefore needs a logged-in session and permission for
+the terminal to control Finder (asked once).
+
+Applications is a Finder alias carrying the folder's icon, not a symlink: in a
+disk image macOS 26 Finder shows a symlink to /Applications as a blank tile.
+The alias records /Applications on the startup disk, which every Mac has.
+
 Usage:
     .venv312/bin/python scripts/build_macos_dmg.py              # dist/PasaScope-<version>.dmg
     .venv312/bin/python scripts/build_macos_dmg.py --no-dmg     # the .app only
@@ -37,6 +48,7 @@ import subprocess
 import sys
 import tarfile
 import tempfile
+import time
 import tomllib
 import urllib.request
 
@@ -52,6 +64,55 @@ PYTHON_SHA256 = "316a463172740e71d8dca1f2730784e325f3f720941137b5d674d5801a63221
 CACHE = PROJECT_ROOT / ".local" / "cache" / "dmg-build"
 REQUIREMENTS = PROJECT_ROOT / "scripts" / "desktop_bundle" / "requirements.txt"
 BUNDLE_ID = "org.pasascope.desktop"
+FONTS = PROJECT_ROOT / "packages" / "desktop" / "ui" / "assets" / "fonts"
+
+# The install window, in points: Finder centres each icon on its location.
+WINDOW = (640, 400)
+APP_AT = (170, 200)
+APPLICATIONS_AT = (470, 200)
+ICON_SIZE = 128
+TITLE_BAR = 32  # Finder's window bounds include the title bar
+
+LAYOUT_SCRIPT = """
+on run argv
+    set volumeName to item 1 of argv
+    tell application "Finder"
+        set theDisk to disk volumeName
+        open theDisk
+        set theWindow to container window of theDisk
+        set current view of theWindow to icon view
+        set toolbar visible of theWindow to false
+        set statusbar visible of theWindow to false
+        set bounds of theWindow to {%(left)d, %(top)d, %(right)d, %(bottom)d}
+        set theOptions to icon view options of theWindow
+        set arrangement of theOptions to not arranged
+        set icon size of theOptions to %(icon)d
+        set text size of theOptions to 13
+        set label position of theOptions to bottom
+        set shows item info of theOptions to false
+        set shows icon preview of theOptions to false
+        set background picture of theOptions to file ".background:background.tiff" of theDisk
+        set theLink to make new alias file at theDisk to (POSIX file "/Applications" as alias)
+        set name of theLink to "Applications"
+        set position of item "PasaScope.app" of theDisk to {%(app_x)d, %(app_y)d}
+        set position of item "Applications" of theDisk to {%(apps_x)d, %(apps_y)d}
+        update theDisk without registering applications
+        delay 1
+        close theWindow
+    end tell
+end run
+"""
+
+# Gives a file (or a volume, via .VolumeIcon.icns) its own Finder icon.
+SET_ICON_SCRIPT = """
+ObjC.import("AppKit");
+function run(argv) {
+    var workspace = $.NSWorkspace.sharedWorkspace;
+    var icon = argv[0].startsWith("/") && argv[0].endsWith(".icns")
+        ? $.NSImage.alloc.initWithContentsOfFile(argv[0]) : workspace.iconForFile(argv[0]);
+    return workspace.setIconForFileOptions(icon, argv[1], 0);
+}
+"""
 
 # What the app runs from; everything else in the repository stays out.
 CODE = ["packages", "src", "apps/api/app", "pyproject.toml", "scripts/desktop_bundle"]
@@ -197,28 +258,143 @@ def smoke_test(bundle: Path) -> None:
         cwd=resources / "app", env=env)
 
 
+def draw_background(folder: Path) -> Path:
+    """The install window's background, one TIFF holding 1x and 2x: title, arrow, and how to open the app the first time."""
+    from PySide6.QtCore import QPointF, QRectF, Qt
+    from PySide6.QtGui import QColor, QFont, QFontDatabase, QGuiApplication, QImage, QPainter, QPainterPath, QPen
+
+    app = QGuiApplication.instance() or QGuiApplication(["dmg"])  # noqa: F841 - fonts need an application
+    for name in ("Sarabun-Regular.ttf", "Sarabun-SemiBold.ttf"):
+        QFontDatabase.addApplicationFont(str(FONTS / name))
+    width, height = WINDOW
+    ink, muted, primary = QColor("#1f2328"), QColor("#6b7280"), QColor("#2383e2")
+
+    def font(pixels: float, weight: QFont.Weight = QFont.Weight.Normal) -> QFont:
+        result = QFont("Sarabun")
+        result.setPixelSize(round(pixels))
+        result.setWeight(weight)
+        return result
+
+    path = folder / "background.png"
+    for scale, target in ((1, path), (2, folder / "background@2x.png")):
+        image = QImage(width * scale, height * scale, QImage.Format.Format_ARGB32)
+        image.fill(QColor("#f7f8fa"))
+        painter = QPainter(image)
+        painter.setRenderHint(QPainter.RenderHint.Antialiasing)
+        painter.setRenderHint(QPainter.RenderHint.TextAntialiasing)
+        painter.scale(scale, scale)
+
+        painter.setPen(ink)
+        painter.setFont(font(22, QFont.Weight.DemiBold))
+        painter.drawText(QRectF(0, 34, width, 32), Qt.AlignmentFlag.AlignHCenter, "ติดตั้ง PasaScope")
+        painter.setPen(muted)
+        painter.setFont(font(14))
+        painter.drawText(QRectF(0, 66, width, 22), Qt.AlignmentFlag.AlignHCenter,
+                         "ลาก PasaScope ไปวางที่ Applications  ·  Drag PasaScope onto Applications")
+
+        # A soft arrow from the app to Applications.
+        y = APP_AT[1]
+        start, end = APP_AT[0] + ICON_SIZE / 2 + 26, APPLICATIONS_AT[0] - ICON_SIZE / 2 - 26
+        pen = QPen(primary, 3.5, Qt.PenStyle.SolidLine, Qt.PenCapStyle.RoundCap, Qt.PenJoinStyle.RoundJoin)
+        painter.setPen(pen)
+        painter.drawLine(QPointF(start, y), QPointF(end - 4, y))
+        head = QPainterPath()
+        head.moveTo(end - 14, y - 11)
+        head.lineTo(end, y)
+        head.lineTo(end - 14, y + 11)
+        painter.drawPath(head)
+
+        # The first launch of an app that is not notarised needs right-click, Open.
+        card = QRectF(70, 318, width - 140, 56)
+        painter.setPen(Qt.PenStyle.NoPen)
+        painter.setBrush(QColor("#e9eef5"))
+        painter.drawRoundedRect(card, 10, 10)
+        painter.setPen(ink)
+        painter.setFont(font(14, QFont.Weight.DemiBold))
+        painter.drawText(card.adjusted(0, 8, 0, 0), Qt.AlignmentFlag.AlignHCenter,
+                         "เปิดครั้งแรก: คลิกขวาที่ PasaScope แล้วเลือก Open")
+        painter.setPen(muted)
+        painter.setFont(font(12.5))
+        painter.drawText(card.adjusted(0, 30, 0, 0), Qt.AlignmentFlag.AlignHCenter,
+                         "First launch: right-click PasaScope and choose Open")
+        painter.end()
+        image.setDotsPerMeterX(round(72 * scale / 0.0254))
+        image.setDotsPerMeterY(round(72 * scale / 0.0254))
+        image.save(str(target))
+    tiff = folder / "background.tiff"
+    run("tiffutil", "-cathidpicheck", str(path), str(folder / "background@2x.png"), "-out", str(tiff))
+    return tiff
+
+
 def build_dmg(bundle: Path, out: Path) -> Path:
     app_version = version()
+    volume_name = f"PasaScope {app_version}"
+    volume = Path("/Volumes") / volume_name
+    if volume.exists():
+        raise SystemExit(f"Eject {volume} first: Finder lays out the new image by its volume name.")
     image = out / f"PasaScope-{app_version}.dmg"
     image.unlink(missing_ok=True)
     stale = image.with_name(image.name + ".sha256")
     stale.unlink(missing_ok=True)
+    width, height = WINDOW
     with tempfile.TemporaryDirectory() as tmp:
         staging = Path(tmp) / "PasaScope"
-        staging.mkdir()
+        (staging / ".background").mkdir(parents=True)
         run("ditto", str(bundle), str(staging / "PasaScope.app"))
-        (staging / "Applications").symlink_to("/Applications")
-        run("hdiutil", "create", "-volname", f"PasaScope {app_version}", "-srcfolder", str(staging),
-            "-fs", "HFS+", "-format", "ULFO", "-ov", str(image))
+        shutil.copy2(draw_background(Path(tmp)), staging / ".background" / "background.tiff")
+        size_mb = int(sum(f.stat().st_size for f in staging.rglob("*") if f.is_file()) / 1e6 * 1.1) + 40
+        writable = Path(tmp) / "writable.dmg"
+        run("hdiutil", "create", "-volname", volume_name, "-srcfolder", str(staging), "-fs", "HFS+",
+            "-format", "UDRW", "-size", f"{size_mb}m", str(writable))
+        run("hdiutil", "attach", "-readwrite", "-noverify", "-noautoopen", "-mountpoint", str(volume), str(writable))
+        try:
+            run("osascript", "-l", "JavaScript", "-e", SET_ICON_SCRIPT,
+                str(bundle / "Contents" / "Resources" / "PasaScope.icns"), str(volume))
+            script = LAYOUT_SCRIPT % {
+                "left": 200, "top": 160, "right": 200 + width, "bottom": 160 + height + TITLE_BAR,
+                "icon": ICON_SIZE, "app_x": APP_AT[0], "app_y": APP_AT[1],
+                "apps_x": APPLICATIONS_AT[0], "apps_y": APPLICATIONS_AT[1],
+            }
+            try:
+                run("osascript", "-e", script, volume_name)
+            except subprocess.CalledProcessError:
+                raise SystemExit("Finder could not lay out the disk image. Allow this terminal to control "
+                                 "Finder (System Settings, Privacy & Security, Automation) and build again.") from None
+            run("osascript", "-l", "JavaScript", "-e", SET_ICON_SCRIPT, "/Applications", str(volume / "Applications"))
+            # Finder writes the window's .DS_Store after the window closes.
+            for _ in range(60):
+                if (volume / ".DS_Store").is_file():
+                    break
+                time.sleep(0.5)
+            else:
+                raise SystemExit("Finder did not save the window layout (.DS_Store).")
+            run("sync")
+            time.sleep(1)
+            run("codesign", "--verify", "--deep", "--strict", str(volume / "PasaScope.app"))
+        finally:
+            detach(volume)
+        run("hdiutil", "convert", str(writable), "-format", "ULFO", "-o", str(image))
     mount = Path(tempfile.mkdtemp())
     run("hdiutil", "attach", "-nobrowse", "-readonly", "-mountpoint", str(mount), str(image))
     try:
         run("codesign", "--verify", "--deep", "--strict", str(mount / "PasaScope.app"))
+        for needed in (".DS_Store", ".background/background.tiff", "Applications"):
+            if not (mount / needed).exists():
+                raise SystemExit(f"The disk image is missing {needed}.")
     finally:
-        run("hdiutil", "detach", str(mount), "-quiet")
+        detach(mount)
     checksum = image.with_name(image.name + ".sha256")
     checksum.write_text(f"{sha256(image)}  {image.name}\n", encoding="utf-8")
     return image
+
+
+def detach(mount: Path) -> None:
+    """Detach, retrying while Finder or Spotlight still holds the volume."""
+    for attempt in range(10):
+        if subprocess.run(["hdiutil", "detach", str(mount), "-quiet"]).returncode == 0:
+            return
+        time.sleep(1 + attempt)
+    run("hdiutil", "detach", str(mount), "-force", "-quiet")
 
 
 def main() -> int:
