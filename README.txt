@@ -1,5 +1,4 @@
-Public Project Atlas build.
+PasaScope intro site (GitHub Pages).
 
-This bundle intentionally includes only dashboard assets, derived CSVs,
-figures, and non-executable metadata. Raw CHAT transcripts, uploaded audio,
-and the executable joblib model bundle are not copied.
+index.html and the screenshots in assets/ only; the screenshots show demonstration data, not a real child.
+The app itself is released at https://github.com/monai86/pasascope/releases

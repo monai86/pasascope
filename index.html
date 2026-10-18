@@ -1,613 +1,467 @@
 <!doctype html>
 <html lang="th">
-  <head>
-    <meta charset="utf-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>ASD Assessment Project Dashboard</title>
-    <meta
-      name="description"
-      content="Interactive project dashboard for the AI-assisted ASD clinical assessment term paper."
-    />
-    <link rel="stylesheet" href="./styles.css" />
-  </head>
-  <body>
-    <div class="app-shell">
-      <aside class="sidebar" aria-label="Dashboard navigation">
-        <a class="sidebar-brand" href="#overview">
-          <span class="brand-icon">A</span>
-          <span>
-            <strong>ASD Flow</strong>
-            <small>Clinical language AI</small>
-          </span>
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>PasaScope (ภาษา-สโคป)</title>
+  <meta name="description" content="PasaScope: โปรแกรมบน Mac ช่วยนักแก้ไขการพูดถอดเสียงและวัดตัวอย่างภาษาของเด็ก ทำงานบนเครื่องของคุณเอง ไม่ใช่เครื่องมือวินิจฉัย">
+  <meta property="og:title" content="PasaScope (ภาษา-สโคป)">
+  <meta property="og:description" content="ถอดเสียงและวัดตัวอย่างภาษาของเด็ก บน Mac ของคุณเอง">
+  <meta property="og:image" content="https://monai86.github.io/pasascope/assets/overview.png">
+  <link rel="icon" type="image/png" href="assets/favicon.png">
+  <link rel="apple-touch-icon" href="assets/icon.png">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Sarabun:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --canvas: #f7f8fa;
+      --surface: #ffffff;
+      --ink: #1f2328;
+      --ink-soft: #3d434b;
+      --muted: #646b75;
+      --line: #e4e7ec;
+      --primary: #2383e2;
+      --primary-dark: #1b6ec2;
+      --primary-soft: #e8f2fc;
+      --accent: #f0974a;
+      --attention-soft: #fdf1e6;
+      --attention-ink: #8a4a10;
+      --shadow: 0 1px 2px rgba(16, 24, 40, .06), 0 12px 32px rgba(16, 24, 40, .08);
+    }
+    @media (prefers-color-scheme: dark) {
+      :root:not([data-theme="light"]) {
+        --canvas: #15171a;
+        --surface: #1d2024;
+        --ink: #eceef1;
+        --ink-soft: #c9cdd3;
+        --muted: #9aa1ab;
+        --line: #2d3137;
+        --primary: #4a9ef0;
+        --primary-dark: #2f86de;
+        --primary-soft: #1d2b3a;
+        --attention-soft: #33261a;
+        --attention-ink: #f3c193;
+        --shadow: 0 1px 2px rgba(0, 0, 0, .3), 0 12px 32px rgba(0, 0, 0, .35);
+      }
+    }
+    :root[data-theme="dark"] {
+      --canvas: #15171a;
+      --surface: #1d2024;
+      --ink: #eceef1;
+      --ink-soft: #c9cdd3;
+      --muted: #9aa1ab;
+      --line: #2d3137;
+      --primary: #4a9ef0;
+      --primary-dark: #2f86de;
+      --primary-soft: #1d2b3a;
+      --attention-soft: #33261a;
+      --attention-ink: #f3c193;
+      --shadow: 0 1px 2px rgba(0, 0, 0, .3), 0 12px 32px rgba(0, 0, 0, .35);
+    }
+
+    * { box-sizing: border-box; }
+    html { scroll-behavior: smooth; }
+    body {
+      margin: 0;
+      background: var(--canvas);
+      color: var(--ink);
+      font-family: "Sarabun", system-ui, -apple-system, "Segoe UI", sans-serif;
+      font-size: 17px;
+      line-height: 1.65;
+      -webkit-font-smoothing: antialiased;
+    }
+    img { max-width: 100%; height: auto; display: block; }
+    a { color: var(--primary); text-decoration: none; }
+    a:hover { text-decoration: underline; }
+    .wrap { width: 100%; max-width: 1080px; margin: 0 auto; padding: 0 16px; }
+
+    /* Language: one page, both languages; the toggle hides one. */
+    [data-lang="en"] { display: none; }
+    html[lang="en"] [data-lang="th"] { display: none; }
+    html[lang="en"] [data-lang="en"] { display: revert; }
+
+    header.top {
+      position: sticky; top: 0; z-index: 10;
+      background: color-mix(in srgb, var(--canvas) 88%, transparent);
+      backdrop-filter: saturate(1.4) blur(10px);
+      -webkit-backdrop-filter: saturate(1.4) blur(10px);
+      border-bottom: 1px solid var(--line);
+    }
+    .nav { display: flex; align-items: center; gap: 20px; height: 60px; }
+    .brand { display: flex; align-items: center; gap: 10px; color: var(--ink); font-weight: 700; font-size: 18px; }
+    .brand:hover { text-decoration: none; }
+    .brand img { width: 30px; height: 30px; }
+    .nav-links { display: flex; gap: 18px; margin-left: auto; align-items: center; }
+    .nav-links a { color: var(--ink-soft); font-weight: 500; font-size: 15px; }
+    .lang-toggle {
+      border: 1px solid var(--line); background: var(--surface); color: var(--ink);
+      border-radius: 999px; padding: 4px 12px; font: inherit; font-size: 14px; cursor: pointer;
+    }
+    @media (max-width: 720px) { .nav-links a.optional { display: none; } }
+
+    .hero { padding: 64px 0 40px; text-align: center; }
+    .hero .icon { width: 96px; height: 96px; margin: 0 auto 18px; }
+    .hero h1 { font-size: clamp(32px, 5vw, 50px); line-height: 1.2; margin: 0 0 14px; letter-spacing: -.01em; }
+    .hero p.lead { font-size: clamp(18px, 2.2vw, 21px); color: var(--muted); max-width: 680px; margin: 0 auto 28px; }
+    .cta { display: flex; gap: 12px; justify-content: center; flex-wrap: wrap; }
+    .btn {
+      display: inline-flex; align-items: center; gap: 10px;
+      border-radius: 12px; padding: 13px 22px; font-weight: 600; font-size: 17px;
+      border: 1px solid transparent; transition: background .15s, transform .15s;
+    }
+    .btn:hover { text-decoration: none; transform: translateY(-1px); }
+    .btn-primary { background: var(--primary); color: #fff; box-shadow: 0 6px 18px color-mix(in srgb, var(--primary) 35%, transparent); }
+    .btn-primary:hover { background: var(--primary-dark); }
+    .btn-ghost { background: var(--surface); color: var(--ink); border-color: var(--line); }
+    .btn svg { width: 20px; height: 20px; flex: none; }
+    .fine { color: var(--muted); font-size: 14px; margin-top: 14px; }
+
+    .shot {
+      margin: 44px auto 0; max-width: 980px; border-radius: 14px; overflow: hidden;
+      background: var(--surface); border: 1px solid var(--line); box-shadow: var(--shadow);
+    }
+    .shot .bar { height: 30px; display: flex; gap: 7px; align-items: center; padding: 0 12px; border-bottom: 1px solid var(--line); }
+    .shot .bar i { width: 11px; height: 11px; border-radius: 50%; background: var(--line); }
+
+    section { padding: 64px 0; }
+    section.alt { background: var(--surface); border-top: 1px solid var(--line); border-bottom: 1px solid var(--line); }
+    h2 { font-size: clamp(26px, 3.4vw, 34px); line-height: 1.25; margin: 0 0 10px; }
+    .section-lead { color: var(--muted); max-width: 680px; margin: 0 0 36px; font-size: 18px; }
+
+    .steps { display: grid; gap: 28px; }
+    .step { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1.35fr); gap: 32px; align-items: center; }
+    .step > * { min-width: 0; }
+    .step:nth-child(even) .step-text { order: 2; }
+    .step-num {
+      display: inline-grid; place-items: center; width: 32px; height: 32px; border-radius: 50%;
+      background: var(--primary-soft); color: var(--primary); font-weight: 700; margin-bottom: 10px;
+    }
+    .step h3 { margin: 0 0 6px; font-size: 22px; }
+    .step p { margin: 0; color: var(--ink-soft); }
+    .step img { border-radius: 10px; border: 1px solid var(--line); box-shadow: var(--shadow); }
+    @media (max-width: 820px) {
+      .step { grid-template-columns: minmax(0, 1fr); gap: 14px; }
+      .step:nth-child(even) .step-text { order: 0; }
+    }
+
+    .points { display: grid; grid-template-columns: repeat(3, 1fr); gap: 18px; }
+    .point { background: var(--canvas); border: 1px solid var(--line); border-radius: 12px; padding: 20px; }
+    .point h3 { margin: 0 0 6px; font-size: 18px; }
+    .point p { margin: 0; color: var(--ink-soft); font-size: 16px; }
+    @media (max-width: 820px) { .points { grid-template-columns: 1fr; } }
+
+    .notice {
+      background: var(--attention-soft); color: var(--attention-ink); border-radius: 12px;
+      padding: 16px 20px; margin-top: 28px; font-size: 16px;
+    }
+    .notice strong { color: inherit; }
+
+    .install { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 36px; align-items: start; }
+    @media (max-width: 820px) { .install { grid-template-columns: minmax(0, 1fr); } }
+    ol.howto { counter-reset: n; list-style: none; padding: 0; margin: 0; }
+    ol.howto > li { counter-increment: n; position: relative; padding: 0 0 22px 48px; }
+    ol.howto > li::before {
+      content: counter(n); position: absolute; left: 0; top: 0;
+      width: 32px; height: 32px; border-radius: 50%; display: grid; place-items: center;
+      background: var(--primary); color: #fff; font-weight: 700;
+    }
+    ol.howto h3 { margin: 0 0 4px; font-size: 19px; }
+    ol.howto p, ol.howto ul { margin: 0; color: var(--ink-soft); font-size: 16px; }
+    ol.howto ul { padding-left: 20px; }
+    .path { font-weight: 600; color: var(--ink); }
+    .req { background: var(--surface); border: 1px solid var(--line); border-radius: 12px; padding: 18px 20px; margin-bottom: 20px; }
+    .req h3 { margin: 0 0 6px; font-size: 17px; }
+    .req ul { margin: 0; padding-left: 20px; color: var(--ink-soft); font-size: 16px; }
+    .install figure { margin: 0; }
+    .install figure img { border-radius: 12px; box-shadow: var(--shadow); }
+    .install figcaption { color: var(--muted); font-size: 14px; margin-top: 8px; text-align: center; }
+
+    details { background: var(--canvas); border: 1px solid var(--line); border-radius: 12px; padding: 14px 18px; margin-bottom: 10px; }
+    summary { cursor: pointer; font-weight: 600; }
+    details p { margin: 10px 0 2px; color: var(--ink-soft); font-size: 16px; }
+
+    footer { padding: 36px 0 48px; color: var(--muted); font-size: 14px; }
+    footer .row { display: flex; gap: 16px; flex-wrap: wrap; justify-content: space-between; }
+    code { overflow-wrap: anywhere; font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: .9em; background: var(--primary-soft); padding: 1px 6px; border-radius: 6px; }
+  </style>
+</head>
+<body>
+  <header class="top">
+    <div class="wrap nav">
+      <a class="brand" href="#"><img src="assets/icon.png" alt="">PasaScope</a>
+      <nav class="nav-links" aria-label="Sections">
+        <a class="optional" href="#features"><span data-lang="th">ทำอะไรได้</span><span data-lang="en">Features</span></a>
+        <a class="optional" href="#install"><span data-lang="th">ติดตั้ง</span><span data-lang="en">Install</span></a>
+        <a class="optional" href="#faq"><span data-lang="th">คำถาม</span><span data-lang="en">FAQ</span></a>
+        <a href="https://github.com/monai86/pasascope">GitHub</a>
+        <button class="lang-toggle" type="button" id="lang" aria-label="Switch language">EN</button>
+      </nav>
+    </div>
+  </header>
+
+  <main>
+    <div class="wrap hero">
+      <img class="icon" src="assets/icon.png" alt="PasaScope">
+      <h1>
+        <span data-lang="th">ถอดเสียงและวัดตัวอย่างภาษาของเด็ก<br>บน Mac ของคุณเอง</span>
+        <span data-lang="en">Transcribe and measure a child's language sample, on your own Mac</span>
+      </h1>
+      <p class="lead">
+        <span data-lang="th">PasaScope (ภาษา-สโคป) ช่วยนักแก้ไขการพูดถอดเสียงภาษาไทย ตรวจ transcript คำนวณตัวชี้วัด และร่างรายงาน โดยเสียงและข้อมูลเด็กไม่ออกจากเครื่อง</span>
+        <span data-lang="en">PasaScope helps speech-language therapists draft a Thai transcript, check it, compute language measures and write the report, without recordings ever leaving the computer.</span>
+      </p>
+      <div class="cta">
+        <a class="btn btn-primary" id="download" href="https://github.com/monai86/pasascope/releases/latest">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 4v11"/><path d="m7 10 5 5 5-5"/><path d="M5 20h14"/></svg>
+          <span data-lang="th">ดาวน์โหลดสำหรับ Mac</span><span data-lang="en">Download for Mac</span>
         </a>
-
-        <nav class="side-nav" aria-label="Sections">
-          <a class="active" href="#overview"><span>▦</span>Dashboard</a>
-          <a href="#data"><span>◫</span>Dataset</a>
-          <a href="#features"><span>◎</span>Features</a>
-          <a href="#eda"><span>≋</span>EDA</a>
-          <a href="#screening"><span>◇</span>Screening</a>
-          <a href="#trust"><span>◬</span>Model Trust</a>
-          <a href="#audio"><span>◉</span>Audio</a>
-          <a href="#reports"><span>▤</span>Reports</a>
-          <a href="#progress"><span>↗</span>Progress</a>
-          <a href="#atlas"><span>▧</span>Atlas</a>
-          <a href="#limits"><span>⚙</span>Safety</a>
-        </nav>
-
-        <div class="sidebar-card">
-          <span>Next module</span>
-          <strong>AI Transcript Reviewer</strong>
-          <p>ตรวจ `.cha`, speaker labels, ASR confidence และ CHAT syntax ก่อนสกัด features</p>
-        </div>
-
-        <p class="sidebar-foot">v0.17.0 · Research prototype</p>
-      </aside>
-
-      <main class="main-panel">
-        <header id="overview" class="topbar">
-          <div class="page-title">
-            <h1>Welcome to ASD Flow</h1>
-            <p>Interactive dashboard จากข้อมูลจริงของโปรเจกต์: CHAT, features, model, audio และ progress</p>
-          </div>
-          <div class="top-actions">
-            <label class="search-box">
-              <span>⌕</span>
-              <input id="dashboardSearch" type="search" placeholder="Search project sections..." />
-            </label>
-            <button class="icon-button" type="button" aria-label="Live status">◌</button>
-            <button class="icon-button" type="button" aria-label="Settings">⚙</button>
-            <div class="date-pill">May 2026</div>
-            <div class="profile-chip">
-              <span>AS</span>
-              <div>
-                <strong>ASD Project</strong>
-                <small>Term paper</small>
-              </div>
-            </div>
-          </div>
-        </header>
-
-        <section class="metric-row" aria-label="Top metrics">
-          <article class="metric-card blue">
-            <div class="metric-icon">C</div>
-            <div>
-              <span>Classification Set</span>
-              <strong id="metricChildren">122</strong>
-              <p>children from ASDBank corpora</p>
-            </div>
-            <svg viewBox="0 0 90 40" aria-hidden="true"><polyline points="2,34 18,24 30,28 44,14 58,22 72,18 88,5"></polyline></svg>
-          </article>
-          <article class="metric-card green">
-            <div class="metric-icon">↗</div>
-            <div>
-              <span>Progress Sessions</span>
-              <strong id="metricSessions">87</strong>
-              <p>longitudinal therapy sessions</p>
-            </div>
-            <svg viewBox="0 0 90 40" aria-hidden="true"><polyline points="2,31 14,29 26,25 38,26 50,18 62,20 74,12 88,7"></polyline></svg>
-          </article>
-          <article class="metric-card purple">
-            <div class="metric-icon">A</div>
-            <div>
-              <span>Binary ROC-AUC</span>
-              <strong id="metricAuc">0.931</strong>
-              <p>Logistic Regression, 5-fold CV</p>
-            </div>
-            <svg viewBox="0 0 90 40" aria-hidden="true"><polyline points="2,27 16,20 30,21 44,17 58,10 72,10 88,8"></polyline></svg>
-          </article>
-          <article class="metric-card amber">
-            <div class="metric-icon">F</div>
-            <div>
-              <span>Extracted Features</span>
-              <strong>13</strong>
-              <p>language and ASD-relevant markers</p>
-            </div>
-            <svg viewBox="0 0 90 40" aria-hidden="true"><polyline points="2,17 14,20 26,14 38,25 50,9 62,13 74,10 88,18"></polyline></svg>
-          </article>
-        </section>
-
-        <section class="grid-two live-grid" id="data">
-          <article class="panel wide live-panel">
-            <div class="panel-head">
-              <div>
-                <h2>Realtime Project Signal</h2>
-                <p>กราฟสดจากค่า feature/model summary ในโปรเจกต์ อัปเดตอัตโนมัติ</p>
-              </div>
-              <div class="panel-controls">
-                <select class="control-select" id="liveMetric" aria-label="Realtime metric">
-                  <option value="mlu">MLU by corpus</option>
-                  <option value="ttr">TTR by corpus</option>
-                  <option value="total_words">Total words by corpus</option>
-                  <option value="echolalia_ratio">Echolalia ratio by corpus</option>
-                  <option value="model_auc">Binary model ROC-AUC</option>
-                </select>
-                <button class="ghost-button" id="liveToggle" type="button">Pause live</button>
-              </div>
-            </div>
-            <div class="live-chart-wrap">
-              <div class="live-y-axis">
-                <span id="liveMax">1.0</span>
-                <span id="liveMid">0.5</span>
-                <span>0</span>
-              </div>
-              <div class="live-plot">
-                <svg id="liveChart" viewBox="0 0 720 300" preserveAspectRatio="none" aria-label="Realtime project chart"></svg>
-                <div class="live-tooltip" id="liveTooltip">
-                  <span>Current</span>
-                  <strong>Loading</strong>
-                </div>
-              </div>
-            </div>
-            <div class="live-footer">
-              <div><span class="live-dot"></span><strong id="liveStatus">Live</strong></div>
-              <p id="liveInsight">Loading project data...</p>
-            </div>
-          </article>
-
-          <article class="panel channel-panel">
-            <div class="panel-head">
-              <div>
-                <h2>Dataset Mix</h2>
-                <p>Group/corpus composition จาก classification set</p>
-              </div>
-              <select class="control-select compact" id="groupView" aria-label="Group view">
-                <option value="group">By group</option>
-                <option value="corpus">By corpus</option>
-              </select>
-            </div>
-            <div class="donut-wrap">
-              <div class="donut" id="compositionDonut" aria-label="Composition donut chart"></div>
-              <div class="donut-center">
-                <span>Total</span>
-                <strong id="donutTotal">122</strong>
-              </div>
-            </div>
-            <div class="legend-list" id="groupLegend"></div>
-          </article>
-        </section>
-
-        <section class="grid-two" id="datasetExplorer">
-          <article class="panel wide">
-            <div class="panel-head">
-              <div>
-                <h2>Dataset Explorer</h2>
-                <p>เลือก corpus และ metric เพื่อดูข้อมูลจาก `combined_features.csv`</p>
-              </div>
-              <select class="control-select" id="corpusFilter" aria-label="Filter by corpus">
-                <option value="all">All corpora</option>
-              </select>
-            </div>
-            <div class="control-row">
-              <select class="control-select" id="datasetMetric" aria-label="Dataset metric">
-                <option value="count">Children count</option>
-                <option value="mlu">Mean MLU</option>
-                <option value="ttr">Mean TTR</option>
-                <option value="total_words">Mean total words</option>
-                <option value="echolalia_ratio">Mean echolalia ratio</option>
-              </select>
-              <button class="ghost-button" id="resetFilters" type="button">Reset</button>
-            </div>
-            <div id="datasetChart" class="interactive-chart" aria-label="Interactive dataset chart"></div>
-            <div class="insight-line" id="datasetInsight">Loading dataset...</div>
-          </article>
-
-          <article class="panel">
-            <div class="panel-head">
-              <div>
-                <h2>Top Feature Signals</h2>
-                <p>ค่าเฉลี่ย feature สำคัญจากข้อมูลทั้งหมด</p>
-              </div>
-            </div>
-            <div id="topFeatureTable" class="mini-table"></div>
-          </article>
-        </section>
-
-        <section class="grid-two" id="features">
-          <article class="panel wide">
-            <div class="panel-head">
-              <div>
-                <h2>Feature Explorer</h2>
-                <p>เทียบค่าเฉลี่ยของ feature ระหว่าง ASD / DD / TD</p>
-              </div>
-              <select class="control-select" id="featureSelect" aria-label="Feature selector"></select>
-            </div>
-            <div id="featureChart" class="interactive-chart" aria-label="Feature comparison chart"></div>
-            <div class="feature-detail" id="featureDetail"></div>
-          </article>
-
-          <article class="panel">
-            <div class="panel-head">
-              <div>
-                <h2>Feature Reference</h2>
-                <p>ครบ 13 language features จาก Streamlit เดิม</p>
-              </div>
-            </div>
-            <div class="feature-ref-grid" id="featureReferenceCards"></div>
-          </article>
-        </section>
-
-        <section class="grid-two" id="eda">
-          <article class="panel wide">
-            <div class="panel-head">
-              <div>
-                <h2>EDA Workspace</h2>
-                <p>Scatter, distribution, correlation และ raw data จาก `combined_features.csv`</p>
-              </div>
-              <select class="control-select" id="edaCorpus" aria-label="EDA corpus">
-                <option value="all">All corpora</option>
-              </select>
-            </div>
-            <div class="eda-controls">
-              <div class="check-pill-group" id="edaGroups">
-                <label><input type="checkbox" value="TD" checked />TD</label>
-                <label><input type="checkbox" value="DD" checked />DD</label>
-                <label><input type="checkbox" value="ASD" checked />ASD</label>
-              </div>
-              <select class="control-select" id="edaX" aria-label="Scatter X"></select>
-              <select class="control-select" id="edaY" aria-label="Scatter Y"></select>
-              <select class="control-select" id="edaDist" aria-label="Distribution feature"></select>
-            </div>
-            <div class="eda-main">
-              <div>
-                <h3>Scatter</h3>
-                <div id="edaScatter" class="svg-chart"></div>
-              </div>
-              <div>
-                <h3>Distribution</h3>
-                <div id="edaDistribution" class="distribution-chart"></div>
-              </div>
-            </div>
-            <div class="insight-line" id="edaCaption">Loading EDA...</div>
-          </article>
-
-          <article class="panel">
-            <div class="panel-head">
-              <div>
-                <h2>Correlation + Raw Data</h2>
-                <p>heatmap และ preview rows เหมือน Streamlit</p>
-              </div>
-            </div>
-            <div id="edaCorrelation" class="corr-wrap"></div>
-            <div id="rawDataTable" class="data-table compact-table"></div>
-          </article>
-        </section>
-
-        <section class="grid-three">
-          <article class="panel" id="screening">
-            <div class="panel-head">
-              <div>
-                <h2>Screening Tool</h2>
-                <p>Risk, uncertainty, XAI, severity, parent concern checklist</p>
-              </div>
-              <select class="control-select compact" id="screeningProfile" aria-label="Screening profile">
-                <option value="balanced">Balanced sample</option>
-                <option value="high">High marker burden</option>
-                <option value="low">Lower risk profile</option>
-              </select>
-            </div>
-            <div class="risk-gauge">
-              <div class="gauge-track">
-                <span class="low-zone"></span>
-                <span class="uncertain-zone"></span>
-                <span class="high-zone"></span>
-                <i id="riskNeedle" style="left: 54%"></i>
-              </div>
-              <div class="gauge-labels"><span>LOW</span><span>UNCERTAIN</span><span>HIGH</span></div>
-            </div>
-            <div class="risk-output" id="riskOutput"></div>
-            <div class="screening-inputs" id="screeningInputs"></div>
-            <div class="mchat-block">
-              <div class="mchat-head"><strong>Parent concern checklist</strong><span id="mchatScore">0/10 concerning</span></div>
-              <div class="mchat-grid" id="mchatGrid"></div>
-            </div>
-            <div class="severity-grid">
-              <div><span>ASD severity</span><strong id="sevAsd">5.4</strong></div>
-              <div><span>Communication</span><strong id="sevComm">6.8</strong></div>
-              <div><span>Marker burden</span><strong id="sevMarker">4.1</strong></div>
-              <div><span>Concern fusion</span><strong id="sevFusion">5.9</strong></div>
-            </div>
-          </article>
-
-          <article class="panel">
-            <div class="panel-head">
-              <div>
-                <h2>XAI Contribution</h2>
-                <p>ตัวอย่าง feature contribution ต่อ log-odds</p>
-              </div>
-            </div>
-            <div class="status-list" id="xaiList"></div>
-          </article>
-
-          <article class="panel" id="models">
-            <div class="panel-head">
-              <div>
-                <h2>Model Results</h2>
-                <p>เลือก task และ metric เพื่อเทียบโมเดล</p>
-              </div>
-              <select class="control-select compact" id="modelTask" aria-label="Model task">
-                <option value="binary">Binary</option>
-                <option value="multiclass">Multiclass</option>
-              </select>
-            </div>
-            <div class="segmented-control" id="modelMetric">
-              <button class="active" type="button" data-metric="roc_auc">ROC-AUC</button>
-              <button type="button" data-metric="accuracy">Accuracy</button>
-              <button type="button" data-metric="f1_macro">F1-macro</button>
-            </div>
-            <div id="modelChart" class="bar-chart" aria-label="Model comparison chart"></div>
-          </article>
-        </section>
-
-        <section class="grid-two" id="trust">
-          <article class="panel wide">
-            <div class="panel-head">
-              <div>
-                <h2>Model Trust Dashboard</h2>
-                <p>ดู performance, threshold behavior, calibration และ uncertainty จาก cross-validation</p>
-              </div>
-              <select class="control-select" id="trustMetric" aria-label="Trust metric">
-                <option value="roc_auc">ROC-AUC</option>
-                <option value="sensitivity">Sensitivity</option>
-                <option value="specificity">Specificity</option>
-                <option value="ppv">PPV</option>
-                <option value="npv">NPV</option>
-                <option value="brier_score">Brier score</option>
-              </select>
-            </div>
-            <div id="trustLeaderboard" class="trust-leaderboard"></div>
-            <div class="trust-grid">
-              <div>
-                <div class="mini-heading">
-                  <strong>Threshold Playground</strong>
-                  <span id="thresholdLabel">0.50</span>
-                </div>
-                <input id="thresholdSlider" class="trust-slider" type="range" min="0.05" max="0.95" step="0.05" value="0.5" />
-                <div id="thresholdMetrics" class="mini-stats trust-stats"></div>
-              </div>
-              <div>
-                <div class="mini-heading"><strong>Confusion Matrix</strong><span>LogReg OOF</span></div>
-                <div id="confusionMatrix" class="confusion-grid"></div>
-              </div>
-            </div>
-          </article>
-
-          <article class="panel">
-            <div class="panel-head">
-              <div>
-                <h2>Model Card</h2>
-                <p>intended use, caveats, version และ transparency notes</p>
-              </div>
-            </div>
-            <div id="modelCardPanel" class="model-card-panel"></div>
-          </article>
-        </section>
-
-        <section class="grid-three">
-          <article class="panel">
-            <div class="panel-head"><div><h2>Calibration View</h2><p>predicted probability vs observed rate</p></div></div>
-            <div id="calibrationChart" class="svg-chart trust-chart"></div>
-            <div class="insight-line" id="calibrationInsight">Loading calibration...</div>
-          </article>
-          <article class="panel">
-            <div class="panel-head"><div><h2>Decision Curve</h2><p>net benefit by referral threshold</p></div></div>
-            <div id="decisionCurve" class="svg-chart trust-chart"></div>
-            <div class="insight-line">ใช้เล่าว่า threshold ใดช่วย decision support ได้มากกว่า treat-all/treat-none</div>
-          </article>
-          <article class="panel">
-            <div class="panel-head"><div><h2>Uncertainty Zone</h2><p>low / uncertain / high concern</p></div></div>
-            <div id="uncertaintyDonut" class="donut trust-donut"></div>
-            <div id="uncertaintyLegend" class="legend-list"></div>
-          </article>
-        </section>
-
-        <section class="grid-two">
-          <article class="panel wide">
-            <div class="panel-head"><div><h2>Subgroup Robustness</h2><p>corpus, sex และ age-band performance เมื่อมีข้อมูลพอ</p></div></div>
-            <div id="subgroupHeatmap" class="robustness-grid"></div>
-          </article>
-          <article class="panel">
-            <div class="panel-head"><div><h2>Leave-One-Corpus-Out</h2><p>stress test against corpus artifacts</p></div></div>
-            <div id="locoTable" class="data-table compact-table"></div>
-          </article>
-        </section>
-
-        <section class="grid-two" id="audio">
-          <article class="panel wide">
-            <div class="panel-head">
-              <div>
-                <h2>Audio Assessment Pipeline</h2>
-                <p>จาก `.wav` / `.mp3` ไปเป็น `.cha`, features และ prediction</p>
-              </div>
-              <select class="control-select" id="audioMode" aria-label="Audio pipeline mode">
-                <option value="auto">auto</option>
-                <option value="dual_pass">dual_pass</option>
-                <option value="thai_specialized">thai_specialized</option>
-              </select>
-            </div>
-            <div class="pipeline-steps">
-              <div><span>01</span><strong>Upload audio</strong><p>เลือกไฟล์และ model size</p></div>
-              <div><span>02</span><strong>ASR strategy</strong><p>auto, english, thai, dual_pass</p></div>
-              <div><span>03</span><strong>Diarization</strong><p>child/adult speaker assignment</p></div>
-              <div><span>04</span><strong>CHAT export</strong><p>post-edit, validate, re-export</p></div>
-            </div>
-            <div class="segment-preview">
-              <div><strong>Segment QA</strong><span>speaker/lang/confidence editor concept</span></div>
-              <table>
-                <thead><tr><th>start</th><th>end</th><th>speaker</th><th>lang</th><th>conf.</th><th>text</th></tr></thead>
-                <tbody>
-                  <tr><td>0.42</td><td>2.10</td><td>INV</td><td>eng</td><td>0.94</td><td>what are you playing with?</td></tr>
-                  <tr><td>2.35</td><td>3.80</td><td>CHI</td><td>eng</td><td>0.88</td><td>car go fast.</td></tr>
-                  <tr><td>4.12</td><td>4.70</td><td>CHI</td><td>paraling</td><td>0.91</td><td>&amp;=laugh</td></tr>
-                </tbody>
-              </table>
-            </div>
-          </article>
-          <article class="panel code-panel">
-            <div class="panel-head">
-              <div>
-                <h2>Generated CHAT</h2>
-                <p>ตัวอย่าง transcript output</p>
-              </div>
-            </div>
-            <pre><code>@Begin
-@Languages:	eng, tha
-@Participants:	CHI Child Target_Child, INV Investigator
-@ID:	eng|ASDProject|CHI|4;00.00|male|||Target_Child|||
-@Media:	session01, audio
-*INV:	what are you playing with ?
-*CHI:	car go fast .
-*CHI:	&=laugh .
-@End</code></pre>
-            <div class="insight-line" id="audioInsight">Mode: auto, fast single pass for mixed recordings.</div>
-          </article>
-        </section>
-
-        <section class="grid-three" id="reports">
-          <article class="panel report-card">
-            <div class="panel-head">
-              <div>
-                <h2>EDA Reports</h2>
-                <p>กดสลับกราฟจาก `reports/figures/`</p>
-              </div>
-            </div>
-            <img id="reportImageA" src="./reports/figures/feature_boxplots.png" alt="Feature boxplots" />
-            <div class="segmented-control image-tabs" data-target="reportImageA">
-              <button class="active" type="button" data-src="./reports/figures/feature_boxplots.png">Boxplots</button>
-              <button type="button" data-src="./reports/figures/correlation_heatmap.png">Correlation</button>
-            </div>
-          </article>
-          <article class="panel report-card">
-            <div class="panel-head">
-              <div>
-                <h2>Classifier Reports</h2>
-                <p>Interpretability และ ROC curve</p>
-              </div>
-            </div>
-            <img id="reportImageB" src="./reports/figures/feature_importance.png" alt="Feature importance" />
-            <div class="segmented-control image-tabs" data-target="reportImageB">
-              <button class="active" type="button" data-src="./reports/figures/feature_importance.png">Importance</button>
-              <button type="button" data-src="./reports/figures/roc_curve_binary.png">ROC</button>
-            </div>
-          </article>
-          <article class="panel report-card">
-            <div class="panel-head">
-              <div>
-                <h2>Deep Learning</h2>
-                <p>MLP และ Bi-LSTM baseline</p>
-              </div>
-            </div>
-            <img id="reportImageC" src="./reports/figures/deep_learning_roc.png" alt="Deep learning ROC" />
-            <div class="segmented-control image-tabs" data-target="reportImageC">
-              <button class="active" type="button" data-src="./reports/figures/deep_learning_roc.png">ROC</button>
-              <button type="button" data-src="./reports/figures/deep_learning_training_curves.png">Training</button>
-            </div>
-          </article>
-        </section>
-
-        <section class="grid-two" id="progress">
-          <article class="panel wide">
-            <div class="panel-head">
-              <div>
-                <h2>Progress Tracker</h2>
-                <p>เลือกเด็กเพื่อดู delta ของ language features</p>
-              </div>
-              <div class="panel-controls">
-                <select class="control-select" id="childSelect" aria-label="Progress child selector"></select>
-                <select class="control-select" id="progressFeature" aria-label="Progress feature"></select>
-              </div>
-            </div>
-            <div id="progressChart" class="interactive-chart" aria-label="Progress comparison chart"></div>
-            <div id="progressTrajectory" class="svg-chart trajectory-chart" aria-label="Progress trajectory chart"></div>
-          </article>
-          <article class="panel">
-            <div class="panel-head">
-              <div>
-                <h2>Therapist Report</h2>
-                <p>summary จากหลาย session</p>
-              </div>
-            </div>
-            <div class="report-summary">
-              <strong id="reportChild">Loading...</strong>
-              <p id="reportText">Loading progress summary...</p>
-            </div>
-            <div class="mini-stats">
-              <div><span>Sessions</span><strong id="reportSessions">0</strong></div>
-              <div><span>Words Δ</span><strong id="reportWords">0</strong></div>
-              <div><span>MLU Δ</span><strong id="reportMlu">0.00</strong></div>
-            </div>
-            <div id="firstLastTable" class="data-table compact-table"></div>
-          </article>
-        </section>
-
-        <section class="grid-two" id="atlas">
-          <article class="panel wide">
-            <div class="panel-head">
-              <div>
-                <h2>Project Atlas</h2>
-                <p>แผนที่อธิบายข้อมูล โครงสร้าง pipeline และ deliverables ทั้งโปรเจกต์</p>
-              </div>
-              <button class="ghost-button" id="presentationMode" type="button">Presentation mode</button>
-            </div>
-            <div class="atlas-flow">
-              <div><span>01</span><strong>Problem</strong><p>ช่วยคัดกรองและติดตามพัฒนาการ ไม่ใช่ diagnosis</p></div>
-              <div><span>02</span><strong>Data</strong><p>TalkBank/ASDBank CHAT transcripts + generated feature CSVs</p></div>
-              <div><span>03</span><strong>Features</strong><p>13 speech-language markers including echolalia</p></div>
-              <div><span>04</span><strong>Models</strong><p>interpretable LogReg baseline + ML/DL comparisons</p></div>
-              <div><span>05</span><strong>Outputs</strong><p>parent demo, clinician dashboard, project atlas, reports</p></div>
-            </div>
-            <div id="atlasNarrative" class="atlas-narrative"></div>
-          </article>
-          <article class="panel">
-            <div class="panel-head"><div><h2>Data Inventory</h2><p>ไฟล์หลักในโปรเจกต์</p></div></div>
-            <div id="dataInventory" class="inventory-list"></div>
-          </article>
-        </section>
-
-        <section class="grid-three">
-          <article class="panel">
-            <div class="panel-head"><div><h2>Corpus Explorer</h2><p>แหล่งข้อมูลและหน้าที่ในโปรเจกต์</p></div></div>
-            <div id="corpusAtlas" class="status-list"></div>
-          </article>
-          <article class="panel">
-            <div class="panel-head"><div><h2>Research Evidence</h2><p>เทคนิคที่นำมาประยุกต์</p></div></div>
-            <div id="researchCards" class="research-card-list"></div>
-          </article>
-          <article class="panel">
-            <div class="panel-head"><div><h2>Glossary</h2><p>คำสำคัญสำหรับอธิบายงาน</p></div></div>
-            <div id="glossaryList" class="glossary-list"></div>
-          </article>
-        </section>
-
-        <section class="grid-three" id="limits">
-          <article class="panel">
-            <div class="panel-head"><div><h2>Clinical Safety</h2><p>screening / decision support only</p></div></div>
-            <div class="status-list">
-              <div><span class="status ok"></span> uncertainty band 40-60%</div>
-              <div><span class="status ok"></span> human-in-the-loop framing</div>
-              <div><span class="status warn"></span> not externally validated</div>
-            </div>
-          </article>
-          <article class="panel">
-            <div class="panel-head"><div><h2>Limitations</h2><p>ข้อจำกัดที่ต้องระบุ</p></div></div>
-            <div class="status-list">
-              <div><span class="status warn"></span> dataset ยังเล็ก</div>
-              <div><span class="status warn"></span> transcripts ส่วนใหญ่เป็น English</div>
-              <div><span class="status warn"></span> ASR/diarization ต้อง benchmark เพิ่ม</div>
-            </div>
-          </article>
-          <article class="panel">
-            <div class="panel-head"><div><h2>Next Steps</h2><p>สิ่งที่ควรพัฒนาต่อ</p></div></div>
-            <div class="status-list">
-              <div><span class="status next"></span> AI transcript reviewer</div>
-              <div><span class="status next"></span> therapist report export</div>
-              <div><span class="status next"></span> Thai validation track</div>
-            </div>
-          </article>
-        </section>
-      </main>
+        <a class="btn btn-ghost" href="#install"><span data-lang="th">วิธีติดตั้ง</span><span data-lang="en">How to install</span></a>
+      </div>
+      <p class="fine">
+        <span id="release-line"></span>
+        <span data-lang="th">Mac ชิป Apple (M1 ขึ้นไป) · macOS 12 ขึ้นไป · ไม่มีค่าใช้จ่าย</span>
+        <span data-lang="en">Apple silicon Mac (M1 or later) · macOS 12 or later · free</span>
+      </p>
+      <div class="shot">
+        <div class="bar"><i></i><i></i><i></i></div>
+        <img src="assets/overview.png" alt="ภาพรวมเคส: ตัวชี้วัดของแต่ละ session และกราฟแนวโน้ม" width="1600" height="1018">
+      </div>
     </div>
 
-    <script src="./app.js"></script>
-  </body>
+    <section id="features" class="alt">
+      <div class="wrap">
+        <h2><span data-lang="th">จากเสียงถึงรายงาน ใน 4 ขั้น</span><span data-lang="en">From recording to report in four steps</span></h2>
+        <p class="section-lead">
+          <span data-lang="th">ทุกขั้นนักบำบัดเป็นผู้ตัดสินใจ โปรแกรมช่วยร่างและคำนวณ</span>
+          <span data-lang="en">The therapist decides at every step; the app drafts and counts.</span>
+        </p>
+        <div class="steps">
+          <div class="step">
+            <div class="step-text">
+              <span class="step-num">1</span>
+              <h3><span data-lang="th">ถอดเสียงและตรวจ transcript</span><span data-lang="en">Transcribe and check</span></h3>
+              <p data-lang="th">อัดเสียงในโปรแกรมหรือเลือกไฟล์เสียง โปรแกรมถอดเป็น transcript รูปแบบ CHAT และแยกเสียงเด็กกับผู้ใหญ่ให้ก่อน นักบำบัดฟังทีละประโยค แก้ข้อความและผู้พูด แล้วรับรอง หรือนำเข้าไฟล์ <code>.cha</code> ที่มีอยู่แล้วก็ได้</p>
+              <p data-lang="en">Record in the app or open a recording. PasaScope drafts a CHAT transcript with child and adult turns separated; you listen line by line, correct the text and speakers, and attest it. A <code>.cha</code> file can be imported instead.</p>
+            </div>
+            <img src="assets/review.png" alt="หน้าตรวจ transcript" loading="lazy" width="1600" height="1018">
+          </div>
+          <div class="step">
+            <div class="step-text">
+              <span class="step-num">2</span>
+              <h3><span data-lang="th">ตัวชี้วัดที่อธิบายได้</span><span data-lang="en">Measures you can explain</span></h3>
+              <p data-lang="th">ความยาวประโยคเฉลี่ย (MLU-w) จำนวนคำไม่ซ้ำ (NDW) อัตราที่เด็กตอบต่อจากผู้ใหญ่ และตัวชี้วัดหลักอีกรวม 11 ตัว ทุกตัวมีคำอธิบายว่าคืออะไร ช่วยอย่างไร และควรระวังอะไร</p>
+              <p data-lang="en">MLU-w, NDW, how often the child answers an adult, and the other main measures, 11 in all. Each one says what it is, how it helps and what to watch for.</p>
+            </div>
+            <img src="assets/findings.png" alt="หน้าตัวชี้วัดและ cue ที่ควรตรวจ" loading="lazy" width="1600" height="1018">
+          </div>
+          <div class="step">
+            <div class="step-text">
+              <span class="step-num">3</span>
+              <h3><span data-lang="th">ชี้จุดที่ควรกลับไปดู</span><span data-lang="en">Lines worth a second look</span></h3>
+              <p data-lang="th">เช่น ประโยคที่อาจเป็นการพูดตาม (echolalia) แสดงคู่ประโยคของผู้ใหญ่กับเด็กและเหตุผล นักบำบัดยืนยันหรือปัดตกเอง ระบบไม่วินิจฉัย</p>
+              <p data-lang="en">Such as possible echolalia, shown with the adult's line, the child's line and the reason. You confirm or dismiss each one; nothing is diagnosed.</p>
+            </div>
+            <img src="assets/cues.png" alt="cue ที่ควรตรวจ พร้อมคู่ประโยคของผู้ใหญ่กับเด็ก" loading="lazy" width="800" height="836" style="width: min(100%, 520px); justify-self: center;">
+          </div>
+          <div class="step">
+            <div class="step-text">
+              <span class="step-num">4</span>
+              <h3><span data-lang="th">รายงาน A4 พร้อมลงนาม</span><span data-lang="en">A4 report, ready to sign</span></h3>
+              <p data-lang="th">กรอกการแปลผล เป้าหมาย และคำแนะนำ เห็นหน้ากระดาษจริงทันทีขณะพิมพ์ ภาษาไทยหรืออังกฤษ แล้วลงนามและ export เป็น PDF</p>
+              <p data-lang="en">Fill in the interpretation, goals and recommendations and watch the printed page update as you type, in Thai or English. Then sign and export a PDF.</p>
+            </div>
+            <img src="assets/report.png" alt="หน้ารายงานพร้อมตัวอย่างก่อนพิมพ์" loading="lazy" width="1600" height="1018">
+          </div>
+        </div>
+        <p class="fine" style="text-align:center">
+          <span data-lang="th">ภาพจากข้อมูลสาธิต (บทสนทนาที่เขียนขึ้น) ไม่ใช่ข้อมูลเด็กจริง</span>
+          <span data-lang="en">Screens show demonstration data written for the purpose, not a real child.</span>
+        </p>
+      </div>
+    </section>
+
+    <section>
+      <div class="wrap">
+        <h2><span data-lang="th">ข้อมูลอยู่กับคุณ</span><span data-lang="en">Your data stays with you</span></h2>
+        <p class="section-lead">
+          <span data-lang="th">ไม่มีบัญชีผู้ใช้ ไม่มีเซิร์ฟเวอร์ อินเทอร์เน็ตใช้แค่ตอนดาวน์โหลดโมเดลและตรวจหาอัปเดต</span>
+          <span data-lang="en">No account and no server. The internet is used only to download the speech models and check for updates.</span>
+        </p>
+        <div class="points">
+          <div class="point">
+            <h3><span data-lang="th">ถอดเสียงบนเครื่อง</span><span data-lang="en">Transcribed on your Mac</span></h3>
+            <p data-lang="th">โมเดล Whisper ภาษาไทยทำงานบนเครื่อง เสียงไม่ถูกส่งไปที่ใด</p>
+            <p data-lang="en">The Thai Whisper model runs on the computer; recordings are not sent anywhere.</p>
+          </div>
+          <div class="point">
+            <h3><span data-lang="th">สำรองและกู้คืน</span><span data-lang="en">Back up and restore</span></h3>
+            <p data-lang="th">สำรองทั้งหมดเป็นไฟล์เดียว และหน้าแรกเตือนเมื่อไม่ได้สำรองนาน</p>
+            <p data-lang="en">One backup file holds everything, and Home reminds you when a backup is due.</p>
+          </div>
+          <div class="point">
+            <h3><span data-lang="th">อัปเดตอย่างปลอดภัย</span><span data-lang="en">Safe updates</span></h3>
+            <p data-lang="th">อัปเดตจากในโปรแกรม สำรองข้อมูลก่อน และตรวจ SHA-256 ของทุกไฟล์</p>
+            <p data-lang="en">Update from inside the app: it backs up first and checks every file's SHA-256.</p>
+          </div>
+        </div>
+        <div class="notice">
+          <strong data-lang="th">PasaScope ไม่ใช่เครื่องมือวินิจฉัย</strong><strong data-lang="en">PasaScope does not diagnose.</strong>
+          <span data-lang="th">ไม่บอกว่าเด็กเป็นหรือไม่เป็นออทิสติก ตัวชี้วัดเป็นค่าเชิงบรรยายและยังไม่มีเกณฑ์อ้างอิงของเด็กไทย transcript ที่ถอดอัตโนมัติอาจผิด ต้องตรวจกับเสียงทุกครั้ง การแปลผลเป็นหน้าที่ของนักบำบัด</span>
+          <span data-lang="en">It does not say whether a child is autistic. The measures are descriptive and have no Thai norms yet. Automatic transcripts can be wrong and must be checked against the recording. Interpretation is the therapist's.</span>
+        </div>
+      </div>
+    </section>
+
+    <section id="install" class="alt">
+      <div class="wrap">
+        <h2><span data-lang="th">ดาวน์โหลดและติดตั้ง</span><span data-lang="en">Download and install</span></h2>
+        <p class="section-lead">
+          <span data-lang="th">ใช้เวลาประมาณ 10 นาที รวมดาวน์โหลดโมเดลถอดเสียง</span>
+          <span data-lang="en">About ten minutes, including the speech model download.</span>
+        </p>
+        <div class="install">
+          <div>
+            <div class="req">
+              <h3><span data-lang="th">เครื่องที่ใช้ได้</span><span data-lang="en">What you need</span></h3>
+              <ul data-lang="th">
+                <li>Mac ชิป Apple (M1 ขึ้นไป) ดูได้ที่เมนู Apple → เกี่ยวกับ Mac เครื่องนี้ → ชิป ยังไม่รองรับ Mac ชิป Intel</li>
+                <li>macOS 12 ขึ้นไป</li>
+                <li>พื้นที่ว่างประมาณ 5 GB</li>
+              </ul>
+              <ul data-lang="en">
+                <li>A Mac with Apple silicon (M1 or later): Apple menu → About This Mac → Chip. Intel Macs are not supported yet.</li>
+                <li>macOS 12 or later</li>
+                <li>About 5 GB free</li>
+              </ul>
+            </div>
+            <ol class="howto">
+              <li>
+                <h3><span data-lang="th">ดาวน์โหลด</span><span data-lang="en">Download</span></h3>
+                <p data-lang="th">กดปุ่ม <a href="#" data-download>ดาวน์โหลดสำหรับ Mac</a> จะได้ไฟล์ <code>PasaScope-x.y.z.dmg</code> (ประมาณ 390 MB)</p>
+                <p data-lang="en">Click <a href="#" data-download>Download for Mac</a> to get <code>PasaScope-x.y.z.dmg</code> (about 390 MB).</p>
+              </li>
+              <li>
+                <h3><span data-lang="th">ลากไปที่ Applications</span><span data-lang="en">Drag to Applications</span></h3>
+                <p data-lang="th">ดับเบิลคลิกไฟล์ที่ได้ ลากไอคอน PasaScope ไปวางบน Applications ตามลูกศร แล้วกดดีดออก (⏏) ใน Finder</p>
+                <p data-lang="en">Open the file, drag PasaScope onto Applications along the arrow, then eject (⏏) it in Finder.</p>
+              </li>
+              <li>
+                <h3><span data-lang="th">อนุญาตให้เปิดครั้งแรก</span><span data-lang="en">Allow the first launch</span></h3>
+                <p data-lang="th">PasaScope ยังไม่ได้ลงทะเบียนนักพัฒนากับ Apple ครั้งแรก macOS จึงปิดกั้นไว้ ให้ทำครั้งเดียว:</p>
+                <ul data-lang="th">
+                  <li>ดับเบิลคลิก PasaScope ใน Applications แล้วกด <span class="path">เสร็จสิ้น</span></li>
+                  <li>ไปที่ <span class="path">การตั้งค่าระบบ → ความเป็นส่วนตัวและความปลอดภัย</span> เลื่อนลงไปที่ส่วนความปลอดภัย</li>
+                  <li>กด <span class="path">ยืนยันจะเปิด</span> แล้วใส่รหัสผ่านของเครื่อง</li>
+                  <li>macOS 12–14: คลิกขวาที่ PasaScope แล้วเลือก <span class="path">เปิด</span> ได้เลย</li>
+                </ul>
+                <p data-lang="en">PasaScope is not notarised by Apple yet, so macOS blocks it the first time. Once only:</p>
+                <ul data-lang="en">
+                  <li>Open PasaScope from Applications and click <span class="path">Done</span>.</li>
+                  <li>Go to <span class="path">System Settings → Privacy &amp; Security</span> and scroll to Security.</li>
+                  <li>Click <span class="path">Open Anyway</span> and enter your password.</li>
+                  <li>On macOS 12–14, right-click PasaScope and choose <span class="path">Open</span>.</li>
+                </ul>
+              </li>
+              <li>
+                <h3><span data-lang="th">ตั้งค่าครั้งแรก</span><span data-lang="en">First setup</span></h3>
+                <p data-lang="th">ใส่ชื่อนักบำบัด (ใช้รับรองและลงนาม) แล้วไปที่ <span class="path">ตั้งค่า → ดาวน์โหลดโมเดลถอดเสียง…</span> ประมาณ 1.5 GB ทำครั้งเดียว เปลี่ยนเป็นภาษาอังกฤษได้ที่ <span class="path">ตั้งค่า → ภาษา</span></p>
+                <p data-lang="en">Enter your name (it signs attestations and reports), then <span class="path">Settings → Download speech models…</span>, about 1.5 GB, once. Switch to English in <span class="path">Settings → Language</span>.</p>
+              </li>
+            </ol>
+          </div>
+          <figure>
+            <img src="assets/install.png" alt="หน้าต่างติดตั้ง: ลาก PasaScope ไปวางบน Applications" loading="lazy" width="1000" height="672">
+            <figcaption>
+              <span data-lang="th">หน้าต่างที่เห็นเมื่อเปิดไฟล์ .dmg</span>
+              <span data-lang="en">The window that opens with the .dmg</span>
+            </figcaption>
+          </figure>
+        </div>
+      </div>
+    </section>
+
+    <section id="faq">
+      <div class="wrap">
+        <h2><span data-lang="th">คำถามที่พบบ่อย</span><span data-lang="en">Questions</span></h2>
+        <div style="margin-top: 24px">
+          <details>
+            <summary><span data-lang="th">อัปเดตโปรแกรมอย่างไร ข้อมูลจะหายไหม</span><span data-lang="en">How do I update, and will I lose data?</span></summary>
+            <p data-lang="th">PasaScope ตรวจหารุ่นใหม่วันละครั้ง หรือกด ช่วยเหลือ → ตรวจหาอัปเดต… โปรแกรมสำรองข้อมูลก่อน ดาวน์โหลดและตรวจไฟล์ แล้วให้ลากตัวใหม่ไปแทนที่ใน Applications ข้อมูลเคสเก็บแยกจากตัวโปรแกรม จึงไม่หาย</p>
+            <p data-lang="en">PasaScope checks once a day, or use Help → Check for updates…. It backs up first, downloads and checks the new version, and you drag it over the old one in Applications. Cases are stored apart from the app, so nothing is lost.</p>
+          </details>
+          <details>
+            <summary><span data-lang="th">ข้อมูลเก็บไว้ที่ไหน</span><span data-lang="en">Where is my data?</span></summary>
+            <p data-lang="th">บนเครื่องนี้เท่านั้น ที่ <code>~/Library/Application Support/PasaScope</code> (ไฟล์ → เปิดโฟลเดอร์ข้อมูล) สำรองได้ที่ ไฟล์ → สำรองข้อมูล… ทุกการเปลี่ยนแปลงถูกบันทึกใน audit log ที่แก้หรือลบไม่ได้</p>
+            <p data-lang="en">On this computer only, in <code>~/Library/Application Support/PasaScope</code> (File → Open data folder). Back it up with File → Back up…. Every change is recorded in an audit log that cannot be edited.</p>
+          </details>
+          <details>
+            <summary><span data-lang="th">ใช้กับ Windows หรือ Mac ชิป Intel ได้ไหม</span><span data-lang="en">Windows or an Intel Mac?</span></summary>
+            <p data-lang="th">ยังไม่ได้ ตอนนี้รองรับเฉพาะ Mac ชิป Apple</p>
+            <p data-lang="en">Not yet: only Macs with Apple silicon.</p>
+          </details>
+          <details>
+            <summary><span data-lang="th">ถอดเสียงแม่นแค่ไหน</span><span data-lang="en">How accurate is the transcription?</span></summary>
+            <p data-lang="th">เสียงเด็ก เสียงรบกวน และการพูดซ้อนกันทำให้ถอดผิดได้ จึงต้องตรวจทุกประโยคก่อนรับรอง ตัวชี้วัดคำนวณจาก transcript ที่นักบำบัดรับรองแล้วเท่านั้น โหมดแม่นยำใช้เวลาประมาณ 5 เท่าของความยาวเสียง โหมดเร็วประมาณเท่าความยาวเสียงแต่ผิดมากกว่า</p>
+            <p data-lang="en">Children's voices, noise and overlapping talk cause errors, so every line is checked before attesting; measures come only from an attested transcript. Accurate mode takes about five times the recording's length; fast mode about its length, with more errors.</p>
+          </details>
+          <details>
+            <summary><span data-lang="th">ใครพัฒนา และแจ้งปัญหาได้ที่ไหน</span><span data-lang="en">Who makes it, and where do I report a problem?</span></summary>
+            <p data-lang="th">PasaScope เป็นต้นแบบเพื่อการศึกษาและวิจัย ภาควิชาเทคนิคการแพทย์ มหาวิทยาลัยมหิดล ยังไม่ผ่านการทดสอบทางคลินิกกับเด็กไทย แจ้งปัญหาได้ที่ <a href="https://github.com/monai86/pasascope/issues">GitHub Issues</a> ห้ามแนบเสียง ชื่อ หรือข้อมูลที่ระบุตัวเด็ก</p>
+            <p data-lang="en">PasaScope is an educational and research prototype from the Department of Medical Technology, Mahidol University, not yet clinically validated with Thai children. Report problems on <a href="https://github.com/monai86/pasascope/issues">GitHub Issues</a>, without recordings, names or anything that identifies a child.</p>
+          </details>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <footer>
+    <div class="wrap row">
+      <span>PasaScope (ภาษา-สโคป)</span>
+      <span>
+        <a href="https://github.com/monai86/pasascope">GitHub</a> ·
+        <a href="https://github.com/monai86/pasascope/releases">
+          <span data-lang="th">ทุกรุ่น</span><span data-lang="en">All releases</span>
+        </a> ·
+        <a href="https://github.com/monai86/pasascope/issues">
+          <span data-lang="th">แจ้งปัญหา</span><span data-lang="en">Report a problem</span>
+        </a>
+      </span>
+    </div>
+  </footer>
+
+  <script>
+    (function () {
+      var LATEST = "https://github.com/monai86/pasascope/releases/latest";
+
+      // Language: remembered per browser; falls back to Thai.
+      var root = document.documentElement, toggle = document.getElementById("lang");
+      function setLang(code) {
+        root.lang = code;
+        toggle.textContent = code === "th" ? "EN" : "ไทย";
+        try { localStorage.setItem("pasascope-lang", code); } catch (e) {}
+      }
+      var saved = null;
+      try { saved = localStorage.getItem("pasascope-lang"); } catch (e) {}
+      setLang(saved === "en" ? "en" : "th");
+      toggle.addEventListener("click", function () { setLang(root.lang === "th" ? "en" : "th"); });
+
+      // Point the download buttons at the newest disk image; the releases page if the API is unreachable.
+      var buttons = [document.getElementById("download")].concat([].slice.call(document.querySelectorAll("[data-download]")));
+      buttons.forEach(function (a) { a.href = LATEST; });
+      fetch("https://api.github.com/repos/monai86/pasascope/releases/latest", { headers: { Accept: "application/vnd.github+json" } })
+        .then(function (r) { return r.ok ? r.json() : null; })
+        .then(function (release) {
+          if (!release || !release.assets) return;
+          var dmg = release.assets.filter(function (a) { return /\.dmg$/.test(a.name); })[0];
+          if (!dmg) return;
+          buttons.forEach(function (a) { a.href = dmg.browser_download_url; });
+          var size = Math.round(dmg.size / 1e6);
+          document.getElementById("release-line").textContent =
+            (release.tag_name || "") + " · " + size + " MB · ";
+        })
+        .catch(function () {});
+    })();
+  </script>
+</body>
 </html>
