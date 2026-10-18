@@ -599,7 +599,7 @@ class DesktopService:
         return release
 
     def download_update(self, release, progress=None, cancelled=None) -> Path:
-        """Download and check the release's disk image into the Downloads folder."""
+        """Download and check the release's installer for this platform into the Downloads folder."""
         from packages.desktop.core.updates import download_release
 
         def report(done: int, total: int) -> None:

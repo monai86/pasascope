@@ -5,7 +5,7 @@ carries everything it runs:
 
 * a standalone CPython 3.12 (python-build-standalone, pinned by SHA-256);
 * the desktop app's packages, at the exact versions of this project's tested
-  environment (``.venv312``'s ``pip freeze`` as constraints);
+  environment (``scripts/desktop_bundle/constraints.txt``, from ``.venv312``);
 * the app's code: ``packages/``, ``src/``, ``apps/api/app`` and ``pyproject.toml``
   (the version the update check compares).
 
@@ -166,13 +166,21 @@ def fetch_python() -> Path:
     return archive
 
 
-def constraints(destination: Path) -> Path:
-    """The tested environment's exact versions, so the bundle runs what the tests ran."""
+CONSTRAINTS = PROJECT_ROOT / "scripts" / "desktop_bundle" / "constraints.txt"
+CONSTRAINTS_HEADER = """# Exact versions for the desktop app bundles (macOS and Windows): the tested
+# environment (.venv312), used as pip constraints by scripts/build_macos_dmg.py
+# and scripts/build_windows.py. Refresh after changing .venv312:
+#   .venv312/bin/python scripts/build_macos_dmg.py --write-constraints
+"""
+
+
+def write_constraints() -> Path:
+    """Record the tested environment's exact versions, so every bundle runs what the tests ran."""
     frozen = subprocess.run([str(PROJECT_ROOT / ".venv312" / "bin" / "python"), "-m", "pip", "freeze"],
                             check=True, capture_output=True, text=True).stdout
     lines = [line for line in frozen.splitlines() if line and not line.startswith(("-e", "#")) and " @ " not in line]
-    destination.write_text("\n".join(lines) + "\n", encoding="utf-8")
-    return destination
+    CONSTRAINTS.write_text(CONSTRAINTS_HEADER + "\n".join(lines) + "\n", encoding="utf-8")
+    return CONSTRAINTS
 
 
 def copy_code(app_dir: Path) -> None:
@@ -227,10 +235,8 @@ def build_app(out: Path) -> Path:
         archive.extractall(resources, filter="data")  # unpacks to resources/python
     python = resources / "python" / "bin" / "python3"
 
-    with tempfile.TemporaryDirectory() as tmp:
-        pins = constraints(Path(tmp) / "constraints.txt")
-        run(str(python), "-m", "pip", "install", "--no-cache-dir", "--disable-pip-version-check",
-            "-r", str(REQUIREMENTS), "-c", str(pins))
+    run(str(python), "-m", "pip", "install", "--no-cache-dir", "--disable-pip-version-check",
+        "-r", str(REQUIREMENTS), "-c", str(CONSTRAINTS))
     copy_code(resources / "app")
 
     launcher = contents / "MacOS" / "PasaScope"
@@ -286,11 +292,11 @@ def draw_background(folder: Path) -> Path:
 
         painter.setPen(ink)
         painter.setFont(font(22, QFont.Weight.DemiBold))
-        painter.drawText(QRectF(0, 34, width, 32), Qt.AlignmentFlag.AlignHCenter, "ติดตั้ง PasaScope")
+        painter.drawText(QRectF(0, 34, width, 32), Qt.AlignmentFlag.AlignHCenter, "Install PasaScope")
         painter.setPen(muted)
         painter.setFont(font(14))
         painter.drawText(QRectF(0, 66, width, 22), Qt.AlignmentFlag.AlignHCenter,
-                         "ลาก PasaScope ไปวางที่ Applications  ·  Drag PasaScope onto Applications")
+                         "Drag PasaScope onto Applications  ·  ลาก PasaScope ไปวางที่ Applications")
 
         # A soft arrow from the app to Applications.
         y = APP_AT[1]
@@ -313,11 +319,11 @@ def draw_background(folder: Path) -> Path:
         painter.setPen(ink)
         painter.setFont(font(14, QFont.Weight.DemiBold))
         painter.drawText(card.adjusted(0, 8, 0, 0), Qt.AlignmentFlag.AlignHCenter,
-                         "เปิดครั้งแรกไม่ได้: การตั้งค่าระบบ → ความเป็นส่วนตัวและความปลอดภัย → ยืนยันจะเปิด")
+                         "Blocked at first launch? System Settings → Privacy & Security → Open Anyway")
         painter.setPen(muted)
         painter.setFont(font(12.5))
         painter.drawText(card.adjusted(0, 30, 0, 0), Qt.AlignmentFlag.AlignHCenter,
-                         "Blocked at first launch: System Settings → Privacy & Security → Open Anyway")
+                         "เปิดครั้งแรกไม่ได้: การตั้งค่าระบบ → ความเป็นส่วนตัวและความปลอดภัย → ยืนยันจะเปิด")
         painter.end()
         image.setDotsPerMeterX(round(72 * scale / 0.0254))
         image.setDotsPerMeterY(round(72 * scale / 0.0254))
@@ -403,7 +409,12 @@ def main() -> int:
     parser.add_argument("--out", type=Path, default=PROJECT_ROOT / "dist")
     parser.add_argument("--no-dmg", action="store_true", help="Build and test the .app only")
     parser.add_argument("--skip-smoke-test", action="store_true")
+    parser.add_argument("--write-constraints", action="store_true",
+                        help="Only record .venv312's versions in scripts/desktop_bundle/constraints.txt")
     args = parser.parse_args()
+    if args.write_constraints:
+        print(f"Wrote {write_constraints()}")
+        return 0
     if sys.platform != "darwin":
         raise SystemExit("Build the macOS app on a Mac.")
     args.out.mkdir(parents=True, exist_ok=True)

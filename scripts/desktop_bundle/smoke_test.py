@@ -1,7 +1,10 @@
 """Run the desktop app's main workflow without a window, in whatever Python runs this file.
 
-Used by scripts/build_macos_dmg.py to check a freshly built app bundle, and to
-list the third-party modules the workflow imports (``--list-modules``).
+Used by scripts/build_macos_dmg.py and scripts/build_windows.py to check a
+freshly built app, and to list the third-party modules the workflow imports
+(``--list-modules``). ``--transcribe`` also decodes and transcribes a short
+generated clip with Whisper ``tiny`` (downloaded, about 75 MB), which checks
+PyAV and CTranslate2 on the build machine.
 Creates a case, imports a transcript, attests it, analyses it, drafts and signs
 the report, writes the PDF, and imports the speech pipeline. Exits non-zero on
 any failure.
@@ -36,7 +39,8 @@ CHAT = """@UTF8
 
 def main() -> int:
     os.environ.setdefault("QT_QPA_PLATFORM", "offscreen")
-    with tempfile.TemporaryDirectory() as tmp:
+    # Windows keeps the database open a moment after the window closes; a leftover temp folder is harmless.
+    with tempfile.TemporaryDirectory(ignore_cleanup_errors=True) as tmp:
         os.environ["PASASCOPE_DESKTOP_HOME"] = str(Path(tmp) / "home")
         os.environ["PASASCOPE_DESKTOP_RECORDS_PATH"] = str(Path(tmp) / "records.json")
         from PySide6.QtWidgets import QApplication
@@ -65,6 +69,20 @@ def main() -> int:
         import torch  # noqa: F401
 
         from src.audio_pipeline import child_adult_frames, pipeline, whisper_transcribe  # noqa: F401
+
+        if "--transcribe" in sys.argv:
+            import numpy as np
+            import soundfile
+
+            from faster_whisper import WhisperModel
+
+            clip = Path(tmp) / "clip.wav"
+            seconds = np.arange(16000 * 2) / 16000
+            soundfile.write(str(clip), 0.1 * np.sin(2 * np.pi * 220 * seconds), 16000)
+            segments, info = WhisperModel("tiny", device="cpu", compute_type="int8").transcribe(str(clip), language="th")
+            list(segments)
+            assert info.duration > 1.5, info.duration
+            print(f"transcription check passed ({info.duration:.1f} s decoded)")
 
         if "--list-modules" in sys.argv:
             names = sorted({name.split(".")[0] for name in sys.modules})

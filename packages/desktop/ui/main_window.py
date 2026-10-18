@@ -5,6 +5,7 @@ from __future__ import annotations
 from datetime import datetime
 from html import escape
 from pathlib import Path
+import sys
 
 from PySide6.QtCore import QSettings, Qt, QUrl
 from PySide6.QtGui import QAction, QActionGroup, QColor, QDesktopServices, QKeySequence, QPixmap
@@ -764,12 +765,23 @@ class MainWindow(QMainWindow):
             dialog.close()
             backup, path = result
             self._update_backup_label()
+            checked = tr(f"สำรองข้อมูลไว้ที่ {backup.path}\nดาวน์โหลดและตรวจ {path.name} แล้ว\n\n",
+                         f"Backed up to {backup.path}\nDownloaded and checked {path.name}.\n\n")
+            if sys.platform == "win32":
+                # The installer replaces the program files, so PasaScope closes first.
+                QMessageBox.information(self, tr("พร้อมติดตั้ง", "Ready to install"), checked + tr(
+                    "เมื่อกด OK โปรแกรมติดตั้งจะเปิดขึ้นและ PasaScope จะปิดเพื่อให้ติดตั้งได้ "
+                    "ทำตามขั้นตอนของโปรแกรมติดตั้ง แล้วเปิด PasaScope ใหม่",
+                    "When you click OK the installer opens and PasaScope closes so it can be replaced. "
+                    "Follow the installer, then open PasaScope again.",
+                ))
+                QDesktopServices.openUrl(QUrl.fromLocalFile(str(path)))
+                self.close()
+                return
             QDesktopServices.openUrl(QUrl.fromLocalFile(str(path)))
-            QMessageBox.information(self, tr("พร้อมติดตั้ง", "Ready to install"), tr(
-                f"สำรองข้อมูลไว้ที่ {backup.path}\nดาวน์โหลดและตรวจ {path.name} แล้ว\n\n"
+            QMessageBox.information(self, tr("พร้อมติดตั้ง", "Ready to install"), checked + tr(
                 "ขั้นต่อไป: ปิด PasaScope แล้วลากไอคอน PasaScope ในหน้าต่างที่เปิดขึ้นไปที่ Applications "
                 "เลือก 'แทนที่' แล้วเปิดโปรแกรมใหม่",
-                f"Backed up to {backup.path}\nDownloaded and checked {path.name}.\n\n"
                 "Next: quit PasaScope, drag PasaScope from the window that opened onto Applications, "
                 "choose Replace, then open it again.",
             ))

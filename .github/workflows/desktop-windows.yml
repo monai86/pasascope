@@ -1,0 +1,78 @@
+name: Desktop Windows installer
+
+# Builds PasaScope-<version>-windows-x64-setup.exe on Windows with
+# scripts/build_windows.py (smoke test included). On a published release the
+# installer and its .sha256 are attached to that release, where the in-app
+# updater on Windows finds them; other runs keep them as a workflow artifact.
+
+on:
+  workflow_dispatch:
+  release:
+    types: [published]
+  push:
+    branches:
+      - feat/desktop-qt
+    paths:
+      - scripts/build_windows.py
+      - scripts/desktop_bundle/**
+      - .github/workflows/desktop-windows.yml
+
+permissions:
+  contents: write
+
+concurrency:
+  group: desktop-windows-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build:
+    runs-on: windows-2022
+    timeout-minutes: 120
+    steps:
+      - name: Check out code
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.release.tag_name || github.ref }}
+
+      - name: Set up Python 3.12
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: The release tag matches the app version
+        if: github.event_name == 'release'
+        shell: python
+        run: |
+          import tomllib
+          version = tomllib.load(open("pyproject.toml", "rb"))["project"]["version"]
+          tag = "${{ github.event.release.tag_name }}"
+          assert tag == f"v{version}", f"tag {tag} but pyproject.toml says {version}"
+
+      - name: Install Inno Setup when missing
+        shell: pwsh
+        run: |
+          if (-not (Test-Path "${env:ProgramFiles(x86)}\Inno Setup 6\ISCC.exe")) {
+            choco install innosetup --no-progress -y
+          }
+
+      - name: Build and smoke-test the installer
+        run: python scripts/build_windows.py
+
+      - name: Keep the installer as an artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: PasaScope-windows-installer
+          path: |
+            dist/PasaScope-*-windows-x64-setup.exe
+            dist/PasaScope-*-windows-x64-setup.exe.sha256
+          retention-days: 14
+
+      - name: Attach the installer to the release
+        if: github.event_name == 'release'
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh release upload "${{ github.event.release.tag_name }}" \
+            dist/PasaScope-*-windows-x64-setup.exe dist/PasaScope-*-windows-x64-setup.exe.sha256 \
+            --clobber --repo "${{ github.repository }}"
