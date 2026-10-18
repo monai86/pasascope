@@ -76,7 +76,9 @@ jobs:
           Stop-Process -Id $process.Id -Force
           if (-not (Test-Path (Join-Path $env:APPDATA "PasaScope"))) { throw "No data folder in %APPDATA%\PasaScope" }
           Start-Process "$app\unins000.exe" -ArgumentList "/VERYSILENT", "/SUPPRESSMSGBOXES" -Wait
-          if (Test-Path "$app\app") { throw "Uninstall left the program files" }
+          # The uninstaller hands over to a copy of itself in %TEMP% and returns at once: wait for that copy.
+          for ($i = 0; $i -lt 60 -and (Test-Path "$app\app"); $i++) { Start-Sleep -Seconds 2 }
+          if (Test-Path "$app\app") { Get-ChildItem -Recurse "$app" | Select-Object -First 20 FullName; throw "Uninstall left the program files" }
           if (-not (Test-Path (Join-Path $env:APPDATA "PasaScope"))) { throw "Uninstall removed the data folder" }
           Write-Output "Installed, opened for 30 s, uninstalled; the data folder was kept."
 

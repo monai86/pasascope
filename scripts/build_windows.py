@@ -121,6 +121,11 @@ Name: "desktopicon"; Description: "{cm:CreateDesktopIcon}"; GroupDescription: "{
 Type: filesandordirs; Name: "{app}\app"
 Type: filesandordirs; Name: "{app}\python"
 
+[UninstallDelete]
+; Python writes __pycache__ next to the code at run time; Inno Setup only removes what it installed.
+Type: filesandordirs; Name: "{app}\app"
+Type: filesandordirs; Name: "{app}\python"
+
 [Files]
 Source: "%(source)s\*"; DestDir: "{app}"; Flags: ignoreversion recursesubdirs createallsubdirs
 
