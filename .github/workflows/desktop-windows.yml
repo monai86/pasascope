@@ -58,6 +58,28 @@ jobs:
       - name: Build and smoke-test the installer
         run: python scripts/build_windows.py
 
+      - name: Install it and open PasaScope as a user would
+        shell: pwsh
+        run: |
+          $setup = Get-ChildItem dist\PasaScope-*-windows-x64-setup.exe | Select-Object -First 1
+          Start-Process $setup.FullName -ArgumentList "/VERYSILENT", "/SUPPRESSMSGBOXES", "/NORESTART", "/TASKS=desktopicon" -Wait
+          $app = Join-Path $env:LOCALAPPDATA "Programs\PasaScope"
+          if (-not (Test-Path "$app\app\PasaScope.pyw")) { throw "PasaScope was not installed in $app" }
+          $shortcut = Join-Path ([Environment]::GetFolderPath("Programs")) "PasaScope.lnk"
+          if (-not (Test-Path $shortcut)) { throw "No Start menu shortcut at $shortcut" }
+          # The same command the shortcut runs; the window must still be open after 30 seconds.
+          $process = Start-Process "$app\python\pythonw.exe" -ArgumentList "-s", "`"$app\app\PasaScope.pyw`"" -WorkingDirectory "$app\app" -PassThru
+          Start-Sleep -Seconds 30
+          $log = Join-Path $env:LOCALAPPDATA "PasaScope\Logs\desktop.log"
+          if (Test-Path $log) { Get-Content $log -Tail 40 }
+          if ($process.HasExited) { throw "PasaScope exited with code $($process.ExitCode)" }
+          Stop-Process -Id $process.Id -Force
+          if (-not (Test-Path (Join-Path $env:APPDATA "PasaScope"))) { throw "No data folder in %APPDATA%\PasaScope" }
+          Start-Process "$app\unins000.exe" -ArgumentList "/VERYSILENT", "/SUPPRESSMSGBOXES" -Wait
+          if (Test-Path "$app\app") { throw "Uninstall left the program files" }
+          if (-not (Test-Path (Join-Path $env:APPDATA "PasaScope"))) { throw "Uninstall removed the data folder" }
+          Write-Output "Installed, opened for 30 s, uninstalled; the data folder was kept."
+
       - name: Keep the installer as an artifact
         uses: actions/upload-artifact@v4
         with:

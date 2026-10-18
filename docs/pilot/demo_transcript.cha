@@ -1,0 +1,20 @@
+@UTF8
+@Begin
+@Languages:	tha
+@Participants:	CHI Target_Child, INV Investigator
+@ID:	tha|pilot|CHI|4;0.||||Target_Child|||
+@ID:	tha|pilot|INV|||||Investigator|||
+@Comment:	Pilot practice file: a scripted dialogue, not a real child. Two lines have the wrong speaker on purpose.
+*INV:	หนูชอบของเล่นชิ้นไหน .
+*CHI:	ชอบรถไฟ .
+*INV:	รถไฟวิ่งไปที่ไหน .
+*INV:	ไปบ้านคุณยาย .
+*INV:	บ้านคุณยายอยู่ไกลไหม .
+*CHI:	ไกลมากเลย .
+*CHI:	ไปถึงแล้วจะทำอะไร .
+*CHI:	จะเล่นกับน้องหมา .
+*INV:	น้องหมาชื่ออะไร .
+*CHI:	ชื่อโบ้ .
+*INV:	โบ้ตัวใหญ่ไหม .
+*CHI:	ตัวเล็ก .
+@End
