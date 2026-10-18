@@ -47,7 +47,7 @@ Speech models are not in the image. On first use the app downloads them and chec
 
 The models are stored in `~/Library/Application Support/PasaScope/.speech-models`. Backups skip that folder.
 
-The bundle is signed ad hoc. Without an Apple Developer ID it cannot be notarised, so the first launch on another Mac needs right-click → Open.
+The bundle is signed ad hoc. Without an Apple Developer ID it cannot be notarised, so macOS blocks the first launch on another Mac. On macOS 15 and later the therapist allows it in System Settings → Privacy & Security → Open Anyway (การตั้งค่าระบบ → ความเป็นส่วนตัวและความปลอดภัย → ยืนยันจะเปิด); on macOS 12–14, right-click → Open also works.
 
 ## Publish
 

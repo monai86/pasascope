@@ -304,19 +304,20 @@ def draw_background(folder: Path) -> Path:
         head.lineTo(end - 14, y + 11)
         painter.drawPath(head)
 
-        # The first launch of an app that is not notarised needs right-click, Open.
-        card = QRectF(70, 318, width - 140, 56)
+        # macOS blocks the first launch of an app that is not notarised; since
+        # macOS 15 it is allowed in Privacy & Security (labels as macOS shows them).
+        card = QRectF(40, 318, width - 80, 56)
         painter.setPen(Qt.PenStyle.NoPen)
         painter.setBrush(QColor("#e9eef5"))
         painter.drawRoundedRect(card, 10, 10)
         painter.setPen(ink)
         painter.setFont(font(14, QFont.Weight.DemiBold))
         painter.drawText(card.adjusted(0, 8, 0, 0), Qt.AlignmentFlag.AlignHCenter,
-                         "เปิดครั้งแรก: คลิกขวาที่ PasaScope แล้วเลือก Open")
+                         "เปิดครั้งแรกไม่ได้: การตั้งค่าระบบ → ความเป็นส่วนตัวและความปลอดภัย → ยืนยันจะเปิด")
         painter.setPen(muted)
         painter.setFont(font(12.5))
         painter.drawText(card.adjusted(0, 30, 0, 0), Qt.AlignmentFlag.AlignHCenter,
-                         "First launch: right-click PasaScope and choose Open")
+                         "Blocked at first launch: System Settings → Privacy & Security → Open Anyway")
         painter.end()
         image.setDotsPerMeterX(round(72 * scale / 0.0254))
         image.setDotsPerMeterY(round(72 * scale / 0.0254))
