@@ -2,168 +2,176 @@
   <img src="packages/desktop/ui/assets/icon.png" width="112" alt="PasaScope">
 </p>
 
-<h1 align="center">PasaScope (ภาษา-สโคป)</h1>
+<h1 align="center">PasaScope</h1>
 
 <p align="center">
-  โปรแกรมช่วยนักแก้ไขการพูด ถอดเสียงและวัดตัวอย่างภาษาของเด็ก บน Mac ของคุณเอง<br>
-  <sub>A Mac app that helps speech-language therapists transcribe and measure a child's language sample, on their own computer.</sub>
+  Transcribe and measure a child's language sample, on your own computer.<br>
+  <sub>A desktop app for Mac and Windows, for speech-language therapists working with Thai-speaking children · <a href="#ภาษาไทย">ภาษาไทย</a></sub>
 </p>
 
 <p align="center">
-  <a href="https://github.com/monai86/pasascope/releases/latest"><b>⬇️ ดาวน์โหลดสำหรับ Mac</b></a>
+  <a href="https://github.com/monai86/pasascope/releases/latest"><b>⬇️ Download</b></a>
   &nbsp;·&nbsp;
-  <a href="#install">วิธีติดตั้ง</a>
+  <a href="#install">Install</a>
   &nbsp;·&nbsp;
-  <a href="#first-use">เริ่มใช้งาน</a>
+  <a href="#first-use">First use</a>
   &nbsp;·&nbsp;
-  <a href="#english">English</a>
+  <a href="https://monai86.github.io/pasascope/">Website</a>
 </p>
 
 <p align="center">
-  <img src="docs/images/desktop/overview.png" width="880" alt="ภาพรวมเคส: ตัวชี้วัดของแต่ละ session และแนวโน้มความยาวประโยค">
+  <img src="docs/images/desktop/overview.png" width="880" alt="Case overview: measures for each session and the trend in utterance length">
 </p>
 
-## PasaScope ช่วยอะไร
+## What PasaScope does
 
-นักบำบัดอัดเสียงขณะเล่นหรือพูดคุยกับเด็ก แล้ว PasaScope จะ:
+Record a therapy session, or open a recording, and PasaScope:
 
-1. **ถอดเสียงภาษาไทย** เป็น transcript รูปแบบ CHAT แยกเสียงเด็กกับผู้ใหญ่ให้ก่อน แล้วให้นักบำบัดตรวจแก้
-2. **คำนวณตัวชี้วัดจากตัวอย่างภาษา** หลังนักบำบัดรับรอง transcript เช่น ความยาวประโยคเฉลี่ย (MLU-w), จำนวนคำไม่ซ้ำ (NDW) และอัตราที่เด็กตอบต่อจากผู้ใหญ่ ทุกตัวชี้วัดมีหน้าอธิบายว่าคืออะไรและช่วยอย่างไร
-3. **ชี้จุดที่ควรกลับไปดู** เช่น ประโยคที่อาจเป็นการพูดตาม (echolalia) พร้อมเหตุผล นักบำบัดเลือกยืนยันหรือปัดตกเอง
-4. **ร่างรายงาน PDF** ภาษาไทยหรืออังกฤษ ขนาด A4 มีหัวกระดาษ ตาราง และช่องลงนาม เห็นตัวอย่างก่อนพิมพ์ขณะพิมพ์ แก้ได้ แล้วลงนาม
-5. **ดูแนวโน้มข้าม session** ของเด็กแต่ละคน
+1. **Drafts a Thai transcript** in CHAT format with the child's and the adults' turns separated, for you to check line by line and attest.
+2. **Computes language-sample measures** from the attested transcript: mean length of utterance in words (MLU-w), number of different words (NDW, NDW-100), MATTR, VOCD-D, how often the child answers an adult, and more. Each measure explains what it is, how it helps and what to watch for.
+3. **Points to lines worth a second look**, such as possible echolalia, with the adult's line, the child's line and the reason. You confirm or dismiss each one.
+4. **Drafts an A4 report** in English or Thai with a live print preview, for you to edit, sign and export as PDF.
+5. **Shows each child's trend** across sessions.
 
-ทุกอย่างทำงานบนเครื่องของคุณ ไม่มีบัญชีผู้ใช้ ไม่มีเซิร์ฟเวอร์ เสียงและข้อมูลเด็กไม่ถูกส่งออกจากเครื่อง
+Everything runs on your computer: no account, no server, and recordings never leave it.
 
 > [!IMPORTANT]
-> PasaScope **ไม่ใช่เครื่องมือวินิจฉัย** ไม่บอกว่าเด็กเป็นหรือไม่เป็นออทิสติก ตัวชี้วัดเป็นค่าเชิงบรรยาย และยังไม่มีเกณฑ์อ้างอิงของเด็กไทย การแปลผลเป็นหน้าที่ของนักบำบัด
-> transcript ที่ถอดอัตโนมัติอาจผิด ต้องตรวจกับเสียงทุกครั้งก่อนรับรอง
+> PasaScope **does not diagnose**. It does not say whether a child is autistic. Its measures are descriptive and have no Thai norms yet, and interpretation is the therapist's.
+> Automatic transcripts can be wrong: check every line against the recording before attesting.
 
 <table>
   <tr>
-    <td width="50%"><img src="docs/images/desktop/review.png" alt="ตรวจ transcript"><br><b>ตรวจ transcript</b>: แก้ข้อความ เลือกผู้พูด ใส่รหัส CHAT แล้วรับรอง</td>
-    <td width="50%"><img src="docs/images/desktop/findings.png" alt="ตัวชี้วัด"><br><b>ตัวชี้วัด</b>: ตัวชี้วัดหลัก 11 ตัว และ cue ที่ควรตรวจพร้อมตัวอย่างจาก transcript</td>
+    <td width="50%"><img src="docs/images/desktop/review.png" alt="Transcript review"><br><b>Transcript</b>: correct text and speakers, add CHAT codes, then attest.</td>
+    <td width="50%"><img src="docs/images/desktop/findings.png" alt="Findings"><br><b>Findings</b>: the 11 main measures, and cues with examples from the transcript.</td>
   </tr>
   <tr>
-    <td width="50%"><img src="docs/images/desktop/report.png" alt="รายงาน"><br><b>รายงาน</b>: กรอกการแปลผล เป้าหมาย และคำแนะนำ เห็นหน้า A4 ทันที</td>
-    <td width="50%"><img src="docs/images/desktop/overview.png" alt="ภาพรวมเคส"><br><b>ภาพรวมเคส</b>: ทุก session ของเด็ก และกราฟแนวโน้ม</td>
+    <td width="50%"><img src="docs/images/desktop/report.png" alt="Report"><br><b>Report</b>: write the interpretation, goals and recommendations and see the A4 page as you type.</td>
+    <td width="50%"><img src="docs/images/desktop/overview.png" alt="Case overview"><br><b>Case overview</b>: every session of a child, with a trend chart.</td>
   </tr>
 </table>
 
-<sub>ภาพจากข้อมูลสาธิต (บทสนทนาที่เขียนขึ้น) ไม่ใช่ข้อมูลเด็กจริง</sub>
+<sub>Screens show demonstration data written for the purpose, not a real child.</sub>
+
+### How accurate is it?
+
+Measured on the current version (details in [`reports/metrics/EVALUATION_SUMMARY.md`](./reports/metrics/EVALUATION_SUMMARY.md)):
+
+- **Measures**: on 1,961 English TalkBank transcripts, MLU-w, NDW-100, MATTR-50 and VOCD-D agree with CLAN, the reference tool for CHAT transcripts (ICC ≥ 0.9997; 94–96% identical values).
+- **Transcription**: on Thai read speech the character error rate is 6.5% in accurate mode and 19.2% in fast mode. On toddlers' play it is much higher, which is why every transcript is checked by the therapist before any measure is computed.
+- **Child or adult**: 87% of utterances are attributed to the right speaker on recordings of children aged 2½ to 5½.
 
 <a id="install"></a>
 
-## ดาวน์โหลดและติดตั้ง
+## Download and install
 
-**เครื่องที่ใช้ได้**
-- Mac ที่ใช้ชิป Apple (M1 ขึ้นไป) ดูได้ที่เมนู  → เกี่ยวกับ Mac เครื่องนี้ → ชิป ยังไม่รองรับ Mac รุ่นที่ใช้ชิป Intel
-- macOS 12 ขึ้นไป
-- พื้นที่ว่างประมาณ 5 GB: โปรแกรม 1.5 GB และโมเดลถอดเสียงที่ดาวน์โหลดตอนใช้ครั้งแรกประมาณ 2 GB
+**You need**
+- A Mac with Apple silicon (M1 or later) on macOS 12 or later (Apple menu → About This Mac → Chip; Intel Macs are not supported yet), **or** a PC with 64-bit Windows 10 or 11
+- About 5 GB free: the app is 1.5 GB, and the speech models it downloads on first use about 2 GB.
 
-### 1. ดาวน์โหลด
+The steps below are for the Mac; see [Windows](#windows) for a PC.
 
-เปิด **[หน้าดาวน์โหลดรุ่นล่าสุด](https://github.com/monai86/pasascope/releases/latest)** เลื่อนลงไปที่หัวข้อ **Assets** แล้วคลิกไฟล์ `PasaScope-x.y.z.dmg` (ประมาณ 390 MB)
+### 1. Download
 
-ไฟล์ `.dmg.sha256` ข้าง ๆ ใช้ตรวจว่าไฟล์ที่ได้ครบถ้วน ไม่ต้องดาวน์โหลดก็ได้
+Open the **[latest release](https://github.com/monai86/pasascope/releases/latest)**, scroll to **Assets** and click `PasaScope-x.y.z.dmg` (about 390 MB). The `.sha256` file beside it checks the download and is optional.
 
-### 2. ติดตั้ง
+### 2. Install
 
-ดับเบิลคลิกไฟล์ `.dmg` ที่ดาวน์โหลดมา จะมีหน้าต่างนี้ขึ้น ลากไอคอน **PasaScope** ไปวางบน **Applications**
+Open the `.dmg` and drag **PasaScope** onto **Applications**.
 
-<p align="center"><img src="docs/images/desktop/install.png" width="560" alt="หน้าต่างติดตั้ง: ลาก PasaScope ไปวางบน Applications"></p>
+<p align="center"><img src="docs/images/desktop/install.png" width="560" alt="Install window: drag PasaScope onto Applications"></p>
 
-เสร็จแล้วปิดหน้าต่าง และกดปุ่มดีดออก (⏏) ข้างชื่อ PasaScope ในแถบด้านข้างของ Finder
+Then close the window and eject PasaScope (⏏) in the Finder sidebar.
 
-### 3. เปิดครั้งแรก
+### 3. Open it the first time
 
-PasaScope ยังไม่ได้ลงทะเบียนนักพัฒนากับ Apple ครั้งแรกที่เปิด macOS จึงแจ้งว่าตรวจสอบโปรแกรมไม่ได้ ให้อนุญาตครั้งเดียวดังนี้:
+PasaScope is not notarised by Apple yet, so macOS blocks the first launch. Allow it once:
 
-1. เปิดโฟลเดอร์ Applications แล้วดับเบิลคลิก **PasaScope** เมื่อ macOS แจ้งเตือน ให้กด **เสร็จสิ้น**
-2. ไปที่ **การตั้งค่าระบบ → ความเป็นส่วนตัวและความปลอดภัย** เลื่อนลงไปที่ส่วน **ความปลอดภัย**
-3. ข้อความว่า PasaScope ถูกปิดกั้น กด **ยืนยันจะเปิด** แล้วใส่รหัสผ่านของเครื่อง
+1. Open **PasaScope** from Applications. When macOS warns you, click **Done**.
+2. Go to **System Settings → Privacy & Security** and scroll to **Security**.
+3. Next to the message about PasaScope, click **Open Anyway** and enter your password.
 
-macOS 12–14: คลิกขวาที่ PasaScope แล้วเลือก **เปิด** ได้เลย
+On macOS 12–14 you can instead right-click PasaScope and choose **Open**.
 
-ครั้งต่อไปเปิดได้ตามปกติ
+### 4. First setup
 
-### 4. ตั้งค่าครั้งแรก
+1. **Enter your name.** It is used to attest transcripts and sign reports. Change it any time with **Change** in the sidebar.
+2. **Download the speech models**: **Settings → Download speech models…**, about 1.5 GB, once. Every file is checked by SHA-256.
+3. Optional: the **clinic name** printed on reports, in **Settings → Clinic name on reports…**
 
-1. **ใส่ชื่อนักบำบัด** ชื่อนี้ใช้รับรอง transcript และลงนามรายงาน เปลี่ยนได้ทุกเมื่อที่แถบด้านซ้าย (ปุ่ม **เปลี่ยน**)
-2. **ดาวน์โหลดโมเดลถอดเสียง** ที่เมนู **ตั้งค่า → ดาวน์โหลดโมเดลถอดเสียง…** ประมาณ 1.5 GB ทำครั้งเดียว ทุกไฟล์ตรวจ SHA-256 ก่อนใช้
-3. (ไม่บังคับ) **ชื่อหน่วยงาน** ที่จะพิมพ์บนหัวรายงาน: **ตั้งค่า → ชื่อหน่วยงานบนรายงาน…**
+The interface is in English; switch to Thai with **Settings → Language**.
 
-ถ้าต้องการใช้ภาษาอังกฤษ: **ตั้งค่า → ภาษา / Language**
+<a id="windows"></a>
+
+### Windows
+
+1. From the [latest release](https://github.com/monai86/pasascope/releases/latest), download `PasaScope-x.y.z-windows-x64-setup.exe` (about 310 MB).
+2. Open it. The installer is not signed yet, so Windows SmartScreen may say it protected your PC: click **More info**, then **Run anyway**.
+3. Follow the installer. It installs for your user only, without administrator rights, and adds PasaScope to the Start menu (and the desktop, if you leave that ticked).
+4. First setup is the same as on a Mac: your name, then **Settings → Download speech models…**
+
+Updates work the same way: PasaScope downloads and checks the new installer, then closes so the installer can replace it. Your data is in `%APPDATA%\PasaScope` and is kept on update and uninstall.
 
 <a id="first-use"></a>
 
-## เริ่มใช้งาน
+## First use
 
-1. **เพิ่มเคส** (ปุ่ม **+ เพิ่มเคส**) ใส่รหัสเด็ก อายุ และชื่อเล่น แล้ว**บันทึกความยินยอมของผู้ปกครอง** ต้องมีความยินยอมก่อนจึงสร้าง session ได้
-2. **สร้าง session** แล้วทำตาม 4 แท็บจากซ้ายไปขวา:
-   - **เสียง**: อัดเสียงในโปรแกรม หรือเลือกไฟล์เสียง แล้วกดถอดเสียง หรือนำเข้า transcript ที่มีอยู่แล้ว (`.cha`)
-   - **Transcript**: ฟังทีละประโยค แก้ข้อความและผู้พูด แล้วกด **รับรอง transcript**
-   - **ตัวชี้วัด**: ดูตัวชี้วัดหลัก และยืนยันหรือปัดตก cue ที่ควรตรวจ ดับเบิลคลิกตัวชี้วัดเพื่ออ่านคำอธิบาย
-   - **รายงาน**: กรอกการแปลผล เป้าหมาย และคำแนะนำ ดูตัวอย่างก่อนพิมพ์ แล้ว **ลงนามรายงาน** และ **Export** เป็น PDF
-3. **หน้าแรก** แสดงงานที่ค้างของทุกเคส ดับเบิลคลิกเพื่อทำต่อ
+1. **Add a case** (**+ New case**): the child's code, age and nickname. Then **record the caregiver's consent**; sessions can only be created after it.
+2. **Create a session** and work through the four tabs from left to right:
+   - **Recording**: record in the app or choose an audio file, then transcribe. You can also import an existing transcript (`.cha`).
+   - **Transcript**: listen line by line, correct the text and speakers, and click **Attest transcript**.
+   - **Findings**: read the main measures and confirm or dismiss each cue. Double-click a measure to read what it means.
+   - **Report**: fill in the interpretation, goals and recommendations, check the preview, then **Sign report** and **Export** a PDF.
+3. **Home** lists the work waiting across all cases. Double-click a line to carry on.
 
-อ่านเพิ่มเติมได้ที่เมนู **ช่วยเหลือ → ความรู้** (F1) มีคำอธิบายตัวชี้วัดทุกตัวและกราฟตามช่วงอายุ
+**Help → Knowledge** (F1) explains every measure and shows the age charts.
 
-## อัปเดตโปรแกรม
+## Updates
 
-PasaScope ตรวจหารุ่นใหม่วันละครั้ง (ปิดได้) หรือกดเองที่ **ช่วยเหลือ → ตรวจหาอัปเดต…** เมื่อมีรุ่นใหม่:
+PasaScope checks for a new version once a day (you can switch this off), or use **Help → Check for updates…**. When there is one, it offers to back up your data, downloads the new version, checks its SHA-256 and opens it; quit PasaScope and drag the new one onto Applications, choosing **Replace**. Your cases are kept apart from the app, so updating does not remove them.
 
-1. โปรแกรมเสนอให้สำรองข้อมูลก่อน
-2. ดาวน์โหลดไฟล์ `.dmg` ไปที่ Downloads ตรวจ SHA-256 แล้วเปิดให้
-3. ปิด PasaScope แล้วลาก PasaScope ตัวใหม่ไปวางบน Applications และเลือก **แทนที่**
+## Your data
 
-ข้อมูลเคสเก็บแยกจากตัวโปรแกรม การอัปเดตจึงไม่ลบข้อมูล
+- Cases, recordings, transcripts and reports stay on this computer: `~/Library/Application Support/PasaScope` on a Mac, `%APPDATA%\PasaScope` on Windows (**File → Open data folder**).
+- **File → Back up…** writes everything to one file; **File → Restore from backup…** brings it back. Home reminds you when a backup is due.
+- Every change is recorded in an audit log that cannot be edited or deleted.
+- The internet is used only to download the speech models and to check for updates.
 
-## ข้อมูลของคุณ
+## Problems and suggestions
 
-- เคส เสียง transcript และรายงานอยู่ที่ `~/Library/Application Support/PasaScope` บนเครื่องนี้เท่านั้น (**ไฟล์ → เปิดโฟลเดอร์ข้อมูล**)
-- **สำรองข้อมูล**: **ไฟล์ → สำรองข้อมูล…** ได้ไฟล์เดียว เก็บไว้ในที่ปลอดภัย และกู้คืนได้ที่ **ไฟล์ → กู้คืนจากไฟล์สำรอง…** หน้าแรกเตือนเมื่อไม่ได้สำรองนาน
-- ทุกการเปลี่ยนแปลงถูกบันทึกในประวัติการทำงาน (audit log) ที่แก้หรือลบไม่ได้
-- อินเทอร์เน็ตใช้เฉพาะตอนดาวน์โหลดโมเดลถอดเสียงและตรวจหาอัปเดต
+Open an issue on [GitHub Issues](https://github.com/monai86/pasascope/issues). Do not attach recordings, names or anything that identifies a child.
 
-## พบปัญหาหรือมีข้อเสนอแนะ
+PasaScope is an educational and research prototype from the Department of Medical Technology, Mahidol University. It has not been clinically validated with Thai children.
 
-แจ้งได้ที่ [GitHub Issues](https://github.com/monai86/pasascope/issues) ห้ามแนบเสียง ชื่อ หรือข้อมูลที่ระบุตัวเด็ก
+<a id="ภาษาไทย"></a>
 
-PasaScope เป็นต้นแบบเพื่อการศึกษาและวิจัย ภาควิชาเทคนิคการแพทย์ มหาวิทยาลัยมหิดล ยังไม่ผ่านการทดสอบทางคลินิกกับเด็กไทย
+## ภาษาไทย
 
-<a id="english"></a>
+PasaScope เป็นโปรแกรมช่วยนักแก้ไขการพูด ถอดเสียงภาษาไทยเป็น transcript รูปแบบ CHAT (แยกเสียงเด็กกับผู้ใหญ่ให้) ให้นักบำบัดตรวจแก้และรับรอง แล้วคำนวณตัวชี้วัดจากตัวอย่างภาษา เช่น MLU-w, NDW และอัตราที่เด็กตอบต่อจากผู้ใหญ่ ชี้จุดที่ควรกลับไปดู เช่น การพูดตาม และร่างรายงาน PDF ภาษาไทยหรืออังกฤษให้แก้และลงนาม ทุกอย่างทำงานบนเครื่อง ไม่มีบัญชีผู้ใช้ ไม่มีเซิร์ฟเวอร์ **และไม่ใช่เครื่องมือวินิจฉัย**
 
-## English
+**ติดตั้งบน Mac** (Mac ชิป Apple, macOS 12 ขึ้นไป, พื้นที่ว่างประมาณ 5 GB)
 
-PasaScope is a Mac app for speech-language therapists. Record a session or open a recording, and it:
+1. ดาวน์โหลด `PasaScope-x.y.z.dmg` จาก[หน้าดาวน์โหลดรุ่นล่าสุด](https://github.com/monai86/pasascope/releases/latest) (หัวข้อ Assets)
+2. เปิดไฟล์ แล้วลาก PasaScope ไปวางบน Applications
+3. เปิดครั้งแรก macOS จะปิดกั้นเพราะแอปยังไม่ได้ลงทะเบียนกับ Apple: กด **เสร็จสิ้น** แล้วไปที่ **การตั้งค่าระบบ → ความเป็นส่วนตัวและความปลอดภัย** กด **ยืนยันจะเปิด** และใส่รหัสผ่าน (macOS 12–14 คลิกขวาแล้วเลือก **เปิด** ได้เลย)
+4. ใส่ชื่อนักบำบัด แล้วไปที่ **Settings → Download speech models…** (ประมาณ 1.5 GB ทำครั้งเดียว) เปลี่ยนหน้าจอเป็นภาษาไทยได้ที่ **Settings → Language / ภาษา**
 
-- drafts a Thai or English transcript in CHAT format, with child and adult turns separated, for you to correct and attest;
-- computes language-sample measures from the attested transcript, such as MLU-w, NDW and how often the child answers an adult, and explains each one;
-- points to lines worth a second look, such as possible echolalia, with its reasons; you confirm or dismiss each one;
-- drafts an A4 PDF report in Thai or English with a live preview, for you to edit and sign;
-- shows each child's trend across sessions.
+**ติดตั้งบน Windows** (Windows 10 หรือ 11 แบบ 64 บิต): ดาวน์โหลด `PasaScope-x.y.z-windows-x64-setup.exe` จากหน้าเดียวกัน เปิดไฟล์ ถ้า Windows SmartScreen แจ้งเตือน ให้กด **More info** แล้ว **Run anyway** จากนั้นทำตามตัวติดตั้ง (ไม่ต้องใช้สิทธิ์ผู้ดูแลระบบ)
 
-Everything runs on your Mac: no account, no server, and recordings never leave the computer. PasaScope **does not diagnose**, and its measures have no Thai norms yet.
+**เริ่มใช้งาน:** เพิ่มเคสและบันทึกความยินยอมของผู้ปกครอง → สร้าง session → ทำตามแท็บ เสียง → Transcript → ตัวชี้วัด → รายงาน
 
-**Install** (Apple silicon Mac, macOS 12 or later, about 5 GB free):
+**อัปเดต:** ช่วยเหลือ → ตรวจหาอัปเดต… โปรแกรมสำรองข้อมูลก่อน ข้อมูลเคสเก็บแยกจากตัวโปรแกรมจึงไม่หาย
 
-1. Download `PasaScope-x.y.z.dmg` from the [latest release](https://github.com/monai86/pasascope/releases/latest).
-2. Open it and drag PasaScope onto Applications.
-3. Open PasaScope. macOS blocks the first launch because the app is not notarised: click **Done**, then go to **System Settings → Privacy & Security** and click **Open Anyway**. On macOS 12–14, right-click the app and choose **Open**.
-4. Enter your name, then **Settings → Download speech models…** (about 1.5 GB, once). Switch the interface with **Settings → Language**.
-
-Updates: **Help → Check for updates…**. Your cases are kept apart from the app, so updating does not remove them.
+**แจ้งปัญหา:** [GitHub Issues](https://github.com/monai86/pasascope/issues) ห้ามแนบเสียง ชื่อ หรือข้อมูลที่ระบุตัวเด็ก
 
 ---
 
-# สำหรับนักพัฒนาและนักวิจัย / For developers and researchers
+# For developers and researchers
 
 Research prototype for extracting speech-language features from Thai language samples, CHAT (`.cha`) transcripts, and audio recordings to support pediatric therapist assessment workflows. Developed as an educational/research decision-support system — **not a diagnostic tool**. Releasing the desktop app: [`docs/DESKTOP_RELEASE.md`](./docs/DESKTOP_RELEASE.md).
 
 ## Project Version Mapping
-- **Project version:** `v1.7.4`
-- **Therapist product version:** `v1.7.4`
+- **Project version:** `v1.7.5`
+- **Therapist product version:** `v1.7.5`
 
 > Start with [`docs/PROJECT_SOURCE_OF_TRUTH.md`](./docs/PROJECT_SOURCE_OF_TRUTH.md).
 > It defines which paths are active, legacy, generated, or research-only.
@@ -177,7 +185,7 @@ Research prototype for extracting speech-language features from Thai language sa
 > [`docs/DATA_FLOW_DIAGRAM.md`](./docs/DATA_FLOW_DIAGRAM.md), and
 > [`docs/DATA_CLASSIFICATION_INVENTORY.md`](./docs/DATA_CLASSIFICATION_INVENTORY.md).
 
-## Therapist App Interface (v1.7.4)
+## Therapist App Interface (v1.7.5)
 
 - **Workflow:** Today → Cases → Session (Intake → Transcript → Findings → Report) → Reports. Each session view names one next step, and a step is ticked only when its work is done.
 - **Language:** a TH/EN toggle in the top bar; Thai is the default. Text supplied by the API and organization-administration Settings are English only.

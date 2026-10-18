@@ -71,6 +71,22 @@ Public app mode on `feat/public-app`: opt-in settings that turn PasaScope into a
 - The public sign-in note no longer says a case can be deleted; it says that withdrawing a case's consent removes its recordings, which is what the app does.
 - In public sign-up mode the sign-in form drops the role tabs and the invitation-only notice, lands on Today, and states what the account stores; the organization switcher is hidden; the caregiver consent form is the confirmation tick alone.
 
+## [v1.7.5] - 2026-10-18
+
+Desktop app release: Windows, English first, and the evaluation in one place.
+
+### Desktop app
+- **Windows 10 and 11 (64-bit)**: `PasaScope-1.7.5-windows-x64-setup.exe` installs for the current user without administrator rights, with Start menu and desktop shortcuts. It is built and tested in GitHub Actions (`scripts/build_windows.py`, `.github/workflows/desktop-windows.yml`): smoke test with a short transcription, then a silent install, the app opened for 30 seconds and an uninstall that keeps the data folder. The installer is not code-signed, so SmartScreen asks once.
+- **Updates per platform**: the updater looks for the installer of the platform it runs on; on Windows it opens the installer and closes PasaScope.
+- **English first**: the install window, the README and the website lead in English, with Thai alongside. The app's interface and reports already default to English.
+- **First launch on macOS 15 and later**: the install window now says System Settings → Privacy & Security → Open Anyway; right-click → Open no longer allows an app that is not notarised.
+- The package versions of both bundles come from the committed `scripts/desktop_bundle/constraints.txt`.
+
+### Evaluation
+- **Main measures against CLAN, run fresh**: `scripts/evaluate_core_measures_clan.py` runs UnixCLAN on 1,961 English TalkBank transcripts. MLU-w, NDW-100, MATTR-50 and VOCD-D agree with ICC(A,1) ≥ 0.9997 (`reports/metrics/core_measures_clan.md`).
+- **Thai transcription re-measured** on the current code: character error rate 6.5% in accurate mode and 19.2% in fast mode on FLEURS Thai.
+- `reports/metrics/EVALUATION_SUMMARY.md` gathers every evaluation for the term paper; `docs/PILOT_USABILITY_PROTOCOL.md` is a usability session ready for when therapists are available.
+
 ## [v1.7.4] - 2026-10-18
 
 Desktop app release: the therapist name in place, and an install window for the disk image.

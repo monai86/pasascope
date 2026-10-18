@@ -5,14 +5,17 @@ The desktop app updates itself from GitHub Releases of this public repository. H
 The release format is fixed. Each release:
 - is tagged `vX.Y.Z`;
 - is not a draft or a pre-release;
-- carries two files: `PasaScope-X.Y.Z.dmg` and `PasaScope-X.Y.Z.dmg.sha256`.
+- carries the macOS disk image `PasaScope-X.Y.Z.dmg` and `PasaScope-X.Y.Z.dmg.sha256`;
+- carries the Windows installer `PasaScope-X.Y.Z-windows-x64-setup.exe` and its `.sha256`, which GitHub Actions attaches (see Windows below).
+
+Each platform's updater looks only for its own file, so a release that has only the disk image so far is offered on macOS and not yet on Windows.
 
 The app (`packages/desktop/core/updates.py`):
-1. takes the newest such release and compares its version with `pyproject.toml`;
+1. takes the newest release with this platform's installer and compares its version with `pyproject.toml`;
 2. offers a backup, written to `~/Documents/PasaScope backups/`;
-3. downloads the disk image into Downloads and checks it against the SHA-256 file before opening it.
+3. downloads the installer into Downloads and checks it against the SHA-256 file before opening it.
 
-The therapist then quits the app and drags it onto Applications. Cases, recordings and settings live in `~/Library/Application Support/PasaScope`, apart from the app, so an update leaves them alone.
+On macOS the therapist then quits the app and drags it onto Applications; on Windows the installer opens and PasaScope closes so it can be replaced. Cases, recordings and settings live in `~/Library/Application Support/PasaScope`, apart from the app, so an update leaves them alone.
 
 ## Build
 
@@ -49,10 +52,22 @@ The models are stored in `~/Library/Application Support/PasaScope/.speech-models
 
 The bundle is signed ad hoc. Without an Apple Developer ID it cannot be notarised, so macOS blocks the first launch on another Mac. On macOS 15 and later the therapist allows it in System Settings → Privacy & Security → Open Anyway (การตั้งค่าระบบ → ความเป็นส่วนตัวและความปลอดภัย → ยืนยันจะเปิด); on macOS 12–14, right-click → Open also works.
 
+## Windows
+
+`.github/workflows/desktop-windows.yml` runs `scripts/build_windows.py` on a Windows runner. It:
+- builds the same self-contained app: standalone CPython 3.12 pinned by SHA-256, the packages at the versions in `scripts/desktop_bundle/constraints.txt`, the app code, and a console-free launcher (`PasaScope.pyw`);
+- runs the smoke test with the bundled Python, including a short transcription;
+- makes an Inno Setup installer that installs per user in `%LOCALAPPDATA%\Programs\PasaScope` without administrator rights, adds Start menu and desktop shortcuts, and closes a running PasaScope before replacing it;
+- installs it silently, opens PasaScope for 30 seconds, uninstalls it and checks that `%APPDATA%\PasaScope` is kept.
+
+It runs on pushes to `feat/desktop-qt` that touch the build, on demand, and when a release is published; for a release it checks that the tag matches `pyproject.toml` and attaches the installer and its `.sha256` to that release, about ten minutes after publishing. The installer is not code-signed, so SmartScreen asks once ("More info", then "Run anyway").
+
+The package versions both builds use come from `scripts/desktop_bundle/constraints.txt`. After changing `.venv312`, refresh it with `.venv312/bin/python scripts/build_macos_dmg.py --write-constraints`.
+
 ## Publish
 
 1. Set the version in `pyproject.toml`, `apps/api/app/main.py`, `README.md`, `PROJECT_STATUS.md` and `CHANGELOG.md` (repository version policy). Commit, and build.
-2. Create the release:
+2. Create the release with the disk image (GitHub Actions adds the Windows installer):
 
    ```bash
    gh release create vX.Y.Z dist/PasaScope-X.Y.Z.dmg dist/PasaScope-X.Y.Z.dmg.sha256 \
@@ -60,6 +75,7 @@ The bundle is signed ad hoc. Without an Apple Developer ID it cannot be notarise
    ```
 
    The notes are shown in the app's update window. GitHub accepts files up to 2 GB.
-3. Check the release from a copy of the previous version: Help → "Check for updates…".
+3. Wait for the "Desktop Windows installer" workflow to attach the Windows files (`gh run list --workflow desktop-windows.yml`).
+4. Check the release from a copy of the previous version: Help → "Check for updates…".
 
 Publishing a release makes it public, and every installed copy will offer it. It needs the project owner's go-ahead.

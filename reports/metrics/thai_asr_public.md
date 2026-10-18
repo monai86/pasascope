@@ -4,11 +4,11 @@ Data: first 30 clips of the FLEURS Thai test split (5.4 minutes; adult speakers 
 
 | Model | WER mean | WER median | CER mean | CER median | Clips with CER under 10% | Processing time / audio length |
 |---|---|---|---|---|---|---|
-| `small` | 97.2% | 92.8% | 29.2% | 26.5% | 3% | 0.74 |
-| `medium` | 71.4% | 62.8% | 20.3% | 16.3% | 20% | 0.97 |
-| `thai-medium` | 18.4% | 15.5% | 6.5% | 5.0% | 80% | 3.96 |
+| `small` | 89.7% | 92.9% | 27.1% | 27.3% | 3% | 0.46 |
+| `medium` | 68.7% | 52.5% | 19.2% | 16.6% | 17% | 0.8 |
+| `thai-medium` | 18.4% | 15.5% | 6.5% | 5.0% | 80% | 3.01 |
 
-The `thai-medium` row was re-run on 2026-10-17 after a sentence Whisper wrote twice was collapsed to one copy and the voice-activity settings changed (it was CER 10.1%, 73% of clips under 10%); `small` and `medium` are from the earlier code.
+All three rows were transcribed afresh on 2026-10-18 with the code of the desktop app 1.7.4. In the app, **accurate** mode uses `thai-medium` and **fast** mode the multilingual `medium` with the language set to Thai.
 
 WER is word error rate after Thai word segmentation of both the reference and the draft; CER is character error rate. A misspelt Thai word usually segments into several wrong words, so WER is much higher than CER and CER is the steadier measure.
 

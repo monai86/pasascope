@@ -6,8 +6,8 @@
 ## สถานะปัจจุบัน
 
 - ชื่อโครงการ: **PasaScope (ภาษา-สโคป)** (เดิม LinguaLens)
-- รุ่นโครงการ: `v1.7.4`
-- active user-facing surfaces และ API ใช้ version `v1.7.4`
+- รุ่นโครงการ: `v1.7.5`
+- active user-facing surfaces และ API ใช้ version `v1.7.5`
 - branch หลัก: `main`
 - ตัวหลักของ term paper (ตั้งแต่ 2026-10-16): **โปรแกรมเดสก์ท็อป** `packages/desktop/`
   (PySide6, เปิดด้วย `./run_gui.sh` หรือคำสั่ง `pasascope`) รัน service layer ของ
