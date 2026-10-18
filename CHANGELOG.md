@@ -71,6 +71,16 @@ Public app mode on `feat/public-app`: opt-in settings that turn PasaScope into a
 - The public sign-in note no longer says a case can be deleted; it says that withdrawing a case's consent removes its recordings, which is what the app does.
 - In public sign-up mode the sign-in form drops the role tabs and the invitation-only notice, lands on Today, and states what the account stores; the organization switcher is hidden; the caregiver consent form is the confirmation tick alone.
 
+## [v1.7.4] - 2026-10-18
+
+Desktop app release: the therapist name in place, and an install window for the disk image.
+
+### Desktop app
+- **Change the therapist name where it shows**: the sidebar shows the therapist on this computer with a Change button, and the status bar and the report's signer line link to the same dialog. Attesting a transcript or signing a report without a name asks for it on the spot. Records signed before a change keep the name they were signed with.
+- **Install window**: the disk image opens as a 640 × 400 window, with PasaScope and Applications side by side over a background with an arrow and how to open the app the first time. Applications shows its folder icon; in 1.7.3 it was a blank tile on macOS 26.
+- **Home**: "Waiting for you" stays at the top when nothing is waiting.
+- **Fresh installs transcribe again**: PyAV is kept below 19, which dropped an argument faster-whisper 1.2.1 uses to read audio.
+
 ## [v1.7.3] - 2026-10-18
 
 Desktop app release: the first that installs from a disk image and updates itself.
