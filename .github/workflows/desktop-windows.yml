@@ -7,6 +7,11 @@ name: Desktop Windows installer
 
 on:
   workflow_dispatch:
+    inputs:
+      release_tag:
+        description: "Attach the installer to this existing release (e.g. v1.7.5); leave empty to keep it as an artifact only"
+        required: false
+        default: ""
   release:
     types: [published]
   push:
@@ -32,7 +37,7 @@ jobs:
       - name: Check out code
         uses: actions/checkout@v4
         with:
-          ref: ${{ github.event.release.tag_name || github.ref }}
+          ref: ${{ github.event.release.tag_name || inputs.release_tag || github.ref }}
 
       - name: Set up Python 3.12
         uses: actions/setup-python@v5
@@ -40,12 +45,12 @@ jobs:
           python-version: "3.12"
 
       - name: The release tag matches the app version
-        if: github.event_name == 'release'
+        if: github.event_name == 'release' || inputs.release_tag != ''
         shell: python
         run: |
           import tomllib
           version = tomllib.load(open("pyproject.toml", "rb"))["project"]["version"]
-          tag = "${{ github.event.release.tag_name }}"
+          tag = "${{ github.event.release.tag_name || inputs.release_tag }}"
           assert tag == f"v{version}", f"tag {tag} but pyproject.toml says {version}"
 
       - name: Install Inno Setup when missing
@@ -92,11 +97,11 @@ jobs:
           retention-days: 14
 
       - name: Attach the installer to the release
-        if: github.event_name == 'release'
+        if: github.event_name == 'release' || inputs.release_tag != ''
         shell: bash
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
-          gh release upload "${{ github.event.release.tag_name }}" \
+          gh release upload "${{ github.event.release.tag_name || inputs.release_tag }}" \
             dist/PasaScope-*-windows-x64-setup.exe dist/PasaScope-*-windows-x64-setup.exe.sha256 \
             --clobber --repo "${{ github.repository }}"

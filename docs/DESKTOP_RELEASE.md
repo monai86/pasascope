@@ -67,15 +67,16 @@ The package versions both builds use come from `scripts/desktop_bundle/constrain
 ## Publish
 
 1. Set the version in `pyproject.toml`, `apps/api/app/main.py`, `README.md`, `PROJECT_STATUS.md` and `CHANGELOG.md` (repository version policy). Commit, and build.
-2. Create the release with the disk image (GitHub Actions adds the Windows installer):
+2. Push the release commit to `main` first. `gh release create` makes the tag at the tip of `main` when the tag does not exist yet, so a release created before the push is tagged on the previous version's code, and GitHub runs the Windows workflow from `main`.
+3. Create the release with the disk image (GitHub Actions adds the Windows installer):
 
    ```bash
    gh release create vX.Y.Z dist/PasaScope-X.Y.Z.dmg dist/PasaScope-X.Y.Z.dmg.sha256 \
-       --title "PasaScope X.Y.Z" --notes-file <notes>
+       --target "$(git rev-parse HEAD)" --title "PasaScope X.Y.Z" --notes-file <notes>
    ```
 
    The notes are shown in the app's update window. GitHub accepts files up to 2 GB.
-3. Wait for the "Desktop Windows installer" workflow to attach the Windows files (`gh run list --workflow desktop-windows.yml`).
-4. Check the release from a copy of the previous version: Help → "Check for updates…".
+4. Wait for the "Desktop Windows installer" workflow to attach the Windows files (`gh run list --workflow desktop-windows.yml`). If it did not run, start it for the release: `gh workflow run desktop-windows.yml -f release_tag=vX.Y.Z`.
+5. Check the release from a copy of the previous version: Help → "Check for updates…".
 
 Publishing a release makes it public, and every installed copy will offer it. It needs the project owner's go-ahead.
