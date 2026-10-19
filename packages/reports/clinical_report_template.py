@@ -415,7 +415,7 @@ def generate_bilingual_clinical_html(
   </div>
 
   <div class="footer">
-    PasaScope v1.7.5 • Department of Medical Technology, Mahidol University • TalkBank / CHILDES Compliant
+    PasaScope v1.7.6 • Department of Medical Technology, Mahidol University • TalkBank / CHILDES Compliant
   </div>
 </div>
 

@@ -171,8 +171,8 @@ PasaScope เป็นโปรแกรมช่วยนักแก้ไข�
 Research prototype for extracting speech-language features from Thai language samples, CHAT (`.cha`) transcripts, and audio recordings to support pediatric therapist assessment workflows. Developed as an educational/research decision-support system — **not a diagnostic tool**. Releasing the desktop app: [`docs/DESKTOP_RELEASE.md`](./docs/DESKTOP_RELEASE.md).
 
 ## Project Version Mapping
-- **Project version:** `v1.7.5`
-- **Therapist product version:** `v1.7.5`
+- **Project version:** `v1.7.6`
+- **Therapist product version:** `v1.7.6`
 
 > Start with [`docs/PROJECT_SOURCE_OF_TRUTH.md`](./docs/PROJECT_SOURCE_OF_TRUTH.md).
 > It defines which paths are active, legacy, generated, or research-only.
@@ -186,7 +186,7 @@ Research prototype for extracting speech-language features from Thai language sa
 > [`docs/DATA_FLOW_DIAGRAM.md`](./docs/DATA_FLOW_DIAGRAM.md), and
 > [`docs/DATA_CLASSIFICATION_INVENTORY.md`](./docs/DATA_CLASSIFICATION_INVENTORY.md).
 
-## Therapist App Interface (v1.7.5)
+## Therapist App Interface (v1.7.6)
 
 - **Workflow:** Today → Cases → Session (Intake → Transcript → Findings → Report) → Reports. Each session view names one next step, and a step is ticked only when its work is done.
 - **Language:** a TH/EN toggle in the top bar; Thai is the default. Text supplied by the API and organization-administration Settings are English only.

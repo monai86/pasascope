@@ -1,6 +1,6 @@
 # ML Decision-Support Model Card
 
-Project version: v1.7.5
+Project version: v1.7.6
 Component status: current maintained runtime
 
 ## Intended use

@@ -1,6 +1,6 @@
 [project]
 name = "pasascope"
-version = "1.7.5"
+version = "1.7.6"
 requires-python = ">=3.11,<3.14"
 
 [tool.pytest.ini_options]
