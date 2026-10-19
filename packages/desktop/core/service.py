@@ -556,7 +556,11 @@ class DesktopService:
         removed = self.repo.delete_case_records(case_id, actor_id=LOCAL_USER_ID, session_id=session_id)
         # Files go after the records: a failure here leaves a file without a record, never the reverse.
         for audio_file in audio:
-            for path in (root / str(audio_file.object_key or ""), root / "playback" / f"{audio_file.audio_file_id}.wav"):
+            for path in (
+                root / str(audio_file.object_key or ""),
+                root / "playback" / f"{audio_file.audio_file_id}.wav",
+                root / "playback" / f"{audio_file.audio_file_id}.full.wav",
+            ):
                 path = path.resolve()
                 if root in path.parents and path.is_file():
                     path.unlink(missing_ok=True)
@@ -715,19 +719,29 @@ class DesktopService:
         return path
 
     def playback_path(self, audio_file) -> Path:
-        """A WAV copy of the recording that the player can read."""
+        """The recording at its own quality, in a form the player can read.
+
+        WAV, MP3, FLAC and Ogg are played as they are. Other containers (M4A,
+        MP4, WebM) are decoded once to a WAV copy at the recording's own sample
+        rate and channels: the 16 kHz mono copy transcription uses loses
+        everything above 8 kHz and is hard to listen to.
+        """
+        import soundfile
+
         source = self.audio_path(audio_file)
-        if source.suffix.lower() == ".wav":
+        try:
+            soundfile.info(str(source))
             return source
-        target = self.workspace.storage_root / "playback" / f"{audio_file.audio_file_id}.wav"
+        except (RuntimeError, soundfile.LibsndfileError):
+            pass
+        target = self.workspace.storage_root / "playback" / f"{audio_file.audio_file_id}.full.wav"
         if not target.is_file():
             target.parent.mkdir(parents=True, exist_ok=True)
-            from src.audio_pipeline.pipeline import decode_to_wav
-
             try:
-                decode_to_wav(source, target)
-            except (OSError, subprocess.SubprocessError) as exc:
-                raise WorkflowError(tr("แปลงไฟล์เสียงเพื่อเล่นไม่สำเร็จ (ต้องมี ffmpeg)", "Could not convert the recording for playback (ffmpeg is needed).")) from exc
+                _decode_for_listening(source, target)
+            except Exception as exc:  # noqa: BLE001 - any decoder failure is reported the same way
+                target.unlink(missing_ok=True)
+                raise WorkflowError(tr("แปลงไฟล์เสียงเพื่อเล่นไม่สำเร็จ", "Could not convert the recording for playback.")) from exc
         return target
 
     def store_recording(self, session_id: str, source: Path):
@@ -1235,3 +1249,23 @@ def _validation_message(exc: Exception) -> str:
     first = errors[0]
     field = ".".join(str(part) for part in first.get("loc", ()))
     return tr(f"{field}: {first.get('msg', 'ค่าไม่ถูกต้อง')}", f"{field}: {first.get('msg', 'invalid value')}")
+
+
+def _decode_for_listening(source: Path, target: Path) -> None:
+    """Decode ``source`` to 16-bit WAV at its own sample rate, keeping stereo (PyAV, no system ffmpeg)."""
+    import av
+    import soundfile
+
+    with av.open(str(source)) as container:
+        stream = container.streams.audio[0]
+        channels = 2 if (stream.channels or 1) >= 2 else 1
+        rate = stream.rate or 44100
+        resampler = av.AudioResampler(format="s16", layout="stereo" if channels == 2 else "mono", rate=rate)
+        with soundfile.SoundFile(str(target), "w", samplerate=rate, channels=channels, subtype="PCM_16") as sink:
+            def write(frames) -> None:
+                for frame in frames:
+                    sink.write(frame.to_ndarray().reshape(-1, channels))
+
+            for frame in container.decode(stream):
+                write(resampler.resample(frame))
+            write(resampler.resample(None))

@@ -71,6 +71,13 @@ Public app mode on `feat/public-app`: opt-in settings that turn PasaScope into a
 - The public sign-in note no longer says a case can be deleted; it says that withdrawing a case's consent removes its recordings, which is what the app does.
 - In public sign-up mode the sign-in form drops the role tabs and the invitation-only notice, lands on Today, and states what the account stores; the organization switcher is hidden; the caregiver consent form is the confirmation tick alone.
 
+## [v1.7.7] - 2026-10-19
+
+Desktop app release: clear playback for checking transcripts.
+
+### Desktop app
+- **Recordings play at their own quality.** Listening back on the Transcript step used the 16 kHz mono copy made for speech recognition, which loses everything above 8 kHz, and the sound system converted it to the speaker's rate on the fly with a 25 ms buffer, so voices sounded muffled and broke up whenever the window was busy. WAV, MP3, FLAC and Ogg files now play as they are; M4A, MP4 and WebM are decoded once at their own sample rate and channels. The player resamples to the output device's rate with a proper filter and uses a larger buffer.
+
 ## [v1.7.6] - 2026-10-19
 
 Desktop app release: edit and delete cases.

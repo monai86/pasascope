@@ -39,6 +39,27 @@ def waveform_peaks(path: Path, buckets: int = 1200) -> tuple[np.ndarray, float]:
     return values, total / float(info.samplerate)
 
 
+def _for_output_device(sd, data: np.ndarray, rate: int) -> tuple[np.ndarray, int]:
+    """Resample to the output device's own rate with a proper filter.
+
+    Left to the sound system, a 16 kHz clip on a 44.1 or 48 kHz device is
+    converted on the fly, which adds crackle under load.
+    """
+    try:
+        device_rate = int(sd.query_devices(kind="output")["default_samplerate"])
+    except Exception:  # noqa: BLE001 - no device information: play as is
+        return data, rate
+    if not data.size or device_rate <= 0 or device_rate == rate:
+        return data, rate
+    from math import gcd
+
+    from scipy.signal import resample_poly
+
+    divisor = gcd(device_rate, int(rate))
+    resampled = resample_poly(data, device_rate // divisor, int(rate) // divisor, axis=0)
+    return np.clip(resampled, -1.0, 1.0).astype("float32"), device_rate
+
+
 class SegmentPlayer:
     """Plays a time range of a WAV file and reports where playback is."""
 
@@ -65,6 +86,7 @@ class SegmentPlayer:
             dtype="float32",
             always_2d=True,
         )
+        data, rate = _for_output_device(sd, data, rate)
         sd.stop()
         with self._lock:
             self._path = path
@@ -73,7 +95,9 @@ class SegmentPlayer:
             self._started_at = time.monotonic()
             self._playing = data.size > 0
         if data.size:
-            sd.play(data, rate)
+            # A roomy buffer: with the smallest one, a busy window or a running
+            # transcription starves the sound card and the voice breaks up.
+            sd.play(data, rate, latency="high", blocksize=2048)
 
     def stop(self) -> None:
         try:
