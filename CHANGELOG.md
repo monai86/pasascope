@@ -2,6 +2,10 @@
 
 ## [Unreleased]
 
+### Desktop app
+- **Edit and delete cases.** Right-click a case in the sidebar, or use ⋯ beside its name or the Case menu: open it, start a session, edit its nickname, age, language and notes, record or withdraw consent, or delete it. Deleting shows what will go (sessions, recordings, transcripts, reports, signed reports called out), offers a backup, and needs the child's code typed. It removes every record of the case in one transaction and its recording files, and the audit log keeps one event with counts only. The Delete key does the same on the selected case. A single session can be deleted from the case overview's right-click menu.
+- Forms in English said "Notes" on their save button; it says "Save".
+
 Public app mode on `feat/public-app`: opt-in settings that turn PasaScope into a sign-up-and-use web app. The defaults keep the invitation-only, gated behaviour.
 
 ### Added

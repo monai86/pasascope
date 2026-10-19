@@ -19,6 +19,7 @@ from PySide6.QtWidgets import (
     QLabel,
     QLineEdit,
     QPlainTextEdit,
+    QPushButton,
     QSpinBox,
     QTableWidget,
     QTableWidgetItem,
@@ -45,7 +46,7 @@ def _pydate(value: QDate) -> date:
 
 
 class _Form(QDialog):
-    def __init__(self, title: str, parent: QWidget | None = None, ok_text: str = tr("บันทึก", "Notes")) -> None:
+    def __init__(self, title: str, parent: QWidget | None = None, ok_text: str | None = None) -> None:
         super().__init__(parent)
         self.setWindowTitle(title)
         self.setMinimumWidth(460)
@@ -66,7 +67,7 @@ class _Form(QDialog):
         self.outer.addWidget(self.error)
         self.buttons = QDialogButtonBox(QDialogButtonBox.StandardButton.Ok | QDialogButtonBox.StandardButton.Cancel)
         ok = self.buttons.button(QDialogButtonBox.StandardButton.Ok)
-        ok.setText(ok_text)
+        ok.setText(ok_text or tr("บันทึก", "Save"))
         ok.setProperty("role", "primary")
         self.buttons.button(QDialogButtonBox.StandardButton.Cancel).setText(tr("ยกเลิก", "Cancel"))
         self.buttons.accepted.connect(self._try_accept)
@@ -128,6 +129,100 @@ class NewCaseDialog(_Form):
     def validate(self) -> str | None:
         if not self.code.text().strip():
             return tr("กรุณาใส่รหัสเด็ก", "Enter a child code.")
+        return None
+
+
+class EditCaseDialog(_Form):
+    """Nickname, age at intake, language and notes of an existing case; the code cannot change."""
+
+    def __init__(self, case, parent: QWidget | None = None) -> None:
+        super().__init__(tr(f"แก้ไขข้อมูลเคส · {case.child_code}", f"Edit case: {case.child_code}"), parent)
+        code = QLineEdit(case.child_code)
+        code.setEnabled(False)
+        code.setToolTip(tr("รหัสเด็กเปลี่ยนไม่ได้ เพราะอยู่ในทุกบันทึกและรายงาน", "The code cannot change: it is on every record and report."))
+        self.nickname = QLineEdit(case.nickname or "")
+        self.nickname.setPlaceholderText(tr("ไม่บังคับ", "Optional"))
+        self.nickname.setMaxLength(120)
+        age = QHBoxLayout()
+        self.years = QSpinBox()
+        self.years.setRange(0, 20)
+        self.years.setValue(case.age_months // 12)
+        self.years.setSuffix(tr(" ปี", " years"))
+        self.months = QSpinBox()
+        self.months.setRange(0, 11)
+        self.months.setValue(case.age_months % 12)
+        self.months.setSuffix(tr(" เดือน", " months"))
+        age.addWidget(self.years)
+        age.addWidget(self.months)
+        age.addStretch(1)
+        self.language = QComboBox()
+        self.language.setEditable(True)
+        self.language.addItems(["Thai", "English", "Thai + English"])
+        self.language.setCurrentText(case.language or "Thai")
+        self.notes = QPlainTextEdit(case.notes or "")
+        self.notes.setFixedHeight(70)
+        self.form.addRow(tr("รหัสเด็ก", "Child code"), code)
+        self.form.addRow(tr("ชื่อเล่น", "Nickname"), self.nickname)
+        self.form.addRow(tr("อายุเมื่อเปิดเคส", "Age at intake"), age)
+        self.form.addRow(tr("ภาษาที่ใช้", "Language"), self.language)
+        self.form.addRow(tr("หมายเหตุ", "Notes"), self.notes)
+
+    @property
+    def age_months(self) -> int:
+        return self.years.value() * 12 + self.months.value()
+
+
+class DeleteCaseDialog(_Form):
+    """Says what deleting a case removes and asks for the child's code before it can go ahead."""
+
+    def __init__(self, child_code: str, summary: dict, parent: QWidget | None = None, on_backup=None) -> None:
+        super().__init__(tr(f"ลบเคส {child_code}", f"Delete case {child_code}"), parent,
+                         ok_text=tr("ลบเคสถาวร", "Delete permanently"))
+        self.child_code = child_code
+        parts = [
+            tr(f"{summary['sessions']} session", f"{summary['sessions']} session(s)"),
+            tr(f"ไฟล์เสียง {summary['recordings']} ไฟล์", f"{summary['recordings']} recording(s)"),
+            tr(f"transcript {summary['transcripts']} ชุด", f"{summary['transcripts']} transcript(s)"),
+            tr(f"รายงาน {summary['reports']} ฉบับ", f"{summary['reports']} report(s)"),
+        ]
+        text = tr(
+            "จะลบเคสนี้ออกจากเครื่องพร้อม " + ", ".join(parts) + " ตัวชี้วัด และ cue ทั้งหมด ย้อนกลับไม่ได้ "
+            "ประวัติการทำงาน (audit log) จะบันทึกว่ามีการลบ โดยไม่เก็บเนื้อหา "
+            "ไฟล์ที่ export ไว้และไฟล์สำรองข้อมูลจะไม่ถูกลบ",
+            "This removes the case from this computer with " + ", ".join(parts) + ", and all its findings and cues. "
+            "It cannot be undone. The audit log records the deletion, without its content. "
+            "Files you exported and backups are not touched.",
+        )
+        self.outer.insertWidget(1, label(text, "", wrap=True))
+        if summary.get("signed_reports"):
+            warning = label(tr(
+                f"มีรายงานที่ลงนามแล้ว {summary['signed_reports']} ฉบับ ถ้าต้องเก็บเป็นเวชระเบียน ให้ export หรือสำรองข้อมูลก่อน",
+                f"{summary['signed_reports']} signed report(s) will be deleted. If they are part of the clinical record, export or back up first.",
+            ), "Notice", wrap=True)
+            self.outer.insertWidget(2, warning)
+        if on_backup is not None:
+            backup = QHBoxLayout()
+            button = QPushButton(tr("สำรองข้อมูลก่อน…", "Back up first…"))
+            button.clicked.connect(on_backup)
+            backup.addWidget(button)
+            backup.addStretch(1)
+            self.outer.insertLayout(self.outer.count() - 3, backup)
+        self.typed = QLineEdit()
+        self.typed.setPlaceholderText(child_code)
+        self.form.addRow(tr(f"พิมพ์ {child_code} เพื่อยืนยัน", f"Type {child_code} to confirm"), self.typed)
+        ok = self.buttons.button(QDialogButtonBox.StandardButton.Ok)
+        ok.setProperty("role", "danger")
+        ok.style().unpolish(ok)
+        ok.style().polish(ok)
+        ok.setEnabled(False)
+        self.typed.textChanged.connect(lambda text: ok.setEnabled(text.strip() == child_code))
+        self.buttons.button(QDialogButtonBox.StandardButton.Cancel).setDefault(True)
+        # Size the dialog to its wrapped paragraphs; otherwise their last lines are cut off.
+        self.outer.setSizeConstraint(QVBoxLayout.SizeConstraint.SetFixedSize)
+
+    def validate(self) -> str | None:
+        if self.typed.text().strip() != self.child_code:
+            return tr(f"พิมพ์ {self.child_code} ให้ตรง", f"Type {self.child_code} exactly.")
         return None
 
 

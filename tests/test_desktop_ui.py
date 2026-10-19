@@ -545,3 +545,39 @@ def test_therapist_name_changes_from_the_sidebar_and_the_report(window, qtbot, m
     assert window.service.therapist_name == "Kanda & Co"
     assert "Kanda &amp; Co" in window.pages[3].form.signer.text()
     assert window.therapist_label.text() == "Kanda & Co"
+
+
+def test_cases_and_sessions_can_be_edited_and_deleted_from_their_menus(window, qtbot, monkeypatch):
+    from packages.desktop.ui import dialogs
+
+    case, session = _case_with_session(window)
+    window.service.import_transcript_text(session.session_id, CHAT)
+
+    labels_of = lambda menu: [action.text() for action in menu.actions() if action.text()]  # noqa: E731
+    menu = window._case_menu(case.case_id)
+    assert labels_of(menu)[:3] == ["เปิดเคส", "Session ใหม่…", "แก้ไขข้อมูลเคส…"]
+    assert any("ลบเคส" in text or "Delete case" in text for text in labels_of(menu))
+
+    def edit(dialog):
+        dialog.nickname.setText("ภูมิใจ")
+        return True
+    monkeypatch.setattr(dialogs.EditCaseDialog, "exec", edit)
+    window.edit_case(case.case_id)
+    assert "ภูมิใจ" in window.case_title.text()
+
+    # Deleting a session asks first; this one is open, so the case goes back to "no session".
+    monkeypatch.setattr(QMessageBox, "warning", lambda *a, **k: QMessageBox.StandardButton.Yes)
+    window.delete_session(session.session_id)
+    assert window.session is None and window.service.list_sessions(case.case_id) == []
+
+    # The delete button stays off until the code is typed.
+    def confirm(dialog):
+        ok = dialog.buttons.button(dialog.buttons.StandardButton.Ok)
+        assert not ok.isEnabled()
+        dialog.typed.setText(case.child_code)
+        assert ok.isEnabled()
+        return True
+    monkeypatch.setattr(dialogs.DeleteCaseDialog, "exec", confirm)
+    window.delete_case(case.case_id)
+    assert window.case is None and window.case_list.count() == 0
+    assert window.stack.currentIndex() == 0  # Home

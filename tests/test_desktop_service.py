@@ -336,3 +336,62 @@ def test_work_queue_lists_what_waits_for_the_therapist(service):
     service.attest(transcript.transcript_id, override_reason="ตรวจกับเสียงแล้ว")
     assert [row["step"] for row in service.work_queue()] == ["consent", 2, 0]
     assert waiting.case_id == queue[0]["case"].case_id
+
+
+def test_deleting_a_session_or_a_case_removes_its_records_and_recordings(service, tmp_path):
+    import sqlite3
+
+    import numpy as np
+    import soundfile
+
+    wav = tmp_path / "clip.wav"
+    soundfile.write(wav, np.zeros(16000, dtype="float32"), 16000)
+    kept = _case_with_consent(service)
+    kept_session = service.create_session(kept.case_id, date(2026, 10, 2))
+    service.import_transcript_text(kept_session.session_id, CHAT)
+
+    case = service.create_case("TH-DEL", 50)
+    service.grant_consent(case.case_id, "ผู้ปกครอง", date(2026, 10, 1))
+    first = service.create_session(case.case_id, date(2026, 10, 2))
+    recording = service.store_recording(first.session_id, wav)
+    transcript = service.import_transcript_text(first.session_id, CHAT)
+    service.attest(transcript.transcript_id, override_reason="test")
+    service.analyze(first.session_id)
+    service.sign_off(service.draft_report(first.session_id).report_id)
+    second = service.create_session(case.case_id, date(2026, 10, 9))
+    service.import_transcript_text(second.session_id, CHAT)
+
+    summary = service.deletion_summary(case.case_id)
+    assert summary == {"sessions": 2, "recordings": 1, "transcripts": 2, "reports": 1, "signed_reports": 1}
+
+    service.delete_session(second.session_id)
+    assert [s.session_id for s in service.list_sessions(case.case_id)] == [first.session_id]
+
+    with pytest.raises(WorkflowError):
+        service.delete_case(case.case_id, "TH-WRONG")
+    assert service.audio_path(recording).is_file()
+
+    service.delete_case(case.case_id, "TH-DEL")
+    assert [c.child_code for c in service.list_cases()] == ["TH-001"]
+    assert not any(path.is_file() for path in service.workspace.storage_root.rglob("*"))
+
+    # Read back from disk: the other case is whole, the deleted one is gone, and the audit log says so.
+    reopened = DesktopService(open_workspace(tmp_path / "ws"))
+    assert [c.child_code for c in reopened.list_cases()] == ["TH-001"]
+    assert len(reopened.list_sessions(kept.case_id)) == 1
+    database = next(path for path in (tmp_path / "ws").rglob("*") if path.suffix in {".db", ".sqlite", ".sqlite3"})
+    with sqlite3.connect(database) as db:
+        assert db.execute("select count(*) from sessions").fetchone()[0] == 1
+        assert db.execute("select count(*) from transcripts").fetchone()[0] == 1
+        assert db.execute("select count(*) from reports").fetchone()[0] == 0
+        assert db.execute("select count(*) from audio_files").fetchone()[0] == 0
+        actions = [row[0] for row in db.execute("select action from audit_logs where action like '%.delete'")]
+    assert sorted(actions) == ["case.delete", "session.delete"]
+
+
+def test_case_details_can_be_edited_but_not_the_code(service):
+    case = _case_with_consent(service)
+    service.update_case(case.case_id, nickname="ภูมิ", age_months=53, language="Thai + English", notes="ย้ายมาจากคลินิกอื่น")
+    edited = service.get_case(case.case_id)
+    assert (edited.child_code, edited.nickname, edited.age_months, edited.language) == ("TH-001", "ภูมิ", 53, "Thai + English")
+    assert edited.notes == "ย้ายมาจากคลินิกอื่น"

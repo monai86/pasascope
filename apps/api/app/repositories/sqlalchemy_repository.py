@@ -1087,6 +1087,68 @@ class SqlAlchemyRepository(MockRepository):
                 del self.audit_log[:excess]
                 self._saved_audit_ids.difference_update(item["audit_id"] for item in dropped)
 
+    def delete_case_records(self, case_id: str, *, actor_id: str, session_id: str | None = None) -> dict[str, int]:
+        """Remove a case with every row recorded for it (or one of its sessions) in one transaction.
+
+        Rows go when they are one of the records found, or carry the case's id
+        (whole case only), one of the sessions' ids or one of their jobs' ids,
+        so tables left by retired features are emptied too. The audit log is
+        kept and gains one event with counts only. Stored recordings are the
+        caller's to remove.
+        """
+        from sqlalchemy import inspect, or_
+
+        from app.repositories.mock_repository import _deletion_message
+
+        self.save()
+        organization_id = self.cases[case_id].organization_id
+        records = self.case_records(case_id, session_id=session_id)
+        ids = {
+            self._sources[collection][0].__tablename__: {
+                getattr(record, self._sources[collection][1]) for record in found
+            }
+            for collection, found in records.items()
+        }
+        session_ids = ids.get(SessionRecord.__tablename__, set())
+        job_ids = ids.get(ProcessingJobRecord.__tablename__, set())
+        removed = {collection: len(found) for collection, found in records.items()}
+        audit = validate_audit_event(
+            actor_id=actor_id,
+            action="session.delete" if session_id else "case.delete",
+            target_id=session_id or case_id,
+            outcome="success",
+            correlation_id=f"{'session' if session_id else 'case'}-delete-{session_id or case_id}",
+            message=_deletion_message(removed, session_id),
+        ).as_dict()
+        audit["organization_id"] = organization_id
+        present = set(inspect(self.engine).get_table_names())
+        with self.SessionLocal() as db:
+            for table in reversed(Base.metadata.sorted_tables):
+                if table.name not in present or table.name == AuditLogRecord.__tablename__:
+                    continue
+                columns = table.columns
+                conditions = []
+                primary = list(table.primary_key.columns)
+                if ids.get(table.name) and len(primary) == 1:
+                    conditions.append(primary[0].in_(ids[table.name]))
+                if session_id is None and "case_id" in columns:
+                    conditions.append(columns["case_id"] == case_id)
+                if "session_id" in columns and session_ids:
+                    conditions.append(columns["session_id"].in_(session_ids))
+                if "job_id" in columns and job_ids and table.name != ProcessingJobRecord.__tablename__:
+                    conditions.append(columns["job_id"].in_(job_ids))
+                if conditions:
+                    db.execute(table.delete().where(or_(*conditions)))
+            db.add(self._audit_to_record(audit))
+            db.commit()
+        for collection, found in records.items():
+            table = getattr(self, collection)
+            for record in found:
+                table.forget(getattr(record, self._sources[collection][1]))
+        self.audit_log.append(audit)
+        self._saved_audit_ids.add(audit["audit_id"])
+        return removed
+
     def delete_workspace(self, organization_id: str, *, user_id: str) -> dict[str, int]:
         """Remove every row of one workspace and its account in one transaction.
 

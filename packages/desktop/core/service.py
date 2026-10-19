@@ -501,6 +501,68 @@ class DesktopService:
         self._save()
         return result
 
+    def update_case(self, case_id: str, *, nickname: str, age_months: int, language: str, notes: str):
+        """Change a case's nickname, age at intake, language and notes; the code stays (it is on every record)."""
+        from pydantic import ValidationError
+
+        from app.schemas.clinical import ChildCaseUpdate
+
+        case = self.get_case(case_id)
+        try:
+            patch = ChildCaseUpdate(
+                nickname=nickname.strip() or None, age_months=age_months,
+                language=language.strip() or case.language, notes=notes.strip(),
+            )
+            updated = self.repo.update_case(case_id, patch, expected_version=None, actor_id=LOCAL_USER_ID)
+        except ValidationError as exc:
+            raise WorkflowError(_validation_message(exc)) from exc
+        self._save()
+        return updated
+
+    def deletion_summary(self, case_id: str, session_id: str | None = None) -> dict[str, int]:
+        """What deleting a case (or one of its sessions) would remove, for the confirmation dialog."""
+        self.get_case(case_id)
+        if session_id is not None and self.get_session(session_id).case_id != case_id:
+            raise WorkflowError(tr("ไม่พบ session นี้", "Session not found."))
+        records = self.repo.case_records(case_id, session_id=session_id)
+        return {
+            "sessions": len(records["sessions"]),
+            "recordings": len(records["audio_files"]),
+            "transcripts": len(records["transcripts"]),
+            "reports": len(records["reports"]),
+            "signed_reports": sum(1 for report in records["reports"] if report.status == "Signed Off"),
+        }
+
+    def delete_case(self, case_id: str, typed_code: str) -> dict[str, int]:
+        """Delete a case with its sessions, recordings, transcripts, findings and reports.
+
+        The therapist types the child's code to confirm. The audit log keeps
+        one event with counts only, and exported files and backups outside the
+        data folder are not touched.
+        """
+        case = self.get_case(case_id)
+        if typed_code.strip() != case.child_code:
+            raise WorkflowError(tr(f"พิมพ์รหัส {case.child_code} ให้ตรงเพื่อยืนยันการลบ", f"Type {case.child_code} exactly to confirm."))
+        return self._delete_records(case_id, None)
+
+    def delete_session(self, session_id: str) -> dict[str, int]:
+        """Delete one session with its recording, transcript, findings and report."""
+        session = self.get_session(session_id)
+        return self._delete_records(session.case_id, session_id)
+
+    def _delete_records(self, case_id: str, session_id: str | None) -> dict[str, int]:
+        root = self.workspace.storage_root.resolve()
+        audio = self.repo.case_records(case_id, session_id=session_id)["audio_files"]
+        removed = self.repo.delete_case_records(case_id, actor_id=LOCAL_USER_ID, session_id=session_id)
+        # Files go after the records: a failure here leaves a file without a record, never the reverse.
+        for audio_file in audio:
+            for path in (root / str(audio_file.object_key or ""), root / "playback" / f"{audio_file.audio_file_id}.wav"):
+                path = path.resolve()
+                if root in path.parents and path.is_file():
+                    path.unlink(missing_ok=True)
+        self._save()
+        return removed
+
     def consent_active(self, case_id: str) -> bool:
         return self.get_case(case_id).consent_status == "granted"
 

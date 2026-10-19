@@ -91,6 +91,13 @@ def _fields(collection: str) -> set[str]:
     return set(_RECORD_TYPES[collection].model_fields)
 
 
+def _deletion_message(removed: dict[str, int], session_id: str | None) -> str:
+    """What a case or session deletion removed, in counts only (no clinical content)."""
+    what = "Session deleted" if session_id else "Case deleted"
+    counts = ", ".join(f"{count} {name}" for name, count in removed.items() if count and name not in {"cases"})
+    return f"{what} with its records: {counts}." if counts else f"{what}."
+
+
 class MockRepository:
     """In-memory repository for local demo and contract tests."""
 
@@ -292,6 +299,58 @@ class MockRepository:
                     found[id(record)] = record
             records[collection] = list(found.values())
         return records
+
+    def case_records(self, case_id: str, *, session_id: str | None = None) -> dict[str, list]:
+        """Every record of one case (or only of one of its sessions), by collection.
+
+        With ``session_id`` the case itself, its goals and its privacy
+        operations are left out: they belong to the case, not the session.
+        """
+        sessions = [
+            session for session in self.find("sessions", case_id=case_id)
+            if session_id is None or session.session_id == session_id
+        ]
+        session_ids = {session.session_id for session in sessions}
+        records: dict[str, list] = {}
+        for collection in self._WORKSPACE_COLLECTIONS:
+            found = {}
+            if collection == "sessions":
+                found = {id(session): session for session in sessions}
+            elif collection == "cases":
+                if session_id is None and case_id in self.cases:
+                    found[id(self.cases[case_id])] = self.cases[case_id]
+            else:
+                fields = _fields(collection)
+                if session_id is None and "case_id" in fields:
+                    for record in self.find(collection, case_id=case_id):
+                        found[id(record)] = record
+                if session_ids and "session_id" in fields:
+                    for record in self.find(collection, session_id=session_ids):
+                        found[id(record)] = record
+            records[collection] = list(found.values())
+        return records
+
+    def delete_case_records(self, case_id: str, *, actor_id: str, session_id: str | None = None) -> dict[str, int]:
+        """Remove a case with everything recorded for it, or one of its sessions.
+
+        Stored recordings are the caller's to remove; this drops their
+        metadata. The audit log is kept and gains one event with counts only.
+        """
+        organization_id = self.cases[case_id].organization_id
+        removed = {}
+        for collection, records in self.case_records(case_id, session_id=session_id).items():
+            table = getattr(self, collection)
+            for record in records:
+                table.pop(_record_key(collection, record), None)
+            removed[collection] = len(records)
+        self.add_audit(
+            "session.delete" if session_id else "case.delete",
+            session_id or case_id,
+            _deletion_message(removed, session_id),
+            actor_id=actor_id,
+            organization_id=organization_id,
+        )
+        return removed
 
     def delete_workspace(self, organization_id: str, *, user_id: str) -> dict[str, int]:
         """Remove a workspace's records, settings and audit events.

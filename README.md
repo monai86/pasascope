@@ -122,6 +122,7 @@ Updates work the same way: PasaScope downloads and checks the new installer, the
    - **Findings**: read the main measures and confirm or dismiss each cue. Double-click a measure to read what it means.
    - **Report**: fill in the interpretation, goals and recommendations, check the preview, then **Sign report** and **Export** a PDF.
 3. **Home** lists the work waiting across all cases. Double-click a line to carry on.
+4. **Right-click a case** in the sidebar (or use **⋯** next to its name, or the **Case** menu) to edit its details, record or withdraw consent, or delete it. Deleting asks you to type the child's code, removes the case's sessions, recordings, transcripts and reports from this computer, and keeps a note in the audit log. Right-click a session in the case overview to delete just that session.
 
 **Help → Knowledge** (F1) explains every measure and shows the age charts.
 

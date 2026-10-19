@@ -15,6 +15,7 @@ from PySide6.QtWidgets import (
     QGridLayout,
     QHBoxLayout,
     QHeaderView,
+    QMenu,
     QSplitter,
     QTableWidget,
     QTableWidgetItem,
@@ -52,6 +53,7 @@ def _number(name: str, value) -> str:
 
 class CaseOverview(QWidget):
     open_session = Signal(str)
+    delete_session = Signal(str)
 
     def __init__(self, service, parent: QWidget | None = None) -> None:
         super().__init__(parent)
@@ -81,7 +83,7 @@ class CaseOverview(QWidget):
         left_layout = QVBoxLayout(left)
         left_layout.setContentsMargins(0, 0, 6, 0)
         left_layout.addWidget(label(tr("ทุก session", "Sessions"), "SectionTitle"))
-        left_layout.addWidget(label(tr("ดับเบิลคลิกเพื่อเปิด session ที่ขั้นที่ค้างอยู่", "Double-click to open a session."), "Muted"))
+        left_layout.addWidget(label(tr("ดับเบิลคลิกเพื่อเปิด session คลิกขวาเพื่อลบ", "Double-click to open a session; right-click to delete one."), "Muted"))
         self.table = QTableWidget(0, len(COLUMNS))
         self.table.setHorizontalHeaderLabels(COLUMNS)
         self.table.verticalHeader().hide()
@@ -93,6 +95,8 @@ class CaseOverview(QWidget):
         header.setSectionResizeMode(QHeaderView.ResizeMode.ResizeToContents)
         header.setStretchLastSection(True)
         self.table.cellDoubleClicked.connect(self._open_row)
+        self.table.setContextMenuPolicy(Qt.ContextMenuPolicy.CustomContextMenu)
+        self.table.customContextMenuRequested.connect(self._row_menu)
         left_layout.addWidget(self.table, 1)
         split.addWidget(left)
 
@@ -176,6 +180,18 @@ class CaseOverview(QWidget):
         item = self.table.item(row, 0)
         if item is not None:
             self.open_session.emit(item.data(Qt.ItemDataRole.UserRole))
+
+    def _row_menu(self, position) -> None:
+        item = self.table.itemAt(position)
+        session_item = self.table.item(item.row(), 0) if item is not None else None
+        if session_item is None:
+            return
+        session_id = session_item.data(Qt.ItemDataRole.UserRole)
+        menu = QMenu(self)
+        menu.addAction(tr("เปิด session", "Open session"), lambda: self.open_session.emit(session_id))
+        menu.addSeparator()
+        menu.addAction(tr("ลบ session…", "Delete session…"), lambda: self.delete_session.emit(session_id))
+        menu.exec(self.table.viewport().mapToGlobal(position))
 
     def _draw_trend(self) -> None:
         if self.case is None:
