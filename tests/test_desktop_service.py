@@ -395,3 +395,44 @@ def test_case_details_can_be_edited_but_not_the_code(service):
     edited = service.get_case(case.case_id)
     assert (edited.child_code, edited.nickname, edited.age_months, edited.language) == ("TH-001", "ภูมิ", 53, "Thai + English")
     assert edited.notes == "ย้ายมาจากคลินิกอื่น"
+
+
+def test_playback_keeps_the_recordings_own_quality(service, tmp_path):
+    import subprocess
+    import sys
+
+    import numpy as np
+    import soundfile
+
+    seconds = np.arange(44100 * 2) / 44100
+    stereo = np.stack([0.3 * np.sin(2 * np.pi * 440 * seconds), 0.3 * np.sin(2 * np.pi * 6000 * seconds)], axis=1)
+    wav = tmp_path / "clip.wav"
+    soundfile.write(wav, stereo.astype("float32"), 44100)
+    case = _case_with_consent(service)
+
+    # A file the player reads as it is: no 16 kHz mono copy.
+    mp3 = tmp_path / "clip.mp3"
+    soundfile.write(mp3, stereo.astype("float32"), 44100, format="MP3")
+    stored = service.store_recording(service.create_session(case.case_id, date(2026, 10, 16)).session_id, mp3)
+    assert service.playback_path(stored) == service.audio_path(stored)
+
+    # A container it cannot read is decoded once, at 44.1 kHz stereo.
+    if sys.platform == "darwin":
+        m4a = tmp_path / "clip.m4a"
+        subprocess.run(["afconvert", "-f", "m4af", "-d", "aac", str(wav), str(m4a)], check=True)
+        stored = service.store_recording(service.create_session(case.case_id, date(2026, 10, 17)).session_id, m4a)
+        info = soundfile.info(str(service.playback_path(stored)))
+        assert (info.samplerate, info.channels) == (44100, 2)
+
+
+def test_player_resamples_to_the_output_device():
+    import numpy as np
+
+    from packages.desktop.ui.audio import _for_output_device
+
+    class Device:
+        def query_devices(self, kind):
+            return {"default_samplerate": 48000.0}
+
+    data, rate = _for_output_device(Device(), np.zeros((16000, 1), dtype="float32"), 16000)
+    assert rate == 48000 and data.shape == (48000, 1) and data.dtype == np.float32
