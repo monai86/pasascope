@@ -265,6 +265,9 @@ persistence layer หลักของ pasascope.
     ใน `packages/desktop/core/workflow/` (settings, clinic_speaker, maintenance, cases, recordings,
     transcripts, findings, reports) และ error กับ helper ที่ใช้ร่วมกันอยู่ใน `workflow/common.py`;
     เพิ่ม method ใหม่ในไฟล์ของส่วนนั้น และ import error จาก `packages.desktop.core` เหมือนเดิม
+    ฝั่งหน้าจอทำแบบเดียวกัน: `MainWindow` (`packages/desktop/ui/main_window.py`) เก็บการสร้างหน้าต่าง
+    layout การนำทาง และสถานะหน้าต่าง ส่วนงานอื่นอยู่ใน mixin ที่ `packages/desktop/ui/window/`
+    (case_view, case_actions, settings_actions, updates, appearance, backup) และค่าที่ใช้ร่วมกันใน `window/common.py`
 37. ขอบเขต term paper อยู่ใน `SCOPE_AND_DELIVERABLES.md` และการจับคู่หัวข้อกับหลักฐาน
     อยู่ใน `docs/TERM_PAPER_MAPPING.md`
 38. ชื่อโครงการในโค้ด config และเอกสารที่ใช้งานอยู่คือ PasaScope เท่านั้น:

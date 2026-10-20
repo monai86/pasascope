@@ -46,6 +46,13 @@ def test_empty_window_shows_case_prompt(window):
     assert window.case_list.count() == 0
 
 
+def test_sidebar_shows_the_logo(window):
+    from PySide6.QtWidgets import QFrame, QLabel
+
+    sidebar = window.findChild(QFrame, "Sidebar")
+    assert any(not mark.pixmap().isNull() for mark in sidebar.findChildren(QLabel))
+
+
 def test_pending_consent_blocks_sessions(window):
     case = window.service.create_case("TH-011", 40)
     window.reload_cases(case.case_id)
