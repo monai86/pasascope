@@ -42,7 +42,7 @@ from packages.desktop.ui.pages.overview import CaseOverview
 from packages.desktop.ui.pages.report import ReportPage
 from packages.desktop.ui.pages.review import ReviewPage
 from packages.desktop.ui.tasks import TaskRunner
-from packages.desktop.ui.widgets import EmptyState, button, chip, label, set_chip
+from packages.desktop.ui.widgets import EmptyState, button, chip, label, repolish, set_chip
 
 LOGO = Path(__file__).resolve().parent / "assets" / "logo.png"
 OVERVIEW = "__overview__"  # session picker entry for the case overview
@@ -1252,7 +1252,8 @@ class MainWindow(QMainWindow):
             tr(f"ถอดเสียง: พร้อม (โหมด{mode})", f"Transcription ready ({mode})") if available
             else tr(f"ถอดเสียงไม่ได้: {reason}", f"Transcription unavailable: {reason}")
         )
-        self.asr_label.setStyleSheet(f"color: {theme.MUTED if available else theme.ATTENTION};")
+        self.asr_label.setObjectName("Muted" if available else "AttentionText")
+        repolish(self.asr_label)
         self._update_backup_label()
 
     def _update_backup_label(self) -> None:

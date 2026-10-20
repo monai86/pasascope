@@ -160,9 +160,7 @@ class Dashboard(QWidget):
         backup_line = tr(f"สำรองล่าสุด {last:%d/%m/%Y}", f"Last backup {last:%d/%m/%Y}") if last else tr("ยังไม่เคยสำรองข้อมูล", "Never backed up")
         due = self.service.backup_due()
         row = QHBoxLayout()
-        text = label(backup_line, "Muted" if not due else None)
-        if due:
-            text.setStyleSheet(f"color: {theme.ATTENTION};")
+        text = label(backup_line, "AttentionText" if due else "Muted")
         row.addWidget(text)
         row.addStretch(1)
         backup = button(tr("สำรองตอนนี้", "Back up"))
@@ -180,7 +178,7 @@ class Dashboard(QWidget):
                 wrap=True,
             )
             models.setTextFormat(Qt.TextFormat.RichText)
-            models.setStyleSheet(f"color: {theme.ATTENTION};")
+            models.setObjectName("AttentionText")
             models.linkActivated.connect(lambda _: self.download_models.emit())
             self.facts.addWidget(models)
         available, reason = self.service.transcription_availability()

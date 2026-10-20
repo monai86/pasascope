@@ -124,6 +124,23 @@ QMainWindow, QDialog {{ background: {CANVAS}; }}
 #MetricValue {{ font-size: 22px; font-weight: 600; color: {INK}; }}
 #Notice {{ border-radius: 4px; padding: 8px 12px; background: {ATTENTION_SOFT}; color: {INK}; }}
 #Notice[kind="primary"] {{ background: {PRIMARY_SOFT}; color: {INK}; }}
+#Chip {{
+    border-radius: 3px; padding: 2px 7px; font-size: 12px; font-weight: 500; color: {INK_SOFT}; background: {HOVER};
+}}
+#Chip[kind="ok"] {{ color: {OK}; background: {OK_SOFT}; }}
+#Chip[kind="attention"] {{ color: {ATTENTION}; background: {ATTENTION_SOFT}; }}
+#Chip[kind="danger"] {{ color: {DANGER}; background: {DANGER_SOFT}; }}
+#Chip[kind="primary"] {{ color: {PRIMARY_TEXT}; background: {PRIMARY_SOFT}; }}
+#ErrorText {{ color: {DANGER}; }}
+#AttentionText {{ color: {ATTENTION}; }}
+#Step[state="done"] {{ color: {FAINT}; text-decoration: line-through; }}
+#Step[state="current"] {{ color: {INK}; font-weight: 600; }}
+#Step[state="todo"] {{ color: {MUTED}; }}
+#Evidence {{ background: {SIDEBAR}; border-radius: 4px; }}
+#EvidenceChild {{ color: {PRIMARY_TEXT}; font-weight: 600; }}
+#RecordTime {{ font-size: 28px; font-weight: 700; color: {INK}; }}
+#ReportText {{ font-family: 'Sarabun'; font-size: 15px; }}
+#PreviewBackdrop, #PreviewBackdrop QGraphicsView {{ background: {SIDEBAR}; border: none; }}
 #InspectorKey {{ color: {MUTED}; font-size: 12px; }}
 #InspectorValue {{ color: {INK}; }}
 
@@ -311,16 +328,3 @@ def apply_theme(app: QApplication, mode: str | None = None) -> bool:
     app.setStyleSheet(STYLE)
     return dark
 
-
-def chip_style(kind: str) -> str:
-    """A Notion-style tag: tinted background, coloured text, small radius."""
-    fg, bg = {
-        "ok": (OK, OK_SOFT),
-        "attention": (ATTENTION, ATTENTION_SOFT),
-        "danger": (DANGER, DANGER_SOFT),
-        "primary": (PRIMARY_TEXT, PRIMARY_SOFT),
-    }.get(kind, (INK_SOFT, HOVER))
-    return (
-        f"color: {fg}; background: {bg}; border-radius: 3px; padding: 2px 7px;"
-        " font-size: 12px; font-weight: 500;"
-    )

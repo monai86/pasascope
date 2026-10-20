@@ -42,7 +42,7 @@ from packages.desktop.core import QaOverrideRequired
 from packages.desktop.ui import labels, theme
 from packages.desktop.ui.audio import SegmentPlayer, waveform_peaks
 from packages.desktop.ui.pages.base import SessionPage
-from packages.desktop.ui.widgets import EmptyState, WaveformView, button, chip, label, set_chip
+from packages.desktop.ui.widgets import EmptyState, WaveformView, button, chip, label, notice, set_chip
 from packages.features.language_sample import compute_language_sample_measures
 
 COL_TIME, COL_SPEAKER, COL_TEXT, COL_WORDS, COL_CONF = range(5)
@@ -264,10 +264,7 @@ class ReviewPage(SessionPage):
         top.addWidget(self.attest_btn)
         body.addLayout(top)
 
-        self.notice = label("", wrap=True)
-        self.notice.setStyleSheet(
-            f"background: {theme.ATTENTION_SOFT}; color: {theme.ATTENTION}; border-radius: 8px; padding: 8px 12px;"
-        )
+        self.notice = notice()
         self.notice.hide()
         body.addWidget(self.notice)
 

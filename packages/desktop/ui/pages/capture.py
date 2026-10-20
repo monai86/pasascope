@@ -14,7 +14,6 @@ from PySide6.QtWidgets import (
     QFileDialog,
     QGridLayout,
     QHBoxLayout,
-    QLabel,
     QMessageBox,
     QPlainTextEdit,
     QProgressBar,
@@ -23,7 +22,6 @@ from PySide6.QtWidgets import (
     QWidget,
 )
 
-from packages.desktop.ui import theme
 from packages.desktop.ui.audio import Recorder
 from packages.desktop.ui.pages.base import SessionPage
 from packages.desktop.ui.widgets import button, card, chip, label, set_chip
@@ -120,8 +118,7 @@ class CapturePage(SessionPage):
         rec_card, rec = card()
         rec.addWidget(label(tr("บันทึกเสียงจากไมโครโฟน", "Record"), "SectionTitle"))
         rec.addWidget(label(tr("วางไมโครโฟนให้ใกล้เด็ก ลดเสียงรบกวน แล้วกดเริ่ม", "Place the microphone near the child and keep background noise down."), "Muted", wrap=True))
-        self.rec_time = QLabel("00:00")
-        self.rec_time.setStyleSheet(f"font-size: 28px; font-weight: 700; color: {theme.INK};")
+        self.rec_time = label("00:00", "RecordTime")
         rec.addWidget(self.rec_time)
         self.level = QProgressBar()
         self.level.setRange(0, 100)

@@ -14,9 +14,23 @@ from PySide6.QtWidgets import QFrame, QLabel, QPushButton, QSizePolicy, QVBoxLay
 from packages.desktop.ui import theme
 
 
+def repolish(widget: QWidget) -> None:
+    """Apply the style sheet again after a property its selectors use has changed."""
+    widget.style().unpolish(widget)
+    widget.style().polish(widget)
+
+
+def set_style_property(widget: QWidget, name: str, value: str) -> None:
+    if widget.property(name) != value:
+        widget.setProperty(name, value)
+        repolish(widget)
+
+
 def chip(text: str, kind: str = "neutral") -> QLabel:
+    """A Notion-style tag: tinted background, coloured text (``#Chip[kind=...]`` in the theme)."""
     label = QLabel(text)
-    label.setStyleSheet(theme.chip_style(kind))
+    label.setObjectName("Chip")
+    label.setProperty("kind", kind)
     label.setSizePolicy(QSizePolicy.Policy.Maximum, QSizePolicy.Policy.Fixed)
     label.setAlignment(Qt.AlignmentFlag.AlignCenter)
     return label
@@ -24,7 +38,7 @@ def chip(text: str, kind: str = "neutral") -> QLabel:
 
 def set_chip(label: QLabel, text: str, kind: str) -> None:
     label.setText(text)
-    label.setStyleSheet(theme.chip_style(kind))
+    set_style_property(label, "kind", kind)
 
 
 def button(text: str, role: str = "", tooltip: str = "") -> QPushButton:
@@ -129,14 +143,8 @@ class EmptyState(QWidget):
             if item.widget():
                 item.widget().deleteLater()
         for index, name in enumerate(self.steps()):
-            if index < step:
-                text, style = f"{index + 1}   {name}", f"color: {theme.FAINT}; text-decoration: line-through;"
-            elif index == step:
-                text, style = f"{index + 1}   {name}", f"color: {theme.INK}; font-weight: 600;"
-            else:
-                text, style = f"{index + 1}   {name}", f"color: {theme.MUTED};"
-            row = label(text, wrap=True)
-            row.setStyleSheet(style)
+            row = label(f"{index + 1}   {name}", "Step", wrap=True)
+            row.setProperty("state", "done" if index < step else "current" if index == step else "todo")
             rows.addWidget(row)
 
 

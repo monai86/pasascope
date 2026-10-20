@@ -27,7 +27,6 @@ from PySide6.QtWidgets import (
     QWidget,
 )
 
-from packages.desktop.ui import theme
 from packages.desktop.ui.widgets import label
 
 SESSION_TYPES = [
@@ -61,7 +60,7 @@ class _Form(QDialog):
         self.form.setVerticalSpacing(10)
         self.outer.addLayout(self.form)
         self.error = QLabel("")
-        self.error.setStyleSheet(f"color: {theme.DANGER};")
+        self.error.setObjectName("ErrorText")
         self.error.setWordWrap(True)
         self.error.hide()
         self.outer.addWidget(self.error)
@@ -264,7 +263,7 @@ class WithdrawConsentDialog(_Form):
             "และหมายเหตุของเคสจะถูกลบ การถอนย้อนกลับไม่ได้", "After withdrawal, no sessions, recordings, transcript edits or report exports are possible for this case, and its notes are deleted. This cannot be undone."),
             wrap=True,
         )
-        warning.setStyleSheet(f"color: {theme.DANGER};")
+        warning.setObjectName("ErrorText")
         self.outer.insertWidget(1, warning)
         self.reason = QPlainTextEdit()
         self.reason.setFixedHeight(70)

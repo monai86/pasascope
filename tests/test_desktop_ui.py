@@ -269,7 +269,7 @@ def test_empty_pages_list_the_steps_and_the_chart_marks_short_samples(qtbot):
     empty.set_steps(1)
     rows = [empty._steps.layout().itemAt(i).widget() for i in range(empty._steps.layout().count())]
     assert [r.text()[0] for r in rows] == ["1", "2", "3", "4"]
-    assert "line-through" in rows[0].styleSheet() and "font-weight: 600" in rows[1].styleSheet()
+    assert [r.property("state") for r in rows] == ["done", "current", "todo", "todo"]
 
     chart = TrendChart()
     qtbot.addWidget(chart)

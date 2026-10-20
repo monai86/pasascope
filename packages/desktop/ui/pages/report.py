@@ -27,11 +27,10 @@ from PySide6.QtWidgets import (
     QWidget,
 )
 
-from packages.desktop.ui import theme
 from packages.desktop.ui.pages.base import SessionPage
 from packages.desktop.ui.pdf import ReportMeta, a4_layout, ensure_fonts, paint_report, write_report_pdf
 from packages.desktop.ui.report_form import FIELDS, GOALS, INTERPRETATION, RECOMMENDATIONS, read_field, write_field
-from packages.desktop.ui.widgets import EmptyState, button, chip, label, set_chip
+from packages.desktop.ui.widgets import EmptyState, button, chip, label, notice, set_chip
 
 REPORT_LANGUAGES = [("en", "English"), ("th", "ไทย")]
 
@@ -102,7 +101,7 @@ class ReportForm(QScrollArea):
             box = QPlainTextEdit()
             box.setPlaceholderText(example)
             box.setMinimumHeight(120 if field.kind == "text" else 90)
-            box.setStyleSheet("font-family: 'Sarabun'; font-size: 15px;")
+            box.setObjectName("ReportText")
             box.textChanged.connect(lambda f=field, b=box: None if self._loading else self.field_changed.emit(f, b.toPlainText()))
             layout.addWidget(box)
             self.boxes[field.key] = box
@@ -176,7 +175,7 @@ class PagePreview(QWidget):
         self.zoom_out_btn.clicked.connect(lambda: self.view.zoomOut())
         self.zoom_in_btn.clicked.connect(lambda: self.view.zoomIn())
         self.view.setZoomMode(QPrintPreviewWidget.ZoomMode.FitToWidth)
-        self.view.setStyleSheet(f"background: {theme.SIDEBAR};")
+        self.view.setObjectName("PreviewBackdrop")
 
     def show_report(self, markdown: str, meta: ReportMeta, focus: str | None = None) -> None:
         """Redraw the pages; with ``focus`` (a section heading), show the page that section starts on."""
@@ -249,10 +248,7 @@ class ReportPage(SessionPage):
             top.addWidget(widget)
         body.addLayout(top)
 
-        self.notice = label("", wrap=True)
-        self.notice.setStyleSheet(
-            f"background: {theme.ATTENTION_SOFT}; color: {theme.ATTENTION}; border-radius: 8px; padding: 8px 12px;"
-        )
+        self.notice = notice()
         self.notice.hide()
         body.addWidget(self.notice)
 
@@ -269,7 +265,7 @@ class ReportPage(SessionPage):
         # Sarabun for Thai and Latin alike: a monospace font has no Thai, and the
         # fallback set Thai smaller than the Latin around it.
         ensure_fonts()
-        self.editor.setStyleSheet("font-family: 'Sarabun'; font-size: 15px;")
+        self.editor.setObjectName("ReportText")
         self.editor.textChanged.connect(self._on_edit)
         self.edit_tabs.addTab(self.editor, tr("ทั้งฉบับ (Markdown)", "Whole report (Markdown)"))
         self.edit_tabs.currentChanged.connect(self._edit_tab_changed)

@@ -53,10 +53,38 @@ def test_apply_theme_switches_every_colour_and_the_style_sheet(qapp):
     assert theme.INK == theme.DARK["INK"]
     assert theme.SPEAKER_COLORS["CHI"] == theme.DARK["PRIMARY_TEXT"]
     assert theme.DARK["SURFACE"] in qapp.styleSheet()
-    assert theme.DARK["PRIMARY_TEXT"] in theme.chip_style("primary")
+    assert f'#Chip[kind="primary"] {{ color: {theme.DARK["PRIMARY_TEXT"]}' in qapp.styleSheet()
     assert theme.apply_theme(qapp, "light") is False
     assert theme.INK == theme.LIGHT["INK"]
     assert theme.LIGHT["SURFACE"] in qapp.styleSheet()
+
+
+def test_widget_colours_come_from_the_style_sheet_not_inline_styles(qtbot):
+    """Every colour lives in the theme's selectors, so one style sheet repaints the app."""
+    import pathlib
+    import re
+
+    ui = pathlib.Path(theme.__file__).parent
+    inline = [
+        f"{path.relative_to(ui)}:{number}"
+        for path in ui.rglob("*.py") if path.name != "theme.py"
+        for number, line in enumerate(path.read_text(encoding="utf-8").splitlines(), 1)
+        if re.search(r"\.setStyleSheet\(", line)
+    ]
+    assert inline == []
+
+
+def test_chip_kind_changes_its_colours(qtbot, qapp):
+    from packages.desktop.ui.widgets import chip, set_chip
+
+    theme.apply_theme(qapp, "light")
+    tag = chip("Draft", "attention")
+    qtbot.addWidget(tag)
+    tag.show()
+    assert tag.palette().color(tag.foregroundRole()).name() == theme.LIGHT["ATTENTION"]
+    set_chip(tag, "Signed", "ok")
+    assert tag.property("kind") == "ok"
+    assert tag.palette().color(tag.foregroundRole()).name() == theme.LIGHT["OK"]
 
 
 def test_changing_theme_reopens_the_same_case_session_and_step(window, qtbot, monkeypatch):

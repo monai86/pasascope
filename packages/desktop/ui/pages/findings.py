@@ -111,7 +111,7 @@ class CueCard(QFrame):
 
     def _evidence_row(self, item: dict, utterances: dict) -> QWidget:
         box = QFrame()
-        box.setStyleSheet(f"background: {theme.SIDEBAR}; border-radius: 4px;")
+        box.setObjectName("Evidence")
         row = QVBoxLayout(box)
         row.setContentsMargins(10, 6, 10, 6)
         row.setSpacing(2)
@@ -120,8 +120,7 @@ class CueCard(QFrame):
         if adult is not None:
             row.addWidget(label(tr(f"ผู้ใหญ่: {_spoken(adult.text)}", f"Adult: {_spoken(adult.text)}"), "Hint", wrap=True))
         if child is not None:
-            text = label(tr(f"เด็ก: {_spoken(child.text)}", f"Child: {_spoken(child.text)}"), wrap=True)
-            text.setStyleSheet(f"color: {theme.PRIMARY_TEXT}; font-weight: 600;")
+            text = label(tr(f"เด็ก: {_spoken(child.text)}", f"Child: {_spoken(child.text)}"), "EvidenceChild", wrap=True)
             row.addWidget(text)
         category = labels.ECHO_CATEGORY.get(item.get("category", ""))
         if category:
