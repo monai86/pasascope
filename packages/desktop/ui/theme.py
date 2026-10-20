@@ -54,6 +54,7 @@ LIGHT = {
     "ADULT": "#9065b0",
     "TOOLTIP": "#37352f",
     "TOOLTIP_TEXT": "#ffffff",
+    "TOAST_BORDER": "#37352f",
 }
 
 DARK = {
@@ -86,6 +87,7 @@ DARK = {
     "ADULT": "#b08bd9",
     "TOOLTIP": "#3b3b3a",
     "TOOLTIP_TEXT": "#ebebea",
+    "TOAST_BORDER": "#4a4a49",
 }
 
 CHECK_MARK = (Path(__file__).resolve().parent / "assets" / "check.svg").as_posix()
@@ -96,7 +98,7 @@ SETTINGS_KEY = "appearance/theme"
 INK = INK_SOFT = MUTED = FAINT = LINE = LINE_STRONG = SURFACE = CANVAS = SIDEBAR = ""
 HOVER = PRESSED = ROW_ALT = PRIMARY = PRIMARY_DARK = PRIMARY_TEXT = PRIMARY_SOFT = ""
 PRIMARY_DISABLED = PRIMARY_DISABLED_TEXT = ON_PRIMARY = LINK = ""
-ATTENTION = ATTENTION_SOFT = DANGER = DANGER_SOFT = OK = OK_SOFT = ADULT = TOOLTIP = TOOLTIP_TEXT = ""
+ATTENTION = ATTENTION_SOFT = DANGER = DANGER_SOFT = OK = OK_SOFT = ADULT = TOOLTIP = TOOLTIP_TEXT = TOAST_BORDER = ""
 SPEAKER_COLORS: dict[str, str] = {}
 STYLE = ""
 _dark = False
@@ -211,6 +213,10 @@ QMenu::item:disabled {{ color: {FAINT}; }}
 QMenu::separator {{ height: 1px; background: {LINE}; margin: 4px 6px; }}
 QSplitter::handle {{ background: transparent; }}
 QSplitter::handle:hover {{ background: {LINE}; }}
+#Toast {{
+    background: {TOOLTIP}; color: {TOOLTIP_TEXT}; border: 1px solid {TOAST_BORDER}; border-radius: 8px;
+    padding: 9px 16px; font-size: 13px;
+}}
 QToolTip {{ background: {TOOLTIP}; color: {TOOLTIP_TEXT}; border: none; padding: 6px 8px; }}
 """
 

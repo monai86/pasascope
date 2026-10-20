@@ -433,6 +433,7 @@ class FindingsPage(SessionPage):
         def done(_result) -> None:
             self.analyze_btn.setEnabled(True)
             self.empty_btn.setEnabled(True)
+            self.notify.emit(tr("วิเคราะห์ตัวชี้วัดเสร็จแล้ว", "Measures analysed"))
             self.changed.emit()
 
         def failed(exc: Exception) -> None:
@@ -444,4 +445,5 @@ class FindingsPage(SessionPage):
 
     def set_cue(self, result, cue, status: str, note: str) -> None:
         if self.attempt(self.service.set_cue_state, result.result_id, cue.cue_code, status, note, title=tr("บันทึกไม่สำเร็จ", "Not saved")) is not None:
+            self.notify.emit(tr("บันทึก cue แล้ว", "Cue saved"))
             self.changed.emit()

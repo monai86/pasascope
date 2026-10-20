@@ -98,7 +98,7 @@ On macOS 12–14 you can instead right-click PasaScope and choose **Open**.
 2. **Download the speech models**: **Settings → Download speech models…**, about 1.5 GB, once. Every file is checked by SHA-256.
 3. Optional: the **clinic name** printed on reports, in **Settings → Clinic name on reports…**
 
-The interface is in English; switch to Thai with **Settings → Language**. It follows the computer's light or dark appearance; choose one yourself in **Settings → Appearance**.
+The interface is in English; switch to Thai with **Settings → Language**. It follows the computer's light or dark appearance; choose one yourself in **Settings → Appearance**. Pages fade in briefly unless the computer's Reduce motion is on (**Settings → Motion**).
 
 <a id="windows"></a>
 
@@ -154,7 +154,7 @@ PasaScope เป็นโปรแกรมช่วยนักแก้ไข�
 1. ดาวน์โหลด `PasaScope-x.y.z.dmg` จาก[หน้าดาวน์โหลดรุ่นล่าสุด](https://github.com/monai86/pasascope/releases/latest) (หัวข้อ Assets)
 2. เปิดไฟล์ แล้วลาก PasaScope ไปวางบน Applications
 3. เปิดครั้งแรก macOS จะปิดกั้นเพราะแอปยังไม่ได้ลงทะเบียนกับ Apple: กด **เสร็จสิ้น** แล้วไปที่ **การตั้งค่าระบบ → ความเป็นส่วนตัวและความปลอดภัย** กด **ยืนยันจะเปิด** และใส่รหัสผ่าน (macOS 12–14 คลิกขวาแล้วเลือก **เปิด** ได้เลย)
-4. ใส่ชื่อนักบำบัด แล้วไปที่ **Settings → Download speech models…** (ประมาณ 1.5 GB ทำครั้งเดียว) เปลี่ยนหน้าจอเป็นภาษาไทยได้ที่ **Settings → Language / ภาษา** หน้าจอสว่างหรือมืดตามเครื่อง เลือกเองได้ที่ **ตั้งค่า → ธีม**
+4. ใส่ชื่อนักบำบัด แล้วไปที่ **Settings → Download speech models…** (ประมาณ 1.5 GB ทำครั้งเดียว) เปลี่ยนหน้าจอเป็นภาษาไทยได้ที่ **Settings → Language / ภาษา** หน้าจอสว่างหรือมืดตามเครื่อง เลือกเองได้ที่ **ตั้งค่า → ธีม** ภาพเคลื่อนไหวปิดเองถ้าเครื่องเปิด "ลดการเคลื่อนไหว" ไว้ (**ตั้งค่า → การเคลื่อนไหว**)
 
 **ติดตั้งบน Windows** (Windows 10 หรือ 11 แบบ 64 บิต): ดาวน์โหลด `PasaScope-x.y.z-windows-x64-setup.exe` จากหน้าเดียวกัน เปิดไฟล์ ถ้า Windows SmartScreen แจ้งเตือน ให้กด **More info** แล้ว **Run anyway** จากนั้นทำตามตัวติดตั้ง (ไม่ต้องใช้สิทธิ์ผู้ดูแลระบบ)
 

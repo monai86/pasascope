@@ -15,13 +15,15 @@ class SessionPage(QWidget):
     """A step of the session workflow.
 
     ``changed`` asks the main window to reload every page after a record
-    changed; ``navigate`` asks it to open another step by index.
+    changed; ``navigate`` asks it to open another step by index; ``notify``
+    shows a short message that fades away.
     """
 
     changed = Signal()
     navigate = Signal(int)
     busy_changed = Signal(bool)
     ask_name = Signal()  # open the therapist-name dialog (connected directly, so it returns after the dialog)
+    notify = Signal(str)  # a short message the window shows as a toast
 
     def __init__(self, service: DesktopService, runner: TaskRunner, parent: QWidget | None = None) -> None:
         super().__init__(parent)

@@ -33,7 +33,7 @@ from PySide6.QtWidgets import (
 from packages.desktop.core import DesktopService
 from packages.desktop.core.backup import BackupError, read_backup, restore_backup
 from packages.desktop.core.i18n import LANGUAGES, language, tr
-from packages.desktop.ui import dialogs, labels, theme
+from packages.desktop.ui import dialogs, labels, motion, theme
 from packages.desktop.ui.pages.capture import CapturePage
 from packages.desktop.ui.pages.dashboard import Dashboard
 from packages.desktop.ui.pages.findings import FindingsPage
@@ -117,6 +117,10 @@ class MainWindow(QMainWindow):
         geometry = settings.value("main/geometry")
         if geometry is not None:
             self.restoreGeometry(geometry)
+        self.toast = motion.Toast(self)
+        self.stack.currentChanged.connect(lambda _: motion.fade_in(self.stack.currentWidget()))
+        self.session_stack.currentChanged.connect(lambda _: motion.fade_in(self.session_stack.currentWidget()))
+        self.tabs.currentChanged.connect(lambda _: motion.fade_in(self.tabs.currentWidget()))
         self.reload_cases()
         self.show_home()
         self.runner.idle.connect(self._apply_pending_restyle)
@@ -262,6 +266,7 @@ class MainWindow(QMainWindow):
             page.navigate.connect(self.tabs.setCurrentIndex)
             page.busy_changed.connect(self._set_busy)
             page.ask_name.connect(lambda: self.ask_therapist_name(first_run=False))
+            page.notify.connect(self.notify)
         self.pages[1].attested.connect(self.learn_speakers_in_background)
         self.pages[2].open_guide.connect(self.show_feature_guide)
         self.session_stack.addWidget(self.tabs)
@@ -348,6 +353,20 @@ class MainWindow(QMainWindow):
             appearance_group.addAction(action)
             appearance_menu.addAction(action)
             self.appearance_actions[mode] = action
+        motion_menu = settings_menu.addMenu(tr("การเคลื่อนไหว", "Motion"))
+        motion_group = QActionGroup(self)
+        self.motion_actions = {}
+        for mode, text in (
+            ("system", tr("ตามเครื่อง (ลดการเคลื่อนไหวในการตั้งค่าระบบ)", "Match the computer (Reduce motion in system settings)")),
+            ("reduce", tr("ลดการเคลื่อนไหว", "Reduce motion")),
+            ("full", tr("เปิดภาพเคลื่อนไหว", "Animate")),
+        ):
+            action = QAction(text, self, checkable=True)
+            action.setChecked(mode == motion.saved_mode())
+            action.triggered.connect(lambda _=False, m=mode: motion.save_mode(m))
+            motion_group.addAction(action)
+            motion_menu.addAction(action)
+            self.motion_actions[mode] = action
 
         help_menu = bar.addMenu(tr("ช่วยเหลือ", "Help"))
         knowledge = QAction(tr("ความรู้", "Knowledge"), self)
@@ -813,7 +832,7 @@ class MainWindow(QMainWindow):
             if open_here or self.stack.currentIndex() == HOME_PAGE:
                 self.show_home()
             self.dashboard.refresh()
-            self.statusBar().showMessage(tr(f"ลบเคส {case.child_code} แล้ว", f"Deleted case {case.child_code}."), 6000)
+            self.notify(tr(f"ลบเคส {case.child_code} แล้ว", f"Deleted case {case.child_code}."), 6000)
             return
 
     def delete_session(self, session_id: str) -> None:
@@ -840,7 +859,7 @@ class MainWindow(QMainWindow):
             self._fill_sessions()
         self.reload_cases(self.case.case_id if self.case else None)
         self.dashboard.refresh()
-        self.statusBar().showMessage(tr(f"ลบ session {session.session_date} แล้ว", f"Deleted the session of {session.session_date}."), 6000)
+        self.notify(tr(f"ลบ session {session.session_date} แล้ว", f"Deleted the session of {session.session_date}."), 6000)
 
     def ask_therapist_name(self, first_run: bool) -> None:
         dialog = dialogs.TherapistDialog(self.service.therapist_name, self, first_run=first_run)
@@ -1084,7 +1103,7 @@ class MainWindow(QMainWindow):
         if waiting:
             self._restyle_pending = True
             if ask:
-                self.statusBar().showMessage(waiting, 10000)
+                self.notify(waiting, 8000)
             return
         self._restyle_pending = False
         state = self._view_state()
@@ -1096,6 +1115,7 @@ class MainWindow(QMainWindow):
         successor.show()
         successor.raise_()
         successor.activateWindow()
+        motion.fade_in(successor.centralWidget(), duration=220)
         self._replaced = True
         self.close()
         self.deleteLater()
@@ -1149,7 +1169,7 @@ class MainWindow(QMainWindow):
             )
             if answer == QMessageBox.StandardButton.Yes:
                 self.service.reset_clinic_speaker_model()
-                self.statusBar().showMessage(tr("ล้างโมเดลประจำคลินิกแล้ว", "Clinic model cleared"), 8000)
+                self.notify(tr("ล้างโมเดลประจำคลินิกแล้ว", "Clinic model cleared"), 6000)
         if self.stack.currentIndex() == HOME_PAGE:
             self.dashboard.refresh()
 
@@ -1167,13 +1187,15 @@ class MainWindow(QMainWindow):
         def done(result) -> None:
             self._learning_speakers = False
             text = labels.clinic_speaker_text(self.service.save_clinic_speaker_result(result))
-            self.statusBar().showMessage(tr("แยกเสียงเด็ก/ผู้ใหญ่: ", "Child/adult voices: ") + text, 15000)
+            self.statusBar().clearMessage()
+            self.notify(tr("แยกเสียงเด็ก/ผู้ใหญ่: ", "Child/adult voices: ") + text, 10000)
 
         def failed(exc: Exception) -> None:
             self._learning_speakers = False
-            self.statusBar().showMessage(
+            self.statusBar().clearMessage()
+            self.notify(
                 tr(f"เรียนเสียงไม่สำเร็จ ({type(exc).__name__}) ยังใช้โมเดลเดิม", f"Could not learn voices ({type(exc).__name__}); the model in use is unchanged"),
-                15000,
+                10000,
             )
 
         self.runner.run(lambda: self.service.train_clinic_speaker_model(sessions), on_done=done, on_error=failed)
@@ -1199,6 +1221,10 @@ class MainWindow(QMainWindow):
     # ------------------------------------------------------------------
     # Window state
     # ------------------------------------------------------------------
+    def notify(self, text: str, msecs: int = 5000) -> None:
+        """A short message that fades away by itself (see ``motion.Toast``)."""
+        self.toast.show_message(text, msecs)
+
     def _set_busy(self, busy: bool) -> None:
         self.busy = busy
         self.case_list.setEnabled(not busy)

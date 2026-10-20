@@ -663,6 +663,7 @@ class ReviewPage(SessionPage):
             return False
         selected = self._selected_rows()
         self.dirty = False
+        self.notify.emit(tr("บันทึก transcript แล้ว", "Transcript saved"))
         self.changed.emit()
         if selected and selected[0] < self.table.rowCount():
             self.table.selectRow(selected[0])
@@ -703,6 +704,7 @@ class ReviewPage(SessionPage):
             self.report_error(exc, tr("รับรองไม่สำเร็จ", "Not attested"))
             return
         self.attested.emit()
+        self.notify.emit(tr(f"รับรอง transcript ในชื่อ {self.service.therapist_name} แล้ว", f"Transcript attested by {self.service.therapist_name}"))
         self.changed.emit()
         self.navigate.emit(2)
 

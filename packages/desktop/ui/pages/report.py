@@ -473,6 +473,7 @@ class ReportPage(SessionPage):
         if updated is None:
             return False
         self.dirty = False
+        self.notify.emit(tr("บันทึกรายงานแล้ว", "Report saved"))
         self.changed.emit()
         return True
 
@@ -493,6 +494,7 @@ class ReportPage(SessionPage):
             return
         report = self.service.get_report(self.session.session_id)
         if self.attempt(self.service.sign_off, report.report_id, title=tr("ลงนามไม่สำเร็จ", "Not signed")) is not None:
+            self.notify.emit(tr(f"ลงนามรายงานในชื่อ {self.service.therapist_name} แล้ว", f"Report signed by {self.service.therapist_name}"))
             self.changed.emit()
 
     def _default_path(self, suffix: str) -> str:

@@ -300,6 +300,7 @@ class CapturePage(SessionPage):
         result = self.attempt(self.service.import_transcript_text, self.session.session_id, text, filename=filename)
         if result is not None:
             self.paste.clear()
+            self.notify.emit(tr("นำเข้า transcript แล้ว", "Transcript imported"))
             self.changed.emit()
             self.navigate.emit(1)
 
@@ -334,6 +335,8 @@ class CapturePage(SessionPage):
             self.refresh()
             return
         session_id = self.session.session_id
+        finished_text = tr(f"ถอดเสียง {self.case.child_code} session {self.session.session_date} เสร็จแล้ว",
+                           f"Transcribed {self.case.child_code}, session {self.session.session_date}")
         self.cancel_event = threading.Event()
         cancel = self.cancel_event
         self.progress_title.setText(tr(f"กำลังถอดเสียง · {self.case.child_code} · session {self.session.session_date}", f"Transcribing {self.case.child_code}, session {self.session.session_date}"))
@@ -344,6 +347,7 @@ class CapturePage(SessionPage):
 
         def done(_transcript) -> None:
             self._end_work()
+            self.notify.emit(finished_text)
             self.changed.emit()
             if self.session is not None and self.session.session_id == session_id:
                 self.navigate.emit(1)

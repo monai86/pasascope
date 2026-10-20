@@ -18,7 +18,7 @@ from PySide6.QtGui import QColor, QFont, QImage, QPainter, QPainterPath, QPen, Q
 from PySide6.QtWidgets import QHBoxLayout, QListWidget, QListWidgetItem, QTextBrowser, QVBoxLayout, QWidget
 
 from packages.desktop.core.i18n import tr
-from packages.desktop.ui import theme
+from packages.desktop.ui import motion, theme
 from packages.desktop.ui.widgets import label
 
 DATA_PATH = Path(__file__).resolve().parents[1] / "assets" / "knowledge_data.json"
@@ -440,6 +440,7 @@ class KnowledgePage(QWidget):
         if topic in ("mlu", "echolalia", "autism", "decisions"):
             self._add_charts()
         self.article.setHtml(_article(topic).replace("{WIDTH}", str(WIDTH)).replace("{HEIGHT}", str(HEIGHT)))
+        motion.fade_in(self.article)
 
     def open_feature(self, name: str) -> None:
         """Open the measure guide at one measure's entry (or at its top for "")."""
