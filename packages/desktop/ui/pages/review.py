@@ -18,8 +18,8 @@ from functools import partial
 from pathlib import Path
 import uuid
 
-from PySide6.QtCore import QModelIndex, Qt, QTimer, Signal
-from PySide6.QtGui import QBrush, QColor, QKeySequence, QShortcut
+from PySide6.QtCore import QModelIndex, QRect, Qt, QTimer, Signal
+from PySide6.QtGui import QBrush, QColor, QKeySequence, QPainter, QShortcut
 from PySide6.QtWidgets import (
     QAbstractItemView,
     QApplication,
@@ -222,6 +222,57 @@ class SpeakerDelegate(QStyledItemDelegate):
         model.setData(index, editor.currentText(), Qt.ItemDataRole.DisplayRole)
 
 
+class TranscriptTable(QTableWidget):
+    """The transcript table, with the line being played marked over its cells.
+
+    The mark is separate from the selection, so playing never changes which
+    lines are selected (and never starts "play on select" again). When the
+    line being played is off screen the table scrolls to it, unless a cell is
+    being edited.
+    """
+
+    def __init__(self, rows: int, columns: int, parent: QWidget | None = None) -> None:
+        super().__init__(rows, columns, parent)
+        self.playing_row: int | None = None
+
+    def set_playing_row(self, row: int | None) -> None:
+        if row is not None and not 0 <= row < self.rowCount():
+            row = None
+        if row == self.playing_row:
+            return
+        previous, self.playing_row = self.playing_row, row
+        if previous is not None and previous < self.rowCount():
+            self.takeVerticalHeaderItem(previous)  # back to its line number
+            self.viewport().update(self._row_rect(previous))
+        if row is not None:
+            marker = QTableWidgetItem("▶")  # the header's style sheet sets its colour
+            marker.setToolTip(tr("กำลังเล่นบรรทัดนี้", "Playing this line"))
+            self.setVerticalHeaderItem(row, marker)
+            self.viewport().update(self._row_rect(row))
+        if row is not None and self.state() != QAbstractItemView.State.EditingState:
+            rect = self._row_rect(row)
+            if not self.viewport().rect().contains(rect):
+                self.scrollTo(self.model().index(row, COL_TEXT), QAbstractItemView.ScrollHint.PositionAtCenter)
+
+    def _row_rect(self, row: int) -> QRect:
+        return QRect(0, self.rowViewportPosition(row), self.viewport().width(), self.rowHeight(row))
+
+    def paintEvent(self, event) -> None:  # noqa: N802 - Qt override
+        super().paintEvent(event)
+        row = self.playing_row
+        if row is None or row >= self.rowCount():
+            return
+        rect = self._row_rect(row)
+        if not rect.intersects(event.rect()):
+            return
+        painter = QPainter(self.viewport())
+        tint = QColor(theme.PRIMARY)
+        tint.setAlphaF(0.18)
+        painter.fillRect(rect, tint)
+        painter.fillRect(QRect(rect.left(), rect.top(), 4, rect.height()), QColor(theme.PRIMARY))
+        painter.end()
+
+
 class ReviewPage(SessionPage):
     attested = Signal()  # the therapist attested a transcript; the clinic speaker model may learn from it
 
@@ -311,7 +362,7 @@ class ReviewPage(SessionPage):
         codes.addStretch(1)
         body.addLayout(codes)
 
-        self.table = QTableWidget(0, 5)
+        self.table = TranscriptTable(0, 5)
         self.table.setHorizontalHeaderLabels([tr("เวลา", "Time"), tr("ผู้พูด", "Speaker"), tr("ข้อความ", "Text"), tr("คำที่นับ", "Counted"), tr("ความมั่นใจ", "Confidence")])
         self.table.verticalHeader().setDefaultSectionSize(34)
         self.table.verticalHeader().setVisible(True)
@@ -383,6 +434,7 @@ class ReviewPage(SessionPage):
 
     def _fill_table(self) -> None:
         self._loading = True
+        self.table.set_playing_row(None)
         with filling(self.table):
             self.table.setRowCount(len(self.utterances))
             for row, utt in enumerate(self.utterances):
@@ -757,12 +809,25 @@ class ReviewPage(SessionPage):
         self.player.stop()
         self.timer.stop()
         self.wave.set_playhead(None)
+        self.table.set_playing_row(None)
 
     def _update_playhead(self) -> None:
         position = self.player.position()
         self.wave.set_playhead(position)
+        self.table.set_playing_row(None if position is None else self.row_at(position))
         if position is None:
             self.timer.stop()
+
+    def row_at(self, seconds: float) -> int | None:
+        """The line being spoken at ``seconds``: the latest one to start, if it has not ended."""
+        ms = seconds * 1000
+        found, found_start = None, -1
+        for row, utt in enumerate(self.utterances):
+            if utt.start_ms is None or utt.end_ms is None:
+                continue
+            if utt.start_ms <= ms < utt.end_ms and utt.start_ms > found_start:
+                found, found_start = row, utt.start_ms
+        return found
 
     def shutdown(self) -> None:
         self.stop_playback()

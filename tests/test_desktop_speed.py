@@ -87,3 +87,30 @@ def test_thai_dictionary_can_load_ahead_of_use():
 
     warm_up()
     assert _segment_thai("ชอบกินขนม") == ("ชอบ", "กิน", "ขนม")
+
+
+def test_the_line_being_played_is_marked_and_kept_in_view(window, qtbot, monkeypatch):
+    case, session = _case_with_session(window)
+    window.service.import_transcript_text(session.session_id, _long_chat(200))
+    window.open_case(case.case_id, session.session_id)
+    window.tabs.setCurrentIndex(1)
+    review = window.pages[1]
+    for row, utt in enumerate(review.utterances):  # imported text has no times; give each line two seconds
+        utt.start_ms, utt.end_ms = row * 2000, row * 2000 + 1500
+    review.table.selectRow(0)
+
+    monkeypatch.setattr(review.player, "position", lambda: 301.0)  # line 151 (index 150)
+    review._update_playhead()
+
+    table = review.table
+    assert review.row_at(301.0) == 150
+    assert table.playing_row == 150
+    assert table.viewport().rect().contains(table.visualItemRect(table.item(150, 2)))
+    assert review._selected_rows() == [0]  # playing does not move the selection
+    assert table.verticalHeaderItem(150).text() == "▶"
+
+    assert review.row_at(301.8) is None  # the pause after a line marks nothing
+    monkeypatch.setattr(review.player, "position", lambda: None)  # playback ended
+    review._update_playhead()
+    assert table.playing_row is None
+    assert table.verticalHeaderItem(150) is None  # its line number is back
