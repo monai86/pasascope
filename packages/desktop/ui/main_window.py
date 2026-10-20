@@ -509,4 +509,5 @@ class MainWindow(
                 page.shutdown()
         QSettings().setValue("main/geometry", self.saveGeometry())
         self.runner.wait(3000)
+        self.start_pending_update()  # a downloaded update installs once the window has agreed to close
         event.accept()

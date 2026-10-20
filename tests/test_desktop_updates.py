@@ -88,3 +88,81 @@ def test_automatic_checks_run_once_a_day_and_can_be_switched_off(tmp_path):
     assert service.update_check_due(now + timedelta(hours=25))
     service.set_auto_update_check(False)
     assert not service.update_check_due(now + timedelta(days=3))
+
+
+# ----------------------------------------------------------------------
+# Installing in place
+# ----------------------------------------------------------------------
+import plistlib  # noqa: E402
+import shutil  # noqa: E402
+import subprocess  # noqa: E402
+import sys  # noqa: E402
+
+
+def _fake_app(path, version, marker):
+    contents = path / "Contents"
+    contents.mkdir(parents=True)
+    with (contents / "Info.plist").open("wb") as handle:
+        plistlib.dump({"CFBundleShortVersionString": version}, handle)
+    (contents / "marker.txt").write_text(marker, encoding="utf-8")
+    return path
+
+
+def _finished_pid():
+    process = subprocess.Popen(["true"])
+    process.wait()
+    return process.pid
+
+
+def test_running_app_bundle_finds_the_enclosing_app(tmp_path):
+    inside = tmp_path / "Applications" / "PasaScope.app" / "Contents" / "Resources" / "app" / "updates.py"
+    assert updates.running_app_bundle(inside) == tmp_path / "Applications" / "PasaScope.app"
+    assert updates.running_app_bundle(tmp_path / "src" / "updates.py") is None
+
+
+@pytest.mark.skipif(sys.platform == "win32", reason="the swap script is for macOS")
+def test_swap_script_replaces_the_app_and_leaves_nothing_behind(tmp_path):
+    bundle = _fake_app(tmp_path / "PasaScope.app", "1.0.0", "old")
+    staged = _fake_app(tmp_path / updates.STAGED_NAME, "1.1.0", "new")
+    script = tmp_path / "swap.sh"
+    script.write_text(updates.macos_swap_script(bundle, staged, _finished_pid(), relaunch=False), encoding="utf-8")
+
+    out = subprocess.run(["/bin/bash", str(script)], capture_output=True, text=True, timeout=30)
+
+    assert "updated" in out.stdout
+    assert (bundle / "Contents" / "marker.txt").read_text() == "new"
+    assert not staged.exists() and not (tmp_path / updates.PREVIOUS_NAME).exists()
+
+
+@pytest.mark.skipif(sys.platform == "win32", reason="the swap script is for macOS")
+def test_swap_script_puts_the_old_app_back_when_the_new_one_is_missing(tmp_path):
+    bundle = _fake_app(tmp_path / "PasaScope.app", "1.0.0", "old")
+    script = tmp_path / "swap.sh"
+    script.write_text(updates.macos_swap_script(bundle, tmp_path / updates.STAGED_NAME, _finished_pid(), relaunch=False),
+                      encoding="utf-8")
+
+    out = subprocess.run(["/bin/bash", str(script)], capture_output=True, text=True, timeout=30)
+
+    assert "previous version is back" in out.stdout
+    assert (bundle / "Contents" / "marker.txt").read_text() == "old"
+
+
+@pytest.mark.skipif(sys.platform != "darwin" or not shutil.which("hdiutil"), reason="needs macOS disk images")
+def test_staging_copies_the_new_app_out_of_the_disk_image(tmp_path):
+    source = tmp_path / "image"
+    _fake_app(source / "PasaScope.app", "1.1.0", "new")
+    image = tmp_path / "PasaScope-1.1.0.dmg"
+    made = subprocess.run(["hdiutil", "create", "-quiet", "-volname", "PasaScope", "-srcfolder", str(source),
+                           "-format", "UDRO", str(image)], capture_output=True, text=True)
+    if made.returncode != 0:
+        pytest.skip(f"hdiutil create is not allowed here: {made.stderr.strip()}")
+    bundle = _fake_app(tmp_path / "Applications" / "PasaScope.app", "1.0.0", "old")
+
+    with pytest.raises(updates.UpdateError):
+        updates.stage_macos_update(image, bundle, "2.0.0")
+    assert not (bundle.parent / updates.STAGED_NAME).exists()
+
+    staged = updates.stage_macos_update(image, bundle, "1.1.0")
+    assert staged == bundle.parent / updates.STAGED_NAME
+    assert (staged / "Contents" / "marker.txt").read_text() == "new"
+    assert (bundle / "Contents" / "marker.txt").read_text() == "old"  # the installed copy is untouched until quit

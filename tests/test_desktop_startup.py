@@ -125,3 +125,23 @@ def test_an_update_keeps_the_name_so_the_walkthrough_does_not_return(tmp_path):
     # A new copy of the app opening the same data folder, as after an update.
     again = DesktopService(open_workspace(tmp_path / "ws"))
     assert again.therapist_name == "Kanda"
+
+
+def test_a_ready_update_starts_only_once_the_window_closes(qtbot, tmp_path, monkeypatch):
+    from packages.desktop.ui.main_window import MainWindow
+    from packages.desktop.ui.window import updates as window_updates
+
+    service = DesktopService(open_workspace(tmp_path / "ws"))
+    window = MainWindow(service)
+    qtbot.addWidget(window)
+    window.show()
+    started = []
+    monkeypatch.setattr(window_updates, "start_macos_swap",
+                        lambda bundle, staged, pid, relaunch: started.append((bundle, staged, pid, relaunch)))
+    window._pending_update = ("macos", tmp_path / "PasaScope.app", tmp_path / ".PasaScope-update.app", True)
+    assert not started
+
+    window.close()
+
+    assert started == [(tmp_path / "PasaScope.app", tmp_path / ".PasaScope-update.app", os.getpid(), True)]
+    assert window._pending_update is None

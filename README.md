@@ -109,7 +109,7 @@ The interface is in English; switch to Thai with **Settings → Language**. It f
 3. Follow the installer. It installs for your user only, without administrator rights, and adds PasaScope to the Start menu (and the desktop, if you leave that ticked).
 4. First setup is the same as on a Mac: your name, then **Settings → Download speech models…**
 
-Updates work the same way: PasaScope downloads and checks the new installer, then closes so the installer can replace it. Your data is in `%APPDATA%\PasaScope` and is kept on update and uninstall.
+Updates work the same way: PasaScope downloads and checks the new installer, closes, installs it without the wizard and opens again. Your data is in `%APPDATA%\PasaScope` and is kept on update and uninstall.
 
 <a id="first-use"></a>
 
@@ -128,7 +128,7 @@ Updates work the same way: PasaScope downloads and checks the new installer, the
 
 ## Updates
 
-PasaScope checks for a new version once a day (you can switch this off), or use **Help → Check for updates…**. When there is one, it offers to back up your data, downloads the new version, checks its SHA-256 and opens it; quit PasaScope and drag the new one onto Applications, choosing **Replace**. Your cases are kept apart from the app, so updating does not remove them.
+PasaScope checks for a new version once a day (you can switch this off), or use **Help → Check for updates…**. When there is one, it offers to back up your data, downloads the new version, checks its SHA-256 and installs it over this copy: choose **Restart now** and PasaScope reopens as the new version, or **Later** to install it when you next quit. Nothing needs uninstalling, and your cases are kept apart from the app, so updating does not remove them.
 
 ## Your data
 
@@ -160,7 +160,7 @@ PasaScope เป็นโปรแกรมช่วยนักแก้ไข�
 
 **เริ่มใช้งาน:** เพิ่มเคสและบันทึกความยินยอมของผู้ปกครอง → สร้าง session → ทำตามแท็บ เสียง → Transcript → ตัวชี้วัด → รายงาน
 
-**อัปเดต:** ช่วยเหลือ → ตรวจหาอัปเดต… โปรแกรมสำรองข้อมูลก่อน ข้อมูลเคสเก็บแยกจากตัวโปรแกรมจึงไม่หาย
+**อัปเดต:** ช่วยเหลือ → ตรวจหาอัปเดต… โปรแกรมสำรองข้อมูลก่อน แล้วติดตั้งรุ่นใหม่ทับรุ่นเดิมให้เอง กด "เปิดใหม่ตอนนี้" แล้วโปรแกรมจะเปิดขึ้นเป็นรุ่นใหม่ ไม่ต้องลบโปรแกรมเดิม ข้อมูลเคสเก็บแยกจากตัวโปรแกรมจึงไม่หาย
 
 **แจ้งปัญหา:** [GitHub Issues](https://github.com/monai86/pasascope/issues) ห้ามแนบเสียง ชื่อ หรือข้อมูลที่ระบุตัวเด็ก
 

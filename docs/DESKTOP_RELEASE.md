@@ -13,9 +13,12 @@ Each platform's updater looks only for its own file, so a release that has only 
 The app (`packages/desktop/core/updates.py`):
 1. takes the newest release with this platform's installer and compares its version with `pyproject.toml`;
 2. offers a backup, written to `~/Documents/PasaScope backups/`;
-3. downloads the installer into Downloads and checks it against the SHA-256 file before opening it.
+3. downloads the installer into Downloads and checks it against the SHA-256 file;
+4. installs it over the running copy, without uninstalling anything:
+   - macOS: mounts the disk image without a Finder window, copies the new `PasaScope.app` beside the installed one as `.PasaScope-update.app`, checks its version, then offers **Restart now** or **Later**. Once PasaScope quits, a small script waits for the process to end, swaps the two apps (putting the old one back if the swap fails) and opens the new one; the log is `~/Library/Logs/PasaScope/update.log`. If the therapist cannot write to the folder the app is in, PasaScope falls back to opening the disk image for a drag onto Applications.
+   - Windows: runs the installer with `/SILENT /SUPPRESSMSGBOXES /CLOSEAPPLICATIONS /NORESTART` and quits; the installer replaces the program files and its `WizardSilent` run entry starts PasaScope again.
 
-On macOS the therapist then quits the app and drags it onto Applications; on Windows the installer opens and PasaScope closes so it can be replaced. Cases, recordings and settings live in `~/Library/Application Support/PasaScope`, apart from the app, so an update leaves them alone.
+Cases, recordings and settings live in `~/Library/Application Support/PasaScope` (`%APPDATA%\PasaScope` on Windows), apart from the app, so an update leaves them alone and the first-start walkthrough does not return. A copy older than 1.8.0 still updates the old way once: it opens the disk image or installer for the therapist.
 
 ## Build
 
