@@ -121,7 +121,7 @@ class CueCard(QFrame):
             row.addWidget(label(tr(f"ผู้ใหญ่: {_spoken(adult.text)}", f"Adult: {_spoken(adult.text)}"), "Hint", wrap=True))
         if child is not None:
             text = label(tr(f"เด็ก: {_spoken(child.text)}", f"Child: {_spoken(child.text)}"), wrap=True)
-            text.setStyleSheet(f"color: {theme.PRIMARY_DARK}; font-weight: 600;")
+            text.setStyleSheet(f"color: {theme.PRIMARY_TEXT}; font-weight: 600;")
             row.addWidget(text)
         category = labels.ECHO_CATEGORY.get(item.get("category", ""))
         if category:
@@ -363,7 +363,7 @@ class FindingsPage(SessionPage):
             font = QFont(self.table.font())
             font.setBold(True)
             item.setFont(font)
-            item.setForeground(QBrush(QColor(theme.PRIMARY_DARK)))
+            item.setForeground(QBrush(QColor(theme.PRIMARY_TEXT)))
             item.setBackground(QBrush(QColor(theme.SIDEBAR)))
         else:
             item.setForeground(QBrush(QColor(theme.MUTED)))

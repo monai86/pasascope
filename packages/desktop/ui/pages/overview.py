@@ -26,14 +26,15 @@ from PySide6.QtWidgets import (
 from packages.desktop.ui import labels, theme
 from packages.desktop.ui.widgets import MetricCard, TrendChart, card, label
 
-# Step → (what the session waits for, colour)
-STEP_TEXT = {
-    0: (tr("รอเสียง", "Needs audio"), theme.MUTED),
-    1: (tr("รอตรวจ", "To review"), theme.ATTENTION),
-    2: (tr("รอวิเคราะห์", "To analyse"), theme.ATTENTION),
-    3: (tr("รอลงนาม", "To sign"), theme.ATTENTION),
-    4: (tr("ลงนามแล้ว", "Signed"), theme.OK),
-}
+def step_text(step: int) -> tuple[str, str]:
+    """What a session at ``step`` waits for, and its colour in the theme in use."""
+    return {
+        0: (tr("รอเสียง", "Needs audio"), theme.MUTED),
+        1: (tr("รอตรวจ", "To review"), theme.ATTENTION),
+        2: (tr("รอวิเคราะห์", "To analyse"), theme.ATTENTION),
+        3: (tr("รอลงนาม", "To sign"), theme.ATTENTION),
+        4: (tr("ลงนามแล้ว", "Signed"), theme.OK),
+    }[step]
 SAMPLE_SIZE = "child_utterance_count"  # how many child utterances each session's measures rest on
 TABLE_FEATURES = [
     "child_utterance_count",
@@ -159,10 +160,10 @@ class CaseOverview(QWidget):
         self.table.setRowCount(len(rows))
         for index, row in enumerate(rows):
             session = row["session"]
-            step_text, color = STEP_TEXT[row["step"]]
+            step_label, color = step_text(row["step"])
             if row["values"] and row["schema_version"] != labels.CURRENT_SCHEMA:
-                step_text += tr(" · วิเคราะห์ใหม่", ", analyse again")
-            cells = [str(session.session_date), step_text]
+                step_label += tr(" · วิเคราะห์ใหม่", ", analyse again")
+            cells = [str(session.session_date), step_label]
             cells.extend(_number(name, row["values"].get(name)) for name in TABLE_FEATURES)
             cells.append(str(row["pending_cues"]) if row["values"] else "—")
             for column, text in enumerate(cells):

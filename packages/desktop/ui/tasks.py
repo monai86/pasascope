@@ -38,6 +38,8 @@ class _Task(QRunnable):
 class TaskRunner(QObject):
     """Keeps running tasks referenced until they finish."""
 
+    idle = Signal()  # the last running task has finished and its callback has run
+
     def __init__(self, parent: QObject | None = None) -> None:
         super().__init__(parent)
         self.pool = QThreadPool.globalInstance()
@@ -61,8 +63,12 @@ class TaskRunner(QObject):
 
         def finish(handler: Callable[[Any], None] | None, value: Any) -> None:
             self._running.discard(task)
-            if handler is not None:
-                handler(value)
+            try:
+                if handler is not None:
+                    handler(value)
+            finally:
+                if not self._running:
+                    self.idle.emit()
 
         task.signals.done.connect(lambda value: finish(on_done, value))
         task.signals.failed.connect(lambda exc: finish(on_error, exc))

@@ -11,7 +11,7 @@ from __future__ import annotations
 import html
 
 from packages.desktop.core.i18n import tr
-from packages.desktop.ui import labels
+from packages.desktop.ui import labels, theme
 
 MAIN, SUPPORT, BACKGROUND = "main", "support", "background"
 
@@ -306,7 +306,7 @@ def guide_html() -> str:
             title = labels.FEATURES[name][0]
             parts.append(
                 f'<a name="{anchor(name)}"></a><h3>{html.escape(title)} '
-                f'<span style="font-weight: 400; color: #787774;">· {tier_name(tier)}</span></h3>'
+                f'<span style="font-weight: 400; color: {theme.MUTED};">· {tier_name(tier)}</span></h3>'
                 f"<p><b>{tr('คืออะไร', 'What it is')}</b> {html.escape(what)}<br>"
                 f"<b>{tr('ช่วยอย่างไร', 'How it helps')}</b> {html.escape(helps)}<br>"
                 f"<b>{tr('ข้อควรระวัง', 'Watch for')}</b> {html.escape(caution)}</p>"

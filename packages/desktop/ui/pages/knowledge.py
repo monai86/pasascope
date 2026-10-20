@@ -22,7 +22,10 @@ from packages.desktop.ui import theme
 from packages.desktop.ui.widgets import label
 
 DATA_PATH = Path(__file__).resolve().parents[1] / "assets" / "knowledge_data.json"
-GROUP_COLORS = {"TD": theme.INK_SOFT, "LT": theme.ATTENTION, "ASD": theme.PRIMARY}
+
+
+def _group_color(group: str) -> str:
+    return {"TD": theme.INK_SOFT, "LT": theme.ATTENTION, "ASD": theme.PRIMARY}.get(group, theme.INK)
 
 
 def _group_name(group: str) -> str:
@@ -91,7 +94,7 @@ def age_chart(measure: str, title: str, value_format: str = "{:.1f}") -> QImage:
     for group, rows in series.items():
         if not rows:
             continue
-        color = QColor(GROUP_COLORS.get(group, theme.INK))
+        color = QColor(_group_color(group))
         band = QPainterPath()
         band.moveTo(QPointF(x(rows[0]["year"]), y(rows[0]["q75"])))
         for row in rows[1:]:
@@ -373,7 +376,8 @@ def _article(topic: str) -> str:
     )
 
 
-ARTICLE_STYLE = f"""
+def article_style() -> str:
+    return f"""
 body {{ color: {theme.INK}; font-size: 14px; }}
 h1 {{ font-size: 24px; font-weight: 700; margin: 4px 0 12px 0; }}
 h2 {{ font-size: 16px; font-weight: 600; margin: 18px 0 6px 0; }}
@@ -414,7 +418,7 @@ class KnowledgePage(QWidget):
         self.article.setFrameShape(QTextBrowser.Shape.NoFrame)
         self.article.setObjectName("Article")
         self.article.document().setDocumentMargin(28)
-        self.article.document().setDefaultStyleSheet(ARTICLE_STYLE)
+        self.article.document().setDefaultStyleSheet(article_style())
         layout.addWidget(self.article, 1)
         self._charts_ready = False
         self.topics.setCurrentRow(0)

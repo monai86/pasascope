@@ -243,6 +243,12 @@ persistence layer หลักของ pasascope.
 36c. แอป desktop แจกเป็น `.dmg` จาก `scripts/build_macos_dmg.py` และอัปเดตจาก GitHub Releases
     ตาม `docs/DESKTOP_RELEASE.md`; โมเดลเสียงดาวน์โหลดตอนใช้ครั้งแรกและตรวจ SHA-256 ทุกไฟล์
     (`packages/desktop/core/models.py`); การสร้าง release ต้องได้รับอนุญาตจากเจ้าของโครงการ
+36d. แอป desktop มีธีมสว่างและมืด (`packages/desktop/ui/theme.py`, ชุดสี `LIGHT`/`DARK` ชื่อเดียวกัน)
+    ค่าเริ่มต้นตามเครื่อง เลือกเองได้ที่ ตั้งค่า → ธีม (เก็บใน QSettings `appearance/theme`);
+    widget ต้องอ่านสีจาก `theme.<NAME>` ตอนสร้างหรือวาด ห้ามคัดลอกสีไปเป็นค่าคงที่ระดับ module
+    การเปลี่ยนธีมสร้างหน้าต่างใหม่ที่เปิดเคส session และแท็บเดิม (`MainWindow.restyle`) และรอถ้ามีงาน
+    ทำอยู่หรือมีการแก้ไขที่ยังไม่บันทึก; ข้อความในธีมมืดต้องมี contrast อย่างน้อย 4.5:1 (มีเทสต์บังคับ)
+    ส่วนรายงานและ PDF เป็นขาวดำเหมือนกระดาษเสมอ
 37. ขอบเขต term paper อยู่ใน `SCOPE_AND_DELIVERABLES.md` และการจับคู่หัวข้อกับหลักฐาน
     อยู่ใน `docs/TERM_PAPER_MAPPING.md`
 38. ชื่อโครงการในโค้ด config และเอกสารที่ใช้งานอยู่คือ PasaScope เท่านั้น:

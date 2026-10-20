@@ -7,9 +7,10 @@ from html import escape
 from pathlib import Path
 import sys
 
-from PySide6.QtCore import QSettings, Qt, QUrl
+from PySide6.QtCore import QSettings, Qt, QTimer, QUrl
 from PySide6.QtGui import QAction, QActionGroup, QColor, QDesktopServices, QKeySequence, QPixmap, QShortcut
 from PySide6.QtWidgets import (
+    QApplication,
     QComboBox,
     QFileDialog,
     QFrame,
@@ -47,6 +48,7 @@ LOGO = Path(__file__).resolve().parent / "assets" / "logo.png"
 OVERVIEW = "__overview__"  # session picker entry for the case overview
 NO_SESSION_PAGE, SESSION_PAGE, OVERVIEW_PAGE = range(3)
 HOME_PAGE, CASE_PAGE, KNOWLEDGE_PAGE = range(3)
+_LIVE: list[QMainWindow] = []  # the window in use after a theme change replaced the first one
 
 
 def step_titles() -> list[str]:
@@ -64,6 +66,8 @@ class MainWindow(QMainWindow):
         self.session = None
         self.busy = False
         self._switching = False
+        self._restyle_pending = False  # a theme change waits for work or unsaved edits
+        self._replaced = False  # a theme change built a new window in place of this one
         self.steps_done = [False] * 4
         self.setWindowTitle("PasaScope")
         self.resize(1280, 820)
@@ -115,6 +119,8 @@ class MainWindow(QMainWindow):
             self.restoreGeometry(geometry)
         self.reload_cases()
         self.show_home()
+        self.runner.idle.connect(self._apply_pending_restyle)
+        QApplication.instance().styleHints().colorSchemeChanged.connect(self._on_system_scheme)
 
     # ------------------------------------------------------------------
     # Layout
@@ -328,6 +334,20 @@ class MainWindow(QMainWindow):
             action.triggered.connect(lambda _=False, c=code: self._set_language(c))
             group.addAction(action)
             language_menu.addAction(action)
+        appearance_menu = settings_menu.addMenu(tr("ธีม", "Appearance"))
+        appearance_group = QActionGroup(self)
+        self.appearance_actions = {}
+        for mode, text in (
+            ("system", tr("ตามเครื่อง", "Match the computer")),
+            ("light", tr("สว่าง", "Light")),
+            ("dark", tr("มืด", "Dark")),
+        ):
+            action = QAction(text, self, checkable=True)
+            action.setChecked(mode == theme.saved_mode())
+            action.triggered.connect(lambda _=False, m=mode: self._set_appearance(m))
+            appearance_group.addAction(action)
+            appearance_menu.addAction(action)
+            self.appearance_actions[mode] = action
 
         help_menu = bar.addMenu(tr("ช่วยเหลือ", "Help"))
         knowledge = QAction(tr("ความรู้", "Knowledge"), self)
@@ -610,6 +630,7 @@ class MainWindow(QMainWindow):
             self.tabs.setCurrentIndex(current_tab)
             self._update_tab_state()
         self.reload_cases(self.case.case_id)
+        self._apply_pending_restyle()  # a save may have cleared the edits a theme change waited for
 
     # ------------------------------------------------------------------
     # Actions
@@ -852,8 +873,7 @@ class MainWindow(QMainWindow):
                     QMessageBox.information(self, tr("ตรวจหาอัปเดต", "Check for updates"),
                                             tr(f"รุ่น {self.version} เป็นรุ่นล่าสุดแล้ว", f"Version {self.version} is the latest."))
                 return
-            self.update_label.setText(f'<a href="update">{tr(f"มีรุ่นใหม่ {release.version}", f"Version {release.version} is available")}</a>')
-            self.update_label.show()
+            self._show_update(release)
             if not quiet:
                 self._offer_update(release)
 
@@ -864,6 +884,11 @@ class MainWindow(QMainWindow):
                                        f"GitHub could not be reached; try again when online.\n\n{exc}"))
 
         self.runner.run(lambda: self.service.check_for_update(self.version), on_done=done, on_error=failed)
+
+    def _show_update(self, release) -> None:
+        self._available_update = release
+        self.update_label.setText(f'<a href="update">{tr(f"มีรุ่นใหม่ {release.version}", f"Version {release.version} is available")}</a>')
+        self.update_label.show()
 
     def _offer_update(self, release) -> None:
         if release is None or self.busy or self.runner.busy:
@@ -1022,6 +1047,91 @@ class MainWindow(QMainWindow):
         )
 
     # ------------------------------------------------------------------
+    # Appearance
+    # ------------------------------------------------------------------
+    def _set_appearance(self, mode: str) -> None:
+        theme.save_mode(mode)
+        QTimer.singleShot(0, lambda: self.restyle(ask=True))
+
+    def _on_system_scheme(self, *_args) -> None:
+        if not self._replaced and theme.saved_mode() == "system":
+            QTimer.singleShot(0, self._restyle_quietly)
+
+    def _apply_pending_restyle(self) -> None:
+        if self._restyle_pending and not self._replaced:
+            QTimer.singleShot(0, self._restyle_quietly)
+
+    def _restyle_quietly(self) -> None:
+        if not self._replaced:
+            self.restyle(ask=False)
+
+    def restyle(self, ask: bool = True) -> None:
+        """Use the theme now chosen by building a new window that opens where this one was.
+
+        Every widget takes its colours when it is built, so a new window is the one
+        way to change them all. It waits while work runs, a dialog is open, or (when
+        nobody asked, as when the computer switches to dark) there are unsaved edits.
+        """
+        app = QApplication.instance()
+        if theme.wants_dark(app) == theme.is_dark():
+            self._restyle_pending = False
+            return
+        waiting = None
+        if self.busy or self.runner.busy or QApplication.activeModalWidget() is not None:
+            waiting = tr("ธีมจะเปลี่ยนเมื่องานที่ทำอยู่เสร็จ", "The theme changes when the current work finishes.")
+        elif any(page.has_unsaved_changes() for page in self.pages) and not (ask and self._confirm_leave()):
+            waiting = tr("ธีมจะเปลี่ยนหลังบันทึกการแก้ไข", "The theme changes after your edits are saved.")
+        if waiting:
+            self._restyle_pending = True
+            if ask:
+                self.statusBar().showMessage(waiting, 10000)
+            return
+        self._restyle_pending = False
+        state = self._view_state()
+        self.stop_pages()
+        theme.apply_theme(app)
+        successor = type(self)(self.service, version=self.version)
+        successor._restore_view(state)
+        _LIVE[:] = [successor]
+        successor.show()
+        successor.raise_()
+        successor.activateWindow()
+        self._replaced = True
+        self.close()
+        self.deleteLater()
+
+    def _view_state(self) -> dict:
+        topic = self.knowledge.topics.currentItem()
+        return {
+            "page": self.stack.currentIndex(),
+            "case_id": self.case.case_id if self.case else None,
+            "session_id": self.session.session_id if self.session else None,
+            "overview": self.case is not None and self.session is None and self.session_stack.currentIndex() == OVERVIEW_PAGE,
+            "tab": self.tabs.currentIndex(),
+            "topic": topic.data(Qt.ItemDataRole.UserRole) if topic else None,
+            "search": self.search.text(),
+            "geometry": self.saveGeometry(),
+            "title": self.windowTitle(),
+            "update": self._available_update,
+        }
+
+    def _restore_view(self, state: dict) -> None:
+        self.setWindowTitle(state["title"])
+        self.restoreGeometry(state["geometry"])
+        self.search.setText(state["search"])
+        if state["update"] is not None:
+            self._show_update(state["update"])
+        if state["page"] == CASE_PAGE and state["case_id"]:
+            self.reload_cases(state["case_id"])
+            self.open_case(state["case_id"], state["session_id"])
+            if state["session_id"]:
+                self.tabs.setCurrentIndex(state["tab"])
+            elif state["overview"] and self.session_pick.findData(OVERVIEW) >= 0:
+                self.session_pick.setCurrentIndex(self.session_pick.findData(OVERVIEW))
+        elif state["page"] == KNOWLEDGE_PAGE:
+            self.show_knowledge(state["topic"])
+
+    # ------------------------------------------------------------------
     # The clinic's own child/adult model
     # ------------------------------------------------------------------
     def show_speaker_model(self) -> None:
@@ -1095,6 +1205,8 @@ class MainWindow(QMainWindow):
         self.session_pick.setEnabled(not busy)
         self.home_btn.setEnabled(not busy)
         self.new_session_btn.setEnabled(not busy and bool(self.case) and self.case.consent_status == "granted")
+        if not busy:
+            self._apply_pending_restyle()
 
     def _update_status_bar(self) -> None:
         name = self.service.therapist_name
@@ -1230,6 +1342,12 @@ class MainWindow(QMainWindow):
 
     def closeEvent(self, event) -> None:  # noqa: N802 - Qt override
         if getattr(self, "_restored", False):
+            event.accept()
+            return
+        if self._replaced:  # a theme change: the new window carries on, nothing to ask
+            for page in self.pages:
+                if hasattr(page, "shutdown"):
+                    page.shutdown()
             event.accept()
             return
         if self.busy or self.runner.busy:
