@@ -4,12 +4,13 @@ from __future__ import annotations
 
 from packages.desktop.core.i18n import tr
 
-from collections.abc import Sequence
+from collections.abc import Iterator, Sequence
+from contextlib import contextmanager
 
 import numpy as np
 from PySide6.QtCore import QPointF, QRectF, Qt, Signal
 from PySide6.QtGui import QColor, QFont, QPainter, QPainterPath, QPen
-from PySide6.QtWidgets import QFrame, QLabel, QPushButton, QSizePolicy, QVBoxLayout, QWidget
+from PySide6.QtWidgets import QFrame, QHeaderView, QLabel, QPushButton, QSizePolicy, QTableWidget, QVBoxLayout, QWidget
 
 from packages.desktop.ui import theme
 
@@ -24,6 +25,31 @@ def set_style_property(widget: QWidget, name: str, value: str) -> None:
     if widget.property(name) != value:
         widget.setProperty(name, value)
         repolish(widget)
+
+
+@contextmanager
+def filling(table: QTableWidget) -> Iterator[QTableWidget]:
+    """Fill ``table`` without re-measuring it after every cell.
+
+    A column that sizes itself to its contents measures every row again each
+    time a cell is set, so filling n rows costs n² (a 500-line transcript took
+    6 s). Inside this block those columns keep their width and the table does
+    not repaint; they measure once when it ends.
+    """
+    header = table.horizontalHeader()
+    auto = [i for i in range(header.count()) if header.sectionResizeMode(i) == QHeaderView.ResizeMode.ResizeToContents]
+    sorting = table.isSortingEnabled()
+    table.setSortingEnabled(False)
+    table.setUpdatesEnabled(False)
+    for index in auto:
+        header.setSectionResizeMode(index, QHeaderView.ResizeMode.Interactive)
+    try:
+        yield table
+    finally:
+        for index in auto:
+            header.setSectionResizeMode(index, QHeaderView.ResizeMode.ResizeToContents)
+        table.setSortingEnabled(sorting)
+        table.setUpdatesEnabled(True)
 
 
 def chip(text: str, kind: str = "neutral") -> QLabel:

@@ -6,6 +6,7 @@ from datetime import datetime
 from html import escape
 from pathlib import Path
 import sys
+import threading
 
 from PySide6.QtCore import QSettings, Qt, QTimer, QUrl
 from PySide6.QtGui import QAction, QActionGroup, QColor, QDesktopServices, QKeySequence, QPixmap, QShortcut
@@ -31,7 +32,7 @@ from PySide6.QtWidgets import (
 )
 
 from packages.desktop.core import DesktopService
-from packages.desktop.core.backup import BackupError, read_backup, restore_backup
+from packages.desktop.core.backup import BackupCancelled, BackupError, read_backup, restore_backup
 from packages.desktop.core.i18n import LANGUAGES, language, tr
 from packages.desktop.ui import dialogs, labels, motion, theme
 from packages.desktop.ui.pages.capture import CapturePage
@@ -1289,11 +1290,17 @@ class MainWindow(QMainWindow):
             return
         QSettings().setValue("backup/folder", str(target.parent))
         self._set_busy(True)
-        self.statusBar().showMessage(tr("กำลังสำรองข้อมูล…", "Backing up…"))
+        dialog = self._progress_dialog(title, tr("กำลังเตรียมสำรองข้อมูล…", "Preparing the backup…"), cancellable=True)
+        cancel = threading.Event()
+        dialog.canceled.connect(cancel.set)
+
+        def progress(fraction: float, stage: str) -> None:
+            dialog.setLabelText(stage)
+            dialog.setValue(int(fraction * 1000))
 
         def done(info) -> None:
             self._set_busy(False)
-            self.statusBar().clearMessage()
+            dialog.close()
             self._update_backup_label()
             counts = info.counts
             QMessageBox.information(
@@ -1312,10 +1319,28 @@ class MainWindow(QMainWindow):
 
         def failed(exc: Exception) -> None:
             self._set_busy(False)
-            self.statusBar().clearMessage()
+            dialog.close()
+            if isinstance(exc, BackupCancelled):
+                self.notify(tr("ยกเลิกการสำรองข้อมูลแล้ว ไม่มีไฟล์ถูกบันทึก", "Backup cancelled; no file was saved."))
+                return
             QMessageBox.critical(self, tr("สำรองข้อมูลไม่สำเร็จ", "Backup failed"), f"{type(exc).__name__}: {exc}")
 
-        self.runner.run(lambda: self.service.create_backup(target, self.version), on_done=done, on_error=failed)
+        self.runner.run(
+            lambda report: self.service.create_backup(target, self.version, progress=report, cancelled=cancel.is_set),
+            on_done=done, on_error=failed, on_progress=progress,
+        )
+
+    def _progress_dialog(self, title: str, text: str, cancellable: bool) -> QProgressDialog:
+        dialog = QProgressDialog(text, tr("ยกเลิก", "Cancel") if cancellable else "", 0, 1000, self)
+        if not cancellable:
+            dialog.setCancelButton(None)
+        dialog.setWindowTitle(title)
+        dialog.setWindowModality(Qt.WindowModality.WindowModal)
+        dialog.setMinimumDuration(0)
+        dialog.setAutoClose(False)
+        dialog.setAutoReset(False)
+        dialog.setValue(0)
+        return dialog
 
     def restore(self) -> None:
         title = tr("กู้คืนข้อมูล", "Restore")
@@ -1353,19 +1378,34 @@ class MainWindow(QMainWindow):
         if answer != QMessageBox.StandardButton.Yes:
             return
         self.service.close()
-        try:
-            previous = restore_backup(self.service.workspace.root, info.path)
-        except (BackupError, OSError) as exc:
+        root = self.service.workspace.root
+        self._set_busy(True)
+        dialog = self._progress_dialog(title, tr("กำลังตรวจและแตกไฟล์สำรอง…", "Checking and unpacking the backup…"), cancellable=False)
+
+        def progress(fraction: float, stage: str) -> None:
+            dialog.setLabelText(stage)
+            dialog.setValue(int(fraction * 1000))
+
+        def done(previous) -> None:
+            self._set_busy(False)
+            dialog.close()
+            QMessageBox.information(
+                self, tr("กู้คืนแล้ว", "Restored"),
+                tr(f"ข้อมูลเดิมย้ายไปที่ {previous}\nโปรแกรมจะปิดตอนนี้ เปิดใหม่เพื่อใช้ข้อมูลที่กู้คืน",
+                   f"The previous data was moved to {previous}\nPasaScope will close now; open it again to use the restored data."),
+            )
+            self._restored = True
+            self.close()
+
+        def failed(exc: Exception) -> None:
+            self._set_busy(False)
+            dialog.close()
+            detail = str(exc) if isinstance(exc, (BackupError, OSError)) else f"{type(exc).__name__}: {exc}"
             QMessageBox.critical(self, tr("กู้คืนไม่สำเร็จ", "Restore failed"),
-                                 tr(f"ข้อมูลปัจจุบันยังอยู่ครบ ไม่ได้เปลี่ยนแปลง\n\n{exc}", f"Your current data is unchanged.\n\n{exc}"))
-            return
-        QMessageBox.information(
-            self, tr("กู้คืนแล้ว", "Restored"),
-            tr(f"ข้อมูลเดิมย้ายไปที่ {previous}\nโปรแกรมจะปิดตอนนี้ เปิดใหม่เพื่อใช้ข้อมูลที่กู้คืน",
-               f"The previous data was moved to {previous}\nPasaScope will close now; open it again to use the restored data."),
-        )
-        self._restored = True
-        self.close()
+                                 tr(f"ข้อมูลปัจจุบันยังอยู่ครบ ไม่ได้เปลี่ยนแปลง\n\n{detail}", f"Your current data is unchanged.\n\n{detail}"))
+
+        self.runner.run(lambda report: restore_backup(root, info.path, progress=report),
+                        on_done=done, on_error=failed, on_progress=progress)
 
     def closeEvent(self, event) -> None:  # noqa: N802 - Qt override
         if getattr(self, "_restored", False):

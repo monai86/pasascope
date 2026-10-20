@@ -14,6 +14,7 @@ from __future__ import annotations
 
 from packages.desktop.core.i18n import tr
 
+from collections.abc import Callable
 from contextlib import closing
 from dataclasses import dataclass
 from datetime import datetime
@@ -38,6 +39,14 @@ class BackupError(Exception):
     """The file is not a usable PasaScope backup."""
 
 
+class BackupCancelled(BackupError):
+    """The therapist stopped the backup; nothing was written."""
+
+
+Progress = Callable[[float, str], None]
+_CHUNK = 1024 * 1024
+
+
 @dataclass(frozen=True)
 class BackupInfo:
     path: Path
@@ -49,36 +58,61 @@ class BackupInfo:
     demo: bool
 
 
-def create_backup(workspace: Workspace, destination: Path, *, counts: dict, app_version: str = "") -> BackupInfo:
-    """Write the workspace to ``destination`` (a .zip); return what was written."""
+def create_backup(
+    workspace: Workspace,
+    destination: Path,
+    *,
+    counts: dict,
+    app_version: str = "",
+    progress: Progress | None = None,
+    cancelled: Callable[[], bool] | None = None,
+) -> BackupInfo:
+    """Write the workspace to ``destination`` (a .zip); return what was written.
+
+    ``progress(fraction, stage)`` follows the bytes written; when ``cancelled()``
+    turns true the half-written file is removed and ``BackupCancelled`` raised.
+    Each file is read once: it is hashed as it goes into the zip.
+    """
     destination = Path(destination)
     partial = destination.with_name(destination.name + ".partial")
     files: dict[str, dict] = {}
-    with tempfile.TemporaryDirectory() as tmp:
-        snapshot = Path(tmp) / DATABASE
-        _snapshot_database(workspace.database_path, snapshot)
-        sources = [(DATABASE, snapshot)] + [
-            (path.relative_to(workspace.root).as_posix(), path)
-            for path in sorted(workspace.root.rglob("*"))
-            if path.is_file() and path.name != DATABASE
-            and not any(part.startswith(".") for part in path.relative_to(workspace.root).parts)
-            and not path.name.endswith((".db-journal", ".db-wal", ".db-shm"))
-        ]
-        with zipfile.ZipFile(partial, "w") as archive:
-            for name, path in sources:
-                compression = zipfile.ZIP_STORED if path.suffix.lower() in _STORED_SUFFIXES else zipfile.ZIP_DEFLATED
-                archive.write(path, name, compress_type=compression)
-                files[name] = {"sha256": _sha256(path), "bytes": path.stat().st_size}
-            manifest = {
-                "format": BACKUP_FORMAT,
-                "created_at": datetime.now().astimezone().isoformat(timespec="seconds"),
-                "app_version": app_version,
-                "counts": counts,
-                "demo": (workspace.root / "pasascope-demo.json").exists(),
-                "files": files,
-            }
-            archive.writestr(MANIFEST, json.dumps(manifest, ensure_ascii=False, indent=2))
-    partial.replace(destination)
+    try:
+        with tempfile.TemporaryDirectory() as tmp:
+            snapshot = Path(tmp) / DATABASE
+            _snapshot_database(workspace.database_path, snapshot)
+            sources = [(DATABASE, snapshot)] + [
+                (path.relative_to(workspace.root).as_posix(), path)
+                for path in sorted(workspace.root.rglob("*"))
+                if path.is_file() and path.name != DATABASE
+                and not any(part.startswith(".") for part in path.relative_to(workspace.root).parts)
+                and not path.name.endswith((".db-journal", ".db-wal", ".db-shm"))
+            ]
+            meter = _Meter(sum(path.stat().st_size for _, path in sources), progress, cancelled,
+                           tr("กำลังสำรอง", "Backing up"))
+            with zipfile.ZipFile(partial, "w") as archive:
+                for name, path in sources:
+                    info = zipfile.ZipInfo.from_file(path, name)
+                    info.compress_type = zipfile.ZIP_STORED if path.suffix.lower() in _STORED_SUFFIXES else zipfile.ZIP_DEFLATED
+                    digest = hashlib.sha256()
+                    with path.open("rb") as source, archive.open(info, "w", force_zip64=True) as sink:
+                        for chunk in iter(lambda: source.read(_CHUNK), b""):
+                            digest.update(chunk)
+                            sink.write(chunk)
+                            meter.add(len(chunk), name)
+                    files[name] = {"sha256": digest.hexdigest(), "bytes": path.stat().st_size}
+                manifest = {
+                    "format": BACKUP_FORMAT,
+                    "created_at": datetime.now().astimezone().isoformat(timespec="seconds"),
+                    "app_version": app_version,
+                    "counts": counts,
+                    "demo": (workspace.root / "pasascope-demo.json").exists(),
+                    "files": files,
+                }
+                archive.writestr(MANIFEST, json.dumps(manifest, ensure_ascii=False, indent=2))
+        partial.replace(destination)
+    except BaseException:
+        partial.unlink(missing_ok=True)
+        raise
     return _info(destination, manifest)
 
 
@@ -88,11 +122,12 @@ def read_backup(path: Path) -> BackupInfo:
     return _info(Path(path), manifest)
 
 
-def restore_backup(workspace_root: Path, path: Path) -> Path:
+def restore_backup(workspace_root: Path, path: Path, progress: Progress | None = None) -> Path:
     """Replace the workspace with the backup; return where the old workspace was moved.
 
     Every file is extracted and checked against the manifest in a sibling
     folder first, so a damaged backup leaves the current workspace untouched.
+    ``progress(fraction, stage)`` follows the bytes extracted.
     """
     workspace_root = Path(workspace_root)
     manifest = _manifest(Path(path))
@@ -100,14 +135,20 @@ def restore_backup(workspace_root: Path, path: Path) -> Path:
     if staging.exists():
         shutil.rmtree(staging)
     staging.mkdir(parents=True)
+    meter = _Meter(sum(int(item.get("bytes", 0)) for item in manifest["files"].values()), progress, None,
+                   tr("กำลังกู้คืน", "Restoring"))
     try:
         with zipfile.ZipFile(path) as archive:
             for name, expected in manifest["files"].items():
                 target = staging / name
                 target.parent.mkdir(parents=True, exist_ok=True)
+                digest = hashlib.sha256()
                 with archive.open(name) as source, target.open("wb") as sink:
-                    shutil.copyfileobj(source, sink)
-                if _sha256(target) != expected["sha256"]:
+                    for chunk in iter(lambda: source.read(_CHUNK), b""):
+                        digest.update(chunk)
+                        sink.write(chunk)
+                        meter.add(len(chunk), name)
+                if digest.hexdigest() != expected["sha256"]:
                     raise BackupError(tr(f"ไฟล์ {name} ในไฟล์สำรองเสียหาย (checksum ไม่ตรง)", f"{name} in the backup is damaged (checksum mismatch)."))
         _check_database(staging / DATABASE)
     except BaseException:
@@ -181,9 +222,19 @@ def _info(path: Path, manifest: dict) -> BackupInfo:
     )
 
 
-def _sha256(path: Path) -> str:
-    digest = hashlib.sha256()
-    with path.open("rb") as handle:
-        for chunk in iter(lambda: handle.read(1024 * 1024), b""):
-            digest.update(chunk)
-    return digest.hexdigest()
+class _Meter:
+    """Turns bytes done into ``progress(fraction, stage)`` calls, and checks for a cancel."""
+
+    def __init__(self, total: int, progress: Progress | None, cancelled: Callable[[], bool] | None, verb: str) -> None:
+        self.total = max(1, total)
+        self.done = 0
+        self.progress = progress
+        self.cancelled = cancelled
+        self.verb = verb
+
+    def add(self, count: int, name: str) -> None:
+        if self.cancelled is not None and self.cancelled():
+            raise BackupCancelled(tr("ยกเลิกการสำรองข้อมูลแล้ว", "Backup cancelled."))
+        self.done += count
+        if self.progress is not None:
+            self.progress(min(1.0, self.done / self.total), f"{self.verb} {PurePosixPath(name).name}")

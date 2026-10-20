@@ -18,7 +18,7 @@ from PySide6.QtWidgets import (
 
 from packages.desktop.core.i18n import tr
 from packages.desktop.ui import labels, theme
-from packages.desktop.ui.widgets import button, label
+from packages.desktop.ui.widgets import button, filling, label
 
 
 def step_text(step) -> str:
@@ -117,19 +117,20 @@ class Dashboard(QWidget):
         today = date.today()
         self.date_line.setText(today.strftime("%d/%m/%Y"))
         rows = self.service.work_queue()
-        self.queue.setRowCount(len(rows))
-        for index, row in enumerate(rows):
-            case, session = row["case"], row["session"]
-            name = case.child_code + (f"  {case.nickname}" if case.nickname else "")
-            cells = [name, str(session.session_date) if session else "—", step_text(row["step"]), waiting_text(row["waiting_days"])]
-            for column, text in enumerate(cells):
-                item = QTableWidgetItem(text)
-                item.setData(Qt.ItemDataRole.UserRole, (case.case_id, session.session_id if session else None))
-                if column == 3 and row["waiting_days"] >= 7:
-                    item.setForeground(QBrush(QColor(theme.ATTENTION)))
-                if column == 2 and row["step"] == "consent":
-                    item.setForeground(QBrush(QColor(theme.ATTENTION)))
-                self.queue.setItem(index, column, item)
+        with filling(self.queue):
+            self.queue.setRowCount(len(rows))
+            for index, row in enumerate(rows):
+                case, session = row["case"], row["session"]
+                name = case.child_code + (f"  {case.nickname}" if case.nickname else "")
+                cells = [name, str(session.session_date) if session else "—", step_text(row["step"]), waiting_text(row["waiting_days"])]
+                for column, text in enumerate(cells):
+                    item = QTableWidgetItem(text)
+                    item.setData(Qt.ItemDataRole.UserRole, (case.case_id, session.session_id if session else None))
+                    if column == 3 and row["waiting_days"] >= 7:
+                        item.setForeground(QBrush(QColor(theme.ATTENTION)))
+                    if column == 2 and row["step"] == "consent":
+                        item.setForeground(QBrush(QColor(theme.ATTENTION)))
+                    self.queue.setItem(index, column, item)
         self.queue.setVisible(bool(rows))
         self.queue_empty.setVisible(not rows)
         self._main.setStretch(self._main.count() - 1, 0 if rows else 1)

@@ -200,6 +200,8 @@ class ReportPage(SessionPage):
         self._loading = False
         self._syncing = False
         self._focus_field = None
+        self._preview_stale = False  # the page was hidden when the report changed
+        self._preview_queued = False
 
         layout = QVBoxLayout(self)
         layout.setContentsMargins(4, 12, 4, 8)
@@ -310,7 +312,32 @@ class ReportPage(SessionPage):
         index = self.language_box.findData(self.service.report_language(self.report))
         self.language_box.setCurrentIndex(max(index, 0))
         self._update_status()
-        self._update_preview()
+        self._preview_soon()
+
+    def _preview_soon(self) -> None:
+        """Lay out the A4 pages after this event, and only while the page is on screen.
+
+        Laying them out takes 100–200 ms, and every save and every session opened
+        refreshes this page, so a hidden page waits until it is shown.
+        """
+        if not self.isVisible():
+            self._preview_stale = True
+        elif not self._preview_queued:
+            self._preview_queued = True
+            QTimer.singleShot(0, self, self._run_queued_preview)
+
+    def _run_queued_preview(self) -> None:
+        self._preview_queued = False
+        if self.isVisible():
+            self._update_preview()
+        else:
+            self._preview_stale = True
+
+    def showEvent(self, event) -> None:  # noqa: N802 - Qt override
+        super().showEvent(event)
+        if self._preview_stale:
+            self._preview_stale = False
+            self._preview_soon()
 
     def _status(self) -> str:
         status = self.report.status

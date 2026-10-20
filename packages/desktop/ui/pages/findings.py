@@ -38,6 +38,7 @@ from packages.desktop.ui.widgets import (
     button,
     card,
     chip,
+    filling,
     label,
     notice,
     set_chip,
@@ -326,12 +327,13 @@ class FindingsPage(SessionPage):
             rows.extend(("feature", feature) for feature in present)
 
         self.table.clearSpans()
-        self.table.setRowCount(len(rows))
-        for row, (kind, item) in enumerate(rows):
-            if kind == "feature":
-                self._feature_row(row, item, values)
-            else:
-                self._span_row(row, item, heading=kind == "group")
+        with filling(self.table):
+            self.table.setRowCount(len(rows))
+            for row, (kind, item) in enumerate(rows):
+                if kind == "feature":
+                    self._feature_row(row, item, values)
+                else:
+                    self._span_row(row, item, heading=kind == "group")
 
     def _open_row_guide(self, row: int, _column: int) -> None:
         item = self.table.item(row, 0)

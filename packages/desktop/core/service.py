@@ -373,7 +373,7 @@ class DesktopService:
         last = self.last_backup_at
         return last is None or (datetime.now(last.tzinfo) - last).days >= self.BACKUP_REMINDER_DAYS
 
-    def create_backup(self, destination, app_version: str = ""):
+    def create_backup(self, destination, app_version: str = "", progress=None, cancelled=None):
         from packages.desktop.core.backup import create_backup
 
         self._save()
@@ -383,7 +383,8 @@ class DesktopService:
             "sessions": sum(len(self.list_sessions(case.case_id)) for case in cases),
             "recordings": sum(1 for path in self.workspace.storage_root.rglob("*") if path.is_file()),
         }
-        info = create_backup(self.workspace, Path(destination), counts=counts, app_version=app_version)
+        info = create_backup(self.workspace, Path(destination), counts=counts, app_version=app_version,
+                             progress=progress, cancelled=cancelled)
         profile = self.workspace.read_profile()
         profile["last_backup_at"] = info.created_at
         profile["last_backup_path"] = str(info.path)

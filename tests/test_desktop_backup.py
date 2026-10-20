@@ -8,7 +8,7 @@ import zipfile
 import pytest
 
 from packages.desktop.core import DesktopService, open_workspace
-from packages.desktop.core.backup import MANIFEST, BackupError, read_backup, restore_backup
+from packages.desktop.core.backup import MANIFEST, BackupCancelled, BackupError, read_backup, restore_backup
 from tests.test_desktop_service import CHAT
 
 
@@ -99,3 +99,37 @@ def test_backup_reminder_after_a_week(service):
     profile["last_backup_at"] = (datetime.now().astimezone() - timedelta(days=8)).isoformat()
     service.workspace.write_profile(profile)
     assert service.backup_due()
+
+
+def test_backup_and_restore_report_progress_by_bytes(service, tmp_path):
+    seen = []
+    info = service.create_backup(tmp_path / "backup.zip", progress=lambda fraction, stage: seen.append((fraction, stage)))
+    fractions = [fraction for fraction, _ in seen]
+    assert fractions == sorted(fractions) and fractions[-1] == pytest.approx(1.0)
+    assert any("rec.wav" in stage for _, stage in seen)
+
+    service.close()
+    restored = []
+    restore_backup(service.workspace.root, info.path, progress=lambda fraction, stage: restored.append(fraction))
+    assert restored == sorted(restored) and restored[-1] == pytest.approx(1.0)
+
+
+def test_cancelled_backup_leaves_no_file(service, tmp_path):
+    target = tmp_path / "backup.zip"
+    with pytest.raises(BackupCancelled):
+        service.create_backup(target, cancelled=lambda: True)
+    assert not target.exists()
+    assert not (tmp_path / "backup.zip.partial").exists()
+    assert service.last_backup_at is None
+
+
+def test_a_failed_backup_removes_its_partial_file(service, tmp_path, monkeypatch):
+    import packages.desktop.core.backup as backup
+
+    def broken(*_args, **_kwargs):
+        raise OSError("disk full")
+
+    monkeypatch.setattr(backup.json, "dumps", broken)
+    with pytest.raises(OSError):
+        service.create_backup(tmp_path / "backup.zip")
+    assert not (tmp_path / "backup.zip.partial").exists()

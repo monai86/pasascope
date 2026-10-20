@@ -21,6 +21,21 @@ def _version() -> str:
         return ""
 
 
+def _warm_up_in_background() -> None:
+    """Load what the first case opened would otherwise wait for, off the UI thread."""
+    import threading
+
+    def warm() -> None:
+        try:
+            from packages.cha.clan_words import warm_up
+
+            warm_up()
+        except Exception:  # noqa: BLE001 - the dictionary then loads on first use, as before
+            pass
+
+    threading.Thread(target=warm, name="thai-dictionary", daemon=True).start()
+
+
 def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(description="PasaScope desktop app")
     parser.add_argument("--home", type=Path, help="Data folder (default: the per-user application data folder)")
@@ -74,6 +89,7 @@ def main(argv: list[str] | None = None) -> int:
 
         window.setWindowTitle(tr("PasaScope — ข้อมูลสาธิต (ไม่ใช่เด็กจริง)", "PasaScope — demonstration data (not real children)"))
     window.show()
+    _warm_up_in_background()
     if not service.therapist_name:
         window.ask_therapist_name(first_run=True)
     if service.update_check_due():

@@ -250,6 +250,15 @@ def _word_forms(token: str) -> list[tuple[str, str]]:
 _STRIP_TABLE = str.maketrans("", "", _STRIP_CHARS)
 
 
+def warm_up() -> None:
+    """Load the Thai word dictionary now (about half a second, once per run).
+
+    The desktop app calls this from a background thread at start, so the
+    first transcript opened does not wait for it.
+    """
+    _segment_thai("ทดสอบ")
+
+
 @lru_cache(maxsize=8192)
 def _segment_thai(text: str) -> tuple[str, ...]:
     try:

@@ -24,7 +24,7 @@ from PySide6.QtWidgets import (
 )
 
 from packages.desktop.ui import labels, theme
-from packages.desktop.ui.widgets import MetricCard, TrendChart, card, label
+from packages.desktop.ui.widgets import MetricCard, TrendChart, card, filling, label
 
 def step_text(step: int) -> tuple[str, str]:
     """What a session at ``step`` waits for, and its colour in the theme in use."""
@@ -157,25 +157,26 @@ class CaseOverview(QWidget):
         )
 
     def _fill_table(self, rows: list[dict]) -> None:
-        self.table.setRowCount(len(rows))
-        for index, row in enumerate(rows):
-            session = row["session"]
-            step_label, color = step_text(row["step"])
-            if row["values"] and row["schema_version"] != labels.CURRENT_SCHEMA:
-                step_label += tr(" · วิเคราะห์ใหม่", ", analyse again")
-            cells = [str(session.session_date), step_label]
-            cells.extend(_number(name, row["values"].get(name)) for name in TABLE_FEATURES)
-            cells.append(str(row["pending_cues"]) if row["values"] else "—")
-            for column, text in enumerate(cells):
-                item = QTableWidgetItem(text)
-                item.setData(Qt.ItemDataRole.UserRole, session.session_id)
-                if column == 1:
-                    item.setForeground(QBrush(QColor(color)))
-                elif column >= 2:
-                    item.setTextAlignment(Qt.AlignmentFlag.AlignRight | Qt.AlignmentFlag.AlignVCenter)
-                if column == len(cells) - 1 and row["pending_cues"]:
-                    item.setForeground(QBrush(QColor(theme.ATTENTION)))
-                self.table.setItem(index, column, item)
+        with filling(self.table):
+            self.table.setRowCount(len(rows))
+            for index, row in enumerate(rows):
+                session = row["session"]
+                step_label, color = step_text(row["step"])
+                if row["values"] and row["schema_version"] != labels.CURRENT_SCHEMA:
+                    step_label += tr(" · วิเคราะห์ใหม่", ", analyse again")
+                cells = [str(session.session_date), step_label]
+                cells.extend(_number(name, row["values"].get(name)) for name in TABLE_FEATURES)
+                cells.append(str(row["pending_cues"]) if row["values"] else "—")
+                for column, text in enumerate(cells):
+                    item = QTableWidgetItem(text)
+                    item.setData(Qt.ItemDataRole.UserRole, session.session_id)
+                    if column == 1:
+                        item.setForeground(QBrush(QColor(color)))
+                    elif column >= 2:
+                        item.setTextAlignment(Qt.AlignmentFlag.AlignRight | Qt.AlignmentFlag.AlignVCenter)
+                    if column == len(cells) - 1 and row["pending_cues"]:
+                        item.setForeground(QBrush(QColor(theme.ATTENTION)))
+                    self.table.setItem(index, column, item)
 
     def _open_row(self, row: int, _column: int) -> None:
         item = self.table.item(row, 0)

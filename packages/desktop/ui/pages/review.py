@@ -42,7 +42,7 @@ from packages.desktop.core import QaOverrideRequired
 from packages.desktop.ui import labels, theme
 from packages.desktop.ui.audio import SegmentPlayer, waveform_peaks
 from packages.desktop.ui.pages.base import SessionPage
-from packages.desktop.ui.widgets import EmptyState, WaveformView, button, chip, label, notice, set_chip
+from packages.desktop.ui.widgets import EmptyState, WaveformView, button, chip, filling, label, notice, set_chip
 from packages.features.language_sample import compute_language_sample_measures
 
 COL_TIME, COL_SPEAKER, COL_TEXT, COL_WORDS, COL_CONF = range(5)
@@ -383,9 +383,10 @@ class ReviewPage(SessionPage):
 
     def _fill_table(self) -> None:
         self._loading = True
-        self.table.setRowCount(len(self.utterances))
-        for row, utt in enumerate(self.utterances):
-            self._fill_row(row, utt)
+        with filling(self.table):
+            self.table.setRowCount(len(self.utterances))
+            for row, utt in enumerate(self.utterances):
+                self._fill_row(row, utt)
         self._loading = False
 
     def _fill_row(self, row: int, utt) -> None:
