@@ -261,6 +261,10 @@ persistence layer หลักของ pasascope.
     `tests/test_desktop_speed.py`), หน้ารายงานวาดตัวอย่าง A4 เฉพาะตอนเห็นบนจอ, พจนานุกรมไทยโหลด
     เบื้องหลังตอนเปิดโปรแกรม (`clan_words.warm_up`), และงานที่นานกว่าเสี้ยววินาทีรันผ่าน `TaskRunner`
     พร้อมหน้าต่างความคืบหน้า (สำรองข้อมูลยกเลิกได้และไม่ทิ้งไฟล์ `.partial`; กู้คืนแสดงความคืบหน้าตามไบต์)
+36g. `DesktopService` (`packages/desktop/core/service.py`) ประกอบจาก mixin หนึ่งตัวต่อหนึ่งส่วนของ workflow
+    ใน `packages/desktop/core/workflow/` (settings, clinic_speaker, maintenance, cases, recordings,
+    transcripts, findings, reports) และ error กับ helper ที่ใช้ร่วมกันอยู่ใน `workflow/common.py`;
+    เพิ่ม method ใหม่ในไฟล์ของส่วนนั้น และ import error จาก `packages.desktop.core` เหมือนเดิม
 37. ขอบเขต term paper อยู่ใน `SCOPE_AND_DELIVERABLES.md` และการจับคู่หัวข้อกับหลักฐาน
     อยู่ใน `docs/TERM_PAPER_MAPPING.md`
 38. ชื่อโครงการในโค้ด config และเอกสารที่ใช้งานอยู่คือ PasaScope เท่านั้น:
