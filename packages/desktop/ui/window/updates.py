@@ -125,8 +125,11 @@ class UpdatesMixin:
 
         self.runner.run(work, on_done=done, on_error=failed, on_progress=progress)
 
-    def download_models(self) -> None:
-        """Download the speech models with a progress window; the work runs off the UI thread."""
+    def download_models(self, confirm: bool = True) -> None:
+        """Download the speech models with a progress window; the work runs off the UI thread.
+
+        ``confirm=False`` skips the question, when the therapist already chose it at first start.
+        """
         if self.busy or self.runner.busy:
             return
         status = self.service.thai_model_status()
@@ -139,7 +142,7 @@ class UpdatesMixin:
                       "ระบบตรวจทุกไฟล์ด้วย SHA-256 ก่อนใช้ ไม่ส่งข้อมูลของเด็กออกจากเครื่อง ดำเนินการต่อ?",
                       f"Download the Thai speech model, about {size_gb:.1f} GB, from Hugging Face? Every file is checked "
                       "against its SHA-256 before use. No children's data leaves this computer.")
-        if QMessageBox.question(self, tr("ดาวน์โหลดโมเดลถอดเสียง", "Download speech models"), text) != QMessageBox.StandardButton.Yes:
+        if confirm and QMessageBox.question(self, tr("ดาวน์โหลดโมเดลถอดเสียง", "Download speech models"), text) != QMessageBox.StandardButton.Yes:
             return
         dialog = QProgressDialog(tr("กำลังดาวน์โหลด…", "Downloading…"), tr("ยกเลิก", "Cancel"), 0, 1000, self)
         dialog.setWindowTitle(tr("ดาวน์โหลดโมเดลถอดเสียง", "Download speech models"))

@@ -21,19 +21,62 @@ def _version() -> str:
         return ""
 
 
-def _warm_up_in_background() -> None:
-    """Load what the first case opened would otherwise wait for, off the UI thread."""
-    import threading
+def _profile_language(root: Path) -> str | None:
+    """The language saved in the data folder, read without loading the workflow."""
+    import json
 
-    def warm() -> None:
-        try:
-            from packages.cha.clan_words import warm_up
+    try:
+        code = json.loads((root / "profile.json").read_text(encoding="utf-8")).get("language")
+    except (OSError, ValueError, AttributeError):
+        return None
+    return code if code in ("en", "th") else None
 
-            warm_up()
-        except Exception:  # noqa: BLE001 - the dictionary then loads on first use, as before
-            pass
 
-    threading.Thread(target=warm, name="thai-dictionary", daemon=True).start()
+def _preload(state: dict) -> None:
+    """Import what opening the data and the window need, off the UI thread, while the splash plays.
+
+    Each step names itself in ``state["stage"]`` for the splash. A failure here
+    is left for the main thread to meet again and report when it opens the data.
+    """
+    from packages.desktop.core.i18n import tr
+
+    steps = [
+        (tr("กำลังเตรียมฐานข้อมูล…", "Preparing the database…"),
+         lambda: __import__("app.repositories.sqlalchemy_repository")),
+        (tr("กำลังโหลดระบบถอดเสียง…", "Loading speech recognition…"),
+         lambda: __import__("src.audio_pipeline.whisper_transcribe")),
+        (tr("กำลังโหลดพจนานุกรมภาษาไทย…", "Loading the Thai dictionary…"),
+         lambda: __import__("packages.cha.clan_words", fromlist=["warm_up"]).warm_up()),
+        (tr("กำลังเตรียมขั้นตอนการทำงาน…", "Preparing the workflow…"),
+         lambda: __import__("packages.desktop.core.service")),
+    ]
+    try:
+        for stage, step in steps:
+            state["stage"] = stage
+            step()
+    except Exception:  # noqa: BLE001 - reported by the main thread when it opens the data
+        pass
+    finally:
+        state["done"] = True
+
+
+def _wait_with_splash(app, splash, state: dict) -> None:
+    """Run the event loop (so the splash animates) until preloading is done and the intro has played."""
+    from PySide6.QtCore import QEventLoop, QTimer
+
+    loop = QEventLoop()
+    timer = QTimer()
+    timer.setInterval(30)
+
+    def check() -> None:
+        splash.set_status(state.get("stage", ""))
+        if state.get("done") and splash.minimum_shown():
+            loop.quit()
+
+    timer.timeout.connect(check)
+    timer.start()
+    loop.exec()
+    timer.stop()
 
 
 def main(argv: list[str] | None = None) -> int:
@@ -43,7 +86,9 @@ def main(argv: list[str] | None = None) -> int:
     args = parser.parse_args(argv)
 
     os.environ.setdefault("OBJC_DISABLE_INITIALIZE_FORK_SAFETY", "YES")
-    from PySide6.QtCore import QCoreApplication
+    import threading
+
+    from PySide6.QtCore import QCoreApplication, QTimer
     from PySide6.QtWidgets import QApplication, QMessageBox
 
     QCoreApplication.setOrganizationName("PasaScope")
@@ -59,12 +104,11 @@ def main(argv: list[str] | None = None) -> int:
 
     apply_theme(app)
 
-    from packages.desktop.core import DesktopService, open_workspace
+    from packages.desktop.core.i18n import set_language, tr
+    from packages.desktop.core.workspace import default_home, demo_home
 
     home = args.home
     if args.demo and home is None:
-        from packages.desktop.core.workspace import demo_home
-
         home = demo_home()
         if not home.exists():
             QMessageBox.information(
@@ -72,27 +116,58 @@ def main(argv: list[str] | None = None) -> int:
                 "Create it first with\n.venv312/bin/python scripts/seed_desktop_demo.py",
             )
             return 1
+    root = (home or default_home()).expanduser()
+    from packages.desktop.ui.onboarding import default_language
+
+    set_language(_profile_language(root) or default_language())  # the splash speaks it
+
+    from packages.desktop.ui.splash import Splash
+
+    version = _version()
+    splash = Splash(version, demo=args.demo)
+    splash.show()
+    app.processEvents()
+    state = {"stage": tr("กำลังเริ่มโปรแกรม…", "Starting…"), "done": False}
+    threading.Thread(target=_preload, args=(state,), name="startup-preload", daemon=True).start()
+    _wait_with_splash(app, splash, state)
+    splash.set_status(tr("กำลังเปิดข้อมูล…", "Opening your data…"))
+    app.processEvents()
+
+    from packages.desktop.core import DesktopService, open_workspace
+
     try:
         service = DesktopService(open_workspace(home))
     except Exception as exc:  # noqa: BLE001 - nothing else can run without the workspace
+        splash.finish()
         QMessageBox.critical(None, "Cannot open data", f"The data folder could not be opened.\n{type(exc).__name__}: {exc}")
         return 1
 
-    from packages.desktop.core.i18n import set_language
+    first_start = None
+    if not service.therapist_name and not args.demo:
+        # A new data folder: say what PasaScope is and ask who signs. An update or
+        # reinstall keeps the data folder and its name, so this does not come back.
+        splash.finish()
+        from packages.desktop.ui.onboarding import run_onboarding
+
+        first_start = run_onboarding(service, service.workspace.root)
+        if first_start is None:
+            return 0
 
     set_language(service.language)  # before the window's text is built
+    from packages.desktop.ui import motion
     from packages.desktop.ui.main_window import MainWindow
 
-    window = MainWindow(service, version=_version())
+    window = MainWindow(service, version=version)
     if args.demo:
-        from packages.desktop.core.i18n import tr
-
         window.setWindowTitle(tr("PasaScope — ข้อมูลสาธิต (ไม่ใช่เด็กจริง)", "PasaScope — demonstration data (not real children)"))
+    splash.finish()
     window.show()
-    _warm_up_in_background()
-    if not service.therapist_name:
-        window.ask_therapist_name(first_run=True)
-    if service.update_check_due():
+    window.raise_()
+    window.activateWindow()
+    motion.fade_in(window.centralWidget(), duration=220)
+    if first_start is not None and first_start.download_models:
+        QTimer.singleShot(500, lambda: window.download_models(confirm=False))
+    elif service.update_check_due():
         window.check_for_updates(quiet=True)
     return app.exec()
 

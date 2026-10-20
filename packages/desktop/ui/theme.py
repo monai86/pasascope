@@ -141,6 +141,15 @@ QMainWindow, QDialog {{ background: {CANVAS}; }}
 #RecordTime {{ font-size: 28px; font-weight: 700; color: {INK}; }}
 #ReportText {{ font-family: 'Sarabun'; font-size: 15px; }}
 #PreviewBackdrop, #PreviewBackdrop QGraphicsView {{ background: {SIDEBAR}; border: none; }}
+#OnboardingSide {{ background: {SIDEBAR}; border-right: 1px solid {LINE}; }}
+#WelcomeTitle {{ font-size: 22px; font-weight: 600; color: {INK}; }}
+#StepItem {{ padding: 6px 8px; border-radius: 4px; color: {MUTED}; }}
+#StepItem[state="current"] {{ background: {PRESSED}; color: {INK}; font-weight: 600; }}
+#StepItem[state="done"] {{ color: {INK_SOFT}; }}
+#FeatureTile {{ background: {SIDEBAR}; border: 1px solid {LINE}; border-radius: 6px; }}
+#NoteItem {{ border: none; border-left: 2px solid {PRIMARY}; }}
+QPushButton[role="segment"] {{ padding: 3px 10px; color: {INK_SOFT}; }}
+QPushButton[role="segment"]:checked {{ background: {PRIMARY_SOFT}; color: {PRIMARY_TEXT}; border-color: {PRIMARY}; }}
 #InspectorKey {{ color: {MUTED}; font-size: 12px; }}
 #InspectorValue {{ color: {INK}; }}
 

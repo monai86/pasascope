@@ -261,6 +261,12 @@ persistence layer หลักของ pasascope.
     `tests/test_desktop_speed.py`), หน้ารายงานวาดตัวอย่าง A4 เฉพาะตอนเห็นบนจอ, พจนานุกรมไทยโหลด
     เบื้องหลังตอนเปิดโปรแกรม (`clan_words.warm_up`), และงานที่นานกว่าเสี้ยววินาทีรันผ่าน `TaskRunner`
     พร้อมหน้าต่างความคืบหน้า (สำรองข้อมูลยกเลิกได้และไม่ทิ้งไฟล์ `.partial`; กู้คืนแสดงความคืบหน้าตามไบต์)
+36h. เปิดโปรแกรม desktop: หน้าต่างโลโก้ (`ui/splash.py`) ขึ้นทุกครั้งระหว่างที่ thread เบื้องหลังโหลด
+    ฐานข้อมูล ระบบถอดเสียง และพจนานุกรมไทย (`app._preload`; `packages.desktop.core` โหลด
+    `DesktopService` เมื่อใช้ครั้งแรก) แล้วจางหายเมื่อหน้าต่างหลักพร้อม; ลดการเคลื่อนไหวแล้วไม่มีภาพเคลื่อนไหว
+    หน้าแนะนำ 3 ขั้น (`ui/onboarding.py`: ยินดีต้อนรับและเลือกภาษา, ข้อควรรู้ที่ต้องติ๊กยอมรับ,
+    ชื่อนักบำบัดที่ต้องกรอกและชื่อหน่วยงาน) ขึ้นเฉพาะเมื่อโฟลเดอร์ข้อมูลยังไม่มีชื่อนักบำบัด
+    ข้อมูลอยู่นอกตัวโปรแกรม การอัปเดตหรือติดตั้งใหม่จึงไม่ทำให้หน้านี้กลับมา
 36g. `DesktopService` (`packages/desktop/core/service.py`) ประกอบจาก mixin หนึ่งตัวต่อหนึ่งส่วนของ workflow
     ใน `packages/desktop/core/workflow/` (settings, clinic_speaker, maintenance, cases, recordings,
     transcripts, findings, reports) และ error กับ helper ที่ใช้ร่วมกันอยู่ใน `workflow/common.py`;
