@@ -171,8 +171,11 @@ class Toast(QLabel):
         self.move(host.center().x() - self.width() // 2, bottom - self.height())
 
     def eventFilter(self, watched: QObject, event: QEvent) -> bool:  # noqa: N802 - Qt override
-        if watched is self._host and event.type() == QEvent.Type.Resize and self.isVisible():
-            self._place()
+        try:
+            if watched is self._host and event.type() == QEvent.Type.Resize and self.isVisible():
+                self._place()
+        except RuntimeError:  # the window is being torn down at quit
+            pass
         return False
 
     def mousePressEvent(self, event) -> None:  # noqa: N802 - Qt override

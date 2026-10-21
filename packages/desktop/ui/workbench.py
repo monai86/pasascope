@@ -350,6 +350,12 @@ class EditorArea(QWidget):
         self.current_changed.emit(key)
 
     def eventFilter(self, watched: QObject, event: QEvent) -> bool:  # noqa: N802 - Qt override
+        try:
+            return self._handle_event(watched, event)
+        except RuntimeError:  # the window is being torn down at quit
+            return False
+
+    def _handle_event(self, watched: QObject, event: QEvent) -> bool:
         # A middle click closes a tab, as in browsers and editors.
         if watched is self.bar and event.type() == QEvent.Type.MouseButtonRelease and event.button() == Qt.MouseButton.MiddleButton:
             index = self.bar.tabAt(event.position().toPoint())
@@ -544,6 +550,12 @@ class CommandPalette(QFrame):
             command.run()
 
     def eventFilter(self, watched: QObject, event: QEvent) -> bool:  # noqa: N802 - Qt override
+        try:
+            return self._handle_event(watched, event)
+        except RuntimeError:  # the window is being torn down at quit
+            return False
+
+    def _handle_event(self, watched: QObject, event: QEvent) -> bool:
         if watched is self.input and event.type() == QEvent.Type.KeyPress:
             key = event.key()
             if key in (Qt.Key.Key_Down, Qt.Key.Key_Up):
