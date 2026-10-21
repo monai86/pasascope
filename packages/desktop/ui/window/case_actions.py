@@ -1,21 +1,21 @@
 """Creating, editing and deleting cases and sessions, and recording or withdrawing consent.
 
-Part of :class:`packages.desktop.ui.main_window.MainWindow`."""
+Part of :class:`packages.desktop.ui.main_window.MainWindow`. The actions work
+on the case of the tab in front (``self.case``); the tree's right-click menu
+opens that case first.
+"""
 
 from __future__ import annotations
 
-from PySide6.QtCore import Qt
 from PySide6.QtWidgets import QMenu, QMessageBox
 
 from packages.desktop.core.i18n import tr
 from packages.desktop.ui import dialogs
-from packages.desktop.ui.window.common import HOME_PAGE, CASE_PAGE
+from packages.desktop.ui.window.case_view import ROLE
 
 
 class CaseActionsMixin:
     def new_case(self) -> None:
-        if not self._confirm_leave():
-            return
         dialog = dialogs.NewCaseDialog(self)
         while dialog.exec():
             try:
@@ -30,64 +30,73 @@ class CaseActionsMixin:
                 dialog.show_error(str(exc))
                 continue
             self.search.clear()
-            self.reload_cases(case.case_id)
-            self.open_case(case.case_id)
+            self.open_case_editor(case.case_id)
             self.record_consent()
+            self.refresh_home()
             return
 
     def _consent_action(self) -> None:
+        if self.case is None:
+            return
         if self.case.consent_status == "granted":
             self.withdraw_consent()
         else:
             self.record_consent()
 
     def record_consent(self) -> None:
-        dialog = dialogs.ConsentDialog(self.case.child_code, self)
+        case = self.case
+        if case is None:
+            return
+        dialog = dialogs.ConsentDialog(case.child_code, self)
         while dialog.exec():
             try:
-                self.service.grant_consent(
-                    self.case.case_id, dialog.signer.text(), dialog.consent_date, dialog.notes.toPlainText()
-                )
+                self.service.grant_consent(case.case_id, dialog.signer.text(), dialog.consent_date, dialog.notes.toPlainText())
             except Exception as exc:  # noqa: BLE001
                 dialog.show_error(str(exc))
                 continue
-            self.case = self.service.get_case(self.case.case_id)
-            self._fill_case_header()
-            self._fill_sessions()
-            self.reload_cases(self.case.case_id)
+            self._refresh_case_views(case.case_id)
+            for editor in self.session_editors(case.case_id):
+                editor.load()
             return
 
     def withdraw_consent(self) -> None:
+        case = self.case
+        if case is None:
+            return
         if self.busy:
             QMessageBox.information(self, tr("รอสักครู่", "Please wait"),
                                     tr("รอให้การถอดเสียงหรือการบันทึกเสียงเสร็จก่อน", "Wait for the transcription or recording to finish."))
             return
-        dialog = dialogs.WithdrawConsentDialog(self.case.child_code, self)
+        if not self._confirm_leave(self.session_editors(case.case_id)):
+            return
+        dialog = dialogs.WithdrawConsentDialog(case.child_code, self)
         while dialog.exec():
             try:
-                self.service.withdraw_consent(self.case.case_id, dialog.reason.toPlainText())
+                self.service.withdraw_consent(case.case_id, dialog.reason.toPlainText())
             except Exception as exc:  # noqa: BLE001
                 dialog.show_error(str(exc))
                 continue
-            self.refresh_session() if self.session else self.open_case(self.case.case_id)
-            self._fill_sessions(self.session.session_id if self.session else None)
+            for editor in self.session_editors(case.case_id):
+                editor.load()
+            self._refresh_case_views(case.case_id)
             return
 
     def new_session(self) -> None:
-        if not self._confirm_leave():
+        case = self.case
+        if case is None:
             return
         dialog = dialogs.NewSessionDialog(self)
         while dialog.exec():
             try:
                 session = self.service.create_session(
-                    self.case.case_id, dialog.session_date,
+                    case.case_id, dialog.session_date,
                     session_type=dialog.session_type, notes=dialog.notes.toPlainText(),
                 )
             except Exception as exc:  # noqa: BLE001
                 dialog.show_error(str(exc))
                 continue
-            self._fill_sessions(session.session_id)
-            self.reload_cases(self.case.case_id)
+            self._refresh_case_views(case.case_id)
+            self.open_session(session.session_id)
             return
 
     def _case_menu(self, case_id: str, menu: QMenu | None = None) -> QMenu:
@@ -104,40 +113,54 @@ class CaseActionsMixin:
         elif case.consent_status == "granted":
             menu.addAction(tr("ถอนความยินยอม…", "Withdraw consent…"), lambda: self._select_case(case_id) and self.withdraw_consent())
         if self.case and self.case.case_id == case_id and self.session is not None:
+            session_id, day = self.session.session_id, self.session.session_date
             menu.addSeparator()
-            menu.addAction(tr(f"ลบ session {self.session.session_date}…", f"Delete session {self.session.session_date}…"),
-                           lambda: self.delete_session(self.session.session_id))
+            menu.addAction(tr(f"ลบ session {day}…", f"Delete session {day}…"), lambda: self.delete_session(session_id))
         menu.addSeparator()
         menu.addAction(tr("ลบเคส…", "Delete case…"), lambda: self.delete_case(case_id))
         return menu
 
+    def _session_menu(self, session_id: str) -> QMenu:
+        session = self.service.get_session(session_id)
+        menu = QMenu(self)
+        menu.addAction(tr("เปิด session", "Open session"), lambda: self.open_session(session_id))
+        menu.addAction(tr("เปิดเคส", "Open case"), lambda: self.open_case_editor(session.case_id))
+        menu.addSeparator()
+        menu.addAction(tr(f"ลบ session {session.session_date}…", f"Delete session {session.session_date}…"),
+                       lambda: self.delete_session(session_id))
+        return menu
+
     def _case_list_menu(self, position) -> None:
         item = self.case_list.itemAt(position)
-        if item is not None:
-            self._case_menu(item.data(Qt.ItemDataRole.UserRole)).exec(self.case_list.viewport().mapToGlobal(position))
+        if item is None:
+            return
+        kind, identifier = item.data(0, ROLE)
+        menu = self._session_menu(identifier) if kind == "session" else self._case_menu(identifier)
+        menu.exec(self.case_list.viewport().mapToGlobal(position))
 
     def _fill_case_bar_menu(self) -> None:
         self.case_bar_menu.clear()
         self.case_bar_menu.addAction(tr("เพิ่มเคส…", "New case…"), self.new_case)
-        if self.case is not None and self.stack.currentIndex() == CASE_PAGE:
+        if self.case is not None:
             self.case_bar_menu.addSeparator()
             self._case_menu(self.case.case_id, self.case_bar_menu)
 
     def _select_case(self, case_id: str) -> bool:
-        """Open ``case_id`` unless it is already open; False when the therapist stays on unsaved work."""
-        if self.case and self.case.case_id == case_id and self.stack.currentIndex() == CASE_PAGE:
+        """Bring ``case_id`` to the front (its session tab stays in front if one is)."""
+        if self.case and self.case.case_id == case_id:
             return True
-        if not self._confirm_leave():
-            return False
-        self.stop_pages()
-        self.reload_cases(case_id)
-        self.open_case(case_id)
+        self.open_case_editor(case_id)
         return True
 
     def _delete_selected_case(self) -> None:
         item = self.case_list.currentItem()
-        if item is not None:
-            self.delete_case(item.data(Qt.ItemDataRole.UserRole))
+        if item is None:
+            return
+        kind, identifier = item.data(0, ROLE)
+        if kind == "session":
+            self.delete_session(identifier)
+        else:
+            self.delete_case(identifier)
 
     def _wait_for_work(self) -> bool:
         if self.busy or self.runner.busy:
@@ -158,11 +181,7 @@ class CaseActionsMixin:
             except Exception as exc:  # noqa: BLE001 - shown in the form
                 dialog.show_error(str(exc))
                 continue
-            if self.case and self.case.case_id == case_id:
-                self.case = self.service.get_case(case_id)
-                self._fill_case_header()
-            self.reload_cases(self.case.case_id if self.case else None)
-            self.dashboard.refresh()
+            self._refresh_case_views(case_id)
             return
 
     def delete_case(self, case_id: str) -> None:
@@ -173,21 +192,18 @@ class CaseActionsMixin:
         while dialog.exec():
             if self._wait_for_work():
                 return
-            open_here = self.case is not None and self.case.case_id == case_id
-            if open_here:
-                self.stop_pages()
+            for editor in self.session_editors(case_id):
+                editor.stop_playback()
             try:
                 self.service.delete_case(case_id, dialog.typed.text())
             except Exception as exc:  # noqa: BLE001
                 dialog.show_error(str(exc))
                 continue
-            if open_here:
-                self.case = None
-                self.session = None
-            self.reload_cases()
-            if open_here or self.stack.currentIndex() == HOME_PAGE:
+            self.close_case_tabs(case_id)
+            if not self.editor_area.keys():
                 self.show_home()
-            self.dashboard.refresh()
+            self.reload_cases()
+            self.refresh_home()
             self.notify(tr(f"ลบเคส {case.child_code} แล้ว", f"Deleted case {case.child_code}."), 6000)
             return
 
@@ -207,12 +223,9 @@ class CaseActionsMixin:
         )
         if answer != QMessageBox.StandardButton.Yes:
             return
-        if self.session is not None and self.session.session_id == session_id:
-            self.stop_pages()
-            self.session = None
+        self.close_case_tabs(session.case_id, session_id)
         self.service.delete_session(session_id)
-        if self.case is not None and self.case.case_id == session.case_id:
-            self._fill_sessions()
-        self.reload_cases(self.case.case_id if self.case else None)
-        self.dashboard.refresh()
+        self._refresh_case_views(session.case_id)
+        if not self.editor_area.keys():
+            self.open_case_editor(session.case_id)
         self.notify(tr(f"ลบ session {session.session_date} แล้ว", f"Deleted the session of {session.session_date}."), 6000)

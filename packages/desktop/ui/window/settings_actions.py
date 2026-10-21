@@ -8,7 +8,6 @@ from PySide6.QtWidgets import QInputDialog, QMessageBox
 
 from packages.desktop.core.i18n import tr
 from packages.desktop.ui import dialogs, labels
-from packages.desktop.ui.window.common import HOME_PAGE
 
 
 class SettingsActionsMixin:
@@ -22,7 +21,8 @@ class SettingsActionsMixin:
                 continue
             break
         self._update_status_bar()
-        self.pages[3].form.set_signer(self.service.therapist_name)
+        for editor in self.session_editors():
+            editor.pages[3].form.set_signer(self.service.therapist_name)
 
     def ask_organization(self) -> None:
         name, ok = QInputDialog.getText(
@@ -38,8 +38,9 @@ class SettingsActionsMixin:
         except Exception as exc:  # noqa: BLE001
             QMessageBox.warning(self, tr("ตั้งค่าไม่สำเร็จ", "Setting not saved"), str(exc))
             return
-        if self.case is not None:
-            self.refresh_session()
+        for editor in self.session_editors():
+            if not editor.has_unsaved_changes():
+                editor.load()  # the report's letterhead shows the new name
 
     def _set_mode(self, mode: str) -> None:
         try:
@@ -75,8 +76,7 @@ class SettingsActionsMixin:
             if answer == QMessageBox.StandardButton.Yes:
                 self.service.reset_clinic_speaker_model()
                 self.notify(tr("ล้างโมเดลประจำคลินิกแล้ว", "Clinic model cleared"), 6000)
-        if self.stack.currentIndex() == HOME_PAGE:
-            self.dashboard.refresh()
+        self.refresh_home()
 
     def learn_speakers_in_background(self, force: bool = False) -> None:
         """After an attestation, retrain the clinic's child/adult model without blocking the window."""

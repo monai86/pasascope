@@ -13,7 +13,6 @@ from PySide6.QtWidgets import QFileDialog, QProgressDialog, QMessageBox
 
 from packages.desktop.core.backup import BackupCancelled, BackupError, read_backup, restore_backup
 from packages.desktop.core.i18n import tr
-from packages.desktop.ui.window.common import HOME_PAGE
 
 
 class BackupMixin:
@@ -61,8 +60,7 @@ class BackupMixin:
                     "The file is not encrypted and holds children's recordings and transcripts. Keep it where only therapists can reach it.",
                 ),
             )
-            if self.stack.currentIndex() == HOME_PAGE:
-                self.dashboard.refresh()
+            self.refresh_home()
 
         def failed(exc: Exception) -> None:
             self._set_busy(False)

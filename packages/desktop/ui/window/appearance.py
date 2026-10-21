@@ -9,7 +9,8 @@ from PySide6.QtWidgets import QApplication
 
 from packages.desktop.core.i18n import tr
 from packages.desktop.ui import motion, theme
-from packages.desktop.ui.window.common import OVERVIEW, OVERVIEW_PAGE, CASE_PAGE, KNOWLEDGE_PAGE, _LIVE
+from packages.desktop.ui.editors import SessionEditor
+from packages.desktop.ui.window.common import _LIVE
 
 
 class AppearanceMixin:
@@ -43,7 +44,7 @@ class AppearanceMixin:
         waiting = None
         if self.busy or self.runner.busy or QApplication.activeModalWidget() is not None:
             waiting = tr("ธีมจะเปลี่ยนเมื่องานที่ทำอยู่เสร็จ", "The theme changes when the current work finishes.")
-        elif any(page.has_unsaved_changes() for page in self.pages) and not (ask and self._confirm_leave()):
+        elif self.has_unsaved_changes() and not (ask and self._confirm_leave()):
             waiting = tr("ธีมจะเปลี่ยนหลังบันทึกการแก้ไข", "The theme changes after your edits are saved.")
         if waiting:
             self._restyle_pending = True
@@ -66,13 +67,16 @@ class AppearanceMixin:
         self.deleteLater()
 
     def _view_state(self) -> dict:
+        """Which tabs are open (in order), which one is in front, and where each session stands."""
         topic = self.knowledge.topics.currentItem()
+        steps = {key: editor.tabs.currentIndex() for key, editor in self.editor_area.editors.items()
+                 if isinstance(editor, SessionEditor)}
         return {
-            "page": self.stack.currentIndex(),
-            "case_id": self.case.case_id if self.case else None,
-            "session_id": self.session.session_id if self.session else None,
-            "overview": self.case is not None and self.session is None and self.session_stack.currentIndex() == OVERVIEW_PAGE,
-            "tab": self.tabs.currentIndex(),
+            "tabs": self.editor_area.keys(),
+            "current": self.editor_area.current_key(),
+            "steps": steps,
+            "side_view": self.side_view,
+            "side_visible": self.side_bar.isVisible(),
             "topic": topic.data(Qt.ItemDataRole.UserRole) if topic else None,
             "search": self.search.text(),
             "geometry": self.saveGeometry(),
@@ -86,12 +90,16 @@ class AppearanceMixin:
         self.search.setText(state["search"])
         if state["update"] is not None:
             self._show_update(state["update"])
-        if state["page"] == CASE_PAGE and state["case_id"]:
-            self.reload_cases(state["case_id"])
-            self.open_case(state["case_id"], state["session_id"])
-            if state["session_id"]:
-                self.tabs.setCurrentIndex(state["tab"])
-            elif state["overview"] and self.session_pick.findData(OVERVIEW) >= 0:
-                self.session_pick.setCurrentIndex(self.session_pick.findData(OVERVIEW))
-        elif state["page"] == KNOWLEDGE_PAGE:
-            self.show_knowledge(state["topic"])
+        if state["topic"]:
+            self.knowledge.open_topic(state["topic"])
+        for key in [k for k in self.editor_area.keys() if k not in state["tabs"]]:
+            self.editor_area.close_editor(key)
+        for key in state["tabs"]:
+            self.open_key(key)
+            if key in state["steps"]:
+                editor = self.editor_area.editors.get(key)
+                if editor is not None:
+                    editor.tabs.setCurrentIndex(state["steps"][key])
+        if state["current"]:
+            self.open_key(state["current"])
+        self.set_side_view(state["side_view"], visible=state["side_visible"])

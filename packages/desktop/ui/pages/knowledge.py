@@ -412,6 +412,7 @@ class KnowledgePage(QWidget):
         self.topics.currentItemChanged.connect(lambda item, _: item and self._show(item.data(Qt.ItemDataRole.UserRole)))
         side_layout.addWidget(self.topics, 1)
         layout.addWidget(side)
+        self.side = side  # the main window moves the topic list into its side bar
 
         self.article = QTextBrowser()
         self.article.setOpenExternalLinks(False)

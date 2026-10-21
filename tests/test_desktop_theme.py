@@ -115,7 +115,7 @@ def test_knowledge_topic_survives_a_theme_change(window, qtbot, monkeypatch):
 
     successor = main_window._LIVE[0]
     qtbot.addWidget(successor)
-    assert successor.stack.currentIndex() == main_window.KNOWLEDGE_PAGE
+    assert successor.editor_area.current_key() == "knowledge"
     assert successor.knowledge.topics.currentItem().data(0x0100) == "privacy"
 
 

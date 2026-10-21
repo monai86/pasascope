@@ -1,12 +1,13 @@
 """Colours and the application style sheet, in a light and a dark set.
 
-A quiet working surface in the manner of Notion's desktop app: white pages,
-a warm grey sidebar, near-black warm text, hairline dividers and grey hover
-fills, with colour kept for meaning. Blue marks primary actions and the
+A working surface laid out like a code editor's workbench: white pages in a
+light grey frame, hairline dividers and grey hover fills, with colour kept
+for meaning. Blue marks primary actions and the
 selection; amber what needs the therapist's attention; red withdrawal and
-failures. No green. Tokens follow those in Notion's desktop shell (text
-rgb(55,53,47), dividers at 9% of it, hover at 8%, accent #2383E2); the dark
-set follows Notion's dark shell (page #191919, sidebar #202020).
+failures. No green. The neutrals follow a code editor's 2026 light and dark
+themes (frame #F8F8FA / #191A1B around a #FFFFFF / #121314 page, hairline
+borders, near-black or light-grey text), with a blue accent (#0069CC) that
+white text reads on.
 
 The colour names below are module attributes that ``apply_theme`` rewrites,
 so read them as ``theme.INK`` when a widget is built or painted, never copy
@@ -25,72 +26,73 @@ from PySide6.QtGui import QColor, QFont, QPalette
 from PySide6.QtWidgets import QApplication
 
 LIGHT = {
-    "INK": "#37352f",
-    "INK_SOFT": "#5f5e5b",
-    "MUTED": "#787774",
-    "FAINT": "#a5a29d",
-    "LINE": "#e9e9e7",
-    "LINE_STRONG": "#d9d8d5",
+    "INK": "#202020",
+    "INK_SOFT": "#3f3f46",
+    "MUTED": "#5f5f68",
+    "FAINT": "#9a9aa2",
+    "LINE": "#e7e7ea",
+    "LINE_STRONG": "#d5d5da",
     "SURFACE": "#ffffff",
-    "CANVAS": "#ffffff",
-    "SIDEBAR": "#f7f7f5",
-    "HOVER": "#efefee",
-    "PRESSED": "#e3e2e0",
-    "ROW_ALT": "#fbfbfa",
-    "PRIMARY": "#2383e2",
-    "PRIMARY_DARK": "#1b6ec2",  # primary button hover
-    "PRIMARY_TEXT": "#1b6ec2",  # blue text and marks on the page
-    "PRIMARY_SOFT": "#e7f3f8",
-    "PRIMARY_DISABLED": "#a7cdf2",
+    "CANVAS": "#ffffff",  # the page an editor draws on
+    "SIDEBAR": "#f8f8fa",  # the frame around the page: activity bar, side bar, tabs, status bar
+    "HOVER": "#ececef",
+    "PRESSED": "#dfdfe3",
+    "ROW_ALT": "#fafafb",
+    "PRIMARY": "#0069cc",
+    "PRIMARY_DARK": "#005bb2",  # primary button hover
+    "PRIMARY_TEXT": "#0062bf",  # blue text and marks on the page
+    "PRIMARY_SOFT": "#e3eefa",
+    "PRIMARY_DISABLED": "#9fc3ea",
     "PRIMARY_DISABLED_TEXT": "#ffffff",
     "ON_PRIMARY": "#ffffff",
-    "LINK": "#2383e2",
-    "ATTENTION": "#c4650a",
-    "ATTENTION_SOFT": "#fbecdd",
-    "DANGER": "#d44c47",
-    "DANGER_SOFT": "#fdebec",
-    "OK": "#337ea9",
-    "OK_SOFT": "#e7f3f8",
-    "ADULT": "#9065b0",
-    "TOOLTIP": "#37352f",
+    "LINK": "#0062bf",
+    "ATTENTION": "#a85400",
+    "ATTENTION_SOFT": "#fbecdc",
+    "DANGER": "#c4314b",
+    "DANGER_SOFT": "#fbe9ec",
+    "OK": "#0062bf",
+    "OK_SOFT": "#e3eefa",
+    "ADULT": "#7b4fb0",
+    "TOOLTIP": "#202020",
     "TOOLTIP_TEXT": "#ffffff",
-    "TOAST_BORDER": "#37352f",
+    "TOAST_BORDER": "#202020",
 }
 
 DARK = {
-    "INK": "#d5d4d1",
-    "INK_SOFT": "#b5b4b0",
-    "MUTED": "#9b9a97",
-    "FAINT": "#6e6d6a",
-    "LINE": "#2f2f2f",
-    "LINE_STRONG": "#3f3f3e",
-    "SURFACE": "#191919",
-    "CANVAS": "#191919",
-    "SIDEBAR": "#202020",
-    "HOVER": "#2c2c2c",
-    "PRESSED": "#373737",
-    "ROW_ALT": "#1e1e1e",
-    "PRIMARY": "#2383e2",
-    "PRIMARY_DARK": "#3a91e6",
-    "PRIMARY_TEXT": "#5ea6d6",
-    "PRIMARY_SOFT": "#1e3549",
-    "PRIMARY_DISABLED": "#253d55",
-    "PRIMARY_DISABLED_TEXT": "#8296aa",
+    "INK": "#cccccc",
+    "INK_SOFT": "#b4b4b6",
+    "MUTED": "#9a9a9e",
+    "FAINT": "#626266",
+    "LINE": "#2a2b2c",
+    "LINE_STRONG": "#3a3b3d",
+    "SURFACE": "#121314",
+    "CANVAS": "#121314",
+    "SIDEBAR": "#191a1b",
+    "HOVER": "#242526",
+    "PRESSED": "#2e2f31",
+    "ROW_ALT": "#161718",
+    "PRIMARY": "#2272c3",
+    "PRIMARY_DARK": "#2d80d6",
+    "PRIMARY_TEXT": "#5ea6e6",
+    "PRIMARY_SOFT": "#16304a",
+    "PRIMARY_DISABLED": "#1d3a57",
+    "PRIMARY_DISABLED_TEXT": "#7f93a8",
     "ON_PRIMARY": "#ffffff",
-    "LINK": "#5ea6d6",
-    "ATTENTION": "#df8c45",
-    "ATTENTION_SOFT": "#3b2a1c",
-    "DANGER": "#e5716b",
-    "DANGER_SOFT": "#3d2523",
-    "OK": "#5ea6d6",
-    "OK_SOFT": "#1e3549",
-    "ADULT": "#b08bd9",
-    "TOOLTIP": "#3b3b3a",
-    "TOOLTIP_TEXT": "#ebebea",
-    "TOAST_BORDER": "#4a4a49",
+    "LINK": "#5ea6e6",
+    "ATTENTION": "#e0914a",
+    "ATTENTION_SOFT": "#3a2a1b",
+    "DANGER": "#ef7470",
+    "DANGER_SOFT": "#3c2324",
+    "OK": "#5ea6e6",
+    "OK_SOFT": "#16304a",
+    "ADULT": "#b48ce0",
+    "TOOLTIP": "#2e2f31",
+    "TOOLTIP_TEXT": "#e6e6e6",
+    "TOAST_BORDER": "#3a3b3d",
 }
 
-CHECK_MARK = (Path(__file__).resolve().parent / "assets" / "check.svg").as_posix()
+ASSETS = Path(__file__).resolve().parent / "assets"
+CHECK_MARK = (ASSETS / "check.svg").as_posix()
 MODES = ("system", "light", "dark")
 SETTINGS_KEY = "appearance/theme"
 
@@ -105,6 +107,7 @@ _dark = False
 
 
 def build_style() -> str:
+    close_icon = (ASSETS / ("close-dark.svg" if _dark else "close-light.svg")).as_posix()
     return f"""
 QWidget {{ color: {INK}; font-size: 14px; }}
 QMainWindow, QDialog {{ background: {CANVAS}; }}
@@ -239,6 +242,56 @@ QMenu::item:disabled {{ color: {FAINT}; }}
 QMenu::separator {{ height: 1px; background: {LINE}; margin: 4px 6px; }}
 QSplitter::handle {{ background: transparent; }}
 QSplitter::handle:hover {{ background: {LINE}; }}
+/* The workbench: activity bar, side bar, editor tabs, breadcrumbs, palette, status bar */
+#ActivityBar {{ background: {SIDEBAR}; border-right: 1px solid {LINE}; }}
+QToolButton#ActivityItem {{ border: none; border-left: 2px solid transparent; background: transparent; }}
+QToolButton#ActivityItem:hover {{ background: {HOVER}; }}
+QToolButton#ActivityItem:checked {{ border-left: 2px solid {PRIMARY}; }}
+#SideBar {{ background: {SIDEBAR}; border-right: 1px solid {LINE}; }}
+#SideBarHeader {{ background: transparent; }}
+#SideBarTitle {{ color: {INK_SOFT}; font-size: 11px; font-weight: 600; letter-spacing: 0.5px; }}
+#SideBarSection {{ color: {INK_SOFT}; font-size: 11px; font-weight: 700; padding: 4px 20px; }}
+QToolButton#HeaderAction {{ border: none; border-radius: 4px; background: transparent; }}
+QToolButton#HeaderAction:hover {{ background: {HOVER}; }}
+#SideBar QLineEdit {{ background: {SURFACE}; border: 1px solid {LINE_STRONG}; margin: 0 12px; }}
+#SideBar QLineEdit:focus {{ border: 1px solid {PRIMARY}; }}
+QTreeWidget#CaseTree, QListWidget#TopicList {{ background: transparent; border: none; outline: none; }}
+QTreeWidget#CaseTree::item, QListWidget#TopicList::item {{ height: 24px; padding: 0 4px; color: {INK}; border: none; }}
+QListWidget#TopicList::item {{ padding-left: 20px; }}
+QTreeWidget#CaseTree::item:hover, QListWidget#TopicList::item:hover {{ background: {HOVER}; }}
+QTreeWidget#CaseTree::item:selected, QListWidget#TopicList::item:selected {{ background: {PRESSED}; color: {INK}; }}
+#SideBarFooter {{ border-top: 1px solid {LINE}; }}
+QSplitter#Workbench::handle {{ background: {LINE}; }}
+#EditorTabsRow {{ background: {SIDEBAR}; border-bottom: 1px solid {LINE}; }}
+QTabBar#EditorTabs {{ background: transparent; }}
+QTabBar#EditorTabs::tab {{
+    height: 34px; padding: 0 6px 0 12px; margin: 0; border: none; border-right: 1px solid {LINE};
+    border-top: 2px solid transparent; background: {SIDEBAR}; color: {MUTED}; font-weight: 400;
+}}
+QTabBar#EditorTabs::tab:hover {{ color: {INK}; }}
+QTabBar#EditorTabs::tab:selected {{ background: {CANVAS}; color: {INK}; border-top: 2px solid {PRIMARY}; }}
+QTabBar#EditorTabs::close-button {{ image: url("{close_icon}"); subcontrol-position: right; width: 16px; height: 16px; border-radius: 3px; margin-left: 4px; }}
+QTabBar#EditorTabs::close-button:hover {{ background: {PRESSED}; }}
+QTabBar#EditorTabs QToolButton {{ background: {SIDEBAR}; border: none; }}
+#EditorStack, #Watermark {{ background: {CANVAS}; }}
+#WatermarkText {{ color: {MUTED}; font-size: 13px; }}
+#Keycap {{ color: {INK_SOFT}; background: {HOVER}; border: 1px solid {LINE_STRONG}; border-radius: 3px; padding: 1px 6px; font-size: 12px; }}
+#Breadcrumbs {{ background: {CANVAS}; }}
+QToolButton#Crumb {{ border: none; padding: 1px 3px; color: {MUTED}; font-size: 12px; background: transparent; }}
+QToolButton#Crumb:hover {{ color: {INK}; background: {HOVER}; border-radius: 3px; }}
+QToolButton#Crumb[last="true"] {{ color: {INK}; }}
+QToolButton#Crumb:disabled {{ color: {MUTED}; }}
+#CrumbSeparator {{ color: {FAINT}; font-size: 12px; }}
+#CommandPalette {{ background: {SIDEBAR}; border: 1px solid {LINE_STRONG}; border-radius: 8px; }}
+QLineEdit#PaletteInput {{ background: {SURFACE}; border: 1px solid {PRIMARY}; padding: 5px 8px; font-size: 13px; }}
+QListWidget#PaletteList {{ background: transparent; border: none; outline: none; font-size: 13px; }}
+QListWidget#PaletteList::item {{ height: 26px; padding: 0 8px; border-radius: 4px; }}
+QListWidget#PaletteList::item:selected {{ background: {PRIMARY_SOFT}; color: {INK}; }}
+#EditorHeader {{ background: {CANVAS}; }}
+QStatusBar {{ font-size: 12px; padding: 0; }}  /* 22 px high, set by the window */
+QStatusBar::item {{ border: none; }}
+QStatusBar QLabel {{ padding: 0 8px; color: {MUTED}; font-size: 12px; }}
+#StatusBadge {{ background: {PRIMARY}; color: {ON_PRIMARY}; padding: 0 10px; }}
 #Toast {{
     background: {TOOLTIP}; color: {TOOLTIP_TEXT}; border: 1px solid {TOAST_BORDER}; border-radius: 8px;
     padding: 9px 16px; font-size: 13px;

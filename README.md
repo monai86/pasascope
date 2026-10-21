@@ -98,7 +98,7 @@ On macOS 12–14 you can instead right-click PasaScope and choose **Open**.
 2. **Download the speech models**: **Settings → Download speech models…**, about 1.5 GB, once. Every file is checked by SHA-256.
 3. Optional: the **clinic name** printed on reports, in **Settings → Clinic name on reports…**
 
-The interface is in English; switch to Thai with **Settings → Language**. It follows the computer's light or dark appearance; choose one yourself in **Settings → Appearance**. Pages fade in briefly unless the computer's Reduce motion is on (**Settings → Motion**).
+The window works like a code editor: cases and their sessions in the side bar, each session in its own tab, and a command palette (**Ctrl/Cmd+Shift+P**; **Ctrl/Cmd+P** opens a case or session by typing). The interface is in English; switch to Thai with **Settings → Language**. It follows the computer's light or dark appearance; choose one yourself in **Settings → Appearance**. Pages fade in briefly unless the computer's Reduce motion is on (**Settings → Motion**).
 
 <a id="windows"></a>
 

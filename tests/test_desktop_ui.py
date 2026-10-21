@@ -41,25 +41,31 @@ def _case_with_session(win: MainWindow):
     return case, session
 
 
-def test_empty_window_shows_case_prompt(window):
-    assert window.stack.currentIndex() == 0
-    assert window.case_list.count() == 0
+def test_empty_window_opens_on_home(window):
+    assert window.editor_area.current_key() == "home"
+    assert window.current_editor is window.dashboard
+    assert window.case_list.topLevelItemCount() == 0
 
 
-def test_sidebar_shows_the_logo(window):
-    from PySide6.QtWidgets import QFrame, QLabel
-
-    sidebar = window.findChild(QFrame, "Sidebar")
-    assert any(not mark.pixmap().isNull() for mark in sidebar.findChildren(QLabel))
+def test_window_is_a_workbench_with_activity_bar_side_bar_and_status_bar(window):
+    assert window.activity.width() == 48
+    assert set(window.activity.views) == {"cases", "knowledge"}
+    assert window.activity.views["cases"].isChecked() and window.side_bar.isVisible()
+    window._on_activity_view("cases")  # the shown view again hides the side bar
+    assert not window.side_bar.isVisible() and not window.activity.views["cases"].isChecked()
+    window.toggle_side_bar()
+    assert window.side_bar.isVisible()
+    assert window.statusBar().maximumHeight() == 22
 
 
 def test_pending_consent_blocks_sessions(window):
     case = window.service.create_case("TH-011", 40)
     window.reload_cases(case.case_id)
     window.open_case(case.case_id)
-    assert not window.new_session_btn.isEnabled()
-    assert window.session_stack.currentIndex() == 0
-    assert "ความยินยอม" in window.no_session.title.text()
+    editor = window.case_editor
+    assert editor is not None and not editor.new_session_btn.isEnabled()
+    assert editor.stack.currentWidget() is editor.no_session
+    assert "ความยินยอม" in editor.no_session.title.text()
 
 
 def test_text_import_to_signed_report(window, qtbot):
@@ -178,15 +184,15 @@ def test_case_with_several_sessions_opens_on_the_overview(window, qtbot):
     case, first = _case_with_session(window)
     second = window.service.create_session(case.case_id, date(2026, 10, 20))
     window.open_case(case.case_id)
-    assert window.session_pick.currentData() == "__overview__"
-    assert window.session_stack.currentWidget() is window.overview
+    assert window.case_editor is not None and window.session is None
     assert window.overview.table.rowCount() == 2
     assert window.overview.cards["sessions"].value.text() == "2"
     window.overview.open_session.emit(second.session_id)
     assert window.session.session_id == second.session_id
-    assert window.session_stack.currentWidget() is window.tabs
-    window.session_pick.setCurrentIndex(0)
-    assert window.session is None and window.session_stack.currentWidget() is window.overview
+    # The first session's tab (opened by the helper) stays open beside the second.
+    assert {f"session:{first.session_id}", f"session:{second.session_id}", f"case:{case.case_id}"} <= set(window.editor_area.keys())
+    window.open_case_editor(case.case_id)
+    assert window.session is None and window.case_editor is not None
 
 
 def test_backup_from_the_menu_updates_the_reminder(window, qtbot, tmp_path, monkeypatch):
@@ -289,7 +295,7 @@ def test_home_lists_waiting_work_and_opens_it(window):
     case, session = _case_with_session(window)
     window.show_home()
     dashboard = window.dashboard
-    assert window.stack.currentWidget() is dashboard and window.home_btn.isChecked()
+    assert window.current_editor is dashboard and window.home_btn.isChecked()
     assert dashboard.queue.rowCount() == 1 and "เพิ่มเสียง" in dashboard.queue.item(0, 2).text()
     dashboard._open_row(0, 0)
     assert window.case.case_id == case.case_id and window.session.session_id == session.session_id
@@ -300,7 +306,8 @@ def test_knowledge_opens_every_topic_with_its_charts(window):
 
     window.show_knowledge("autism")
     page = window.knowledge
-    assert window.stack.currentWidget() is page and page.topics.currentItem().data(0x0100) == "autism"
+    assert window.current_editor is page and page.topics.currentItem().data(0x0100) == "autism"
+    assert window.side_view == "knowledge"
     for row in range(page.topics.count()):
         page.topics.setCurrentRow(row)
         assert page.article.toPlainText().strip()
@@ -528,7 +535,7 @@ def test_findings_show_main_measures_and_open_their_guide(window, qtbot):
     row = next(r for r in range(page.table.rowCount())
                if page.table.item(r, 0) and page.table.item(r, 0).data(Qt.ItemDataRole.UserRole) == "child_response_rate")
     page.table.cellDoubleClicked.emit(row, 0)
-    assert window.stack.currentIndex() == 2  # the Knowledge page
+    assert window.editor_area.current_key() == "knowledge"
     assert window.knowledge.topics.currentItem().data(Qt.ItemDataRole.UserRole) == "measures"
 
 
@@ -548,6 +555,7 @@ def test_therapist_name_changes_from_the_sidebar_and_the_report(window, qtbot, m
     assert window.therapist_label.text() == "กานดา ใจดี" and "กานดา ใจดี" in window.name_label.text()
 
     # The report's signer line opens the same dialog and shows the new name.
+    _case_with_session(window)
     window.pages[3].form.signer.linkActivated.emit("name")
     assert window.service.therapist_name == "Kanda & Co"
     assert "Kanda &amp; Co" in window.pages[3].form.signer.text()
@@ -570,12 +578,14 @@ def test_cases_and_sessions_can_be_edited_and_deleted_from_their_menus(window, q
         return True
     monkeypatch.setattr(dialogs.EditCaseDialog, "exec", edit)
     window.edit_case(case.case_id)
-    assert "ภูมิใจ" in window.case_title.text()
+    assert "ภูมิใจ" in window.session_editor.crumbs.parts[0].text()
+    assert "ภูมิใจ" in window.case_list.topLevelItem(0).text(0)
 
-    # Deleting a session asks first; this one is open, so the case goes back to "no session".
+    # Deleting a session asks first; its tab closes.
     monkeypatch.setattr(QMessageBox, "warning", lambda *a, **k: QMessageBox.StandardButton.Yes)
     window.delete_session(session.session_id)
     assert window.session is None and window.service.list_sessions(case.case_id) == []
+    assert f"session:{session.session_id}" not in window.editor_area.keys()
 
     # The delete button stays off until the code is typed.
     def confirm(dialog):
@@ -586,5 +596,5 @@ def test_cases_and_sessions_can_be_edited_and_deleted_from_their_menus(window, q
         return True
     monkeypatch.setattr(dialogs.DeleteCaseDialog, "exec", confirm)
     window.delete_case(case.case_id)
-    assert window.case is None and window.case_list.count() == 0
-    assert window.stack.currentIndex() == 0  # Home
+    assert window.case is None and window.case_list.topLevelItemCount() == 0
+    assert window.editor_area.current_key() == "home"
