@@ -20,6 +20,10 @@ The app (`packages/desktop/core/updates.py`):
 
 Cases, recordings and settings live in `~/Library/Application Support/PasaScope` (`%APPDATA%\PasaScope` on Windows), apart from the app, so an update leaves them alone and the first-start walkthrough does not return. A copy older than 1.8.0 still updates the old way once: it opens the disk image or installer for the therapist.
 
+## Download page
+
+`site/` is the public download page, published to GitHub Pages (`https://monai86.github.io/pasascope/`) by `.github/workflows/pages.yml` whenever `site/` changes on `main`. It is static: in the browser it reads the latest release from the GitHub API and links its `.dmg` and Windows installer directly, with their sizes, so a new release needs no change to the page. It offers the file for the visitor's computer first and falls back to the Releases page when the API cannot be reached. The page is in Thai and English (`?lang=en`), and its screenshots in `site/assets/` come from the demonstration data (`scripts/seed_desktop_demo.py`).
+
 ## Build
 
 ```bash
