@@ -246,6 +246,18 @@ def status_text(status: Any) -> str:
     return SESSION_STATUS.get(value, value)
 
 
+def day_text(value: Any) -> str:
+    """A date as the app shows it, 16/10/2026, whether it is stored as a date or as ISO text."""
+    from datetime import date
+
+    if isinstance(value, str):
+        try:
+            value = date.fromisoformat(value[:10])
+        except ValueError:
+            return value
+    return value.strftime("%d/%m/%Y") if hasattr(value, "strftime") else str(value)
+
+
 def age_text(months: int) -> str:
     years, rem = divmod(int(months), 12)
     if years and rem:

@@ -9,8 +9,6 @@ busy and its edits are saved or discarded.
 
 from __future__ import annotations
 
-from datetime import date
-
 from PySide6.QtCore import Qt, Signal
 from PySide6.QtGui import QColor
 from PySide6.QtWidgets import QHBoxLayout, QStackedWidget, QTabWidget, QVBoxLayout, QWidget
@@ -32,14 +30,8 @@ def case_name(case) -> str:
 
 
 def session_day(session) -> str:
-    """The session date as 16/10/2026, whether it is stored as a date or as ISO text."""
-    value = session.session_date
-    if isinstance(value, str):
-        try:
-            value = date.fromisoformat(value[:10])
-        except ValueError:
-            return value
-    return value.strftime("%d/%m/%Y") if hasattr(value, "strftime") else str(value)
+    """The session date as 16/10/2026."""
+    return labels.day_text(session.session_date)
 
 
 def session_key(session_id: str) -> str:

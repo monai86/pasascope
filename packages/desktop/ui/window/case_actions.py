@@ -10,7 +10,7 @@ from __future__ import annotations
 from PySide6.QtWidgets import QMenu, QMessageBox
 
 from packages.desktop.core.i18n import tr
-from packages.desktop.ui import dialogs
+from packages.desktop.ui import dialogs, labels
 from packages.desktop.ui.window.case_view import ROLE
 
 
@@ -113,7 +113,7 @@ class CaseActionsMixin:
         elif case.consent_status == "granted":
             menu.addAction(tr("ถอนความยินยอม…", "Withdraw consent…"), lambda: self._select_case(case_id) and self.withdraw_consent())
         if self.case and self.case.case_id == case_id and self.session is not None:
-            session_id, day = self.session.session_id, self.session.session_date
+            session_id, day = self.session.session_id, labels.day_text(self.session.session_date)
             menu.addSeparator()
             menu.addAction(tr(f"ลบ session {day}…", f"Delete session {day}…"), lambda: self.delete_session(session_id))
         menu.addSeparator()
@@ -126,7 +126,8 @@ class CaseActionsMixin:
         menu.addAction(tr("เปิด session", "Open session"), lambda: self.open_session(session_id))
         menu.addAction(tr("เปิดเคส", "Open case"), lambda: self.open_case_editor(session.case_id))
         menu.addSeparator()
-        menu.addAction(tr(f"ลบ session {session.session_date}…", f"Delete session {session.session_date}…"),
+        day = labels.day_text(session.session_date)
+        menu.addAction(tr(f"ลบ session {day}…", f"Delete session {day}…"),
                        lambda: self.delete_session(session_id))
         return menu
 
@@ -212,12 +213,13 @@ class CaseActionsMixin:
             return
         session = self.service.get_session(session_id)
         summary = self.service.deletion_summary(session.case_id, session_id)
+        day = labels.day_text(session.session_date)
         signed = tr(" รวมรายงานที่ลงนามแล้ว", ", including a signed report") if summary["signed_reports"] else ""
         answer = QMessageBox.warning(
             self, tr("ลบ session", "Delete session"),
-            tr(f"ลบ session วันที่ {session.session_date} พร้อมไฟล์เสียง {summary['recordings']} ไฟล์ "
+            tr(f"ลบ session วันที่ {day} พร้อมไฟล์เสียง {summary['recordings']} ไฟล์ "
                f"transcript ตัวชี้วัด และรายงาน{signed}? ย้อนกลับไม่ได้",
-               f"Delete the session of {session.session_date} with its {summary['recordings']} recording(s), "
+               f"Delete the session of {day} with its {summary['recordings']} recording(s), "
                f"transcript, findings and report{signed}? This cannot be undone."),
             QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.Cancel, QMessageBox.StandardButton.Cancel,
         )
@@ -228,4 +230,4 @@ class CaseActionsMixin:
         self._refresh_case_views(session.case_id)
         if not self.editor_area.keys():
             self.open_case_editor(session.case_id)
-        self.notify(tr(f"ลบ session {session.session_date} แล้ว", f"Deleted the session of {session.session_date}."), 6000)
+        self.notify(tr(f"ลบ session {day} แล้ว", f"Deleted the session of {day}."), 6000)

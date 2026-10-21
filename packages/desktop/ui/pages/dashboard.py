@@ -122,7 +122,7 @@ class Dashboard(QWidget):
             for index, row in enumerate(rows):
                 case, session = row["case"], row["session"]
                 name = case.child_code + (f"  {case.nickname}" if case.nickname else "")
-                cells = [name, str(session.session_date) if session else "—", step_text(row["step"]), waiting_text(row["waiting_days"])]
+                cells = [name, labels.day_text(session.session_date) if session else "—", step_text(row["step"]), waiting_text(row["waiting_days"])]
                 for column, text in enumerate(cells):
                     item = QTableWidgetItem(text)
                     item.setData(Qt.ItemDataRole.UserRole, (case.case_id, session.session_id if session else None))

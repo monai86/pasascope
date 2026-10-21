@@ -174,3 +174,34 @@ def test_the_tab_in_front_is_the_page_shown(window):
 def test_the_tab_row_keeps_its_height_with_one_tab(window):
     assert window.editor_area.bar.count() == 1
     assert window.editor_area.bar.height() == 36
+
+
+def test_tabs_reopen_next_time_on_the_same_data_folder(window, qtbot):
+    from packages.desktop.ui.main_window import MainWindow
+
+    _, first, second = _two_sessions(window)
+    window.open_session(first.session_id).tabs.setCurrentIndex(2)
+    window.open_session(second.session_id)
+    window.close_tab("home")
+    keys = window.editor_area.keys()
+    window.close()
+
+    again = MainWindow(window.service)
+    qtbot.addWidget(again)
+    assert again.editor_area.keys() == keys
+    assert again.session.session_id == second.session_id
+    assert again.editor_area.editors[f"session:{first.session_id}"].tabs.currentIndex() == 2
+
+
+def test_a_deleted_session_is_not_reopened(window, qtbot, monkeypatch):
+    from packages.desktop.ui.main_window import MainWindow
+
+    _, first, second = _two_sessions(window)
+    window.open_session(second.session_id)
+    window.close()
+    window.service.delete_session(second.session_id)
+
+    again = MainWindow(window.service)
+    qtbot.addWidget(again)
+    assert f"session:{second.session_id}" not in again.editor_area.keys()
+    assert again.editor_area.keys()  # something is in front

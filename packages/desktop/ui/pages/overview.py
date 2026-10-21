@@ -144,7 +144,7 @@ class CaseOverview(QWidget):
                 self.cards[key].set_value("—", tr("ยังไม่มี session ที่วิเคราะห์แล้ว", "None analysed yet"))
                 continue
             latest = series[0]["values"][name]
-            detail = f"{series[0]['session'].session_date}"
+            detail = labels.day_text(series[0]['session'].session_date)
             if len(series) > 1:
                 previous = series[1]["values"][name]
                 change = _number(name, latest - previous)
@@ -164,7 +164,7 @@ class CaseOverview(QWidget):
                 step_label, color = step_text(row["step"])
                 if row["values"] and row["schema_version"] != labels.CURRENT_SCHEMA:
                     step_label += tr(" · วิเคราะห์ใหม่", ", analyse again")
-                cells = [str(session.session_date), step_label]
+                cells = [labels.day_text(session.session_date), step_label]
                 cells.extend(_number(name, row["values"].get(name)) for name in TABLE_FEATURES)
                 cells.append(str(row["pending_cues"]) if row["values"] else "—")
                 for column, text in enumerate(cells):

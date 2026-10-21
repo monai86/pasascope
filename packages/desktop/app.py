@@ -21,6 +21,25 @@ def _version() -> str:
         return ""
 
 
+# Qt prints these when a macOS accessibility client (VoiceOver, or a menu-bar
+# utility reading the screen) asks a widget about text or rows that just
+# changed; Qt recovers by itself, so they only flood the log.
+QUIET_QT_MESSAGES = ("QTextCursor::setPosition: Position", "Cell requested for row")
+
+
+def _install_qt_message_filter() -> None:
+    """Pass Qt's messages to stderr (the log) as usual, except the harmless accessibility ones."""
+    from PySide6.QtCore import qInstallMessageHandler
+
+    def handler(_mode, context, message: str) -> None:
+        if message.startswith(QUIET_QT_MESSAGES) or (context.category == "qt.accessibility.table"):
+            return
+        category = f"{context.category}: " if context.category and context.category != "default" else ""
+        sys.stderr.write(f"{category}{message}\n")
+
+    qInstallMessageHandler(handler)
+
+
 def _profile_language(root: Path) -> str | None:
     """The language saved in the data folder, read without loading the workflow."""
     import json
@@ -93,6 +112,7 @@ def main(argv: list[str] | None = None) -> int:
 
     QCoreApplication.setOrganizationName("PasaScope")
     QCoreApplication.setApplicationName("PasaScope")
+    _install_qt_message_filter()
     app = QApplication(sys.argv[:1])
     icon = ROOT / "packages" / "desktop" / "ui" / "assets" / "icon.png"
     if icon.is_file():

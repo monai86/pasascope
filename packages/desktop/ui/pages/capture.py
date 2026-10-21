@@ -22,6 +22,7 @@ from PySide6.QtWidgets import (
     QWidget,
 )
 
+from packages.desktop.ui import labels
 from packages.desktop.ui.audio import Recorder
 from packages.desktop.ui.pages.base import SessionPage
 from packages.desktop.ui.widgets import button, card, chip, label, set_chip
@@ -332,11 +333,12 @@ class CapturePage(SessionPage):
             self.refresh()
             return
         session_id = self.session.session_id
-        finished_text = tr(f"ถอดเสียง {self.case.child_code} session {self.session.session_date} เสร็จแล้ว",
-                           f"Transcribed {self.case.child_code}, session {self.session.session_date}")
+        day = labels.day_text(self.session.session_date)
+        finished_text = tr(f"ถอดเสียง {self.case.child_code} session {day} เสร็จแล้ว",
+                           f"Transcribed {self.case.child_code}, session {day}")
         self.cancel_event = threading.Event()
         cancel = self.cancel_event
-        self.progress_title.setText(tr(f"กำลังถอดเสียง · {self.case.child_code} · session {self.session.session_date}", f"Transcribing {self.case.child_code}, session {self.session.session_date}"))
+        self.progress_title.setText(tr(f"กำลังถอดเสียง · {self.case.child_code} · session {day}", f"Transcribing {self.case.child_code}, session {day}"))
         self.cancel_btn.setEnabled(True)
 
         def work(progress):

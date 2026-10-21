@@ -10,6 +10,7 @@ parts and ``ui/window/`` for what the window does.
 from __future__ import annotations
 
 from html import escape
+import json
 
 from PySide6.QtCore import QSettings, Qt, QTimer, QUrl
 from PySide6.QtGui import QAction, QActionGroup, QDesktopServices, QKeySequence, QShortcut
@@ -121,6 +122,7 @@ class MainWindow(
         self.reload_cases()
         self.show_home()
         self.set_side_view("cases")
+        self._reopen_tabs()
         self.runner.idle.connect(self._apply_pending_restyle)
         QApplication.instance().styleHints().colorSchemeChanged.connect(self._on_system_scheme)
 
@@ -446,6 +448,42 @@ class MainWindow(
         self.open_case(case_id, session_id)
 
     # ------------------------------------------------------------------
+    # Tabs from the last time, per data folder
+    # ------------------------------------------------------------------
+    def _tabs_key(self) -> str:
+        import hashlib
+
+        return "tabs/" + hashlib.sha1(str(self.service.workspace.root).encode("utf-8")).hexdigest()[:12]
+
+    def _save_tabs(self) -> None:
+        steps = {key: editor.tabs.currentIndex() for key, editor in self.editor_area.editors.items()
+                 if hasattr(editor, "tabs") and hasattr(editor, "session")}
+        QSettings().setValue(self._tabs_key(), json.dumps({
+            "tabs": self.editor_area.keys(), "current": self.editor_area.current_key(), "steps": steps,
+        }))
+
+    def _reopen_tabs(self) -> None:
+        """Open what was open when PasaScope last closed on this data folder; deleted records are skipped."""
+        try:
+            saved = json.loads(QSettings().value(self._tabs_key(), "") or "{}")
+        except (TypeError, ValueError):
+            return
+        for key in saved.get("tabs", []):
+            if key != "home":
+                self.open_key(key)
+                step = saved.get("steps", {}).get(key)
+                editor = self.editor_area.editors.get(key)
+                if step is not None and editor is not None and hasattr(editor, "tabs"):
+                    editor.tabs.setCurrentIndex(int(step))
+        if "home" not in saved.get("tabs", ["home"]):
+            self.editor_area.close_editor("home")
+        current = saved.get("current")
+        if current and current in self.editor_area.editors:
+            self.open_key(current)
+        if not self.editor_area.keys():
+            self.show_home()
+
+    # ------------------------------------------------------------------
     # Window state
     # ------------------------------------------------------------------
     def notify(self, text: str, msecs: int = 5000) -> None:
@@ -512,6 +550,7 @@ class MainWindow(
             return
         for editor in self.session_editors():
             editor.shutdown()
+        self._save_tabs()
         settings = QSettings()
         settings.setValue("main/geometry", self.saveGeometry())
         if self.side_bar.isVisible():

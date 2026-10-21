@@ -145,3 +145,28 @@ def test_a_ready_update_starts_only_once_the_window_closes(qtbot, tmp_path, monk
 
     assert started == [(tmp_path / "PasaScope.app", tmp_path / ".PasaScope-update.app", os.getpid(), True)]
     assert window._pending_update is None
+
+
+def test_log_filter_drops_only_the_accessibility_noise(capsys):
+    from PySide6.QtCore import qDebug, qInstallMessageHandler, qWarning
+
+    desktop_app._install_qt_message_filter()
+    try:
+        qWarning("QTextCursor::setPosition: Position '1' out of range")
+        qWarning("something that matters")
+        qDebug("Cell requested for row 5 is out of bounds for table with 0 rows! Resizing table model.")
+    finally:
+        qInstallMessageHandler(None)
+    err = capsys.readouterr().err
+    assert "something that matters" in err
+    assert "setPosition" not in err and "Cell requested" not in err
+
+
+def test_dates_on_screen_read_day_month_year():
+    from datetime import date
+
+    from packages.desktop.ui import labels
+
+    assert labels.day_text("2026-10-16") == "16/10/2026"
+    assert labels.day_text(date(2026, 9, 4)) == "04/09/2026"
+    assert labels.day_text("not a date") == "not a date"
