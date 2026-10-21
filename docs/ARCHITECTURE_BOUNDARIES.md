@@ -1,6 +1,6 @@
 # PasaScope Architecture Boundaries
 
-Status: current maintained architecture, v1.7.7
+Status: current maintained architecture, v1.8.0
 
 This document describes the smallest boundary that matches the code currently
 in the repository. It is intentionally not a plan for multiple services.

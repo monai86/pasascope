@@ -71,6 +71,20 @@ Public app mode on `feat/public-app`: opt-in settings that turn PasaScope into a
 - The public sign-in note no longer says a case can be deleted; it says that withdrawing a case's consent removes its recordings, which is what the app does.
 - In public sign-up mode the sign-in form drops the role tabs and the invitation-only notice, lands on Today, and states what the account stores; the organization switcher is hidden; the caregiver consent form is the confirmation tick alone.
 
+## [v1.8.0] - 2026-10-21
+
+Desktop app release: a code-editor workbench, a splash and first-start walkthrough, and one-click updates.
+
+### Desktop app
+- **A workbench like a code editor.** An activity bar (Home, Cases, Knowledge, search, Settings), a side bar with cases as a tree of their sessions, and editor tabs: each session opens in its own tab with its own place and unsaved edits (shown with ●), and closing a tab asks about edits and waits while it records or transcribes. Breadcrumbs show case › session › step. A command palette finds any case, session, Knowledge topic or command by typing (Ctrl/Cmd+Shift+P; Ctrl/Cmd+P opens a case or session). The tabs open when PasaScope closed open again next time.
+- **Light and dark themes** that follow the computer (Settings → Appearance), with colours after a code editor's 2026 themes and a blue that white text reads on; light-theme text now passes 4.5:1 contrast.
+- **A splash at every start** (the logo, what PasaScope does, what it is loading) while the database and speech recognition load in the background, and a **three-step walkthrough on a new data folder**: welcome and language, what to know, and the therapist's name. Updates keep the data folder, so it does not come back.
+- **Updates install themselves.** On macOS the new version is copied beside this one and swapped in when PasaScope quits ("Restart now" or "Later"), with the old one put back if the swap fails; on Windows the installer runs without its wizard and starts PasaScope again. Nothing needs uninstalling. This copy (1.7.7 or older) updates the old way once more.
+- **Motion:** pages fade in and short messages (toasts) say when work is saved, attested, signed or analysed; Settings → Motion follows the computer's Reduce motion.
+- **The line being played is marked** in the transcript and kept in view.
+- **Long transcripts open and save at once** (a 500-line transcript took 6.5 s; now about 50 ms); backups show progress and can be cancelled, and restore runs with a progress window.
+- Session dates read 16/10/2026 everywhere on screen.
+
 ## [v1.7.7] - 2026-10-19
 
 Desktop app release: clear playback for checking transcripts.

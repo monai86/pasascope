@@ -36,7 +36,7 @@ echo " | |_) / _\` / __|/ _\` \___ \ / __/ _ \| '_ \ / _ \\"
 echo " |  __/ (_| \__ \ (_| |___) | (_| (_) | |_) |  __/"
 echo " |_|   \__,_|___/\__,_|____/ \___\___/| .__/ \___|"
 echo "                                      |_|        "
-echo "       PasaScope (ภาษา-สโคป) — Clinical Pilot v1.7.7"
+echo "       PasaScope (ภาษา-สโคป) — Clinical Pilot v1.8.0"
 echo -e "${NC}"
 
 echo -e "${BLUE}▶ [1/4] Running Pilot Pre-flight Verification...${NC}"
