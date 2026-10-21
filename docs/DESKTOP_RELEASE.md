@@ -16,7 +16,7 @@ The app (`packages/desktop/core/updates.py`):
 3. downloads the installer into Downloads and checks it against the SHA-256 file;
 4. installs it over the running copy, without uninstalling anything:
    - macOS: mounts the disk image without a Finder window, copies the new `PasaScope.app` beside the installed one as `.PasaScope-update.app`, checks its version, then offers **Restart now** or **Later**. Once PasaScope quits, a small script waits for the process to end, swaps the two apps (putting the old one back if the swap fails) and opens the new one; the log is `~/Library/Logs/PasaScope/update.log`. If the therapist cannot write to the folder the app is in, PasaScope falls back to opening the disk image for a drag onto Applications.
-   - Windows: runs the installer with `/SILENT /SUPPRESSMSGBOXES /CLOSEAPPLICATIONS /NORESTART` and quits; the installer replaces the program files and its `WizardSilent` run entry starts PasaScope again.
+   - Windows: runs the installer with `/SILENT /SUPPRESSMSGBOXES /CLOSEAPPLICATIONS /NORESTART /relaunch=1` and quits; the installer replaces the program files and starts PasaScope again only because of `/relaunch=1` (its `RelaunchAfterUpdate` check). Other silent installs, such as the CI check, start nothing: a PasaScope started by the installer would keep PowerShell's `Start-Process -Wait` waiting for good.
 
 Cases, recordings and settings live in `~/Library/Application Support/PasaScope` (`%APPDATA%\PasaScope` on Windows), apart from the app, so an update leaves them alone and the first-start walkthrough does not return. A copy older than 1.8.0 still updates the old way once: it opens the disk image or installer for the therapist.
 

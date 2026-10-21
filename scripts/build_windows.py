@@ -135,8 +135,15 @@ Name: "{autodesktop}\PasaScope"; Filename: "{app}\python\pythonw.exe"; Parameter
 
 [Run]
 Filename: "{app}\python\pythonw.exe"; Parameters: "-s %(q)s{app}\app\PasaScope.pyw%(q)s"; WorkingDir: "{app}\app"; Description: "{cm:LaunchProgram,PasaScope}"; Flags: nowait postinstall skipifsilent
-; An update from inside PasaScope runs this installer with /SILENT; start PasaScope again afterwards.
-Filename: "{app}\python\pythonw.exe"; Parameters: "-s %(q)s{app}\app\PasaScope.pyw%(q)s"; WorkingDir: "{app}\app"; Flags: nowait; Check: WizardSilent
+; An update from inside PasaScope runs this installer with /SILENT /relaunch=1; start PasaScope again
+; afterwards. Other silent installs (such as CI) pass no /relaunch and nothing is started.
+Filename: "{app}\python\pythonw.exe"; Parameters: "-s %(q)s{app}\app\PasaScope.pyw%(q)s"; WorkingDir: "{app}\app"; Flags: nowait; Check: RelaunchAfterUpdate
+
+[Code]
+function RelaunchAfterUpdate: Boolean;
+begin
+  Result := WizardSilent and (ExpandConstant('{param:relaunch|0}') = '1');
+end;
 """
 
 

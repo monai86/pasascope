@@ -278,7 +278,8 @@ def start_macos_swap(bundle: Path, staged: Path, pid: int, relaunch: bool = True
     return script
 
 
-WINDOWS_SILENT_ARGS = ("/SILENT", "/SUPPRESSMSGBOXES", "/CLOSEAPPLICATIONS", "/NORESTART")
+# /relaunch=1 asks the installer to start PasaScope again when it is done (see build_windows.py).
+WINDOWS_SILENT_ARGS = ("/SILENT", "/SUPPRESSMSGBOXES", "/CLOSEAPPLICATIONS", "/NORESTART", "/relaunch=1")
 
 
 def start_windows_install(installer: Path) -> None:
