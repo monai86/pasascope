@@ -196,6 +196,28 @@ figure { margin: 0; }
 .download-card li + li { margin-top: 6px; }
 .checksum { text-align: center; color: var(--gray); font-size: 14px; margin-top: 40px; }
 
+/* ----------------------------------------------------- small pieces */
+.eyebrow-thai { font-weight: 400; color: var(--gray-on-dark); margin-left: 6px; }
+.demo-note { text-align: center; color: var(--gray); font-size: 12px; margin-top: 28px; }
+code { font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; font-size: 0.88em; background: rgba(0, 0, 0, 0.05); padding: 1px 5px; border-radius: 5px; }
+.section-dark code { background: rgba(255, 255, 255, 0.1); }
+.install-shot { margin-top: 16px; }
+.install-shot img { border-radius: 10px; box-shadow: 0 0 0 1px rgba(0, 0, 0, 0.08); }
+
+.faq details { border-top: 1px solid var(--line); }
+.faq details:last-child { border-bottom: 1px solid var(--line); }
+.faq summary {
+  cursor: pointer; list-style: none; padding: 22px 36px 22px 0; position: relative;
+  font-size: 21px; font-weight: 600; line-height: 1.2;
+}
+.faq summary::-webkit-details-marker { display: none; }
+.faq summary::after {
+  content: "+"; position: absolute; right: 4px; top: 50%; transform: translateY(-50%);
+  font-size: 28px; font-weight: 300; color: var(--gray); transition: transform 200ms ease;
+}
+.faq details[open] summary::after { transform: translateY(-50%) rotate(45deg); }
+.faq details p { color: var(--gray); padding: 0 0 24px; max-width: 720px; }
+
 /* -------------------------------------------------------------- footer */
 .footer { background: var(--alt); color: var(--gray); font-size: 12px; padding: 22px 0 40px; border-top: 1px solid var(--line); }
 .footer p + p { margin-top: 8px; }

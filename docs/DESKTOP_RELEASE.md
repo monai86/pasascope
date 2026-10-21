@@ -22,7 +22,7 @@ Cases, recordings and settings live in `~/Library/Application Support/PasaScope`
 
 ## Download page
 
-`site/` is the public download page, published to GitHub Pages (`https://monai86.github.io/pasascope/`) by `.github/workflows/pages.yml` whenever `site/` changes on `main`. It is static: in the browser it reads the latest release from the GitHub API and links its `.dmg` and Windows installer directly, with their sizes, so a new release needs no change to the page. It offers the file for the visitor's computer first and falls back to the Releases page when the API cannot be reached. The page is in Thai and English (`?lang=en`), and its screenshots in `site/assets/` come from the demonstration data (`scripts/seed_desktop_demo.py`).
+`site/` is the public download page, published to GitHub Pages (`https://monai86.github.io/pasascope/`) by `.github/workflows/pages.yml` whenever `site/` changes on `main`. It replaces the earlier page on the `gh-pages` branch: the repository's Pages source is set to GitHub Actions (`gh api -X PUT repos/monai86/pasascope/pages -f build_type=workflow`), and `gh-pages` is kept only as history. It is static: in the browser it reads the latest release from the GitHub API and links its `.dmg` and Windows installer directly, with their sizes, so a new release needs no change to the page. It offers the file for the visitor's computer first and falls back to the Releases page when the API cannot be reached. The page is in Thai and English (`?lang=en`), and its screenshots in `site/assets/` come from the demonstration data (`scripts/seed_desktop_demo.py`).
 
 ## Build
 

@@ -16,9 +16,9 @@
   let saved = null;
   try { saved = localStorage.getItem("pasascope-lang"); } catch (_) { /* private mode */ }
   const wanted = new URLSearchParams(location.search).get("lang");
-  // ?lang= first, then the visitor's earlier choice, then Thai (the page is for Thai therapists).
+  // ?lang= first, then the visitor's earlier choice, then English (Thai is one click away).
   const choice = [wanted, saved].find((code) => code === "th" || code === "en");
-  setLanguage(choice || "th");
+  setLanguage(choice || "en");
   document.querySelectorAll("[data-lang-toggle]").forEach((button) =>
     button.addEventListener("click", () => setLanguage(root.dataset.lang === "th" ? "en" : "th")));
 
