@@ -12,6 +12,10 @@ on:
         description: "Attach the installer to this existing release (e.g. v1.7.5); leave empty to keep it as an artifact only"
         required: false
         default: ""
+      build_ref:
+        description: "Build from this branch or commit instead of the release tag (for an installer fix made after tagging); the app version must still match the tag"
+        required: false
+        default: ""
   release:
     types: [published]
   push:
@@ -37,7 +41,7 @@ jobs:
       - name: Check out code
         uses: actions/checkout@v4
         with:
-          ref: ${{ github.event.release.tag_name || inputs.release_tag || github.ref }}
+          ref: ${{ inputs.build_ref || github.event.release.tag_name || inputs.release_tag || github.ref }}
 
       - name: Set up Python 3.12
         uses: actions/setup-python@v5

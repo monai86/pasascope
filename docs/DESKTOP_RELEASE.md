@@ -83,7 +83,7 @@ The package versions both builds use come from `scripts/desktop_bundle/constrain
    ```
 
    The notes are shown in the app's update window. GitHub accepts files up to 2 GB.
-4. Wait for the "Desktop Windows installer" workflow to attach the Windows files (`gh run list --workflow desktop-windows.yml`). If it did not run, start it for the release: `gh workflow run desktop-windows.yml -f release_tag=vX.Y.Z`.
+4. Wait for the "Desktop Windows installer" workflow to attach the Windows files (`gh run list --workflow desktop-windows.yml`). If it did not run, start it for the release: `gh workflow run desktop-windows.yml -f release_tag=vX.Y.Z`. That builds from the tag. If an installer fix landed after tagging, add `-f build_ref=main` to build from main (the app version must still match the tag); say so in the release notes.
 5. Check the release from a copy of the previous version: Help → "Check for updates…".
 
 Publishing a release makes it public, and every installed copy will offer it. It needs the project owner's go-ahead.
