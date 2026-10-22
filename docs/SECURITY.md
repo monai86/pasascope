@@ -1,102 +1,41 @@
-# Security Operations
+# Security
 
-This project is a research/demo prototype. Production clinical use requires a
-separate security review before any real child data or audio is entered.
+PasaScope is a research prototype. Using it with real children's data needs a
+separate review by the clinic (consent forms, device security, retention).
 
-## Required Controls
+## Where data lives
 
-- Enforce provider-backed authentication and role claims. Disable mock accounts.
-- Filter every clinical query by `owner_user_id` unless the verified user role is `admin`.
-- Keep audio/video objects in private encrypted storage.
-- Return only short-lived signed URLs to the browser; never expose permanent storage keys.
-- Require granted consent before secure upload or backend audio processing.
-- Keep the additive assessment foundation on its own database URL and Alembic
-  history; never import, rewrite, or delete v1 records during v2 rollout.
-- Treat Supabase Auth as the identity source, FastAPI as the authoritative
-  organization/role/care-team/consent policy layer, and PostgreSQL RLS as
-  defense in depth. The v2 service is not a diagnostic engine and exposes no
-  ASD probability.
-- Set PostgreSQL tenant context transaction-locally and verify that pooled
-  connections do not retain a previous organization context.
-- Keep audit-log reads admin-only through a backend/service-role path.
-- Log workflow events without transcript text, audio bytes, direct identifiers, or storage keys.
-- Log request paths as route templates or sanitized paths only. Disable
-  access-style dependency logs that emit raw URLs at INFO level.
-- Configure CORS allowed origins explicitly per environment. Production must
-  reject wildcard or empty origin lists, and unsafe HTTP methods must reject
-  untrusted browser origins with a generic 403 response.
-- Store production database, Redis, storage, provider, and signing credentials in
-  a managed secret store. Production startup must fail closed when demo/default
-  database or Redis URLs, local repositories, local storage, or in-memory queues
-  are configured, when the secret-store provider is not approved, or when no
-  credential rotation runbook is configured.
-- Enable managed database backups and point-in-time recovery before real data.
-  Restore drills must meet the RPO/RTO in `docs/BACKUP_RESTORE_RUNBOOK.md` and
-  preserve audit/sign-off evidence.
-- An account holder deletes their own account with `DELETE /api/v1/account`:
-  recordings first, then every record of the workspace including its audit
-  events and reports, then the Supabase Auth user; one content-free audit event
-  records the deletion (ADR 0023). Consent withdrawal on a case still removes
-  that case's recordings and unlinks its outputs.
-- Two-step verification is optional per account. Once an account has a
-  verified authenticator, the API refuses its `aal1` sessions; the check needs
-  the Supabase service role key (ADR 0023).
-- Stop rollout immediately for cross-tenant exposure, consent bypass, audit
-  loss, or fabricated ASR output. Follow `docs/INCIDENT_RESPONSE_RUNBOOK.md` and
-  keep child identifiers, transcript text, audio content, storage keys, and
-  report excerpts out of incident tools.
-- Keep in-app notifications and email generic. Use the API notification safety
-  validator before sending messages, and never include child identifiers,
-  transcript text, audio content, storage keys, raw filenames, report excerpts,
-  or clinical content.
-- Audit events must include actor, action, target, outcome, timestamp, and
-  correlation ID. Use the API audit safety validator before persisting events,
-  and keep clinical content out of audit messages.
-- Production observability must use an approved provider such as Sentry,
-  CloudWatch, or OTLP and a configured critical alert route. Telemetry tags,
-  measurements, and details must stay operational-only and pass the API
-  observability safety validator before export.
-- Run repository consistency and secret scanning before test/deploy jobs.
-- Run dependency audits for Python and the maintained Therapist frontend before
-  production release. CI treats unresolved critical/high findings as blocking.
-- Follow `docs/SECRET_ROTATION_RUNBOOK.md` for credential rotation and drills.
-  Never copy secret values or clinical content into tickets, logs, chat, or
-  repository files.
+- Everything stays on the therapist's computer: a SQLite database and an audio
+  folder in the user's application-data folder
+  (`~/Library/Application Support/PasaScope` on macOS, override with
+  `PASASCOPE_DESKTOP_HOME`). Nothing is sent to a server.
+- Transcription runs on the computer (Whisper). Model files are downloaded on
+  first use and every file is checked against its SHA-256
+  (`packages/desktop/core/models.py`).
+- Updates come from GitHub Releases and are checked against the published
+  SHA-256 before they are opened (`packages/desktop/core/updates.py`).
+- Backups (`packages/desktop/core/backup.py`) are plain zip files that contain
+  recordings and transcripts. They are **not encrypted**; keep them on an
+  encrypted disk (FileVault/BitLocker).
 
-## Local Security Checks
+## Rules the code keeps
 
-```bash
-python scripts/security_scan.py
-pip-audit -r requirements.txt -r apps/api/requirements.txt
-cd apps/pasascope-app && npm audit --audit-level=high
-```
+- No session or recording before the caregiver's consent is `granted`;
+  withdrawing consent removes that case's recordings.
+- Every change writes an audit event with actor, action, target, outcome and
+  time, and no transcript text, audio, names or file names.
+- Reports pass the report safety check before sign-off; signed reports are
+  immutable snapshots with a SHA-256 hash.
+- Logs contain no child identifiers, transcript text, audio or file names.
+- The clinic speaker model is trained only on that computer's attested
+  sessions and is never shared between clinics.
 
-The secret scanner reports only file path, line number, and finding category. It
-does not print matched secret values.
+## Repository rules
 
-## Monitoring
-
-Track auth failures, 403/404 access-denial spikes, upload-intent failures,
-processing-job failures, storage errors, report export volume, and privacy
-operation queue age. Production startup fails closed when observability is
-disabled, the provider is not approved, or no critical alert route is configured.
-Do not send child identifiers, transcript text, audio content, storage keys, raw
-filenames, report excerpts, or clinical content to error/metrics providers.
-
-## Log Retention
-
-Use `LOG_RETENTION_DAYS` for application logs. Audit events are kept for the
-life of the workspace; deleting an account removes its audit events with the
-rest of its records and keeps one event that the deletion happened.
-
-## Incident Response
-
-1. Disable affected API credentials, storage keys, or auth provider clients.
-2. Pause new uploads and backend processing jobs.
-3. Preserve audit logs and relevant operational logs.
-4. Identify affected `case_id`, `session_id`, and `file_object_id` records.
-5. Notify the responsible project owner and clinic/privacy contact.
-6. Patch, redeploy, and record the incident outcome before re-enabling uploads.
-
-See `docs/INCIDENT_RESPONSE_RUNBOOK.md` for stop-rollout criteria and drill
-requirements.
+- Never commit real child data, audio, credentials or `.env` files.
+- `python scripts/security_scan.py` scans for secrets (prints file, line and
+  category only, never the value). CI runs it on every push.
+- `pip-audit -r requirements.txt -r apps/api/requirements.txt` checks
+  dependencies; CI treats high/critical findings as blocking.
+- Report a problem through GitHub Issues without attaching audio, names or
+  anything that identifies a child.

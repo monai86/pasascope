@@ -2,148 +2,39 @@
 
 Current maintained version: `v1.8.0`.
 
-This project is an AI-assisted speech-language clinical decision-support prototype for therapist review, language sample analysis, transcript QA, guideline-linked interpretation, and Progress Report generation. It is not a diagnostic device and has not been clinically validated for Thai children.
+PasaScope is a research prototype that helps a speech-language therapist turn a
+recording or transcript of a child's speech into a reviewed transcript,
+descriptive language-sample measures, review cues and a signed session report.
+It is not a diagnostic device and has not been clinically validated for Thai
+children.
 
-## Current Deliverable Status
+## Deliverable
 
-- pasascope (`apps/pasascope-app` + `apps/api`): primary deliverable
-  and main demo surface.
-- Python ML and audio pipeline: research and prototype support code, not a
-  deployed clinical system.
-- Legacy benchmark and demo surfaces removed from the working tree to keep the
-  repository aligned with the current therapist workflow.
-- Legacy Vite/Capacitor therapist app: removed from Git.
-- Legacy `src/therapist_backend`: retained only for research compatibility and
-  its existing tests.
+- **Desktop program** (`packages/desktop/`): the term paper's main deliverable.
+  Released as v1.8.0 for macOS (`.dmg`) and Windows (installer), with in-app
+  updates from GitHub Releases. One computer, SQLite, no server.
+- **Shared service layer** (`apps/api/app/services`): consent checks, measures,
+  review cues, report drafting, report safety check and audit events, called
+  in-process by the desktop program.
+- **Evaluation** (`reports/metrics/`, summary in `EVALUATION_SUMMARY.md`):
+  agreement with CLAN on 1,961 transcripts, Thai ASR accuracy, child/adult
+  speaker attribution, echolalia cue check, turn-taking reference values.
+- The paused web app, the Tkinter GUI, the TUI and the legacy research API were
+  removed from the working tree on 2026-10-23 (git tag `web-app-final`).
 
-## Current Strengths
+## Open items
 
-- Human-in-the-loop transcript review and sign-off workflow.
-- On-device Whisper transcription with child/adult speaker separation for
-  uploaded recordings in the web app (opt-in), producing a draft the therapist
-  must correct and attest.
-- Thai language-sample features, echolalia cues and pronoun cues are computed
-  by one shared rule set in the web app and the desktop GUI.
-- `scripts/evaluate_thai_asr.py` scores ASR drafts against hand-corrected Thai
-  transcripts and reports feature drift.
-- Mock/demo mode with seeded therapist cases and sessions.
-- Reviewed-only report eligibility boundary for decision-support outputs.
-- Shared Guideline Mapping Catalog for feature-to-construct mapping.
-- Safety wording that separates research model results from clinical decision support.
-- One documented runtime source of truth shared across Codex and Antigravity.
-- Gate 1 reference-evidence candidate passes the engineering promotion gate,
-  while clinical and diagnostic claims remain explicitly blocked.
-- Phase 0 production architecture freeze artifacts are documented: Supabase
-  Auth/Postgres/private Storage plus FastAPI as clinical policy boundary,
-  responsive web/PWA-only direction, threat model, data-flow diagram, and data
-  classification inventory.
-- One-day production-like pilot scope is documented in
-  `docs/ONE_DAY_PILOT_SCOPE.md` and `docs/ONE_DAY_PILOT_RUNBOOK.md`, with
-  local/SQL tenant scaffolding, backend organization/care-team guards, and
-  local-private upload intents for pilot use only.
-- Phase 1 tenant isolation foundation now includes SQL model/migration support
-  for organization settings, memberships, care-team assignments, identity
-  profiles, retention policies, consent records, notifications, job attempts,
-  organization-scoped clinical child records, broader backend route guards, and
-  PostgreSQL RLS policy SQL as defense-in-depth.
-- Phase 2 auth foundation now includes a backend Supabase Auth scaffold,
-  JWT claim contract, production JWT secret/issuer guard, invitation/MFA/active
-  membership checks, break-glass claim validation, backend invitation lifecycle,
-  membership revocation, scoped audited break-glass case access, and a
-  pasascope Settings/Admin Pilot Access Lifecycle console for local admin workflow
-  demonstration.
-- Backend organization-admin endpoints can add/list local memberships and assign
-  case care-team members with cross-tenant denial and audit tenant tagging.
-- `scripts/check_project.sh` provides focused local verification for repository
-  consistency, secret scan, Python core tests, API migration smoke, frontend
-  unit tests, and production build. It is not a complete CI/release attestation:
-  dependency audits, the Python matrix, frontend lint/typecheck, UI audit, full
-  Playwright suites, and the benchmark gate remain complete-candidate lanes.
-- The analysis-only Python boundary now includes deterministic CHAT subset
-  semantic round-trip checks, a versioned Thai/mixed tokenizer profile,
-  descriptive child-only features, structured QA limitations/blockers, and
-  checksum/version provenance plus a synchronous execution seam without taking
-  ownership of product workflows.
-- Feature Schema v2 now has an explicit additive output contract: every input
-  preserves its legacy v1 values while the 8 new conversation fields have
-  numeric parity across supported transcript inputs. Exports are synchronized
-  and checksum-bound. Model comparisons remain exploratory and show mixed
-  deltas plus strong corpus confounding.
+- No recordings of Thai children aged 2;6–7 years have been evaluated yet.
+- The therapist usability test has not been run; the protocol is ready
+  (`docs/PILOT_USABILITY_PROTOCOL.md`).
+- No real transcript review-time data yet
+  (`scripts/report_transcript_review_time.py --desktop`).
 
-## Current Limitations
+## Limitations
 
-- The system does not diagnose ASD and cannot confirm or rule out ASD.
-- The model was evaluated on public English-language datasets, not validated as a clinical model for Thai children.
-- The audio-to-CHAT pipeline is experimental and requires therapist transcript review.
-- ASR accuracy on Thai child speech is unmeasured beyond a small local sample
-  set; no recordings of real children are part of the repository.
-- The extracted transcript analysis contract has a synchronous research
-  execution seam but is not yet connected to a product API, production job
-  runner, or therapist workflow.
-- Guideline-linked findings provide construct linkage and review cues only; no project-verified Thai thresholds or norms are applied.
-- Acoustic/prosody features are exploratory/display-only unless separately validated.
-- SQL persistence, production authentication, monitoring, and managed private
-  object storage still require production hardening beyond the one-day pilot,
-  Phase 1 tenant/RLS foundation, and local Supabase Auth scaffold. Durable
-  asynchronous analysis execution is not a current requirement; add it only
-  when measured execution time or workload makes synchronous execution
-  unsuitable.
-- Gate 1 is an engineering validation on proxy labels and public English
-  corpora, not clinical validation.
-- pasascope currently uses Next.js 16.3.5, React 19, and Node.js 22.x. CI runs
-  type checking, linting, tests, a production build, and blocking dependency
-  audits before deployment.
-- AI report drafting through non-template providers is gated behind explicit
-  opt-in and records provider/input provenance, but full vendor governance,
-  region controls, and legal review are still required before production use.
-- API rate limiting now has an opt-in in-memory foundation with generic 429
-  responses; public production still needs managed edge/API-gateway enforcement
-  and alerting.
-- CI includes repository consistency and secret scanning before test/deploy
-  jobs. Python and frontend dependency audits are blocking gates for unresolved
-  high/critical findings. Backend deployment hooks run only on successful pushes
-  to `main` after all security, backend-matrix, frontend, UI, E2E, and benchmark
-  jobs; repository branch protection still requires owner-side configuration.
-- Structured API request logging now records route templates or sanitized paths
-  and suppresses INFO-level HTTP access logs that can include raw clinical URLs.
-- CORS allowed origins are now server-configurable, production rejects wildcard
-  or empty origins, and unsafe browser-origin writes are protected by an Origin
-  guard.
-- Production runtime validation now rejects demo/default database or Redis URLs,
-  local repositories, local storage, and in-memory queues when mock mode is off.
-- API migration smoke checks now verify Alembic head on a fresh database, and
-  `docs/BACKUP_RESTORE_RUNBOOK.md` defines the RPO/RTO restore drill gate.
-- `docs/INCIDENT_RESPONSE_RUNBOOK.md` now defines stop-rollout criteria for
-  cross-tenant exposure, consent bypass, audit loss, and fabricated ASR output.
-- Notification/email safety now has a backend validator that blocks child
-  identifiers, transcript text, audio/storage keys, raw filenames, and clinical
-  content from outbound operational messages.
-- Audit events now carry actor, action, target, outcome, timestamp, and
-  correlation ID fields with backend validation against clinical content.
-- Production observability now requires an approved provider and critical alert
-  route when mock mode is off, with backend validation for privacy-safe telemetry
-  metadata.
-- Privacy deletion-review requests now include retention days, legal-hold state,
-  eligible deletion timestamps, completion timestamps, and retained-evidence
-  summaries while preserving audit/sign-off evidence.
-- Production runtime validation now requires an approved managed secret-store
-  provider and credential rotation runbook reference when mock mode is off.
-- Phase 0 architecture artifacts are written and Phase 1 tenant/RLS plus Phase
-  2 auth scaffolds exist locally, including backend invitation/revocation and
-  audited break-glass workflow foundations, but implementation evidence is still
-  missing for real Supabase Auth/MFA project configuration, managed Postgres RLS
-  verification, private Storage, provider integrations, infrastructure, and
-  controlled rollout gates. A durable worker remains deferred until an actual
-  asynchronous workload requires it.
+See [`KNOWN_LIMITATIONS.md`](./KNOWN_LIMITATIONS.md). In short: no diagnosis,
+no verified Thai norms or cutoffs, ASR drafts must be corrected by the
+therapist, and Gate 1 of the earlier ML work is an engineering check on public
+English corpora, not clinical validation.
 
-## Canonical Demo Path
-
-The recommended demo path is the Therapist Five-Step Workflow:
-
-1. Open case
-2. Add session
-3. Upload file
-4. Review transcript
-5. Generate Progress Report
-
-See `docs/PROJECT_SOURCE_OF_TRUTH.md` for the exact active/legacy boundaries.
+See `docs/PROJECT_SOURCE_OF_TRUTH.md` for the rules every change must follow.

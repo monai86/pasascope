@@ -125,17 +125,10 @@
 > **ใช้เพรถะ:** pandas library ที่เราใช้จัดการ DataFrames ทั้งหมด
 
 **Hunter, J. D. (2007).** Matplotlib: A 2D graphics environment. *Computing in Science & Engineering, 9*(3), 90-95.
-> **ใช้เพรถะ:** matplotlib ที่เราใช้สร้าง plots ใน eda.py
+> **ใช้เพรถะ:** matplotlib ที่เราใช้สร้างกราฟในรายงานผลการประเมิน
 
 **Waskom, M. (2021).** seaborn: statistical data visualization. *Journal of Open Source Software, 6*(60), 3021.
 > **ใช้เพรถะ:** seaborn ที่เราใช้สร้าง visualizations ใน dashboard
-
----
-
-## 8. Deployment & Web Framework
-
-**Docker. (n.d.).** *Docker: Container platform.* Retrieved from https://www.docker.com/
-> **ใช้เพรถะ:** Containerization สำหรับ deployment (Dockerfile)
 
 ---
 

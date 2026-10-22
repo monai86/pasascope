@@ -1,117 +1,51 @@
-# PasaScope Architecture Boundaries
+# PasaScope Architecture
 
-Status: current maintained architecture, v1.8.0
+Status: v1.8.0, desktop program.
 
-This document describes the smallest boundary that matches the code currently
-in the repository. It is intentionally not a plan for multiple services.
-
-## Current product flow
+PasaScope is one program on one computer. It has four layers that run in the
+same process (term paper Figure 4.1):
 
 ```mermaid
-flowchart LR
-    Browser[Next.js therapist app]
-    API[FastAPI workflow API]
-    Data[(Postgres / Supabase)]
-    Auth[Supabase Auth]
-    Storage[Private Storage]
-    Research[Python research and analysis code]
+flowchart TB
+    UI["PySide6 interface<br/>packages/desktop/ui"]
+    Core["DesktopService<br/>packages/desktop/core"]
+    Services["Shared service layer<br/>apps/api/app/services"]
+    Engine["AI and language rules<br/>src/audio_pipeline, src/clinical_speech,<br/>packages/features, packages/cha"]
+    Data[("SQLite + audio folder<br/>application-data folder")]
 
-    Browser -->|UI, forms, session state, one HTTP client| API
-    Browser -->|Auth session only| Auth
-    API --> Data
-    API --> Storage
-    API -.->|future analysis job boundary| Research
+    UI --> Core
+    Core -->|consent check, audit event| Services
+    Services --> Engine
+    Core --> Data
+    Services --> Data
 ```
 
-### Next.js application
+## Layers
 
-`apps/pasascope-app/` owns the browser-facing product surface:
+- **Interface** (`packages/desktop/ui`): windows, session tabs, waveform
+  review, measures, report preview and PDF. Long work runs on a background
+  thread (`TaskRunner`) with a progress window. No clinical logic here.
+- **DesktopService** (`packages/desktop/core`): the only door from the
+  interface to the data. One mixin per part of the workflow in
+  `core/workflow/` (cases, recordings, transcripts, findings, reports,
+  settings, clinic speaker model, maintenance). It checks consent and writes
+  audit events, then calls the service layer. It has no formulas of its own.
+- **Service layer** (`apps/api/app/services`): transcripts and attestation,
+  feature extraction, review cues, report drafting (`template_th`,
+  `template_clinic_en`), the report safety check, consent and audit rules. The
+  same code once served the web app; its FastAPI routes remain in `apps/api`
+  and are covered by `apps/api/tests`.
+- **Engine**: Whisper transcription, voice activity detection, child/adult
+  speaker split, utterance boundaries, CHAT output (`src/audio_pipeline`);
+  Thai language-sample rules (`src/clinical_speech/thai_lsa.py`); measures
+  (`packages/features`); CHAT parsing and the Thai word list (`packages/cha`).
 
-- UI, routing, navigation, and responsive behavior;
-- browser authentication/session integration and MFA gating;
-- React Hook Form/Zod validation at the form boundary;
-- workflow orchestration and display of API results;
-- one HTTP client boundary in `src/lib/api.ts`.
+## Boundaries
 
-The browser does not read clinical tables directly, create ML results, or
-finalize reports. It may use Supabase Auth and consume short-lived signed URLs
-issued by the API.
-
-### FastAPI workflow API
-
-`apps/api/` is the current authoritative clinical policy boundary. This is
-explicitly frozen by ADR 0015 while the product is still using the existing
-FastAPI workflow API. It owns:
-
-- authenticated clinical CRUD and authorization checks;
-- consent, tenant, care-team, audit, and report-safety rules;
-- upload-intent orchestration and signed URL mediation;
-- lightweight workflow jobs and current provider orchestration.
-
-New product endpoints belong here, not in `src/therapist_backend/` or
-`src/clinical_workflow/`, which remain legacy/research compatibility surfaces.
-
-### Supabase
-
-Supabase is the managed backing platform for the eventual production path:
-
-- PostgreSQL for persisted records;
-- Auth for user sessions and MFA;
-- private Storage for audio and other sensitive files.
-
-Service-role credentials stay server-side. RLS is defense in depth; FastAPI
-authorization remains required. Realtime is not part of the default boundary.
-
-### Python analysis boundary
-
-`src/`, `packages/`, and research scripts contain scientific computation such as
-audio preprocessing, CHAT parsing, feature extraction, acoustic/prosody work,
-and research evaluation. They are not a second product API and are not imported
-by browser code.
-
-The small `packages/analysis_contract/` module defines the future handoff shape:
-opaque input/session references, pipeline and feature-schema versions, optional
-model version, timestamp, feature values, warnings, and explicit abstention
-states. It has no FastAPI, database, auth, or storage dependency and is not
-wired into the current workflow yet.
-
-The current Python layer is local/CI research tooling. It is not deployed as a
-separate production service today. If heavy processing later exceeds the API
-runtime budget, introduce one small analysis service behind FastAPI with an
-explicit job payload and result schema. Do not split it into audio, transcript,
-feature, ML, and report microservices.
-
-Every future persisted analysis result should carry explicit provenance fields:
-
-- `pipeline_version`;
-- `feature_schema_version`;
-- `model_version` when a model is used;
-- analysis timestamp and input/session reference.
-
-No new ML model, queue platform, vector database, or analysis microservice is
-required by the current application.
-
-## Deployment posture
-
-| Surface | Current posture | Boundary rule |
-| --- | --- | --- |
-| Next.js app | Standard `next build` is the Vercel contract; OpenNext/Cloudflare is an explicit staging path | Keep heavy audio/ML work out of edge/serverless functions |
-| FastAPI API | Separate Python runtime/service | Keep clinical policy, CRUD, storage mediation, and jobs here |
-| Supabase | Managed Postgres/Auth/private Storage target | Never expose service-role keys to the browser |
-| Python research | Local/CI only today | Add one analysis boundary only when real workload requires it |
-
-The progression for asynchronous scientific work is deliberately incremental:
-
-1. synchronous execution while runtime is acceptable;
-2. a database-backed `analysis_jobs` record and one worker when needed;
-3. a dedicated queue only after measured workload proves the database-backed
-   approach insufficient.
-
-The legacy API worker has two concrete queue adapters: in-memory for local
-tests/demo runs and Redis for a managed worker deployment. Capture V2 is a
-separate database-backed worker: it claims `processing_runs` directly with
-row-level locking and does not use the legacy Redis contract. A dedicated
-Capture V2 queue adapter can be added only after its enqueue, lease, retry, and
-acknowledgement semantics are implemented and tested. The worker must poll
-through a tenant allowlist (`PASASCOPE_CAPTURE_WORKER_ORGANIZATION_IDS`) so
-PostgreSQL RLS is never bypassed by an unscoped tenant-discovery query.
+- The interface never writes to the database directly.
+- Every measure comes from one implementation; the desktop program must not
+  add a second formula.
+- Every automated output (transcript draft, measures, cues, report draft) is a
+  draft until the therapist reviews it.
+- No network calls except model downloads and update checks, both verified by
+  SHA-256.

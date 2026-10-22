@@ -2,6 +2,12 @@
 
 ## [Unreleased]
 
+### Removed
+- **Repository cleanup (2026-10-23).** The working tree now holds only what the desktop program and the term paper need. Removed: the paused Next.js web app (`apps/pasascope-app`), `shared/`, its deploy setup (`Dockerfile`, `docker-compose*.yml`, `render.yaml`, `deploy/`, `.env.example`), the Supabase, staging and SaaS scripts and documents, the Tkinter GUI (`packages/gui`, `./run_gui.sh --legacy`), the TUI (`packages/tui`, `run_tui.sh`), the legacy research API (`src/therapist_backend`, `src/clinical_workflow` and the modules only it used), `packages/analysis_contract`, `packages/clinical_speech_artifacts`, `packages/reports`, `clinical-guidelines/`, old plans, handoffs and progress reports, and the tests of all of these. Everything is kept at git tag `web-app-final`. AI agent tool folders (`.agents/`, `.windsurf/`) are no longer tracked. The desktop program, the service layer in `apps/api`, the evaluation scripts and `reports/metrics` are unchanged.
+- CI (`.github/workflows/ci.yml`, formerly `deploy.yml`) runs the consistency check, secret scan, dependency audit and Python tests only; the web build, Playwright, benchmark and deploy jobs are gone.
+
+## Web app work after v1.7.2 (never released; removed on 2026-10-23)
+
 Public app mode on `feat/public-app`: opt-in settings that turn PasaScope into a sign-up-and-use web app. The defaults keep the invitation-only, gated behaviour.
 
 ### Added

@@ -1,136 +1,59 @@
 # Development Workflow
 
-Read these files before changing the project:
+Read first: `AGENTS.md`, `docs/PROJECT_SOURCE_OF_TRUTH.md`, `README.md`.
+Setup: `DEVELOPER_SETUP.md`.
 
-1. `AGENTS.md`
-2. `docs/PROJECT_SOURCE_OF_TRUTH.md`
-3. `README.md`
-4. the relevant component documentation
+## Branches
 
-## Branch and workspace discipline
+- `main` is the integration branch; a push to `main` runs CI (`ci.yml`) and,
+  when `site/` changes, redeploys the download page.
+- Use a feature branch for multi-session or risky work. Check
+  `git status --short` and the branch before editing.
+- Delete merged branches and stale worktrees.
 
-- `main` is the integration branch.
-- Use a feature branch for multi-session or high-risk work.
-- Before editing, run `git status --short` and confirm the active branch.
-- Worktrees and subagent branches are temporary. Merge verified work into
-  `main`, then delete obsolete local branches/worktrees.
-- Never use generated files as the source of truth.
+## Where code goes
 
-## Canonical paths
+- Screens and interaction: `packages/desktop/ui`
+- Workflow steps, consent and audit: `packages/desktop/core/workflow/<part>.py`
+- Clinical logic (measures, cues, reports, safety checks): `apps/api/app/services`
+  so there is one implementation
+- Audio and language rules: `src/audio_pipeline`, `src/clinical_speech`,
+  `packages/features`, `packages/cha`
+- Evaluation: a script in `scripts/` that writes to `reports/metrics/`
 
-- Product frontend: `apps/pasascope-app`
-- Product API: `apps/api`
-- Research ML/audio: `packages`, `src`, `scripts`
-- Legacy compatibility only: `src/therapist_backend`,
-  `src/clinical_workflow`
-
-Changing these boundaries requires an ADR and updates to
-`docs/PROJECT_SOURCE_OF_TRUTH.md`, `README.md`, and `AGENTS.md`.
-
-## Local setup
-
-```bash
-python3 -m venv .venv
-source .venv/bin/activate
-pip install -r requirements.txt
-pip install -r apps/api/requirements.txt
-```
-
-Frontend dependencies are installed independently:
-
-```bash
-cd apps/pasascope-app && npm ci
-```
-
-Use Node.js 22.x. Supported Python versions are 3.11–3.13; Python 3.12 is
-preferred.
-
-## Run
-
-```bash
-# Terminal 1
-cd apps/api
-PYTHONPATH=.:../..:../../src uvicorn app.main:app --reload --port 8000
-
-# Terminal 2
-cd apps/pasascope-app
-NEXT_PUBLIC_API_BASE_URL=http://localhost:8000/api/v1 npm run dev
-```
+Changing these boundaries needs an ADR (`docs/adr/`) and updates to
+`docs/PROJECT_SOURCE_OF_TRUTH.md`, `README.md` and `AGENTS.md`.
 
 ## Verification
-
-### Focused local verification
-
-Use the maintained focused local project check for repository consistency,
-secret scanning, Python imports/core tests/migration smoke, and frontend unit
-tests plus a production build:
 
 ```bash
 bash scripts/check_project.sh
 ```
 
-It does not run dependency audits, the Python version matrix, frontend lint or
-typecheck, the UI design audit, the full Playwright suites, or the benchmark
-gate. Do not use it alone as release or deployment evidence.
+It runs the consistency check, the secret scan, import checks, all Python
+tests (Qt tests in their own process) and the migration smoke check. CI adds
+the Python 3.11/3.12/3.13 matrix and `pip-audit`.
 
-### Complete CI candidate gates
+## Do not commit
 
-The complete candidate is the green `Test and Deploy CI/CD` workflow. It adds
-dependency audits, Python 3.11/3.12/3.13 coverage, frontend lint/typecheck,
-the UI design audit, the full therapist and demo Playwright suites, and the
-transcript benchmark plus baseline gate. Pull requests receive those checks;
-the backend deployment hook is reserved for a successful push to `main`.
+`dist/`, `.local/`, `.venv*/`, `models/*`, `node_modules/`, `__pycache__/`,
+audio files, databases, credentials, private corpus mirrors.
 
-### Compose
+## Documentation and versions
 
-The default Compose stack starts the frontend, API, and PostgreSQL services.
-It intentionally contains no Redis or dedicated worker service. Asynchronous
-queue processing is deferred until measurement justifies it and a complete
-API-to-worker lifecycle has been separately designed and verified:
+- Update `README.md` when setup, structure or user-facing behavior changes.
+- Update `CHANGELOG.md` for behavior, dependency or release changes.
+- Version `v1.8.x`; the version string must match in `README.md`,
+  `PROJECT_STATUS.md`, `pyproject.toml` and `CHANGELOG.md`.
 
-```bash
-docker compose up
-```
+## Commits
 
-## Generated and local-only files
-
-Do not commit:
-
-- `.next/`
-- `dist/`
-- `.local/`
-- `node_modules/`
-- `*.tsbuildinfo`
-- caches, logs, uploaded media, credentials, or private corpus mirrors
-
-Runtime JSON repositories must use anonymized demo records only.
-
-## Documentation and versioning
-
-- Update `README.md` when entry points, setup, architecture, or behavior changes.
-- Update `PROJECT_STATUS.md` for maintained status changes.
-- Update `CHANGELOG.md` for behavior, dependency, deployment, or meaningful
-  maintenance changes.
-- Component and schema version tags must be updated when maintained runtime contracts change.
-- Use semantic project versions (`v1.6.x`) and Git tags for releases.
-- Historical phase/spec/plan documents remain immutable context unless a
-  factual correction is required.
-
-## Commit format
-
-Use Conventional Commits:
-
-```text
-type(scope): imperative summary
-```
-
-AI-authored commits include the required `Co-Authored-By` footer from
-`AGENTS.md`.
+Conventional Commits (`type(scope): summary`). AI-authored commits carry the
+`Co-Authored-By` footer from `AGENTS.md`.
 
 ## Clinical and privacy constraints
 
-- Use anonymized case codes only.
-- Do not log transcript/audio content, identifiers, secrets, or storage keys.
-- Preserve consent, role, audit, attestation, and report-finalization gates.
-- Software verification and Gate 1 results are not clinical validation.
-- Thai or mixed-language evidence must fail closed when unsupported.
+- Anonymized case codes only.
+- No transcript text, audio, identifiers or file names in logs.
+- Keep consent, attestation, audit and report sign-off gates.
+- Software tests and Gate 1 are not clinical validation.

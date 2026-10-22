@@ -33,8 +33,8 @@ def main() -> int:
     print("Using canonical filesystem release policy for consistency check.")
 
     for path in (
-        "apps/api/app/main.py",
-        "apps/pasascope-app/package.json",
+        "apps/api/app/services",
+        "packages/desktop/app.py",
         "docs/PROJECT_SOURCE_OF_TRUTH.md",
         "docs/REPO_STRUCTURE.md",
     ):
@@ -42,11 +42,20 @@ def main() -> int:
 
     errors.extend(consistency_violations(ROOT, ignore_local_runtime=True))
     errors.extend(previous_name_violations(ROOT))
-    for retired_surface in ("therapist-clinician-app", "public-screening", "presentation-dashboard"):
+    for retired_surface in (
+        "therapist-clinician-app",
+        "public-screening",
+        "presentation-dashboard",
+        "apps/pasascope-app",
+        "shared",
+        "packages/gui",
+        "packages/tui",
+        "src/therapist_backend",
+        "src/clinical_workflow",
+    ):
         surface_path = ROOT / retired_surface
         if surface_path.exists():
             errors.append(f"retired or removed surface exists: {retired_surface}")
-
 
     require_text("README.md", PROJECT_VERSION, errors)
     require_text("PROJECT_STATUS.md", PROJECT_VERSION, errors)
@@ -56,20 +65,13 @@ def main() -> int:
         "Current ML runtime surface",
         errors,
     )
-    require_text(
-        "PROJECT_STATUS.md",
-        "Legacy benchmark and demo surfaces removed",
-        errors,
-    )
     require_text("requirements.txt", "scikit-learn==1.9.0", errors)
-    require_text("Dockerfile", "FROM python:3.11-slim", errors)
-    require_text("Dockerfile", 'CMD ["uvicorn", "app.main:app"', errors)
     require_text("pyproject.toml", 'requires-python = ">=3.11,<3.14"', errors)
     require_text("pyproject.toml", f'version = "{PROJECT_VERSION.removeprefix("v")}"', errors)
     require_text(".python-version", "3.12", errors)
-    require_text(".github/workflows/deploy.yml", '["3.11", "3.12", "3.13"]', errors)
+    require_text(".github/workflows/ci.yml", '["3.11", "3.12", "3.13"]', errors)
     require_text(
-        ".github/workflows/deploy.yml",
+        ".github/workflows/ci.yml",
         'PYTHONPATH=apps/api:src pytest -m "not audio"',
         errors,
     )

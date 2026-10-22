@@ -36,12 +36,13 @@ in its own process, so consent checks, feature extraction, review cues,
 report drafting, the report safety check and the audit events are one
 implementation.
 
-## Supporting Deliverable
+## Earlier Web App
 
-The therapist web app (`apps/pasascope-app` + `apps/api`, `/api/v1`) is the
-earlier multi-user version of the same workflow. Its development is paused;
-it shares the service layer above and is not part of the presented system or
-its evaluation.
+The therapist web app (Next.js + `apps/api`, `/api/v1`) was the earlier
+multi-user version of the same workflow. Its development stopped, it is not
+part of the presented system or its evaluation, and it was removed from the
+working tree on 2026-10-23 (git tag `web-app-final`). The service layer it
+shared with the desktop app stays in `apps/api/app/services`.
 
 ## Research Output
 
@@ -74,13 +75,8 @@ norms or cutoffs because none are verified.
 
 ## Out of Scope for the Term Paper
 
-These exist in the repository as groundwork and are not part of the presented
-system or its evaluation:
-
-- The web app and its production deployment: multi-tenant isolation, Supabase
-  Auth/MFA, RLS, managed storage, invitation and break-glass flows, staging
-  evidence scripts.
-- The earlier Tkinter desktop GUI (`packages/gui`, `./run_gui.sh --legacy`).
-- The Assessment v2 workflow (removed).
-- The terminal TUI.
+- The earlier web app and its production deployment (multi-tenant isolation,
+  Supabase Auth/MFA, RLS, managed storage), the Tkinter desktop GUI, the
+  terminal TUI and the Assessment v2 workflow. All were removed from the
+  working tree; see `docs/PROJECT_SOURCE_OF_TRUTH.md`.
 - Clinical diagnosis, risk scores, and Thai clinical validation claims.

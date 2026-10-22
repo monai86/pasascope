@@ -5,42 +5,6 @@ from __future__ import annotations
 from pathlib import Path
 
 
-APPROVED_ROOTS = (
-    "apps",
-    "packages",
-    "src",
-    "tests",
-    "scripts",
-    "migrations",
-    "supabase",
-    "docs",
-    "artifacts",
-    "data/fixtures",
-    "data/manifests",
-    "data/demo",
-    "data/evaluation",
-    "data/reference",
-    ".github",
-)
-APPROVED_FILES = (
-    ".env.example",
-    ".python-version",
-    "DESIGN.md",
-    "README.md",
-    "DEVELOPER_SETUP.md",
-    "PROJECT_STATUS.md",
-    "SCOPE_AND_DELIVERABLES.md",
-    "CHANGELOG.md",
-    "Dockerfile",
-    "pyproject.toml",
-    "pytest.ini",
-    "requirements.txt",
-    "requirements-dev.txt",
-    "data/combined_features.csv",
-    "data/longitudinal_features.csv",
-    "data/rollins_features.csv",
-    "data/metadata.example.csv",
-)
 FORBIDDEN_DIR_NAMES = {
     ".git",
     ".venv",
@@ -76,7 +40,6 @@ FORBIDDEN_SUFFIXES = {
     ".gz",
     ".docx",
 }
-ARCHIVED_DOCUMENT_ROOT = "docs/archive/planning"
 LOCAL_ONLY_ROOTS = {
     ".agents",
     ".codex",
@@ -156,36 +119,6 @@ def forbidden_reason(relative: str | Path) -> str | None:
 def is_local_only(relative: str | Path) -> bool:
     value = Path(relative).as_posix()
     return any(value == root or value.startswith(root + "/") for root in LOCAL_ONLY_ROOTS)
-
-
-def is_approved_source(relative: str | Path) -> bool:
-    value = Path(relative).as_posix()
-    if value in APPROVED_FILES:
-        return True
-    return any(value == root or value.startswith(root + "/") for root in APPROVED_ROOTS)
-
-
-def source_files(root: Path) -> list[tuple[Path, Path]]:
-    selected: list[tuple[Path, Path]] = []
-    violations: list[str] = []
-    for value in sorted(relative_files(root)):
-        relative = Path(value)
-        if is_local_only(relative) or not is_approved_source(relative):
-            continue
-        # Runtime/build artifacts are intentionally absent from a source-review
-        # archive even when they exist below an otherwise approved source root.
-        # Keep rejecting forbidden source content (for example .DS_Store), while
-        # treating caches and dependency trees as local-only inputs.
-        if is_local_runtime_path(relative):
-            continue
-        reason = forbidden_reason(relative)
-        if reason:
-            violations.append(reason)
-        else:
-            selected.append((root / relative, relative))
-    if violations:
-        raise ValueError("\n".join(violations))
-    return selected
 
 
 def consistency_violations(root: Path, *, ignore_local_runtime: bool = False) -> list[str]:

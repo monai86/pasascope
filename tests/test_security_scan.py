@@ -20,8 +20,7 @@ def test_secret_scanner_blocks_committed_high_risk_tokens(tmp_path):
 
 
 def test_security_workflow_runs_secret_and_dependency_scans():
-    workflow = Path(".github/workflows/deploy.yml").read_text(encoding="utf-8")
+    workflow = Path(".github/workflows/ci.yml").read_text(encoding="utf-8")
 
     assert "python scripts/security_scan.py" in workflow
-    assert "npm audit --audit-level=high" in workflow
     assert "pip-audit" in workflow

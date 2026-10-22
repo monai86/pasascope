@@ -1,166 +1,67 @@
-# PasaScope (ภาษา-สโคป) Clinical Pilot - Developer Setup Guide
+# PasaScope Developer Setup
 
-Welcome to the development guide for the PasaScope (ภาษา-สโคป) ASD Speech-Language Screening Support tool. This document explains how to set up, build, test, and run the project's applications.
+How to run, test and build the PasaScope desktop program from source.
 
-> [!IMPORTANT]
-> **Safety Notice**: This project is a research prototype and educational demo. It is **not a diagnostic tool** and is **not clinically validated** for Thai children. Real child names, surnames, and identifiers are strictly prohibited in the system caseload.
+> PasaScope is a research prototype. It is **not a diagnostic tool** and is
+> **not clinically validated** for Thai children. Never put real child names or
+> identifiers into fixtures, logs or committed data.
 
----
+## Prerequisites
 
-## 🛠️ Prerequisites
-- **Python**: `3.11` or higher
-- **Node.js**: `22.x` (the same major used by CI and Vercel)
-- **npm**: `v9` or higher
+- Python 3.11–3.13 (3.12 recommended)
+- macOS on Apple silicon or Windows 10/11
+- For CLAN comparisons only: UnixCLAN (`docs/CLAN_BATCH_RUNBOOK.md`)
 
----
-
-## 🐍 Python and Active API Setup
-
-### 1. Initialize Virtual Environment
-From the project root:
-```bash
-python3 -m venv .venv
-source .venv/bin/activate
-```
-
-### 2. Install Dependencies
-```bash
-pip install -r requirements.txt
-pip install -r apps/api/requirements.txt
-pip install -r requirements-desktop.txt   # desktop app (PySide6)
-```
-
-### 3. Run the Active Backend API
-```bash
-cd apps/api
-PYTHONPATH=.:../..:../../src uvicorn app.main:app --reload --port 8000
-```
-API Documentation will be available at: [http://localhost:8000/docs](http://localhost:8000/docs)
-
-`src/therapist_backend` is a legacy research compatibility API. Do not use it
-as the Therapist App v2 backend or add new product routes there.
-
-### Assessment v2 foundation
-
-The existing therapist product remains on `/api/v1`. The additive `/api/v2`
-foundation uses a fresh database and a separate Alembic history. It starts with
-no imported v1 records and now covers the first Capture V2 workflow slice:
-children, consent records, assessment lifecycle, protocol selection, private
-recording upload intents, durable processing runs, checksum verification,
-reviewed transcript attestation, immutable timestamped segment review with
-uncertainty filtering and bounded replay, asynchronous evidence extraction, and
-non-diagnostic quality states. Capture and evidence jobs share the same native
-tenant-scoped worker and PostgreSQL `processing_runs` queue.
-
-For the primary local verification path, Docker is optional. Install PostgreSQL
-16 with Postgres.app, Homebrew, or the PostgreSQL distribution for your OS,
-then provide an admin connection to the local `postgres` database. The native
-check creates a uniquely named temporary assessment database, starts local
-FastAPI and worker processes, exercises transcript attestation, segment v1 → v2
-revision/attestation, bounded replay, segment-bound evidence provenance, the
-`202` enqueue → poll → evidence-read path, staleness and access denials, runs
-the API/RLS/lease suite, and removes only that temporary database and test role
-when it finishes:
+## 1. Install
 
 ```bash
-export PASASCOPE_NATIVE_ADMIN_DATABASE_URL=postgresql+psycopg://<local-admin>:<password>@127.0.0.1:5432/postgres
-PYTHONPATH=apps/api:src python scripts/check_assessment_v2_native.py
+python3.12 -m venv .venv312
+source .venv312/bin/activate
+pip install -r requirements.txt            # pipeline, ML, audio
+pip install -r apps/api/requirements.txt   # service layer
+pip install -r requirements-desktop.txt    # PySide6, pytest-qt
 ```
 
-The native gate is the primary local acceptance path and does not require
-Docker. It does not require Redis or Celery. For optional Compose verification:
+`run_gui.sh` and `scripts/check_project.sh` look for `.venv312` first, then
+`.venv`.
+
+## 2. Run the desktop program
 
 ```bash
-docker compose up -d postgres
-PYTHONPATH=apps/api:src python scripts/check_assessment_v2_migrations.py
-PYTHONPATH=apps/api:src python scripts/check_assessment_v2_postgres.py
-PYTHONPATH=apps/api:src python scripts/check_assessment_v2_compose.py
+./run_gui.sh          # your own data
+./run_gui.sh --demo   # demonstration data
 ```
 
-The optional Compose assessment check owns its temporary `postgres` and `api`
-stack; it starts the API container, waits for `/health`, and removes its
-volumes when the check finishes. It is not required for native development.
+- Data folder: `~/Library/Application Support/PasaScope` on macOS (override
+  with `PASASCOPE_DESKTOP_HOME`). Demo data: `python scripts/seed_desktop_demo.py`
+  fills `~/Library/Application Support/PasaScope Demo`.
+- Whisper models download on first use. To use a local Thai model instead,
+  convert it with `bash scripts/convert_thai_whisper.sh` (see `models/README.md`).
+- Transcription mode (accurate Thai model or fast multilingual model) is under
+  ตั้งค่า → โหมดถอดเสียง.
 
-The v1 and v2 URLs are separate:
-
-```text
-PASASCOPE_DATABASE_URL=postgresql+psycopg://.../therapist_app_v2
-PASASCOPE_ASSESSMENT_DATABASE_URL=postgresql+psycopg://.../lingualens_assessment_v2
-```
-
-The web app's `/assessments` route uses `/api/v2`; all existing session screens
-continue using `/api/v1`. For local development the v2 base is derived
-automatically, or can be set explicitly:
+## 3. Test
 
 ```bash
-NEXT_PUBLIC_API_BASE_URL=http://localhost:8000/api/v1 \
-NEXT_PUBLIC_ASSESSMENT_API_BASE_URL=http://localhost:8000/api/v2 \
-npm run dev
+bash scripts/check_project.sh                               # everything below
+PYTHONPATH=apps/api:src pytest tests/test_desktop*.py -q    # desktop (Qt)
+PYTHONPATH=apps/api:src pytest tests -m "not audio" --ignore-glob="tests/test_desktop*.py" -q
+PYTHONPATH=apps/api:src pytest apps/api/tests -m "not audio" -q
+PYTHONPATH=apps/api:src pytest -m audio                     # needs faster-whisper, speechbrain, librosa
 ```
 
-Supabase Auth supplies the verified identity; FastAPI owns clinical policy and
-PostgreSQL RLS is defense in depth. The v2 slice is research decision support,
-not diagnosis, and does not expose an ASD probability. To roll it back, stop
-mounting `/api/v2` and keep `PASASCOPE_RUN_ASSESSMENT_MIGRATIONS_ON_STARTUP=false`;
-do not touch the v1 database or migration history.
+On macOS keep the Qt tests in their own pytest process.
 
-### 4. Running Python Unit Tests
-We use **pytest** to validate backend services.
-- **Run all core tests** (excluding heavy audio/transcription workloads):
-  ```bash
-  PYTHONPATH=apps/api:src pytest -m "not audio"
-  ```
-- **Run all tests** (requires installing heavy audio dependencies like `faster-whisper`, `speechbrain`, `librosa`):
-  ```bash
-  PYTHONPATH=apps/api:src pytest
-  ```
+## 4. Build
 
----
+- macOS `.dmg`: `python scripts/build_macos_dmg.py` (writes `dist/`)
+- Local launchers for this machine only: `python scripts/build_macos_app.py`
+- Windows installer: built by `.github/workflows/desktop-windows.yml`
+  (`scripts/build_windows.py`)
+- Releasing: `docs/DESKTOP_RELEASE.md` (needs the project owner's approval)
 
-## 🌐 Frontend Application Setup
+## 5. Reproduce the evaluation
 
-The maintained frontend surface is the pasascope therapist app only.
-
-### 1. 🩺 Therapist App (`apps/pasascope-app/`)
-Enforces the clinical sign-off, consent gates, and caseload review.
-```bash
-cd apps/pasascope-app
-npm ci
-npm run build
-npm test
-npm run dev
-```
-- Default URL: [http://localhost:3000](http://localhost:3000)
-
----
-
-## ⚙️ pasascope Runtime Modes
-
-The active app uses `PASASCOPE_*` backend settings. Legacy v2 env names remain
-supported temporarily during migration. The former
-`VITE_RUNTIME_MODE` settings belonged to the retired Vite therapist app.
-
-1. **JSON repository** (default):
-   - The pasascope API defaults to durable local JSON persistence,
-     which survives API restarts.
-   - Memory repository mode is only for isolated tests or intentional demo
-     resets.
-   - SQL repository mode is PostgreSQL-ready but not pilot-hardened yet.
-   - Browser `sessionStorage` is only lightweight workflow/navigation cache,
-     never the clinical source of truth.
-   - Audio bytes remain memory-only unless the therapist explicitly uploads
-     them.
-   - Processing is simulated with mock CHAT files.
-   - File uploads are metadata-only.
-   
-2. **Memory repository**:
-   - Set `PASASCOPE_REPOSITORY_MODE=memory`.
-   - Use only for isolated tests or intentional resets.
-   
-3. **SQL repository**:
-   - Set `PASASCOPE_REPOSITORY_MODE=sql`.
-   - Configure `PASASCOPE_DATABASE_URL`.
-   - This remains PostgreSQL-ready scaffolding, not a pilot-hardened deployment.
-
-The frontend API base is configured with
-`NEXT_PUBLIC_API_BASE_URL=http://localhost:8000/api/v1`.
+See the table in `README.md` ("Evaluation") and
+`reports/metrics/EVALUATION_SUMMARY.md`. Evaluation audio is not in git; follow
+`data/evaluation/README.md` and `docs/TALKBANK_DOWNLOAD_RUNBOOK.md`.

@@ -1,6 +1,13 @@
-# PasaScope (ภาษา-สโคป) API
+# PasaScope (ภาษา-สโคป) API and service layer
 
-FastAPI boundary for the case-centered PasaScope clinical workflow.
+`app/services/` is the shared service layer the desktop program
+(`packages/desktop`) calls in-process: transcripts, features, review cues,
+reports, consent and audit rules. The FastAPI app around it (`app/main.py`,
+`app/api/`) was the backend of the paused web app, which was removed on
+2026-10-23 (git tag `web-app-final`). Its routes stay because `tests/` exercise
+the services through them; do not add new web endpoints.
+
+The notes below describe running the API on its own.
 
 Local development defaults to a durable JSON repository at
 `.local/pasascope-app-repository.json`. Set
@@ -14,9 +21,6 @@ Legacy v2 env names remain supported temporarily for backward compatibility.
 - `memory`: isolated tests and intentional demo resets only.
 - `sql`: PostgreSQL-ready SQLAlchemy scaffold; not pilot-hardened yet.
 
-The frontend treats backend records as the clinical workflow source of truth.
-`sessionStorage` is only a UI cache/local fallback. Audio bytes remain in memory
-unless the therapist explicitly uploads them.
 Case creation validates bounded de-identified fields server-side and defaults
 new records to pending consent. Session workflows remain consent-gated.
 

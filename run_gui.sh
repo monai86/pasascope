@@ -18,11 +18,5 @@ else
 fi
 
 export OBJC_DISABLE_INITIALIZE_FORK_SAFETY=YES
-# The PySide6 desktop app is the default; --legacy opens the old Tkinter GUI.
-if [ "$1" = "--legacy" ]; then
-    shift
-    "$PYTHON_BIN" scripts/pasascope_gui.py "$@" 2> >(grep -v -E 'libmpg123|id3\.c' >&2)
-else
-    "$PYTHON_BIN" -m packages.desktop.app "$@" 2> >(grep -v -E 'libmpg123|id3\.c|qt\.qpa\.fonts' >&2)
-fi
+"$PYTHON_BIN" -m packages.desktop.app "$@" 2> >(grep -v -E 'libmpg123|id3\.c|qt\.qpa\.fonts' >&2)
 

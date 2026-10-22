@@ -22,7 +22,7 @@
 | Human-in-the-loop | แก้ transcript เทียบคลื่นเสียงทีละประโยค, attest, ยืนยันหรือปัดตก cue พร้อมคู่ประโยคหลักฐาน, แก้และลงนามรายงานภาษาไทย | `reports/metrics/transcript_review_time.csv`, audit log (เมนู ช่วยเหลือ → ประวัติการทำงาน) |
 | ผลการทดลองโมเดลจำแนก | การศึกษา classifier บนคลังข้อมูลภาษาอังกฤษสาธารณะ | `reports/ml/MODEL_RESULTS.md`, `reports/ml/ML_VALIDITY_DECISION.md`, `reports/ml/LEAKAGE_AND_CONFOUNDING_AUDIT.md` |
 | ข้อจำกัด | ดูหัวข้อด้านล่าง | `KNOWN_LIMITATIONS.md` |
-| งานในอนาคต | ข้อมูลเด็กไทยจริง, เกณฑ์อ้างอิงไทย, ถอดเสียงเร็วขึ้นบน GPU/Apple Neural Engine, ติดตั้งเป็นแอปสำเร็จรูป, ระบบหลายผู้ใช้ (web app ที่พักไว้) | `reports/ml/THAI_ACOUSTIC_NORMATIVE_DATA_PLAN.md`, `docs/PRODUCTION_SAAS_ROADMAP.md` |
+| งานในอนาคต | ข้อมูลเด็กไทยจริง, เกณฑ์อ้างอิงไทย, ถอดเสียงเร็วขึ้นบน GPU/Apple Neural Engine, ติดตั้งเป็นแอปสำเร็จรูป, ระบบหลายผู้ใช้ (web app รุ่นก่อนอยู่ที่ git tag `web-app-final`) | `reports/ml/THAI_ACOUSTIC_NORMATIVE_DATA_PLAN.md`, `docs/PRODUCTION_SAAS_ROADMAP.md` |
 
 ## วิธีเล่าผลโมเดลจำแนก
 

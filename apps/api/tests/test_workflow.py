@@ -305,13 +305,6 @@ def test_pasascope_repository_mode_env_does_not_emit_deprecation_warning(monkeyp
     get_settings.cache_clear()
 
 
-def test_env_example_defaults_repository_mode_to_json():
-    env_example = (repo_root() / ".env.example").read_text(encoding="utf-8")
-
-    assert "PASASCOPE_REPOSITORY_MODE=json" in env_example
-    assert "PASASCOPE_REPOSITORY_MODE=memory" not in env_example
-
-
 def test_case_session_transcript_feature_report_workflow():
     case_response = client.post(
         "/api/v1/cases",

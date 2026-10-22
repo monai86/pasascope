@@ -11,9 +11,7 @@
 **PasaScope** is a research and education prototype for therapist review of conversational and narrative child-language samples. The retrospective corpus labels below support methodology research; they do not establish a diagnostic model or a clinically validated reference population.
 
 ### System Components:
-- **Web Application:** Next.js + React + TypeScript ([`apps/pasascope-app/`](../apps/pasascope-app))
-- **Canonical Therapist Product:** Next.js frontend ([`apps/pasascope-app/`](../apps/pasascope-app)) and FastAPI backend ([`apps/api/`](../apps/api))
-- **Legacy Research Clients:** Tkinter and terminal utilities under [`scripts/`](../scripts); these are compatibility surfaces, not canonical product clients
+- **Therapist Product:** PySide6 desktop program ([`packages/desktop/`](../packages/desktop)) on the shared service layer ([`apps/api/app/services`](../apps/api/app/services))
 - **Research & ML Pipelines:** Python modules ([`src/`](../src), [`packages/`](../packages), [`scripts/`](../scripts))
 
 ---
@@ -109,7 +107,7 @@ The dataset encompasses **7 distinct clinical and developmental profiles**:
 
 1. **Canonical research interface:** [`packages/features/transcript_features.py`](../packages/features/transcript_features.py) exposes v1 and v2 extraction for CHAT paths, parsed CHAT objects, and normalized transcript lines.
 2. **Deterministic v2 parity:** [`tests/ml/test_features_v2.py`](../tests/ml/test_features_v2.py) verifies the research export across those supported inputs and checks semantic parity across local CSV, Parquet, and XLSX artifacts. The export contains 13 non-age v1 fields, `age_months`, and 8 conversational fields; experiments use 21 non-age inputs when v1 and v2 are combined.
-3. **Product boundary:** `apps/api/` and `apps/pasascope-app/` do not currently expose or consume the v2 research vector. The Tkinter/TUI utilities are not evidence of product parity.
+3. **Product boundary:** the desktop program and `apps/api/` do not expose or consume the v2 research vector.
 
 **Implication for deployment:** No trained model is approved for direct backend deployment. Any future product integration requires a versioned API contract, independent measurement validation, privacy review, drift checks, and therapist-facing safety acceptance.
 

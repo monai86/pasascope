@@ -15,11 +15,8 @@ dist/
 .coverage
 htmlcov/
 
-# Node / frontend
+# Node (the paused web app lives at tag web-app-final)
 node_modules/
-.next/
-.open-next/
-*.tsbuildinfo
 
 # Row-level research datasets stay local. They may contain source-linked
 # participant/session metadata needed for reproducible extraction and must not
@@ -33,10 +30,6 @@ data/ml/canonical_features_v2.csv
 data/ml/canonical_features_v2.parquet
 data/ml/canonical_features_v2.xlsx
 data/ml/LinguaLens_ML_Features_and_Results_Summary.xlsx
-
-# Playwright
-apps/pasascope-app/test-results/
-apps/pasascope-app/playwright-report/
 
 # Virtual envs
 .venv/
@@ -59,21 +52,16 @@ Thumbs.db
 # Project scratch / runtime
 .local/
 **/.local/
-.windsurf/*
-!.windsurf/rules/
-!.windsurf/rules/project-update-workflow.md
-.wrangler/
+.worktrees/
+
+# AI agent tool folders stay on this machine only
+.agents/
+.claude/
+.windsurf/
 .freebuff/
 .superpowers/
-.worktrees/
 .impeccable/
-.agents/skills/banner-design/
-.agents/skills/brand/
-.agents/skills/design-system/
-.agents/skills/design/
-.agents/skills/slides/
-.agents/skills/ui-styling/
-.agents/skills/ui-ux-pro-max/
+skills-lock.json
 reports/metrics/_asr_hyp_*
 reports/figures/_asr_hyp_*
 reports/progress_reports/*.pdf
@@ -94,8 +82,6 @@ reports/progress_reports/*.pdf
 # Secrets
 .env
 .env.local
-docs/release_artifacts/staging_env/*.env
-!docs/release_artifacts/staging_env/2026-06-28_145106_staging-verification.env
 
 # Release archives
 *.zip

@@ -7,7 +7,7 @@ from zipfile import ZipFile
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / "scripts"))
 
-from release_scope import consistency_violations, source_files  # noqa: E402
+from release_scope import consistency_violations  # noqa: E402
 
 
 def write(root: Path, relative: str) -> None:
@@ -78,25 +78,3 @@ def test_local_consistency_mode_ignores_tool_state_and_linked_worktrees(tmp_path
     errors = consistency_violations(tmp_path, ignore_local_runtime=True)
 
     assert errors == []
-
-
-def test_source_archive_skips_local_runtime_artifacts_below_approved_roots(tmp_path):
-    write(tmp_path, "apps/api/app/main.py")
-    write(tmp_path, "apps/api/.local/repository.json")
-    write(tmp_path, "apps/api/app/__pycache__/main.pyc")
-    write(tmp_path, "apps/pasascope-app/node_modules/pkg/index.js")
-    write(tmp_path, "apps/pasascope-app/.next/server/app.js")
-    write(tmp_path, "apps/pasascope-app/tsconfig.tsbuildinfo")
-
-    selected = {relative.as_posix() for _, relative in source_files(tmp_path)}
-
-    assert selected == {"apps/api/app/main.py"}
-
-
-def test_source_archive_includes_root_design_authority(tmp_path):
-    write(tmp_path, "DESIGN.md")
-    write(tmp_path, "apps/pasascope-app/DESIGN.md")
-
-    selected = {relative.as_posix() for _, relative in source_files(tmp_path)}
-
-    assert selected == {"DESIGN.md", "apps/pasascope-app/DESIGN.md"}

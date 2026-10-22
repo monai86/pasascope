@@ -41,34 +41,28 @@ NC='\033[0;0m' # No Color
 
 echo -e "${BLUE}=== Starting Focused Local Project Verification ===${NC}"
 
-echo -e "${BLUE}[0/7] Checking repository source-of-truth consistency...${NC}"
-find . -name ".DS_Store" -delete 2>/dev/null || true
+echo -e "${BLUE}[0/5] Checking repository source-of-truth consistency...${NC}"
+find . -name ".DS_Store" -not -path "./.venv*" -delete 2>/dev/null || true
 "$PYTHON_BIN" scripts/check_repo_consistency.py
 
-echo -e "${BLUE}[1/7] Running local secret scan...${NC}"
+echo -e "${BLUE}[1/5] Running local secret scan...${NC}"
 "$PYTHON_BIN" scripts/security_scan.py
 
-echo -e "${BLUE}[2/7] Using Python interpreter: $PYTHON_BIN${NC}"
-
-# 1. Python Syntax & Import Validation
-echo -e "${BLUE}[3/7] Running Python import validation checks...${NC}"
+echo -e "${BLUE}[2/5] Checking that the core modules import (Python: $PYTHON_BIN)...${NC}"
 python_imports=(
-    "app.main"
-    "src.clinical_workflow"
-    "src.clinical_workflow.models"
-    "src.clinical_workflow.repository_interface"
-    "src.clinical_workflow.mock_repository"
-    "src.clinical_workflow.postgres_supabase_repository"
-    "src.therapist_backend.app"
+    "app.services.report_service"
+    "app.services.transcript_service"
+    "packages.desktop.core"
     "src.audio_pipeline.chat_formatter"
     "src.audio_pipeline.chatter_validator"
     "src.audio_pipeline.segmentation"
     "src.audio_pipeline.whisper_transcribe"
+    "src.clinical_speech.thai_lsa"
 )
 
 for mod in "${python_imports[@]}"; do
     echo -n "  Checking import of $mod... "
-    if PYTHONPATH=apps/api:src "$PYTHON_BIN" -c "import $mod" >/dev/null 2>&1; then
+    if PYTHONPATH=.:apps/api:src "$PYTHON_BIN" -c "import $mod" >/dev/null 2>&1; then
         echo -e "${GREEN}OK${NC}"
     else
         echo -e "${RED}FAILED${NC}"
@@ -77,54 +71,21 @@ for mod in "${python_imports[@]}"; do
     fi
 done
 
-# 2. Pytest Core Tests
-echo -e "${BLUE}[4/7] Running core Python unit tests (excluding heavy audio)...${NC}"
+echo -e "${BLUE}[3/5] Running Python tests (excluding heavy audio)...${NC}"
 if "$PYTHON_BIN" -c "import pytest" >/dev/null 2>&1; then
+    # Qt tests run in their own process; mixing them with the rest has hung on macOS.
     PYTHONPATH=apps/api:src "$PYTHON_BIN" -m pytest apps/api/tests -m "not audio" -q
-    PYTHONPATH=apps/api:src "$PYTHON_BIN" -m pytest tests/test_gui*.py -q
-    PYTHONPATH=apps/api:src "$PYTHON_BIN" -m pytest tests --ignore-glob="tests/test_gui*.py" -m "not audio" -q
-    echo -e "${GREEN}✓ All core Python unit tests passed successfully.${NC}"
+    PYTHONPATH=apps/api:src "$PYTHON_BIN" -m pytest tests/test_desktop*.py -q
+    PYTHONPATH=apps/api:src "$PYTHON_BIN" -m pytest tests --ignore-glob="tests/test_desktop*.py" -m "not audio" -q
+    echo -e "${GREEN}✓ All core Python tests passed.${NC}"
 else
     echo -e "${RED}Error: pytest is not installed in the current Python environment.${NC}"
     exit 1
 fi
 
-echo -e "${BLUE}[5/7] Running API migration smoke check...${NC}"
+echo -e "${BLUE}[4/5] Running database migration smoke check...${NC}"
 PYTHONPATH=apps/api:src "$PYTHON_BIN" scripts/check_api_migrations.py
 
-# 3. Maintained Frontend App Checks
-apps=(
-    "apps/pasascope-app"
-)
-
-for app in "${apps[@]}"; do
-    echo -e "${BLUE}[6/7] Verifying frontend app: $app...${NC}"
-    if [ -d "$app" ]; then
-        (
-            cd "$app"
-            if [ ! -d "node_modules" ]; then
-                echo "  Installing locked Node modules for $app..."
-                find . -name ".DS_Store" -delete 2>/dev/null || true
-                npm ci
-            fi
-            
-            echo "  Running tests for $app..."
-            if grep -q '"test":' package.json; then
-                npm test
-            else
-                echo -e "${YELLOW}  [Skip] No 'test' script found in $app/package.json${NC}"
-            fi
-            
-            echo "  Building production package for $app..."
-            npm run build
-            echo -e "${GREEN}  ✓ $app verified successfully.${NC}"
-        )
-    else
-        echo -e "${RED}Error: Directory $app not found.${NC}"
-        exit 1
-    fi
-done
-
 echo -e "\n${GREEN}=== Focused local project verification passed. ===${NC}"
-echo -e "${YELLOW}This check does not run dependency audits, the Python version matrix, frontend lint/typecheck, UI audit, full Playwright suites, or the benchmark gate. Use the complete CI candidate gates before release or deployment.${NC}"
+echo -e "${YELLOW}This check does not run dependency audits, the Python version matrix or audio tests. CI runs the version matrix and the audit.${NC}"
 exit 0

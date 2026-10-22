@@ -1,23 +1,51 @@
 # Known Limitations
 
-- **Decision-support only, not diagnostic**: This is a research and education prototype, not a clinical diagnostic product or validated clinical tool. It does not provide automated diagnoses.
-- **ASR is experimental**: Browser recording and automated speech recognition (ASR) are experimental. Uploaded recordings are transcribed by on-device Whisper only when `PASASCOPE_ASR_LOCAL_WHISPER_ENABLED=true`; otherwise transcription is unavailable and the therapist pastes or imports the transcript. The synthetic mock provider is never selected by the web app.
-- **Whisper is not trained for young children's Thai**: expect wrong words, merged turns, and wrong speaker labels, especially with quiet, overlapping, or unclear speech. Speaker separation relies on voice differences and fails when speakers sound alike. Measured so far (see `reports/metrics/`): on 30 FLEURS Thai clips of adults reading formal sentences the mean character error rate is 29% with the `small` model and 20% with `medium`; on six scripted text-to-speech therapy-style dialogues it is 6.7% and 0.8%. No Thai child speech has been tested, and child/adult separation has not been evaluated for Thai.
-- **Draft utterance boundaries follow pauses**: the draft starts a new utterance at a pause of about 0.3 s or more. A child who hesitates mid-sentence gets two utterances, which lowers MLU until the therapist merges them, and cutting at a pause can occasionally split a Thai word across two utterances.
-- **Echolalia and pronoun cues are heuristics**: a natural answer that reuses the adult's words can be flagged as an echo (4 of 20 ordinary replies in the scripted check, with all 20 scripted echoes caught), and only immediate echoes are detected.
-- **Feature values are not CLAN values**: on 1,961 TalkBank transcripts the app's child word count tracks CLAN closely (r = 0.997, median difference 4.7%), but it counts about 21% more distinct words and more utterances. Do not compare app values with CLAN-based published norms. Thai pronoun cues cover second-person pronouns followed by a desire or state verb only.
-- **Desktop GUI radar chart is not a normative comparison**: it plots one session's measured values on fixed drawing scales. It does not compare the child with other children, because no verified Thai norm exists.
-- **Basic CHAT import/export only**: Import and export support basic CHAT file structure (metadata headers, speaker tiers, timestamps) and skip unsupported tiers with warnings.
-- **Not full TalkBank/CLAN-grade compatibility yet**: The parser does not validate full TalkBank/CLAN compatibility or enforce all syntactic conventions of the CLAN utility suite.
-- Audio remains memory-only in the browser and is lost on page refresh.
-- Current-tab browser persistence is for demonstrations only and must not contain real identifiers, sensitive clinical data, or raw transcript recordings.
-- Feature extraction provides descriptive language-sample cues for clinical interpretation, not diagnostics.
-- ML output is editable/dismissible decision support trained on limited/public datasets and is not clinically validated.
-- Reports require therapist review. Local finalization is not a production signature or secure caregiver-delivery workflow.
-- Markdown and HTML export are available. PDF export is not yet implemented.
-- Runtime language-sample features are not computed the same way as the reference cohorts they would be compared with: on one sample the runtime reports MLU-words 2.0 and unintelligible ratio 0.1667, the reference extractor 3.0 and 0.25 (`apps/api/tests/test_reference_runtime_parity.py`). Reference evidence must stay disabled until a clinician chooses one definition and both sides use it.
-- The SQL repository keeps a per-process cache of clinical records and writes legacy paths as a whole-snapshot upsert. It must run as a single API worker (`WEB_CONCURRENCY=1`, enforced at startup); a second instance would read and write stale state. Per-request queries need a separate ADR.
-- Production authentication, encrypted private storage, durable queues, deployment monitoring, and audited role enforcement remain future work.
+Numbers below come from `reports/metrics/EVALUATION_SUMMARY.md`.
 
-For deeper engineering detail, see the archived v2 known-limitations document in
-`docs/`.
+- **Decision support only, not diagnostic.** PasaScope is a research and
+  education prototype. It does not diagnose ASD, gives no risk score, and
+  applies no Thai norms or cutoffs because none are verified.
+- **Transcription is a draft.** On adult read Thai (30 FLEURS clips) the
+  character error rate is 6.5% in accurate mode and 19.2% in fast mode. On real
+  recordings of children, uncorrected, the word error rate is 29–36% for
+  English preschoolers and about 86% for Thai toddlers under two. No Thai
+  preschool recordings with gold transcripts were available. The program
+  computes no measure until the therapist has corrected and attested the
+  transcript.
+- **Child/adult labels can be wrong.** On 16 English recordings of children
+  aged 2;6–5;6, 87.0% of utterances got the right speaker (child F1 0.81).
+  Separation fails more often when speakers sound alike or talk over each
+  other. A clinic-trained model does better (94–97%) but needs at least four
+  attested sessions from two children.
+- **Utterance boundaries follow simple rules.** Thai drafts start a new
+  utterance at a pause of 0.6 s or more; English drafts use a small logistic
+  regression model. A child who hesitates mid-sentence can get two utterances,
+  which lowers MLU until the therapist merges them.
+- **Echolalia and pronoun cues are heuristics.** In 40 scripted Thai turn pairs
+  the echolalia rule caught all 20 echoes and also flagged 4 of 20 ordinary
+  answers (precision 83%). Only immediate echoes are detected. Thai pronoun
+  cues cover second-person pronouns followed by a desire or state verb only.
+  Cues never change a measure or a report by themselves.
+- **Measures are checked against CLAN on English only.** On 1,961 TalkBank
+  transcripts MLU-w, NDW-100, MATTR-50 and VOCD-D agree with CLAN (ICC ≥ 0.9997).
+  There is no reference tool for Thai; the Thai path uses the same counting
+  code after PyThaiNLP word segmentation.
+- **Turn-taking reference values are English.** They come from TalkBank toy-play
+  transcripts and are not Thai norms.
+- **CHAT support is a subset.** Import and export cover headers, speaker tiers,
+  timestamps and the codes the program uses; other tiers are skipped with a
+  warning. Full CLAN compatibility is not validated.
+- **Runtime and reference features differ.** Runtime language-sample features
+  are not computed the same way as the earlier reference cohorts: on one sample
+  the runtime reports MLU-words 2.0 and unintelligible ratio 0.1667, the
+  reference extractor 3.0 and 0.25 (`apps/api/tests/test_reference_runtime_parity.py`).
+  Reference evidence stays disabled until a clinician chooses one definition
+  and both sides use it.
+- **Earlier ML work is not clinical validation.** The Gate 1 result is an
+  engineering check on proxy labels from public English corpora. No model
+  output is shown to therapists.
+- **One computer, one user.** Records stay in a local SQLite database and audio
+  folder. There is no multi-user access, server sync or remote backup beyond the
+  program's own backup file.
+- **Usability is untested.** No therapist has used the program in a timed
+  session yet (`docs/PILOT_USABILITY_PROTOCOL.md`).

@@ -17,25 +17,13 @@ PREVIOUS_NAME = re.compile(r"lingualens", re.IGNORECASE)
 
 # Dated records and reports of past work: they describe the project as it was.
 HISTORICAL_PREFIXES = (
-    "docs/archive/",
-    "docs/release_artifacts/",
-    "docs/plans/",
-    "docs/superpowers/",
-    "docs/readiness/",
-    "docs/frontend/",
-    "docs/core-speech-testbed/",
-    "docs/ux/",
     "docs/literature/",
     "reports/",
     "data/",
-    ".agents/",
-    ".windsurf/",
     "releases/",
 )
 HISTORICAL_FILES = {
     "CHANGELOG.md",
-    "docs/ANTIGRAVITY_HANDOFF_PROGRESS.md",
-    "docs/THERAPIST_APP_V2_RENAME_AUDIT.md",
     "docs/RENAME_FOLLOWUP.md",
     "scripts/project_name_guard.py",
     "tests/test_project_name_guard.py",
@@ -44,13 +32,8 @@ HISTORICAL_FILES = {
 FALLBACK_FILES = {
     "apps/api/app/core/config.py",
     "apps/api/tests/test_workflow.py",
-    "apps/pasascope-app/src/lib/storage-key-migration.ts",
-    "apps/pasascope-app/src/__tests__/storage-key-migration.test.ts",
-    "scripts/clean_mock_data.py",
     "scripts/report_transcript_review_time.py",
     "scripts/check_project.sh",
-    "docker-compose.yml",
-    "tests/test_deployment_config.py",
 }
 # External resources and persisted identifiers that keep the old name.
 # See docs/RENAME_FOLLOWUP.md before changing any of these.

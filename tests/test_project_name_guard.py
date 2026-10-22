@@ -31,7 +31,7 @@ def test_previous_name_in_maintained_code_is_reported(tmp_path):
 
 def test_external_names_history_and_local_files_are_allowed(tmp_path):
     _write(tmp_path, "docs/RUNBOOK.md", "Deploy to https://lingualens-web.example.workers.dev using db lingualens_assessment_v2.\n")
-    _write(tmp_path, "docs/archive/old-plan.md", "LinguaLens plan\n")
+    _write(tmp_path, "reports/metrics/old-run.md", "LinguaLens run\n")
     _write(tmp_path, "CHANGELOG.md", "Renamed LinguaLens to PasaScope.\n")
     _write(tmp_path, "apps/pasascope-app/node_modules/pkg/index.js", "// lingualens\n")
     _write(tmp_path, ".local/lingualens-app-repository.json", "{}\n")

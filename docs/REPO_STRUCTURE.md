@@ -1,83 +1,65 @@
 # Repository Structure
 
-Use [`PROJECT_SOURCE_OF_TRUTH.md`](./PROJECT_SOURCE_OF_TRUTH.md) as the
-authoritative runtime boundary. This file is the quick structural map for the
-current repository layout.
+[`PROJECT_SOURCE_OF_TRUTH.md`](./PROJECT_SOURCE_OF_TRUTH.md) holds the rules.
+This file is the quick folder map.
 
-## Active product surfaces
+## The program
 
-- `apps/pasascope-app/` — canonical therapist frontend (Next.js)
-- `apps/api/` — canonical therapist workflow API (FastAPI)
+| Path | What it is |
+|---|---|
+| `packages/desktop/` | The PySide6 desktop program: `app.py` (start), `ui/` (windows, pages, theme, PDF), `core/` (DesktopService, SQLite workspace, backup, updates, model downloads) |
+| `apps/api/app/services/` | Shared service layer the desktop program calls in-process (transcripts, features, reports, consent, safety checks) |
+| `apps/api/` (rest) | Database models and migrations used by the service layer, plus the FastAPI routes and tests of the paused web app's backend |
+| `src/audio_pipeline/` | Recording → transcript draft: VAD, Whisper, child/adult split, utterance boundaries, CHAT output |
+| `src/clinical_speech/` | Thai LSA rules (`thai_lsa.py`), CHAT export, clinical feature extraction |
+| `packages/features/` | Transcript, turn-taking, Thai POS and acoustic measures |
+| `packages/cha/` | CHAT parser, round-trip check, Thai word list |
+| `run_gui.sh`, `pasascope` | Launchers (`pasascope` is a link to `run_gui.sh`) |
+| `site/` | Download page (GitHub Pages) |
 
-## Shared and research libraries
+## Evaluation and research
 
-- `shared/` — shared frontend-safe JavaScript models/services used by the Vite
-  surfaces
-- `packages/cha/` — CHAT parser
-- `packages/features/` — canonical transcript feature extraction
-- `packages/ml/` — reference-evidence ML contracts, artifacts, and inference
-- `src/audio_pipeline/` — experimental audio-to-CHAT pipeline
-- `src/clinical_speech/` — normalization and clinical speech utilities
-- `src/` top-level scripts — active research entrypoints that remain outside
-  the maintained product runtime
+| Path | What it is |
+|---|---|
+| `scripts/evaluate_*.py` and related | Evaluation scripts; results go to `reports/metrics/` |
+| `reports/metrics/` | Evaluation results cited by the term paper (`EVALUATION_SUMMARY.md` first) |
+| `packages/ml/`, `scripts/ml/`, `reports/ml/`, `artifacts/` | Earlier ML work: reference-evidence model, Gate 1, model cards |
+| `reports/clinical/`, `reports/human_actions/` | Protocols and checklists for a future Thai clinical pilot |
+| `data/` | Public TalkBank transcripts, manifests, reference features, evaluation gold transcripts |
+| `models/` | Local Whisper models (ignored by git except `README.md`) |
+| `docs/literature/`, `docs/REFERENCES.md` | Literature notes and bibliography |
 
-## Legacy compatibility surfaces
+## Build and release
 
-- `src/therapist_backend/` — legacy pilot API retained for research tests
-- `src/clinical_workflow/` — legacy repository/domain layer retained for
-  compatibility
+| Path | What it is |
+|---|---|
+| `scripts/build_macos_dmg.py`, `scripts/build_macos_app.py` | macOS `.dmg` and local `.app` launchers |
+| `scripts/build_windows.py`, `scripts/desktop_bundle/` | Windows installer (built in CI) |
+| `.github/workflows/` | `ci.yml` (tests), `desktop-windows.yml` (installer), `pages.yml` (download page) |
 
-Do not add new product behavior to these legacy paths.
+## Checks
 
-## Removed non-current surfaces
+| Path | What it is |
+|---|---|
+| `tests/` | Pipeline, measures, evaluation scripts, desktop (`test_desktop*.py`) |
+| `apps/api/tests/` | Service layer and API tests |
+| `scripts/check_project.sh` | Runs the checks below and every Python test |
+| `scripts/check_repo_consistency.py`, `scripts/security_scan.py` | Version/path consistency and secret scan |
 
-- `public-screening/` — removed educational demo
-- `presentation-dashboard/` — removed advisor/demo dashboard
-- `src/classifier.py`, `src/deep_learning.py` — removed legacy benchmark pipelines
+## Root documents
 
-## Data and artifacts
+- `README.md`: user guide (top) and developer guide (bottom)
+- `AGENTS.md`, `CLAUDE.md`: instructions for AI agents
+- `SCOPE_AND_DELIVERABLES.md`: term paper scope
+- `PROJECT_STATUS.md`, `CHANGELOG.md`: status and version history
+- `DEVELOPER_SETUP.md`: setting up a development machine
+- `KNOWN_LIMITATIONS.md`: limitations
 
-- `data/` — corpora, curated/reference data, evaluation inputs, and local demo
-  uploads
-- `artifacts/` — promoted or candidate model/reference artifacts
-- `reports/` — generated figures, metrics, and progress-report outputs
+## Not in git
 
-## Documentation and operations
+`dist/`, `.local/` (local evaluation audio and caches), `.venv*/`, `models/*`,
+`node_modules/`, `__pycache__/`, `.worktrees/`, and AI agent tool folders
+(`.agents/`, `.claude/`, `.windsurf/`).
 
-- `docs/` — maintained product, architecture, safety, and research docs
-- `scripts/` — verification, artifact generation, and reproducible research
-  helpers
-- `tests/` — research/runtime regression tests
-- `apps/api/tests/` — API-focused tests for the active therapist backend
-
-## Root-level documentation and clinical guidelines
-
-- `AGENTS.md` / `CLAUDE.md` — AI agent guardrails, rules, and canonical source-of-truth pointers
-- `README.md` / `PROJECT_STATUS.md` — project introduction, architecture overview, and maintained status
-- `CHANGELOG.md` — version release notes and system changes
-- `DEVELOPER_SETUP.md` — local development onboarding and environment instructions
-- `CONTEXT.md` — project glossary and clinical terminology reference
-- `PRODUCT.md` — product personality, clinical teal design principles, and UI tokens
-- `CLINICAL_GUIDELINE_MAPPING.md` & `clinical-guidelines/` — clinical construct mappings and raw guidelines (ASHA, NICE, DSPM)
-- `REPORT_SPECIFICATION.md` — clinical progress report requirements and guardrails
-- `THERAPIST_SIMPLE_WORKFLOW.md` & `SCOPE_AND_DELIVERABLES.md` — therapist workflow specs and deliverables
-- `KNOWN_LIMITATIONS.md` — prototype constraints and clinical safety boundaries
-
-## Desktop and terminal launchers
-
-- `scripts/pasascope_gui.py` (compatibility alias: `scripts/pasascope_gui.py`) — launcher for PasaScope Desktop GUI
-- `scripts/pasascope_tui.py` (compatibility alias: `scripts/pasascope_tui.py`) — launcher for PasaScope Terminal TUI
-
-## Generated and local-only files
-
-These may exist locally but are not source:
-
-- `.next/`
-- `dist/`
-- `.local/`
-- `node_modules/`
-- `__pycache__/`
-- `.pytest_cache/`
-- `*.tsbuildinfo`
-- `.worktrees/`
-
+Removed surfaces and where to find them are listed in
+[`PROJECT_SOURCE_OF_TRUTH.md`](./PROJECT_SOURCE_OF_TRUTH.md#removed-paths).

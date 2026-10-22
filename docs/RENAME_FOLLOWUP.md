@@ -11,16 +11,13 @@
 
 | ชื่อ | อยู่ที่ | ถ้าจะเปลี่ยน |
 |---|---|---|
-| Cloudflare worker `lingualens-web` | `apps/pasascope-app/wrangler.jsonc` | สร้าง/เปลี่ยนชื่อ worker ใน Cloudflare, ย้าย route และ secret, แล้วแก้ `name` กับ `service` |
-| ฐานข้อมูล `lingualens_assessment_v2` และ role `lingualens_assessment_app` | `apps/api/app/core/config.py`, `docker-compose.yml`, `scripts/postgres/init-assessment-v2.sql`, สคริปต์ `scripts/check_assessment_v2_*.py` | สร้างฐานข้อมูลและ role ใหม่หรือ `ALTER … RENAME`, อัปเดต connection string ใน secret store, ลบ volume ของ Docker ในเครื่องถ้าใช้ compose |
-| โปรเจกต์ staging/production (`lingualens-staging`, `lingualens-production`, `lingualens-api-staging`, URL ของ Render/Vercel/Supabase) | runbook ใน `docs/` | เปลี่ยนชื่อที่ผู้ให้บริการ แล้วแก้ URL ใน runbook และค่า CORS |
 | GitHub repository `monai86/lingualens` | เอกสารที่อ้าง URL | เปลี่ยนชื่อ repo บน GitHub (ลิงก์เดิมจะ redirect) |
 
 ## 2. ตัวระบุที่ถูกบันทึกไปกับข้อมูล
 
 | ตัวระบุ | เหตุผลที่คงไว้ |
 |---|---|
-| `lingualens-thai-mixed-tokenizer-v1`, `lingualens-chat-subset-v1`, `lingualens-cha-parser-v1`, `lingualens-cha-serializer-v1` | เป็นรหัสเวอร์ชันที่ผูกกับ checksum ของผลวิเคราะห์ที่สร้างไว้แล้ว เปลี่ยนแล้วผลเดิมจะตรวจสอบย้อนหลังไม่ได้ ให้ออกรหัส `-v2` ชื่อใหม่เมื่อมีการเปลี่ยนพฤติกรรมจริง |
+| `lingualens-chat-subset-v1`, `lingualens-cha-parser-v1`, `lingualens-cha-serializer-v1` (`packages/cha/roundtrip.py`) | เป็นรหัสเวอร์ชันที่ผูกกับ checksum ของผลวิเคราะห์ที่สร้างไว้แล้ว เปลี่ยนแล้วผลเดิมจะตรวจสอบย้อนหลังไม่ได้ ให้ออกรหัส `-v2` ชื่อใหม่เมื่อมีการเปลี่ยนพฤติกรรมจริง |
 | `demo_mode: "lingualens-app-local"` | ค่าในไฟล์ข้อมูล demo (`data/demo/demo_manifest.json`) |
 | `data/ml/LinguaLens_ML_Features_and_Results_Summary.xlsx` | ชื่อไฟล์ผลวิจัยที่อ้างในรายงานเดิม |
 
@@ -30,13 +27,11 @@
 
 | สิ่งที่ยังรับชื่อเดิม | อยู่ที่ |
 |---|---|
-| ตัวแปร `LINGUALENS_*` (ชื่อ `PASASCOPE_*` ชนะเมื่อมีทั้งคู่) | `getenv_compat` ใน `apps/api/app/core/config.py`, `docker-compose.yml`, `scripts/check_project.sh` |
-| ไฟล์ `.local/lingualens-app-repository.json` | `Settings.resolved_json_repository_path`, `scripts/report_transcript_review_time.py`, `scripts/clean_mock_data.py` |
-| key ในเบราว์เซอร์ที่ขึ้นต้นด้วย `lingualens.` | `apps/pasascope-app/src/lib/storage-key-migration.ts` |
+| ตัวแปร `LINGUALENS_*` (ชื่อ `PASASCOPE_*` ชนะเมื่อมีทั้งคู่) | `getenv_compat` ใน `apps/api/app/core/config.py`, `scripts/check_project.sh` |
+| ไฟล์ `.local/lingualens-app-repository.json` | `Settings.resolved_json_repository_path`, `scripts/report_transcript_review_time.py` |
 
 ## สิ่งที่ไม่ได้แก้
 
-บันทึกย้อนหลังคงชื่อเดิมไว้ตามที่เขียนในตอนนั้น: `docs/archive/`, `docs/release_artifacts/`,
-`docs/plans/`, `docs/superpowers/`, `docs/readiness/`, `docs/frontend/`, `docs/core-speech-testbed/`,
-`docs/ux/`, `reports/`, รายการเก่าใน `CHANGELOG.md` และ path `/Users/porschecaa/lingualens/…`
-ที่อ้างเป็นหลักฐานในเอกสาร
+บันทึกย้อนหลังคงชื่อเดิมไว้ตามที่เขียนในตอนนั้น: `reports/`, `data/`, `docs/literature/`,
+รายการเก่าใน `CHANGELOG.md` และ path `/Users/porschecaa/lingualens/…` ที่อ้างเป็นหลักฐานในเอกสาร
+เอกสารเก่าที่ถอดออกจาก working tree ยังอยู่ที่ git tag `web-app-final`

@@ -118,7 +118,7 @@ function run(argv) {
 CODE = ["packages", "src", "apps/api/app", "pyproject.toml", "scripts/desktop_bundle"]
 SKIP_DIRS = {"__pycache__", "tests", ".pytest_cache", "node_modules"}
 # Not part of the desktop app.
-SKIP_CODE = {"packages/gui", "packages/tui"}
+SKIP_CODE: set[str] = set()
 
 LAUNCHER = """#!/bin/bash
 # PasaScope: runs the bundled Python on the bundled code.

@@ -54,7 +54,7 @@ INNO_APP_ID = "{{6E0C2F3B-7A41-4B8E-9D0F-5C1A2E7B9F64}"
 # What the app runs from; everything else in the repository stays out (as for macOS).
 CODE = ["packages", "src", "apps/api/app", "pyproject.toml", "scripts/desktop_bundle"]
 SKIP_DIRS = {"__pycache__", "tests", ".pytest_cache", "node_modules"}
-SKIP_CODE = {"packages/gui", "packages/tui"}
+SKIP_CODE: set[str] = set()
 
 LAUNCHER = '''"""Start PasaScope without a console window (run by pythonw.exe from the Start menu shortcut)."""
 import os
