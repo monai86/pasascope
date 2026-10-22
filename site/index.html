@@ -4,268 +4,327 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>PasaScope</title>
-  <meta name="description" content="PasaScope: a desktop app that helps speech-language therapists transcribe and measure a child's language sample, on their own computer. Not a diagnostic tool.">
+  <meta name="description" content="PasaScope: a desktop app that helps speech-language therapists transcribe a child's Thai language sample and count the measures by CLAN's rules, on their own computer. Not a diagnostic tool.">
   <meta property="og:title" content="PasaScope">
-  <meta property="og:description" content="Transcribe and measure a child's language sample, on your own computer.">
+  <meta property="og:description" content="Transcribe a child's language sample and count every word, on your own computer.">
   <meta property="og:image" content="https://monai86.github.io/pasascope/assets/og.png">
   <meta property="og:type" content="website">
-  <meta name="theme-color" content="#000000">
+  <meta name="theme-color" content="#f4f8fd">
+  <meta name="color-scheme" content="light">
   <link rel="icon" href="assets/logo.png">
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+Thai:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="preload" href="fonts/Prompt-600-latin.woff2" as="font" type="font/woff2" crossorigin>
+  <link rel="preload" href="fonts/NotoSansThai-400-thai.woff2" as="font" type="font/woff2" crossorigin>
+  <link rel="stylesheet" href="fonts.css">
   <link rel="stylesheet" href="styles.css">
 </head>
 <body>
   <a class="skip" href="#download"><span lang="en">Skip to download</span><span lang="th">ข้ามไปที่ดาวน์โหลด</span></a>
 
-  <header class="localnav" id="top">
-    <div class="localnav-inner">
-      <a class="localnav-title" href="#top"><img src="assets/logo.png" alt="" width="22" height="22"> PasaScope</a>
-      <nav class="localnav-links" aria-label="Sections">
-        <a href="#steps"><span lang="en">Features</span><span lang="th">ทำอะไรได้</span></a>
+  <header class="bar" id="top">
+    <div class="wrap bar-inner">
+      <a class="wordmark" href="#top"><img src="assets/logo.png" alt="" width="28" height="28">PasaScope</a>
+      <nav class="bar-links" aria-label="Sections">
+        <a href="#how"><span lang="en">How it works</span><span lang="th">วิธีทำงาน</span></a>
+        <a href="#measures"><span lang="en">Measures</span><span lang="th">ตัวชี้วัด</span></a>
         <a href="#privacy"><span lang="en">Privacy</span><span lang="th">ความเป็นส่วนตัว</span></a>
-        <a href="#download"><span lang="en">Install</span><span lang="th">ติดตั้ง</span></a>
-        <a href="#faq"><span lang="en">FAQ</span><span lang="th">คำถาม</span></a>
-        <button class="lang-toggle" type="button" data-lang-toggle aria-label="ภาษาไทย / English">
-          <span lang="en">ไทย</span><span lang="th">EN</span>
-        </button>
-        <a class="button button-small" href="#download"><span lang="en">Download</span><span lang="th">ดาวน์โหลด</span></a>
+        <a href="#faq"><span lang="en">Questions</span><span lang="th">คำถาม</span></a>
       </nav>
+      <button class="lang-toggle" type="button" data-lang-toggle aria-label="ภาษาไทย / English">
+        <span lang="en">ไทย</span><span lang="th">EN</span>
+      </button>
+      <a class="pill pill-small" href="#download"><span lang="en">Download</span><span lang="th">ดาวน์โหลด</span></a>
     </div>
   </header>
 
   <main>
-    <!-- Hero -->
-    <section class="hero section-dark">
-      <div class="content hero-content">
-        <div class="app-icon reveal" aria-hidden="true">
-          <span class="ring"></span><span class="ring"></span><span class="ring"></span>
-          <img src="assets/logo.png" alt="" width="96" height="96">
-        </div>
-        <p class="eyebrow reveal">PasaScope <span class="eyebrow-thai">ภาษา-สโคป</span></p>
-        <h1 class="headline-hero reveal">
-          <span lang="en">Every sentence,<br>heard and measured.</span>
-          <span lang="th">ฟังเด็กพูด<br>ทีละประโยค</span>
-        </h1>
-        <p class="hero-copy reveal">
-          <span lang="en">PasaScope helps speech-language therapists draft a Thai transcript, check it, compute language measures and write the report, without recordings ever leaving the computer.</span>
-          <span lang="th">ช่วยนักแก้ไขการพูดถอดเสียงภาษาไทย ตรวจ transcript คำนวณตัวชี้วัด และร่างรายงาน โดยเสียงและข้อมูลเด็กไม่ออกจากเครื่อง</span>
-        </p>
-        <div class="hero-ctas reveal">
-          <a class="button button-large" data-download="primary" href="https://github.com/monai86/pasascope/releases/latest">
-            <span data-label-mac><span lang="en">Download for Mac</span><span lang="th">ดาวน์โหลดสำหรับ Mac</span></span>
-            <span data-label-win hidden><span lang="en">Download for Windows</span><span lang="th">ดาวน์โหลดสำหรับ Windows</span></span>
-          </a>
-          <a class="link-arrow" href="#download">
-            <span data-label-mac><span lang="en">Also for Windows</span><span lang="th">มีสำหรับ Windows ด้วย</span></span>
-            <span data-label-win hidden><span lang="en">Also for Mac</span><span lang="th">มีสำหรับ Mac ด้วย</span></span>
-          </a>
-        </div>
-        <p class="hero-meta reveal" data-release-meta>
-          <span lang="en">Free · Mac with Apple silicon, macOS 12+ · Windows 10 or 11, 64-bit</span>
-          <span lang="th">ไม่มีค่าใช้จ่าย · Mac ชิป Apple, macOS 12 ขึ้นไป · Windows 10 หรือ 11 แบบ 64 บิต</span>
-        </p>
-      </div>
-      <figure class="hero-shot reveal reveal-rise">
-        <div class="window">
-          <img src="assets/transcript-dark.webp" width="2880" height="1800"
-               alt="PasaScope showing a transcript: cases in the side bar, sessions in tabs, the waveform and the line being played">
-        </div>
-      </figure>
-    </section>
-
-    <!-- Four steps -->
-    <section class="section section-alt" id="steps">
-      <div class="content">
-        <header class="section-header reveal">
-          <p class="eyebrow-small"><span lang="en">How it works</span><span lang="th">วิธีทำงาน</span></p>
-          <h2 class="headline">
-            <span lang="en">From recording<br>to report, in four steps.</span>
-            <span lang="th">จากเสียง ถึงรายงาน<br>ใน 4 ขั้น</span>
-          </h2>
-          <p class="section-copy">
-            <span lang="en">The therapist decides at every step; the app drafts and counts.</span>
-            <span lang="th">ทุกขั้นนักบำบัดเป็นผู้ตัดสินใจ โปรแกรมช่วยร่างและคำนวณ</span>
+    <!-- First view: what it does, and a sheet marked the way it counts -->
+    <section class="hero">
+      <div class="wrap hero-grid">
+        <div class="hero-text">
+          <h1>
+            <span lang="en">Counts every word the child says.</span>
+            <span lang="th">นับทุกคำ<br>ที่เด็กพูด</span>
+          </h1>
+          <p class="lede">
+            <span lang="en">PasaScope drafts a Thai transcript from your recording. You check it line by line, then it counts MLU-w, NDW and the other measures by CLAN's rules and drafts the A4 report. Recordings never leave the computer.</span>
+            <span lang="th">PasaScope ถอดเสียงภาษาไทยจากไฟล์เสียงให้ก่อน คุณตรวจทีละบรรทัด แล้วโปรแกรมนับ MLU-w, NDW และตัวชี้วัดอื่นตามกติกาของ CLAN และร่างรายงาน A4 ให้ เสียงไม่ออกจากเครื่อง</span>
           </p>
-        </header>
-        <div class="tiles">
-          <article class="tile reveal">
-            <p class="tile-step">1</p>
-            <h3><span lang="en">Transcribe</span><span lang="th">ถอดเสียง</span></h3>
-            <p><span lang="en">Record in the app or open a recording. PasaScope drafts a CHAT transcript with child and adult turns separated, on this computer with Whisper. A <code>.cha</code> file can be imported instead.</span>
-               <span lang="th">อัดเสียงในโปรแกรมหรือเลือกไฟล์เสียง โปรแกรมถอดเป็น transcript รูปแบบ CHAT และแยกเสียงเด็กกับผู้ใหญ่ให้ก่อน บนเครื่องด้วย Whisper หรือนำเข้าไฟล์ <code>.cha</code> ก็ได้</span></p>
-          </article>
-          <article class="tile reveal">
-            <p class="tile-step">2</p>
-            <h3><span lang="en">Check and attest</span><span lang="th">ตรวจและรับรอง</span></h3>
-            <p><span lang="en">Listen line by line, correct the text and speakers, add CHAT codes, then attest the transcript in your name.</span>
-               <span lang="th">ฟังทีละประโยค แก้ข้อความและผู้พูด ใส่รหัส CHAT แล้วรับรองในชื่อของคุณ</span></p>
-          </article>
-          <article class="tile reveal">
-            <p class="tile-step">3</p>
-            <h3><span lang="en">Measures you can explain</span><span lang="th">ตัวชี้วัดที่อธิบายได้</span></h3>
-            <p><span lang="en">MLU-w, NDW, how often the child answers an adult and the other main measures, counted by CLAN's rules. Lines worth a second look, such as possible echolalia, come with their reasons.</span>
-               <span lang="th">MLU-w, NDW, อัตราที่เด็กตอบต่อจากผู้ใหญ่ และตัวชี้วัดหลักอื่น นับตามกติกาของ CLAN พร้อมชี้ประโยคที่ควรกลับไปดู เช่น อาจเป็นการพูดตาม และบอกเหตุผล</span></p>
-          </article>
-          <article class="tile reveal">
-            <p class="tile-step">4</p>
-            <h3><span lang="en">A4 report, ready to sign</span><span lang="th">รายงาน A4 พร้อมลงนาม</span></h3>
-            <p><span lang="en">Fill in the interpretation, goals and recommendations and watch the printed page update as you type, in Thai or English. Then sign and export a PDF.</span>
-               <span lang="th">กรอกการแปลผล เป้าหมาย และคำแนะนำ เห็นหน้ากระดาษจริงขณะพิมพ์ ภาษาไทยหรืออังกฤษ แล้วลงนามและ export เป็น PDF</span></p>
-          </article>
-        </div>
-        <div class="two-up">
-          <figure class="reveal reveal-rise">
-            <div class="window window-light">
-              <img src="assets/findings-light.webp" width="2880" height="1800" loading="lazy"
-                   alt="The findings step: the main language measures and the cues to review">
-            </div>
-            <figcaption><span lang="en">The main measures, with the lines worth a second look.</span><span lang="th">ตัวชี้วัดหลัก พร้อมประโยคที่ควรกลับไปดู</span></figcaption>
-          </figure>
-          <figure class="reveal reveal-rise">
-            <div class="window window-light">
-              <img src="assets/report-light.webp" width="2880" height="1800" loading="lazy"
-                   alt="The report step: a form on the left and the A4 page preview on the right">
-            </div>
-            <figcaption><span lang="en">Fill in the report and see the printed page as you go.</span><span lang="th">กรอกรายงาน แล้วเห็นหน้ากระดาษจริงทันที</span></figcaption>
-          </figure>
-        </div>
-        <p class="demo-note reveal"><span lang="en">Screens show demonstration data written for the purpose, not a real child.</span><span lang="th">ภาพจากข้อมูลสาธิต (บทสนทนาที่เขียนขึ้น) ไม่ใช่ข้อมูลเด็กจริง</span></p>
-      </div>
-    </section>
-
-    <!-- Listening -->
-    <section class="section section-dark">
-      <div class="content">
-        <header class="section-header centered reveal">
-          <h2 class="headline">
-            <span lang="en">Read along<br>as you listen.</span>
-            <span lang="th">ฟังไปพร้อมกับอ่าน</span>
-          </h2>
-          <p class="section-copy">
-            <span lang="en">While a recording plays, the line being spoken is highlighted and kept in view. Click the waveform to play from there, and set speakers from the keyboard.</span>
-            <span lang="th">ระหว่างเล่นเสียง บรรทัดที่กำลังพูดจะถูกไฮไลต์และเลื่อนตามให้เอง คลิกที่คลื่นเสียงเพื่อเล่นจากตรงนั้น และใช้แป้นพิมพ์กำหนดผู้พูดได้ทันที</span>
-          </p>
-        </header>
-        <figure class="wide-shot reveal reveal-rise">
-          <div class="window">
-            <img src="assets/listen-dark.webp" width="2220" height="1360" loading="lazy"
-                 alt="The transcript while a recording plays: the waveform with the playhead, and the line being spoken marked in the table">
+          <div class="ctas">
+            <a class="pill" data-download="primary" href="https://github.com/monai86/pasascope/releases/latest">
+              <span data-label-mac><span lang="en">Download for Mac</span><span lang="th">ดาวน์โหลดสำหรับ Mac</span></span>
+              <span data-label-win hidden><span lang="en">Download for Windows</span><span lang="th">ดาวน์โหลดสำหรับ Windows</span></span>
+            </a>
+            <a class="quiet-link" data-download="secondary" href="#download">
+              <span data-label-mac><span lang="en">Also for Windows</span><span lang="th">มีสำหรับ Windows ด้วย</span></span>
+              <span data-label-win hidden><span lang="en">Also for Mac</span><span lang="th">มีสำหรับ Mac ด้วย</span></span>
+            </a>
           </div>
+          <p class="release-meta" data-release-meta>
+            <span lang="en">Free · Mac with Apple silicon, macOS 12+ · Windows 10 or 11, 64-bit</span>
+            <span lang="th">ไม่มีค่าใช้จ่าย · Mac ชิป Apple, macOS 12 ขึ้นไป · Windows 10 หรือ 11 แบบ 64 บิต</span>
+          </p>
+        </div>
+
+        <figure class="sheet" aria-labelledby="sheet-title">
+          <header class="sheet-head">
+            <p class="sheet-title" id="sheet-title">
+              <span lang="en">A sample, marked the way PasaScope counts it</span>
+              <span lang="th">ตัวอย่างที่ขีดตามวิธีที่ PasaScope นับ</span>
+            </p>
+            <ul class="legend">
+              <li><i class="key key-word" aria-hidden="true"></i><span lang="en">counted word</span><span lang="th">คำที่นับ</span></li>
+              <li><i class="key key-rep" aria-hidden="true"></i><span lang="en">said before</span><span lang="th">คำที่พูดไปแล้ว</span></li>
+              <li><i class="key key-check" aria-hidden="true"></i><span lang="en">to check</span><span lang="th">ควรตรวจ</span></li>
+            </ul>
+          </header>
+
+          <ol class="lines">
+            <li class="line adult">
+              <span class="no">1</span><span class="who">*INV</span>
+              <p class="say"><span lang="th" data-keep>หนูชอบกินอะไร</span><span class="gloss" lang="en">What do you like to eat?</span></p>
+            </li>
+            <li class="line child">
+              <span class="no">2</span><span class="who">*CHI</span>
+              <p class="say"><span lang="th" data-keep><span class="w" style="--i:0">ชอบ</span><span class="w" style="--i:1">กิน</span><span class="w" style="--i:2">ขนม</span></span><span class="gloss" lang="en">Like eating sweets.</span>
+                <span class="note" style="--i:3"><span lang="en">Reuses two words of line 1. A fair answer; you decide.</span><span lang="th">ใช้คำ 2 คำจากบรรทัด 1 เป็นคำตอบที่สมเหตุสมผล คุณเป็นผู้ตัดสิน</span></span></p>
+              <span class="tally" style="--i:3"><svg viewBox="0 0 44 34" aria-hidden="true"><path pathLength="1" d="M24 4C33 4 41 9 40 17s-9 14-19 13S3 24 4 16 13 3 26 5"/></svg><b>3</b></span>
+            </li>
+            <li class="line adult">
+              <span class="no">3</span><span class="who">*INV</span>
+              <p class="say"><span lang="th" data-keep>ขนมอะไรครับ</span><span class="gloss" lang="en">What sweets?</span></p>
+            </li>
+            <li class="line child echo">
+              <span class="no">4</span><span class="who">*CHI</span>
+              <p class="say"><span lang="th" data-keep class="mark" style="--i:4"><span class="w rep" style="--i:4">ขนม</span><span class="w" style="--i:5">อะไร</span><span class="w" style="--i:6">ครับ</span></span><span class="gloss" lang="en">What sweets?</span>
+                <span class="note" style="--i:7"><span lang="en">Repeats line 3 word for word. Flagged for you to check.</span><span lang="th">ซ้ำบรรทัด 3 ทุกคำ ระบบชี้ให้คุณกลับไปฟัง</span></span></p>
+              <span class="tally" style="--i:7"><svg viewBox="0 0 44 34" aria-hidden="true"><path pathLength="1" d="M20 4C30 3 40 8 40 16s-8 15-19 14S4 25 4 17 12 4 24 5"/></svg><b>3</b></span>
+            </li>
+            <li class="line adult">
+              <span class="no">5</span><span class="who">*INV</span>
+              <p class="say"><span lang="th" data-keep>เล่นรถกันไหม</span><span class="gloss" lang="en">Shall we play with the car?</span></p>
+            </li>
+            <li class="line child">
+              <span class="no">6</span><span class="who">*CHI</span>
+              <p class="say"><span lang="th" data-keep><span class="w" style="--i:8">เล่น</span><span class="w" style="--i:9">รถ</span> <span class="w" style="--i:10">สีแดง</span></span><span class="gloss" lang="en">Play car. Red.</span>
+                <span class="note" style="--i:11"><span lang="en">Reuses two words of line 5.</span><span lang="th">ใช้คำ 2 คำจากบรรทัด 5</span></span></p>
+              <span class="tally" style="--i:11"><svg viewBox="0 0 44 34" aria-hidden="true"><path pathLength="1" d="M23 5C32 3 41 9 40 17s-10 14-20 13S3 23 5 15 14 4 27 6"/></svg><b>3</b></span>
+            </li>
+            <li class="line adult">
+              <span class="no">7</span><span class="who">*INV</span>
+              <p class="say"><span lang="th" data-keep>รถคันนี้สีอะไร</span><span class="gloss" lang="en">What colour is this car?</span></p>
+            </li>
+            <li class="line child">
+              <span class="no">8</span><span class="who">*CHI</span>
+              <p class="say"><span lang="th" data-keep><span class="w rep" style="--i:12">สีแดง</span> <span class="w" style="--i:13">ไม่</span><span class="w" style="--i:14">เอา</span> <span class="w" style="--i:15">สี</span><span class="w" style="--i:16">ฟ้า</span></span><span class="gloss" lang="en">Red. Don't want. Blue.</span></p>
+              <span class="tally" style="--i:16"><svg viewBox="0 0 44 34" aria-hidden="true"><path pathLength="1" d="M21 4C31 3 41 9 40 17s-9 14-20 13S3 24 4 16 12 4 25 5"/></svg><b>5</b></span>
+            </li>
+          </ol>
+
+          <footer class="sheet-foot">
+            <dl class="totals">
+              <div><dt><span lang="en">Child utterances</span><span lang="th">ประโยคของเด็ก</span></dt><dd>4</dd></div>
+              <div><dt><span lang="en">Words</span><span lang="th">คำ</span></dt><dd>14</dd></div>
+              <div><dt>MLU-w</dt><dd>3.50</dd></div>
+              <div><dt>NDW</dt><dd>12</dd></div>
+              <div><dt><span lang="en">Echo cues</span><span lang="th">cue พูดตาม</span></dt><dd>3</dd></div>
+            </dl>
+            <p class="sheet-caveat">
+              <span lang="en">A short sample: CLAN recommends 50 or more child utterances, and PasaScope says so on the findings screen. Written for this page; not a real child.</span>
+              <span lang="th">ตัวอย่างสั้น: CLAN แนะนำอย่างน้อย 50 ประโยค ซึ่ง PasaScope เตือนไว้ในหน้าตัวชี้วัดด้วย บทสนทนานี้เขียนขึ้นเพื่อหน้านี้ ไม่ใช่เด็กจริง</span>
+            </p>
+          </footer>
         </figure>
-        <div class="facts reveal">
-          <div class="fact"><p class="fact-value">11</p><p class="fact-label"><span lang="en">main measures, each explained</span><span lang="th">ตัวชี้วัดหลัก มีคำอธิบายทุกตัว</span></p></div>
-          <div class="fact"><p class="fact-value">500</p><p class="fact-label"><span lang="en">lines open and save at once</span><span lang="th">บรรทัด เปิดและบันทึกได้ทันที</span></p></div>
-          <div class="fact"><p class="fact-value">2</p><p class="fact-label"><span lang="en">report languages, Thai and English</span><span lang="th">ภาษาของรายงาน ไทยและอังกฤษ</span></p></div>
+      </div>
+    </section>
+
+    <!-- The four steps, and the transcript screen they happen on -->
+    <section class="section" id="how">
+      <div class="wrap">
+        <h2>
+          <span lang="en">From a recording to that sheet</span>
+          <span lang="th">จากไฟล์เสียง ถึงแผ่นนี้</span>
+        </h2>
+        <div class="how-grid">
+          <ol class="steps">
+            <li>
+              <h3><span lang="en">Record or open</span><span lang="th">อัดเสียงหรือเปิดไฟล์</span></h3>
+              <p><span lang="en">Record in the app, open an audio file or import a <code>.cha</code>. Whisper drafts a CHAT transcript on this computer and separates the child's turns from the adults'.</span>
+                 <span lang="th">อัดเสียงในโปรแกรม เปิดไฟล์เสียง หรือนำเข้าไฟล์ <code>.cha</code> Whisper ถอดเป็น transcript รูปแบบ CHAT บนเครื่องนี้ และแยกบรรทัดของเด็กกับผู้ใหญ่ให้ก่อน</span></p>
+            </li>
+            <li>
+              <h3><span lang="en">Check and attest</span><span lang="th">ตรวจและรับรอง</span></h3>
+              <p><span lang="en">Listen line by line; the line being spoken stays highlighted. Fix the words and speakers, add CHAT codes, then attest the transcript in your name. Nothing is counted before that.</span>
+                 <span lang="th">ฟังทีละบรรทัด บรรทัดที่กำลังเล่นจะถูกไฮไลต์ตามเสียง แก้คำและผู้พูด ใส่รหัส CHAT แล้วรับรองในชื่อของคุณ ก่อนรับรองยังไม่มีการนับใด ๆ</span></p>
+            </li>
+            <li>
+              <h3><span lang="en">Read the findings</span><span lang="th">ดูตัวชี้วัด</span></h3>
+              <p><span lang="en">The measures, each with what it means, and the lines worth a second listen, each with its reason.</span>
+                 <span lang="th">ตัวชี้วัดพร้อมความหมายของแต่ละตัว และบรรทัดที่ควรกลับไปฟังอีกครั้ง พร้อมเหตุผล</span></p>
+            </li>
+            <li>
+              <h3><span lang="en">Sign the report</span><span lang="th">ลงนามรายงาน</span></h3>
+              <p><span lang="en">Write the interpretation and goals; the A4 page fills in as you type. Sign it and export a PDF.</span>
+                 <span lang="th">เขียนการแปลผลและเป้าหมาย หน้า A4 เปลี่ยนตามที่พิมพ์ ลงนามแล้ว export เป็น PDF</span></p>
+            </li>
+          </ol>
+
+          <figure class="shot shot-annotated">
+            <div class="frame">
+              <img lang="en" src="assets/transcript-en.webp" width="1600" height="1130" loading="lazy"
+                   alt="The transcript screen: the waveform, the lines with their speakers and counted words, and the details of the selected line">
+              <img lang="th" src="assets/transcript-th.webp" width="1600" height="1130" loading="lazy"
+                   alt="หน้า transcript: คลื่นเสียง บรรทัดพร้อมผู้พูดและจำนวนคำที่นับ และรายละเอียดของบรรทัดที่เลือก">
+              <span class="pin" style="--x:50%;--y:17%" aria-hidden="true">a</span>
+              <span class="pin" style="--x:56.5%;--y:94%" aria-hidden="true">b</span>
+              <span class="pin" style="--x:96%;--y:38%" aria-hidden="true">c</span>
+            </div>
+            <figcaption>
+              <ol class="pins-key">
+                <li><span lang="en">Click the waveform to play from there.</span><span lang="th">คลิกที่คลื่นเสียงเพื่อเล่นจากตรงนั้น</span></li>
+                <li><span lang="en">How many words of each child line go into the measures.</span><span lang="th">จำนวนคำของแต่ละบรรทัดของเด็กที่นำไปคำนวณ</span></li>
+                <li><span lang="en">Why a line starts where it does, and how sure the speaker label is.</span><span lang="th">เหตุผลที่ประโยคเริ่มตรงนี้ และความมั่นใจของการระบุผู้พูด</span></li>
+              </ol>
+            </figcaption>
+          </figure>
         </div>
       </div>
     </section>
 
-    <!-- Workspace -->
+    <!-- The measures, worked on the sheet above -->
+    <section class="section section-paper" id="measures">
+      <div class="wrap">
+        <div class="section-intro">
+          <h2>
+            <span lang="en">Every number says<br>where it came from</span>
+            <span lang="th">ทุกตัวเลข<br>บอกที่มาของตัวเอง</span>
+          </h2>
+          <p>
+            <span lang="en">Each measure in the app carries three lines: what it is, why it matters and where it falls short. Here are four of them, worked on the sheet above.</span>
+            <span lang="th">ตัวชี้วัดทุกตัวในโปรแกรมมีคำอธิบาย 3 บรรทัด: คืออะไร ใช้ทำอะไร และข้อควรระวัง ตัวอย่าง 4 ตัวนี้คำนวณจากแผ่นด้านบน</span>
+          </p>
+        </div>
+
+        <dl class="measures">
+          <div class="measure">
+            <dt><span class="m-name">MLU-w</span><span class="m-value">3.50</span></dt>
+            <dd class="m-worked"><span lang="en">14 words over 4 utterances.</span><span lang="th">14 คำ จาก 4 ประโยค</span></dd>
+            <dd><span lang="en">Mean length of utterance in words, by CLAN's rules. Shows the child's language level and tracks progress; TalkBank medians at age 4 are TD 4.5, LT 3.4, ASD 2.1.</span>
+                <span lang="th">ความยาวประโยคเฉลี่ยเป็นคำ ตามกติกา CLAN บอกระดับภาษาและใช้ติดตามพัฒนาการ ข้อมูล TalkBank อายุ 4 ปี ค่ามัธยฐาน TD 4.5, LT 3.4, ASD 2.1</span></dd>
+            <dd class="m-caution"><span lang="en">Thai values depend on word segmentation and cannot be compared with English norms; best for change in one child.</span>
+                <span lang="th">ภาษาไทยขึ้นกับการตัดคำ เทียบกับเกณฑ์ภาษาอังกฤษตรง ๆ ไม่ได้ ใช้ดูการเปลี่ยนของเด็กคนเดียวกันดีที่สุด</span></dd>
+          </div>
+          <div class="measure">
+            <dt><span class="m-name">NDW</span><span class="m-value">12</span></dt>
+            <dd class="m-worked"><span lang="en">14 words, two of them said before: <span lang="th" data-keep>ขนม</span> and <span lang="th" data-keep>สีแดง</span>.</span><span lang="th">14 คำ มี 2 คำที่พูดไปแล้ว คือ ขนม และ สีแดง</span></dd>
+            <dd><span lang="en">Different words the child used. Shows the breadth of vocabulary.</span>
+                <span lang="th">จำนวนคำที่ไม่ซ้ำกันที่เด็กใช้ บอกความกว้างของคลังคำ</span></dd>
+            <dd class="m-caution"><span lang="en">Grows with sample length; to compare sessions use NDW-100 or MATTR.</span>
+                <span lang="th">ขึ้นกับความยาวตัวอย่าง เทียบข้าม session ให้ใช้ NDW-100 หรือ MATTR</span></dd>
+          </div>
+          <div class="measure">
+            <dt><span class="m-name"><span lang="en">Response rate</span><span lang="th">อัตราการตอบต่อ</span></span><span class="m-value">1.00</span></dt>
+            <dd class="m-worked"><span lang="en">The child spoke after all four adult lines.</span><span lang="th">เด็กพูดต่อหลังผู้ใหญ่ครบทั้ง 4 ครั้ง</span></dd>
+            <dd><span lang="en">Share of adult utterances the child follows straight away. Measures turn-taking, which MLU does not show (ρ = 0.18 with MLU); typical children aged 3–5 in TalkBank sit around 0.55–0.57.</span>
+                <span lang="th">สัดส่วนประโยคของผู้ใหญ่ที่เด็กพูดต่อทันที วัดการผลัดกันพูด ให้ข้อมูลที่ MLU ไม่ได้บอก (สัมพันธ์กับ MLU เพียง ρ = 0.18) ใน TalkBank เด็ก TD 3–5 ปีอยู่ราว 0.55–0.57</span></dd>
+            <dd class="m-caution"><span lang="en">Counts only that the child spoke next, not whether it answered; depends on the activity.</span>
+                <span lang="th">นับแค่ว่าเด็กพูดต่อ ไม่ได้ดูว่าตอบตรงคำถาม และขึ้นกับกิจกรรม</span></dd>
+          </div>
+          <div class="measure">
+            <dt><span class="m-name"><span lang="en">Echo cues</span><span lang="th">cue พูดตาม</span></span><span class="m-value">3</span></dt>
+            <dd class="m-worked"><span lang="en">Line 4 word for word; lines 2 and 6 in part.</span><span lang="th">บรรทัด 4 ทุกคำ บรรทัด 2 และ 6 บางส่วน</span></dd>
+            <dd><span lang="en">Child utterances that repeat what an adult has just said, as a cue to review. Echoing is common in autistic children; in TalkBank it falls with age in typical children and rises in autistic children aged 4–6.</span>
+                <span lang="th">ประโยคของเด็กที่พูดซ้ำคำของผู้ใหญ่ที่เพิ่งพูด เป็น cue ให้ตรวจ การพูดตามพบบ่อยในเด็กออทิสติก ใน TalkBank สัดส่วนนี้ลดลงตามอายุในเด็ก TD แต่สูงขึ้นในเด็ก ASD 4–6 ปี</span></dd>
+            <dd class="m-caution"><span lang="en">An answer that reuses the question's words can be caught, as line 2 shows. You confirm or dismiss each one.</span>
+                <span lang="th">คำตอบที่ใช้คำเดียวกับคำถามอาจถูกจับได้ อย่างบรรทัด 2 คุณยืนยันหรือปัดตกได้ทีละข้อ</span></dd>
+          </div>
+        </dl>
+
+        <figure class="shot shot-narrow">
+          <div class="frame">
+            <img lang="en" src="assets/findings-en.webp" width="1600" height="1130" loading="lazy"
+                 alt="The findings screen: the main measures on the left and the echo cues to confirm or dismiss on the right">
+            <img lang="th" src="assets/findings-th.webp" width="1600" height="1130" loading="lazy"
+                 alt="หน้าตัวชี้วัด: ตัวชี้วัดหลักด้านซ้าย และ cue การพูดตามที่ยืนยันหรือปัดตกได้ด้านขวา">
+          </div>
+          <figcaption><span lang="en">The findings screen. Every screen on this page shows demonstration data, not a real child.</span><span lang="th">หน้าตัวชี้วัด ภาพทุกภาพในหน้านี้เป็นข้อมูลสาธิต ไม่ใช่เด็กจริง</span></figcaption>
+        </figure>
+      </div>
+    </section>
+
+    <!-- The report -->
     <section class="section">
-      <div class="content">
-        <header class="section-header centered reveal">
-          <h2 class="headline">
-            <span lang="en">Many sessions.<br>All open at once.</span>
-            <span lang="th">หลายเคส หลาย session<br>เปิดพร้อมกันได้</span>
-          </h2>
-          <p class="section-copy">
-            <span lang="en">Each session opens in its own tab and keeps your unsaved edits while you switch. Type a child's code or a date to open it with ⌘P, or find any command with ⇧⌘P.</span>
-            <span lang="th">แต่ละ session เปิดเป็นแท็บของตัวเอง งานที่ยังไม่บันทึกไม่หายเมื่อสลับไปมา พิมพ์รหัสเด็กหรือวันที่เพื่อเปิดได้ทันทีด้วย ⌘P และค้นหาทุกคำสั่งด้วย ⇧⌘P</span>
-          </p>
-        </header>
-        <figure class="wide-shot reveal reveal-rise">
-          <div class="window window-light">
-            <img src="assets/palette-light.webp" width="2880" height="1800" loading="lazy"
-                 alt="The command palette finding a case and its sessions by typing">
+      <div class="wrap report-grid">
+        <figure class="shot">
+          <div class="frame">
+            <img lang="en" src="assets/report-en.webp" width="1600" height="1130" loading="lazy"
+                 alt="The report screen: the form on the left and the A4 print preview on the right">
+            <img lang="th" src="assets/report-th.webp" width="1600" height="1130" loading="lazy"
+                 alt="หน้ารายงาน: แบบฟอร์มด้านซ้าย และตัวอย่างหน้า A4 ด้านขวา">
           </div>
         </figure>
-        <ul class="feature-list reveal">
-          <li><strong><span lang="en">Light and dark</span><span lang="th">ธีมสว่างและมืด</span></strong><span lang="en">Follows your computer.</span><span lang="th">ตามการตั้งค่าของเครื่อง</span></li>
-          <li><strong><span lang="en">Thai and English</span><span lang="th">ไทยและอังกฤษ</span></strong><span lang="en">The app and its reports.</span><span lang="th">ทั้งหน้าจอและรายงาน</span></li>
-          <li><strong><span lang="en">One-click updates</span><span lang="th">อัปเดตในคลิกเดียว</span></strong><span lang="en">Backs up first, installs over itself; your data stays.</span><span lang="th">สำรองก่อน ติดตั้งทับรุ่นเดิม ข้อมูลอยู่ครบ</span></li>
-          <li><strong><span lang="en">Back up and restore</span><span lang="th">สำรองและกู้คืน</span></strong><span lang="en">One file holds everything; Home reminds you when one is due.</span><span lang="th">ไฟล์เดียวเก็บทุกอย่าง หน้าแรกเตือนเมื่อถึงเวลา</span></li>
-        </ul>
-      </div>
-    </section>
-
-    <!-- Privacy -->
-    <section class="section section-dark" id="privacy">
-      <div class="content">
-        <header class="section-header centered reveal">
-          <p class="eyebrow-small"><span lang="en">Privacy</span><span lang="th">ความเป็นส่วนตัว</span></p>
-          <h2 class="headline headline-large">
-            <span lang="en">Your data<br>stays with you.</span>
-            <span lang="th">ข้อมูลของเด็ก<br>อยู่ในเครื่องนี้</span>
+        <div class="report-text">
+          <h2>
+            <span lang="en">An A4 report,<br>in Thai or English</span>
+            <span lang="th">รายงาน A4<br>ภาษาไทยหรืออังกฤษ</span>
           </h2>
-          <p class="section-copy">
-            <span lang="en">No account and no server. The internet is used only to download the speech models and check for updates.</span>
-            <span lang="th">ไม่มีบัญชีผู้ใช้ ไม่มีเซิร์ฟเวอร์ อินเทอร์เน็ตใช้แค่ตอนดาวน์โหลดโมเดลและตรวจหาอัปเดต</span>
-          </p>
-        </header>
-        <div class="columns reveal">
-          <div class="column">
-            <svg class="glyph" viewBox="0 0 48 48" aria-hidden="true"><rect x="10" y="21" width="28" height="20" rx="4"/><path d="M16 21v-6a8 8 0 0 1 16 0v6"/></svg>
-            <h3><span lang="en">Transcribed on your computer</span><span lang="th">ถอดเสียงบนเครื่อง</span></h3>
-            <p><span lang="en">The Thai Whisper model runs on the computer; recordings and transcripts are not sent anywhere.</span>
-               <span lang="th">โมเดล Whisper ภาษาไทยทำงานบนเครื่อง เสียงและข้อความไม่ถูกส่งไปที่ใด</span></p>
-          </div>
-          <div class="column">
-            <svg class="glyph" viewBox="0 0 48 48" aria-hidden="true"><path d="M24 6l14 5v11c0 9-6 16-14 20-8-4-14-11-14-20V11z"/><path d="M17 24l5 5 9-10"/></svg>
-            <h3><span lang="en">Consent first</span><span lang="th">ความยินยอมมาก่อน</span></h3>
-            <p><span lang="en">A guardian's consent is recorded before any recording is added. Once it is withdrawn, the child's data is not used again.</span>
-               <span lang="th">ต้องบันทึกความยินยอมของผู้ปกครองก่อนเพิ่มเสียง ถอนความยินยอมแล้วข้อมูลของเด็กไม่ถูกใช้อีก</span></p>
-          </div>
-          <div class="column">
-            <svg class="glyph" viewBox="0 0 48 48" aria-hidden="true"><rect x="8" y="10" width="32" height="28" rx="4"/><path d="M8 18h32M15 26h10M15 31h16"/></svg>
-            <h3><span lang="en">Every change recorded</span><span lang="th">ทุกการเปลี่ยนแปลงมีบันทึก</span></h3>
-            <p><span lang="en">The audit log keeps every edit, attestation and signature, and cannot be edited or deleted.</span>
-               <span lang="th">audit log เก็บทุกการแก้ไข การรับรอง และการลงนาม แก้หรือลบไม่ได้</span></p>
-          </div>
+          <p><span lang="en">The session details, the source of the transcript and the measures go in by themselves. You write the interpretation, goals and recommendations and watch the printed page as you type.</span>
+             <span lang="th">ข้อมูล session ที่มาของ transcript และตัวชี้วัดใส่ให้เอง คุณเขียนการแปลผล เป้าหมาย และคำแนะนำ แล้วเห็นหน้ากระดาษจริงขณะพิมพ์</span></p>
+          <p><span lang="en">A draft exports without a signature. Once you sign, the PDF carries your name and the date.</span>
+             <span lang="th">ฉบับร่าง export ได้แต่ไม่มีลายเซ็น เมื่อลงนามแล้ว PDF จะมีชื่อของคุณและวันที่</span></p>
         </div>
       </div>
     </section>
 
-    <!-- Good to know -->
-    <section class="section" id="know">
-      <div class="content content-narrow">
-        <header class="section-header reveal">
-          <h2 class="headline headline-reduced"><span lang="en">PasaScope does not diagnose.</span><span lang="th">PasaScope ไม่ใช่เครื่องมือวินิจฉัย</span></h2>
-        </header>
-        <div class="notes reveal">
-          <p><strong><span lang="en">No yes-or-no answer.</span><span lang="th">ไม่ตอบว่าเป็นหรือไม่เป็น</span></strong>
-             <span lang="en">It does not say whether a child is autistic. Interpretation is the therapist's.</span>
-             <span lang="th">ไม่บอกว่าเด็กเป็นหรือไม่เป็นออทิสติก การแปลผลเป็นหน้าที่ของนักบำบัด</span></p>
-          <p><strong><span lang="en">No Thai norms yet.</span><span lang="th">ยังไม่มีเกณฑ์อ้างอิงของเด็กไทย</span></strong>
-             <span lang="en">The measures are descriptive and not yet clinically validated with Thai children; compare the same child across sessions with the same kind of activity.</span>
-             <span lang="th">ตัวชี้วัดเป็นค่าเชิงบรรยาย และยังไม่ได้ตรวจสอบทางคลินิกกับเด็กไทย ให้เทียบเด็กคนเดิมข้าม session ด้วยกิจกรรมแบบเดียวกัน</span></p>
-          <p><strong><span lang="en">Check every line.</span><span lang="th">ตรวจทุกประโยค</span></strong>
-             <span lang="en">Automatic transcripts can be wrong and must be checked against the recording; measures come only from an attested transcript.</span>
-             <span lang="th">transcript ที่ถอดอัตโนมัติอาจผิด ต้องตรวจกับเสียงทุกครั้ง ตัวชี้วัดคำนวณจาก transcript ที่รับรองแล้วเท่านั้น</span></p>
-          <p><strong><span lang="en">Backups are not encrypted.</span><span lang="th">ไฟล์สำรองไม่เข้ารหัส</span></strong>
-             <span lang="en">Keep them where only therapists can reach them.</span>
-             <span lang="th">เก็บไว้ในที่ที่มีแต่นักบำบัดเข้าถึงได้</span></p>
+    <!-- Privacy and limits -->
+    <section class="section section-paper" id="privacy">
+      <div class="wrap two-col">
+        <div>
+          <h2><span lang="en">Stays on this computer</span><span lang="th">อยู่ในเครื่องนี้</span></h2>
+          <ul class="points">
+            <li><strong><span lang="en">No account, no server.</span><span lang="th">ไม่มีบัญชี ไม่มีเซิร์ฟเวอร์</span></strong>
+                <span lang="en">The Thai Whisper model runs here. The internet is used only to download the speech models and check for updates.</span>
+                <span lang="th">โมเดล Whisper ภาษาไทยทำงานบนเครื่อง อินเทอร์เน็ตใช้แค่ตอนดาวน์โหลดโมเดลและตรวจหาอัปเดต</span></li>
+            <li><strong><span lang="en">Consent first.</span><span lang="th">ความยินยอมมาก่อน</span></strong>
+                <span lang="en">A guardian's consent is recorded before any recording is added. Once it is withdrawn, the child's data is not used again.</span>
+                <span lang="th">ต้องบันทึกความยินยอมของผู้ปกครองก่อนเพิ่มเสียง ถอนความยินยอมแล้วข้อมูลของเด็กไม่ถูกใช้อีก</span></li>
+            <li><strong><span lang="en">Every change recorded.</span><span lang="th">ทุกการเปลี่ยนแปลงมีบันทึก</span></strong>
+                <span lang="en">The audit log keeps every edit, attestation and signature, and cannot be edited or deleted.</span>
+                <span lang="th">audit log เก็บทุกการแก้ไข การรับรอง และการลงนาม แก้หรือลบไม่ได้</span></li>
+            <li><strong><span lang="en">Backups are not encrypted.</span><span lang="th">ไฟล์สำรองไม่เข้ารหัส</span></strong>
+                <span lang="en">Keep them where only therapists can reach them.</span>
+                <span lang="th">เก็บไว้ในที่ที่มีแต่นักบำบัดเข้าถึงได้</span></li>
+          </ul>
+        </div>
+        <div id="know">
+          <h2><span lang="en">Does not diagnose</span><span lang="th">ไม่ใช่เครื่องมือวินิจฉัย</span></h2>
+          <ul class="points">
+            <li><strong><span lang="en">No yes-or-no answer.</span><span lang="th">ไม่ตอบว่าเป็นหรือไม่เป็น</span></strong>
+                <span lang="en">It does not say whether a child is autistic. Interpretation is the therapist's.</span>
+                <span lang="th">ไม่บอกว่าเด็กเป็นหรือไม่เป็นออทิสติก การแปลผลเป็นหน้าที่ของนักบำบัด</span></li>
+            <li><strong><span lang="en">No Thai norms yet.</span><span lang="th">ยังไม่มีเกณฑ์อ้างอิงของเด็กไทย</span></strong>
+                <span lang="en">The measures are descriptive and not yet clinically validated with Thai children. Compare the same child across sessions with the same kind of activity.</span>
+                <span lang="th">ตัวชี้วัดเป็นค่าเชิงบรรยาย และยังไม่ได้ตรวจสอบทางคลินิกกับเด็กไทย ให้เทียบเด็กคนเดิมข้าม session ด้วยกิจกรรมแบบเดียวกัน</span></li>
+            <li><strong><span lang="en">Check every line.</span><span lang="th">ตรวจทุกประโยค</span></strong>
+                <span lang="en">Automatic transcripts can be wrong and must be checked against the recording; measures come only from an attested transcript.</span>
+                <span lang="th">transcript ที่ถอดอัตโนมัติอาจผิด ต้องตรวจกับเสียงทุกครั้ง ตัวชี้วัดคำนวณจาก transcript ที่รับรองแล้วเท่านั้น</span></li>
+          </ul>
         </div>
       </div>
     </section>
 
     <!-- Download and install -->
-    <section class="section section-alt" id="download">
-      <div class="content">
-        <header class="section-header centered reveal">
-          <h2 class="headline"><span lang="en">Download and install</span><span lang="th">ดาวน์โหลดและติดตั้ง</span></h2>
-          <p class="section-copy" data-release-line>
-            <span lang="en">Free. About ten minutes, including the speech model download. After that, PasaScope updates itself.</span>
-            <span lang="th">ไม่มีค่าใช้จ่าย ใช้เวลาประมาณ 10 นาที รวมดาวน์โหลดโมเดลถอดเสียง หลังจากนั้นโปรแกรมอัปเดตตัวเองได้</span>
-          </p>
-        </header>
-        <div class="download-cards">
-          <article class="download-card reveal" data-platform="mac">
-            <svg class="platform-glyph" viewBox="0 0 64 48" aria-hidden="true"><rect x="10" y="6" width="44" height="30" rx="3"/><path d="M4 40h56l-3 4H7z"/></svg>
-            <h3>Mac</h3>
+    <section class="section" id="download">
+      <div class="wrap">
+        <div class="section-intro">
+          <h2><span lang="en">Download and install</span><span lang="th">ดาวน์โหลดและติดตั้ง</span></h2>
+          <p><span lang="en">Free. About ten minutes, including the speech model download. After that, PasaScope updates itself and keeps your data.</span>
+             <span lang="th">ไม่มีค่าใช้จ่าย ใช้เวลาประมาณ 10 นาที รวมดาวน์โหลดโมเดลถอดเสียง หลังจากนั้นโปรแกรมอัปเดตตัวเองได้ และข้อมูลอยู่ครบ</span></p>
+        </div>
+        <div class="platforms">
+          <article class="download-card" data-platform="mac">
+            <h3>Mac <span class="rec"><span lang="en">For this computer</span><span lang="th">สำหรับเครื่องนี้</span></span></h3>
             <p class="requirement"><span lang="en">Apple silicon (M1 or later) · macOS 12+ · about 5 GB free</span><span lang="th">ชิป Apple (M1 ขึ้นไป) · macOS 12 ขึ้นไป · พื้นที่ว่างประมาณ 5 GB</span></p>
-            <a class="button" data-asset="dmg" href="https://github.com/monai86/pasascope/releases/latest">
+            <a class="pill" data-asset="dmg" href="https://github.com/monai86/pasascope/releases/latest">
               <span lang="en">Download .dmg</span><span lang="th">ดาวน์โหลด .dmg</span></a>
             <p class="asset-meta" data-asset-meta="dmg"></p>
             <details>
@@ -273,19 +332,16 @@
               <ol>
                 <li><span lang="en">Open the .dmg, drag PasaScope onto Applications along the arrow, then eject it in Finder.</span><span lang="th">เปิดไฟล์ .dmg ลาก PasaScope ไปวางบน Applications ตามลูกศร แล้วกดดีดออก (⏏) ใน Finder</span></li>
                 <li><span lang="en">PasaScope is not notarised by Apple yet, so macOS blocks the first launch, once: open it and click Done, then System Settings → Privacy &amp; Security → Open Anyway, and enter your password. On macOS 12–14, right-click PasaScope and choose Open.</span><span lang="th">PasaScope ยังไม่ได้ลงทะเบียนกับ Apple ครั้งแรก macOS จึงปิดกั้น ทำครั้งเดียว: เปิดแล้วกด เสร็จสิ้น ไปที่ การตั้งค่าระบบ → ความเป็นส่วนตัวและความปลอดภัย กด ยืนยันจะเปิด แล้วใส่รหัสผ่าน (macOS 12–14 คลิกขวาแล้วเลือก เปิด)</span></li>
-                <li><span lang="en">A short walkthrough asks for your name (it signs attestations and reports), then download the Thai speech model, about 1.5 GB, once.</span><span lang="th">หน้าแนะนำจะถามชื่อของคุณ (ใช้รับรองและลงนาม) แล้วดาวน์โหลดโมเดลถอดเสียงภาษาไทย ประมาณ 1.5 GB ครั้งเดียว</span></li>
+                <li><span lang="en">A short walkthrough asks for your name (it signs attestations and reports), then downloads the Thai speech model, about 1.5 GB, once.</span><span lang="th">หน้าแนะนำจะถามชื่อของคุณ (ใช้รับรองและลงนาม) แล้วดาวน์โหลดโมเดลถอดเสียงภาษาไทย ประมาณ 1.5 GB ครั้งเดียว</span></li>
                 <li><span lang="en">Intel Macs are not supported yet.</span><span lang="th">ยังไม่รองรับ Mac ชิป Intel</span></li>
               </ol>
-              <figure class="install-shot">
-                <img src="assets/install.webp" width="1000" height="674" loading="lazy" alt="The window that opens with the .dmg: drag PasaScope onto Applications">
-              </figure>
+              <img class="install-shot" src="assets/install.webp" width="1000" height="674" loading="lazy" alt="The window that opens with the .dmg: drag PasaScope onto Applications">
             </details>
           </article>
-          <article class="download-card reveal" data-platform="windows">
-            <svg class="platform-glyph" viewBox="0 0 64 48" aria-hidden="true"><rect x="8" y="6" width="48" height="32" rx="3"/><path d="M8 14h48M24 42h16M32 38v4"/></svg>
-            <h3>Windows</h3>
+          <article class="download-card" data-platform="windows">
+            <h3>Windows <span class="rec"><span lang="en">For this computer</span><span lang="th">สำหรับเครื่องนี้</span></span></h3>
             <p class="requirement"><span lang="en">Windows 10 or 11 · 64-bit</span><span lang="th">Windows 10 หรือ 11 · 64 บิต</span></p>
-            <a class="button" data-asset="exe" href="https://github.com/monai86/pasascope/releases/latest">
+            <a class="pill" data-asset="exe" href="https://github.com/monai86/pasascope/releases/latest">
               <span lang="en">Download installer</span><span lang="th">ดาวน์โหลดตัวติดตั้ง</span></a>
             <p class="asset-meta" data-asset-meta="exe"></p>
             <details>
@@ -298,21 +354,19 @@
             </details>
           </article>
         </div>
-        <p class="checksum reveal">
-          <span lang="en">Every file has its SHA-256 beside it ·</span>
-          <span lang="th">ทุกไฟล์มี SHA-256 อยู่ข้าง ๆ ให้ตรวจได้ ·</span>
-          <a href="https://github.com/monai86/pasascope/releases"><span lang="en">All versions and release notes</span><span lang="th">ทุกรุ่นและบันทึกการเปลี่ยนแปลง</span> ›</a>
+        <p class="checksum">
+          <span lang="en">Every file has its SHA-256 beside it.</span>
+          <span lang="th">ทุกไฟล์มี SHA-256 อยู่ข้าง ๆ ให้ตรวจได้</span>
+          <a href="https://github.com/monai86/pasascope/releases"><span lang="en">All versions and release notes</span><span lang="th">ทุกรุ่นและบันทึกการเปลี่ยนแปลง</span></a>
         </p>
       </div>
     </section>
 
     <!-- FAQ -->
-    <section class="section" id="faq">
-      <div class="content content-narrow">
-        <header class="section-header reveal">
-          <h2 class="headline headline-reduced"><span lang="en">Questions</span><span lang="th">คำถามที่พบบ่อย</span></h2>
-        </header>
-        <div class="faq reveal">
+    <section class="section section-paper" id="faq">
+      <div class="wrap narrow">
+        <h2><span lang="en">Questions</span><span lang="th">คำถามที่พบบ่อย</span></h2>
+        <div class="faq">
           <details>
             <summary><span lang="en">How do I update, and will I lose data?</span><span lang="th">อัปเดตโปรแกรมอย่างไร ข้อมูลจะหายไหม</span></summary>
             <p><span lang="en">PasaScope checks once a day, or use Help → Check for updates…. It backs up first, downloads and checks the new version and installs it over this one: choose Restart now, or Later to install when you quit. Cases are stored apart from the app, so nothing is lost and nothing needs uninstalling. (Updating from 1.7.7 or older still opens the disk image once.)</span>
@@ -344,10 +398,10 @@
   </main>
 
   <footer class="footer">
-    <div class="content">
+    <div class="wrap footer-inner">
       <p><span lang="en">PasaScope (ภาษา-สโคป) is an educational and research prototype, Department of Medical Technology, Mahidol University. A clinical decision-support tool, not a diagnostic device.</span>
          <span lang="th">PasaScope (ภาษา-สโคป) ต้นแบบเพื่อการศึกษาและวิจัย ภาควิชาเทคนิคการแพทย์ มหาวิทยาลัยมหิดล เครื่องมือสนับสนุนการตัดสินใจทางคลินิก ไม่ใช่เครื่องมือวินิจฉัย</span></p>
-      <p><a href="https://github.com/monai86/pasascope">GitHub</a> · <a href="https://github.com/monai86/pasascope/releases">Releases</a> · <a href="https://github.com/monai86/pasascope/issues">Issues</a></p>
+      <p class="footer-links"><a href="https://github.com/monai86/pasascope">GitHub</a><a href="https://github.com/monai86/pasascope/releases">Releases</a><a href="https://github.com/monai86/pasascope/issues">Issues</a></p>
     </div>
   </footer>
 

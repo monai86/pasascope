@@ -1,5 +1,5 @@
 // PasaScope download page: language, the right download for this computer,
-// the latest release's files and sizes, and content that fades in on scroll.
+// the latest release's files and sizes, and the hero sheet's counting marks.
 (function () {
   "use strict";
   const REPO = "monai86/pasascope";
@@ -69,30 +69,29 @@
       }
     })
     .catch(() => {
-      document.querySelectorAll("[data-asset], [data-download]").forEach((link) => (link.href = RELEASES));
+      document.querySelectorAll('[data-asset], [data-download="primary"]').forEach((link) => (link.href = RELEASES));
     });
 
-  // ---------------------------------------------------- fade in on scroll
-  const reveals = document.querySelectorAll(".reveal");
+  // ------------------------- the sheet marks itself once it comes into view
+  // Marks are visible by default; with motion allowed, CSS hides them until
+  // this adds .is-marked, then they draw in word by word.
+  const sheet = document.querySelector(".sheet");
+  if (!sheet) return;
+  const mark = () => sheet.classList.add("is-marked");
   if (!("IntersectionObserver" in window) || matchMedia("(prefers-reduced-motion: reduce)").matches) {
-    reveals.forEach((el) => el.classList.add("in"));
+    mark();
     return;
   }
+  // Wait for the fonts so the marks draw under the final word widths, but not for long.
+  const fonts = Promise.race([
+    document.fonts && document.fonts.ready ? document.fonts.ready : Promise.resolve(),
+    new Promise((resolve) => setTimeout(resolve, 1500)),
+  ]);
   const observer = new IntersectionObserver((entries) => {
-    for (const entry of entries) {
-      if (entry.isIntersecting) {
-        entry.target.classList.add("in");
-        observer.unobserve(entry.target);
-      }
+    if (entries.some((entry) => entry.isIntersecting)) {
+      observer.disconnect();
+      fonts.then(() => requestAnimationFrame(mark));
     }
-  }, { rootMargin: "0px 0px -8% 0px", threshold: 0.08 });
-  reveals.forEach((el, index) => {
-    // Siblings in a grid arrive one after another.
-    const siblings = el.parentElement ? [...el.parentElement.children].filter((c) => c.classList.contains("reveal")) : [];
-    const position = siblings.indexOf(el);
-    if (siblings.length > 1 && position > 0 && el.closest(".tiles, .download-cards, .columns")) {
-      el.style.transitionDelay = `${position * 90}ms`;
-    }
-    observer.observe(el);
-  });
+  }, { threshold: 0.3 });
+  observer.observe(sheet);
 })();
