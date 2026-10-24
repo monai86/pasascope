@@ -73,7 +73,7 @@ The package versions both builds use come from `scripts/desktop_bundle/constrain
 
 ## Publish
 
-1. Set the version in `pyproject.toml`, `apps/api/app/main.py`, `README.md`, `PROJECT_STATUS.md` and `CHANGELOG.md` (repository version policy). Commit, and build.
+1. Set the version in `pyproject.toml`, `README.md`, `PROJECT_STATUS.md` and `CHANGELOG.md` (repository version policy). Commit, and build.
 2. Push the release commit to `main` first. `gh release create` makes the tag at the tip of `main` when the tag does not exist yet, so a release created before the push is tagged on the previous version's code, and GitHub runs the Windows workflow from `main`.
 3. Create the release with the disk image (GitHub Actions adds the Windows installer):
 

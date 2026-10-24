@@ -31,7 +31,7 @@ HISTORICAL_FILES = {
 # Files whose job is to read data or settings written under the old name.
 FALLBACK_FILES = {
     "apps/api/app/core/config.py",
-    "apps/api/tests/test_workflow.py",
+    "apps/api/tests/test_config_and_repository.py",
     "scripts/report_transcript_review_time.py",
     "scripts/check_project.sh",
 }

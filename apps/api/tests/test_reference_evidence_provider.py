@@ -24,7 +24,7 @@ from app.schemas.clinical import (
     Utterance,
 )
 from app.repositories.mock_repository import JsonFileRepository, MockRepository
-from app.core.security import CurrentUser
+from app.core.user import CurrentUser
 from app.services.ml_providers.base import (
     BaseMLProvider,
     MLProviderAvailability,

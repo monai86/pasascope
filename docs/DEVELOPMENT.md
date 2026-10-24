@@ -31,7 +31,7 @@ bash scripts/check_project.sh
 ```
 
 It runs the consistency check, the secret scan, import checks, all Python
-tests (Qt tests in their own process) and the migration smoke check. CI adds
+tests (Qt tests in their own process). CI adds
 the Python 3.11/3.12/3.13 matrix and `pip-audit`.
 
 ## Do not commit

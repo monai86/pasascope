@@ -1,3 +1,11 @@
+"""Settings for the shared service layer, read from ``PASASCOPE_*`` environment variables.
+
+The desktop program sets ``PASASCOPE_DATABASE_URL`` and the storage root for its
+workspace; everything else keeps its default unless a developer overrides it.
+The web server's settings (sign-in, CORS, rate limits, queues, production
+checks) were removed with the web app (git tag web-app-final).
+"""
+
 from functools import lru_cache
 import os
 from pathlib import Path
@@ -6,34 +14,9 @@ from urllib.parse import urlparse
 import warnings
 
 from pydantic import BaseModel, Field
-from sqlalchemy.engine import URL, make_url
-from sqlalchemy.exc import ArgumentError
 
 
-DEFAULT_DATABASE_URL = "postgresql+psycopg://therapist:therapist@localhost/therapist_app_v2"
-DEFAULT_REDIS_URL = "redis://localhost:6379/0"
-MEBIBYTE = 1024 * 1024
-DEFAULT_SUPABASE_STORAGE_SIGNED_UPLOAD_TTL_SECONDS = 7200
-DEFAULT_SUPABASE_STORAGE_SIGNED_DOWNLOAD_TTL_SECONDS = 900
-SUPABASE_TUS_CHUNK_SIZE_BYTES = 6 * MEBIBYTE
-MAX_CAPTURE_UPLOAD_SIZE_BYTES = 250 * MEBIBYTE
-DEFAULT_CAPTURE_MAX_UPLOAD_SIZE_BYTES = MAX_CAPTURE_UPLOAD_SIZE_BYTES
-PRODUCTION_STORAGE_MODES = {"private", "supabase_private"}
-# Keep this list aligned with implemented queue adapters. Celery is not
-# installed or implemented in this repository, so it must not pass production
-# configuration validation.
-PRODUCTION_JOB_QUEUE_MODES = {"redis"}
-PRODUCTION_OBSERVABILITY_PROVIDERS = {"sentry", "cloudwatch", "otlp"}
-PRODUCTION_SECRET_STORE_PROVIDERS = {
-    "aws_secrets_manager",
-    "azure_key_vault",
-    "gcp_secret_manager",
-    "doppler",
-    "infisical",
-    "vault",
-}
-_POSTGRESQL_DEFAULT_PORT = 5432
-_LOOPBACK_HOSTS = frozenset({"localhost", "127.0.0.1", "::1", "[::1]"})
+DEFAULT_DATABASE_URL = "sqlite:///.local/pasascope.sqlite3"
 _SUPABASE_BUCKET_NAME_RE = re.compile(r"[a-z0-9][a-z0-9._-]{0,62}")
 _SUPABASE_PROJECT_HOST_RE = re.compile(
     r"(?P<project_ref>[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?)\.supabase\.co"
@@ -64,32 +47,6 @@ def getenv_compat(name: str, legacy_name: str = "", default: str = "") -> str:
     return default
 
 
-def _parse_database_url(value: str) -> URL | None:
-    try:
-        parsed = make_url(value)
-        _ = parsed.port
-    except (ArgumentError, ValueError):
-        return None
-    return parsed
-
-
-def _postgresql_target(value: URL) -> tuple[str, int, str]:
-    host = value.host or str(value.query.get("host", ""))
-    normalized_host = host.strip().rstrip(".").lower()
-    if normalized_host in _LOOPBACK_HOSTS:
-        normalized_host = "loopback"
-    return (
-        normalized_host,
-        value.port if value.port is not None else _POSTGRESQL_DEFAULT_PORT,
-        value.database or "",
-    )
-
-
-def _points_at_loopback(value: str) -> bool:
-    host = (urlparse(value).hostname or "").strip().rstrip(".").lower()
-    return host in _LOOPBACK_HOSTS or host.startswith("127.")
-
-
 def _is_valid_https_url(value: str) -> bool:
     if not isinstance(value, str) or value != value.strip():
         return False
@@ -105,12 +62,6 @@ def _is_valid_https_url(value: str) -> bool:
     return True
 
 
-def _is_valid_supabase_tus_endpoint(value: str) -> bool:
-    if not _is_valid_https_url(value):
-        return False
-    return urlparse(value).path.rstrip("/") == "/storage/v1/upload/resumable"
-
-
 def _supabase_project_ref_from_host(host: str) -> str | None:
     normalized_host = host.casefold()
     match = _SUPABASE_PROJECT_HOST_RE.fullmatch(normalized_host)
@@ -124,26 +75,6 @@ def _is_valid_supabase_project_url(value: str) -> bool:
     return parsed.path in {"", "/"} and _supabase_project_ref_from_host(parsed.hostname or "") is not None
 
 
-def _allowed_supabase_storage_hosts(storage_url: str) -> frozenset[str]:
-    if not _is_valid_supabase_project_url(storage_url):
-        return frozenset()
-    project_ref = _supabase_project_ref_from_host(urlparse(storage_url).hostname or "")
-    if project_ref is None:
-        return frozenset()
-    return frozenset(
-        {
-            f"{project_ref}.supabase.co",
-            f"{project_ref}.storage.supabase.co",
-        }
-    )
-
-
-def _is_valid_supabase_tus_endpoint_for_project(value: str, storage_url: str) -> bool:
-    return _is_valid_supabase_tus_endpoint(value) and (
-        urlparse(value).hostname or ""
-    ).casefold() in _allowed_supabase_storage_hosts(storage_url)
-
-
 def _is_valid_supabase_service_role_key(value: str) -> bool:
     return isinstance(value, str) and bool(value) and value == value.strip() and not any(
         character.isspace() for character in value
@@ -154,32 +85,12 @@ def _is_valid_supabase_bucket_name(value: str) -> bool:
     return isinstance(value, str) and _SUPABASE_BUCKET_NAME_RE.fullmatch(value) is not None
 
 
-def _is_positive_int(value: int) -> bool:
-    return isinstance(value, int) and not isinstance(value, bool) and value > 0
-
-
 class Settings(BaseModel):
-    app_name: str = "PasaScope API"
-    api_prefix: str = "/api/v1"
     mock_mode: bool = True
-    auth_mode: str = "mock"
-    supabase_jwt_verification_mode: str = "hs256_shared_secret"
-    supabase_jwt_secret: str = ""
-    supabase_jwt_jwks_json: str = ""
-    supabase_jwt_jwks_url: str = ""
-    supabase_jwt_jwks_cache_ttl_seconds: int = 300
-    supabase_jwt_issuer: str = ""
-    supabase_jwt_audience: str = "authenticated"
+    # Optional copy of each recording in a private Supabase bucket (off by default).
     audio_backup_mode: str = "none"
     debug_feature_override: bool = False
-    max_audio_file_size_mb: int = DEFAULT_CAPTURE_MAX_UPLOAD_SIZE_BYTES // MEBIBYTE
-    repository_mode: str = "json"
-    json_repository_path: str = ".local/pasascope-app-repository.json"
     database_url: str = DEFAULT_DATABASE_URL
-    sql_create_schema: bool = True
-    run_migrations_on_startup: bool = False
-    job_queue_mode: str = "memory"
-    inline_job_worker_enabled: bool = True
     # Local Whisper runs on this machine only; recordings are never sent out.
     asr_local_whisper_enabled: bool = False
     asr_whisper_model_size: str = "medium"
@@ -195,70 +106,17 @@ class Settings(BaseModel):
     asr_hosted_base_url: str = "https://api.groq.com/openai/v1"
     asr_hosted_api_key: str = ""
     asr_hosted_model: str = "whisper-large-v3"
-    redis_url: str = DEFAULT_REDIS_URL
     storage_mode: str = "local_private"
     local_storage_root: str = ".local/storage"
     supabase_storage_url: str = ""
     supabase_storage_service_role_key: str = Field(default="", repr=False)
     supabase_storage_bucket: str = ""
-    supabase_storage_tus_endpoint: str = ""
-    supabase_storage_signed_upload_ttl_seconds: int = DEFAULT_SUPABASE_STORAGE_SIGNED_UPLOAD_TTL_SECONDS
-    supabase_storage_signed_download_ttl_seconds: int = DEFAULT_SUPABASE_STORAGE_SIGNED_DOWNLOAD_TTL_SECONDS
-    supabase_storage_tus_chunk_size_bytes: int = SUPABASE_TUS_CHUNK_SIZE_BYTES
-    capture_max_upload_size_bytes: int = DEFAULT_CAPTURE_MAX_UPLOAD_SIZE_BYTES
-    capture_worker_organization_ids: str = ""
-    cors_allowed_origins: str = "http://localhost:3000,http://127.0.0.1:3000"
-    csrf_origin_guard_enabled: bool = True
     ai_report_drafting_enabled: bool = False
-    rate_limit_enabled: bool = False
-    rate_limit_requests: int = 120
-    rate_limit_window_seconds: int = 60
-    rate_limit_trusted_proxy_count: int = 0
-    observability_enabled: bool = False
-    observability_provider: str = "disabled"
-    critical_alert_route: str = ""
-    secret_store_provider: str = "local_env"
-    credential_rotation_runbook: str = ""
     reference_artifact_dir: str = "artifacts/reference_evidence/current"
-    ml_inference_timeout_seconds: float = 2.0
-    web_concurrency: int = 1
-
-    @property
-    def resolved_json_repository_path(self) -> Path:
-        path = Path(self.json_repository_path)
-        # Keep reading local data written before the project was renamed.
-        previous = path.with_name(path.name.replace("pasascope-app", "lingualens-app"))
-        if previous != path and not path.exists() and previous.exists():
-            return previous
-        return path
 
     @property
     def resolved_local_storage_root(self) -> Path:
         return Path(self.local_storage_root)
-
-    @property
-    def parsed_cors_allowed_origins(self) -> list[str]:
-        return [origin.strip() for origin in self.cors_allowed_origins.split(",") if origin.strip()]
-
-    @property
-    def has_valid_supabase_private_storage_configuration(self) -> bool:
-        return (
-            self.storage_mode == "supabase_private"
-            and _is_valid_supabase_project_url(self.supabase_storage_url)
-            and _is_valid_supabase_service_role_key(self.supabase_storage_service_role_key)
-            and _is_valid_supabase_bucket_name(self.supabase_storage_bucket)
-            and _is_valid_supabase_tus_endpoint_for_project(
-                self.supabase_storage_tus_endpoint,
-                self.supabase_storage_url,
-            )
-            and self.supabase_storage_signed_upload_ttl_seconds
-            == DEFAULT_SUPABASE_STORAGE_SIGNED_UPLOAD_TTL_SECONDS
-            and _is_positive_int(self.supabase_storage_signed_download_ttl_seconds)
-            and self.supabase_storage_signed_download_ttl_seconds
-            <= DEFAULT_SUPABASE_STORAGE_SIGNED_DOWNLOAD_TTL_SECONDS
-            and self.supabase_storage_tus_chunk_size_bytes == SUPABASE_TUS_CHUNK_SIZE_BYTES
-            and 0 < self.capture_max_upload_size_bytes <= MAX_CAPTURE_UPLOAD_SIZE_BYTES
-        )
 
     @property
     def has_valid_audio_backup_target(self) -> bool:
@@ -269,22 +127,7 @@ class Settings(BaseModel):
             and _is_valid_supabase_bucket_name(self.supabase_storage_bucket)
         )
 
-    @property
-    def supabase_admin_target(self) -> tuple[str, str] | None:
-        """Project URL and service role key for managing accounts, or ``None``.
-
-        Used to check whether an account has two-step verification and to
-        delete an account. The recording backup's settings already name this
-        project and key, so they are reused rather than set twice.
-        """
-        if _is_valid_supabase_project_url(self.supabase_storage_url) and _is_valid_supabase_service_role_key(
-            self.supabase_storage_service_role_key
-        ):
-            return self.supabase_storage_url.rstrip("/"), self.supabase_storage_service_role_key
-        return None
-
     def validate_runtime_security(self) -> "Settings":
-        origins = self.parsed_cors_allowed_origins
         if self.audio_backup_mode not in {"none", "supabase"}:
             raise ValueError("Audio backup mode must be 'none' or 'supabase'.")
         if self.audio_backup_mode == "supabase" and not self.has_valid_audio_backup_target:
@@ -293,92 +136,12 @@ class Settings(BaseModel):
             self.asr_hosted_api_key.strip() and self.asr_hosted_base_url.startswith("https://")
         ):
             raise ValueError("Hosted transcription needs an API key and an https base URL.")
-        if self.repository_mode in {"sql", "sqlalchemy"} and self.web_concurrency > 1:
-            # The SQL repository keeps a per-process cache of clinical records;
-            # a second worker would serve and write stale state.
-            raise ValueError("SQL repository mode supports a single API worker; set WEB_CONCURRENCY=1.")
-        if not self.mock_mode and (not origins or "*" in origins):
-            raise ValueError(
-                "CORS allowed origins must be explicit in production; wildcard or empty origins are not allowed."
-            )
-        if "*" in origins and self.csrf_origin_guard_enabled:
-            raise ValueError("CORS allowed origins cannot include wildcard when origin guard is enabled.")
-        if not self.mock_mode:
-            if self.auth_mode != "supabase":
-                raise ValueError("Production auth mode must be supabase.")
-            if self.supabase_jwt_verification_mode not in {"hs256_shared_secret", "jwks_json", "jwks_url"}:
-                raise ValueError("Production Supabase JWT verification mode is invalid.")
-            if not self.supabase_jwt_issuer.strip():
-                raise ValueError("Production Supabase JWT issuer must be configured.")
-            if self.supabase_jwt_verification_mode == "hs256_shared_secret":
-                if not self.supabase_jwt_secret.strip():
-                    raise ValueError("Production Supabase JWT secret must be configured for HS256 verification.")
-            elif self.supabase_jwt_verification_mode == "jwks_json":
-                if not self.supabase_jwt_jwks_json.strip():
-                    raise ValueError("Production Supabase JWKS JSON must be configured for asymmetric verification.")
-            else:
-                if not self.supabase_jwt_jwks_url.strip():
-                    raise ValueError("Production Supabase JWKS URL must be configured for remote asymmetric verification.")
-                if self.supabase_jwt_jwks_cache_ttl_seconds <= 0:
-                    raise ValueError("Production Supabase JWKS cache TTL must be positive.")
-            if self.repository_mode != "sql":
-                raise ValueError("Production repository mode must be sql.")
-            if self.database_url == DEFAULT_DATABASE_URL or _points_at_loopback(self.database_url):
-                raise ValueError("Production database URL must come from managed secrets and cannot use demo defaults.")
-            if self.storage_mode not in PRODUCTION_STORAGE_MODES:
-                raise ValueError("Production storage mode must use private managed storage.")
-            if self.storage_mode == "supabase_private" and not self.has_valid_supabase_private_storage_configuration:
-                raise ValueError("Production Supabase private storage configuration is missing or invalid.")
-            if self.job_queue_mode not in PRODUCTION_JOB_QUEUE_MODES:
-                raise ValueError("Production job queue mode must use a durable managed queue.")
-            if self.redis_url == DEFAULT_REDIS_URL or _points_at_loopback(self.redis_url):
-                raise ValueError("Production Redis URL must come from managed secrets and cannot use demo defaults.")
-            if not self.observability_enabled or self.observability_provider not in PRODUCTION_OBSERVABILITY_PROVIDERS:
-                raise ValueError("Production observability provider must be configured.")
-            if not self.critical_alert_route.strip():
-                raise ValueError("Production critical alert route must be configured.")
-            if self.secret_store_provider not in PRODUCTION_SECRET_STORE_PROVIDERS:
-                raise ValueError("Production secrets must use a managed secret store provider.")
-            if not self.credential_rotation_runbook.strip():
-                raise ValueError("Production credential rotation runbook must be configured.")
-            if self.sql_create_schema:
-                raise ValueError("Production database schema creation must use Alembic migrations, not automatic create_all.")
         return self
 
     @classmethod
     def from_env(cls) -> "Settings":
         return cls(
             mock_mode=getenv_compat("PASASCOPE_MOCK_MODE", "THERAPIST_APP_V2_MOCK_MODE", "true").lower() != "false",
-            auth_mode=getenv_compat("PASASCOPE_AUTH_MODE", "THERAPIST_APP_V2_AUTH_MODE", "mock"),
-            supabase_jwt_verification_mode=getenv_compat(
-                "PASASCOPE_SUPABASE_JWT_VERIFICATION_MODE",
-                "THERAPIST_APP_V2_SUPABASE_JWT_VERIFICATION_MODE",
-                "hs256_shared_secret",
-            ),
-            supabase_jwt_secret=getenv_compat("PASASCOPE_SUPABASE_JWT_SECRET", "THERAPIST_APP_V2_SUPABASE_JWT_SECRET", ""),
-            supabase_jwt_jwks_json=getenv_compat(
-                "PASASCOPE_SUPABASE_JWT_JWKS_JSON",
-                "THERAPIST_APP_V2_SUPABASE_JWT_JWKS_JSON",
-                "",
-            ),
-            supabase_jwt_jwks_url=getenv_compat(
-                "PASASCOPE_SUPABASE_JWT_JWKS_URL",
-                "THERAPIST_APP_V2_SUPABASE_JWT_JWKS_URL",
-                "",
-            ),
-            supabase_jwt_jwks_cache_ttl_seconds=int(
-                getenv_compat(
-                    "PASASCOPE_SUPABASE_JWT_JWKS_CACHE_TTL_SECONDS",
-                    "THERAPIST_APP_V2_SUPABASE_JWT_JWKS_CACHE_TTL_SECONDS",
-                    "300",
-                )
-            ),
-            supabase_jwt_issuer=getenv_compat("PASASCOPE_SUPABASE_JWT_ISSUER", "THERAPIST_APP_V2_SUPABASE_JWT_ISSUER", ""),
-            supabase_jwt_audience=getenv_compat(
-                "PASASCOPE_SUPABASE_JWT_AUDIENCE",
-                "THERAPIST_APP_V2_SUPABASE_JWT_AUDIENCE",
-                "authenticated",
-            ),
             audio_backup_mode=getenv_compat("PASASCOPE_AUDIO_BACKUP_MODE", default="none").strip().lower(),
             debug_feature_override=getenv_compat(
                 "PASASCOPE_DEBUG_FEATURE_OVERRIDE",
@@ -386,32 +149,7 @@ class Settings(BaseModel):
                 "false",
             ).lower()
             == "true",
-            repository_mode=getenv_compat("PASASCOPE_REPOSITORY_MODE", "THERAPIST_APP_V2_REPOSITORY_MODE", "json"),
-            json_repository_path=getenv_compat(
-                "PASASCOPE_JSON_REPOSITORY_PATH",
-                "THERAPIST_APP_V2_JSON_REPOSITORY_PATH",
-                ".local/pasascope-app-repository.json",
-            ),
             database_url=getenv_compat("PASASCOPE_DATABASE_URL", "THERAPIST_APP_V2_DATABASE_URL", DEFAULT_DATABASE_URL),
-            sql_create_schema=getenv_compat(
-                "PASASCOPE_SQL_CREATE_SCHEMA",
-                "THERAPIST_APP_V2_SQL_CREATE_SCHEMA",
-                "true",
-            ).lower()
-            != "false",
-            run_migrations_on_startup=getenv_compat(
-                "PASASCOPE_RUN_MIGRATIONS_ON_STARTUP",
-                "THERAPIST_APP_V2_RUN_MIGRATIONS_ON_STARTUP",
-                "false",
-            ).lower()
-            == "true",
-            job_queue_mode=getenv_compat("PASASCOPE_JOB_QUEUE_MODE", "THERAPIST_APP_V2_JOB_QUEUE_MODE", "memory"),
-            inline_job_worker_enabled=getenv_compat(
-                "PASASCOPE_INLINE_JOB_WORKER_ENABLED",
-                "THERAPIST_APP_V2_INLINE_JOB_WORKER_ENABLED",
-                "true",
-            ).lower()
-            != "false",
             asr_local_whisper_enabled=getenv_compat("PASASCOPE_ASR_LOCAL_WHISPER_ENABLED", default="false").lower()
             == "true",
             asr_whisper_model_size=getenv_compat("PASASCOPE_ASR_WHISPER_MODEL_SIZE", default="medium"),
@@ -422,7 +160,6 @@ class Settings(BaseModel):
             ).rstrip("/"),
             asr_hosted_api_key=getenv_compat("PASASCOPE_ASR_HOSTED_API_KEY", default=""),
             asr_hosted_model=getenv_compat("PASASCOPE_ASR_HOSTED_MODEL", default="whisper-large-v3"),
-            redis_url=os.getenv("REDIS_URL", DEFAULT_REDIS_URL),
             storage_mode=getenv_compat("PASASCOPE_STORAGE_MODE", "THERAPIST_APP_V2_STORAGE_MODE", "local_private"),
             local_storage_root=getenv_compat(
                 "PASASCOPE_LOCAL_STORAGE_ROOT",
@@ -444,124 +181,17 @@ class Settings(BaseModel):
                 "THERAPIST_APP_V2_SUPABASE_STORAGE_BUCKET",
                 "",
             ),
-            supabase_storage_tus_endpoint=getenv_compat(
-                "PASASCOPE_SUPABASE_STORAGE_TUS_ENDPOINT",
-                "THERAPIST_APP_V2_SUPABASE_STORAGE_TUS_ENDPOINT",
-                "",
-            ),
-            supabase_storage_signed_upload_ttl_seconds=int(
-                getenv_compat(
-                    "PASASCOPE_SUPABASE_STORAGE_SIGNED_UPLOAD_TTL_SECONDS",
-                    "THERAPIST_APP_V2_SUPABASE_STORAGE_SIGNED_UPLOAD_TTL_SECONDS",
-                    str(DEFAULT_SUPABASE_STORAGE_SIGNED_UPLOAD_TTL_SECONDS),
-                )
-            ),
-            supabase_storage_signed_download_ttl_seconds=int(
-                getenv_compat(
-                    "PASASCOPE_SUPABASE_STORAGE_SIGNED_DOWNLOAD_TTL_SECONDS",
-                    "THERAPIST_APP_V2_SUPABASE_STORAGE_SIGNED_DOWNLOAD_TTL_SECONDS",
-                    str(DEFAULT_SUPABASE_STORAGE_SIGNED_DOWNLOAD_TTL_SECONDS),
-                )
-            ),
-            supabase_storage_tus_chunk_size_bytes=int(
-                getenv_compat(
-                    "PASASCOPE_SUPABASE_STORAGE_TUS_CHUNK_SIZE_BYTES",
-                    "THERAPIST_APP_V2_SUPABASE_STORAGE_TUS_CHUNK_SIZE_BYTES",
-                    str(SUPABASE_TUS_CHUNK_SIZE_BYTES),
-                )
-            ),
-            capture_max_upload_size_bytes=int(
-                getenv_compat(
-                    "PASASCOPE_SUPABASE_STORAGE_MAX_UPLOAD_SIZE_BYTES",
-                    "THERAPIST_APP_V2_SUPABASE_STORAGE_MAX_UPLOAD_SIZE_BYTES",
-                    str(DEFAULT_CAPTURE_MAX_UPLOAD_SIZE_BYTES),
-                )
-            ),
-            capture_worker_organization_ids=os.getenv(
-                "PASASCOPE_CAPTURE_WORKER_ORGANIZATION_IDS", ""
-            ),
-            cors_allowed_origins=getenv_compat(
-                "PASASCOPE_CORS_ALLOWED_ORIGINS",
-                "THERAPIST_APP_V2_CORS_ALLOWED_ORIGINS",
-                "http://localhost:3000,http://127.0.0.1:3000",
-            ),
-            csrf_origin_guard_enabled=getenv_compat(
-                "PASASCOPE_CSRF_ORIGIN_GUARD_ENABLED",
-                "THERAPIST_APP_V2_CSRF_ORIGIN_GUARD_ENABLED",
-                "true",
-            ).lower()
-            != "false",
             ai_report_drafting_enabled=getenv_compat(
                 "PASASCOPE_AI_REPORT_DRAFTING_ENABLED",
                 "THERAPIST_APP_V2_AI_REPORT_DRAFTING_ENABLED",
                 "false",
             ).lower()
             == "true",
-            rate_limit_enabled=getenv_compat(
-                "PASASCOPE_RATE_LIMIT_ENABLED",
-                "THERAPIST_APP_V2_RATE_LIMIT_ENABLED",
-                "false",
-            ).lower()
-            == "true",
-            rate_limit_requests=int(
-                getenv_compat("PASASCOPE_RATE_LIMIT_REQUESTS", "THERAPIST_APP_V2_RATE_LIMIT_REQUESTS", "120")
-            ),
-            rate_limit_window_seconds=int(
-                getenv_compat(
-                    "PASASCOPE_RATE_LIMIT_WINDOW_SECONDS",
-                    "THERAPIST_APP_V2_RATE_LIMIT_WINDOW_SECONDS",
-                    "60",
-                )
-            ),
-            rate_limit_trusted_proxy_count=max(
-                0,
-                int(
-                    getenv_compat(
-                        "PASASCOPE_RATE_LIMIT_TRUSTED_PROXY_COUNT",
-                        "THERAPIST_APP_V2_RATE_LIMIT_TRUSTED_PROXY_COUNT",
-                        "0",
-                    )
-                ),
-            ),
-            observability_enabled=getenv_compat(
-                "PASASCOPE_OBSERVABILITY_ENABLED",
-                "THERAPIST_APP_V2_OBSERVABILITY_ENABLED",
-                "false",
-            ).lower()
-            == "true",
-            observability_provider=getenv_compat(
-                "PASASCOPE_OBSERVABILITY_PROVIDER",
-                "THERAPIST_APP_V2_OBSERVABILITY_PROVIDER",
-                "disabled",
-            ),
-            critical_alert_route=getenv_compat(
-                "PASASCOPE_CRITICAL_ALERT_ROUTE",
-                "THERAPIST_APP_V2_CRITICAL_ALERT_ROUTE",
-                "",
-            ),
-            secret_store_provider=getenv_compat(
-                "PASASCOPE_SECRET_STORE_PROVIDER",
-                "THERAPIST_APP_V2_SECRET_STORE_PROVIDER",
-                "local_env",
-            ),
-            credential_rotation_runbook=getenv_compat(
-                "PASASCOPE_CREDENTIAL_ROTATION_RUNBOOK",
-                "THERAPIST_APP_V2_CREDENTIAL_ROTATION_RUNBOOK",
-                "",
-            ),
             reference_artifact_dir=getenv_compat(
                 "PASASCOPE_REFERENCE_ARTIFACT_DIR",
                 "THERAPIST_APP_V2_REFERENCE_ARTIFACT_DIR",
                 "artifacts/reference_evidence/current",
             ),
-            ml_inference_timeout_seconds=float(
-                getenv_compat(
-                    "PASASCOPE_ML_INFERENCE_TIMEOUT_SECONDS",
-                    "THERAPIST_APP_V2_ML_INFERENCE_TIMEOUT_SECONDS",
-                    "2.0",
-                )
-            ),
-            web_concurrency=int(os.getenv("WEB_CONCURRENCY", "1") or "1"),
         ).validate_runtime_security()
 
 

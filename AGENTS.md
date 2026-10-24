@@ -20,7 +20,7 @@
 
 ## Project Layout
 - `packages/desktop/`: the desktop program (`ui/` windows, `core/` DesktopService and workspace).
-- `apps/api/`: shared service layer; its FastAPI routes and tests are kept because the tests cover the services.
+- `apps/api/`: shared service layer (`app/services`), database models and repository; `apps/api/tests` tests them directly. The FastAPI routes were removed on 2026-10-25.
 - `src/audio_pipeline/`, `src/clinical_speech/`, `packages/features/`, `packages/cha/`: ASR, Thai LSA rules, measures, CHAT.
 - `scripts/evaluate_*.py` → `reports/metrics/`: evaluation evidence used by the term paper.
 - `packages/ml/`, `scripts/ml/`, `reports/ml/`: earlier ML research (reference evidence, Gate 1).

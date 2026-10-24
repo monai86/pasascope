@@ -1,18 +1,14 @@
 # What the desktop app bundle (scripts/build_macos_dmg.py) installs. Versions
-# come from the tested environment (.venv312) as constraints. The server-only
-# parts of requirements.txt (uvicorn, psycopg, supabase, redis, weasyprint,
-# reportlab) and the test and plotting tools are left out.
+# come from the tested environment (.venv312) as constraints. Report PDFs come
+# from Qt, so reportlab and weasyprint are left out, as are the test and
+# plotting tools.
 PySide6-Essentials
 pydantic
 sqlalchemy
 fastapi
 httpx
 openai
-PyJWT
-cryptography
-python-multipart
 PyYAML
-rich
 markdown2
 pylangacq
 pythainlp

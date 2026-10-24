@@ -9,7 +9,7 @@ This file is the quick folder map.
 |---|---|
 | `packages/desktop/` | The PySide6 desktop program: `app.py` (start), `ui/` (windows, pages, theme, PDF), `core/` (DesktopService, SQLite workspace, backup, updates, model downloads) |
 | `apps/api/app/services/` | Shared service layer the desktop program calls in-process (transcripts, features, reports, consent, safety checks) |
-| `apps/api/` (rest) | Database models and migrations used by the service layer, plus the FastAPI routes and tests of the paused web app's backend |
+| `apps/api/app/` (rest) | Database models, repository (SQLite through SQLAlchemy), schemas and settings used by the service layer |
 | `src/audio_pipeline/` | Recording → transcript draft: VAD, Whisper, child/adult split, utterance boundaries, CHAT output |
 | `src/clinical_speech/` | Thai LSA rules (`thai_lsa.py`), CHAT export, clinical feature extraction |
 | `packages/features/` | Transcript, turn-taking, Thai POS and acoustic measures |
@@ -42,7 +42,7 @@ This file is the quick folder map.
 | Path | What it is |
 |---|---|
 | `tests/` | Pipeline, measures, evaluation scripts, desktop (`test_desktop*.py`) |
-| `apps/api/tests/` | Service layer and API tests |
+| `apps/api/tests/` | Service layer and repository tests |
 | `scripts/check_project.sh` | Runs the checks below and every Python test |
 | `scripts/check_repo_consistency.py`, `scripts/security_scan.py` | Version/path consistency and secret scan |
 

@@ -3,7 +3,7 @@ from __future__ import annotations
 import hashlib
 import json
 
-from app.core.security import CurrentUser
+from app.core.user import CurrentUser
 from app.repositories.mock_repository import MockRepository, new_id
 from app.schemas.clinical import (
     EvidenceReviewPatch,

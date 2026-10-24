@@ -28,7 +28,7 @@
 | สิ่งที่ยังรับชื่อเดิม | อยู่ที่ |
 |---|---|
 | ตัวแปร `LINGUALENS_*` (ชื่อ `PASASCOPE_*` ชนะเมื่อมีทั้งคู่) | `getenv_compat` ใน `apps/api/app/core/config.py`, `scripts/check_project.sh` |
-| ไฟล์ `.local/lingualens-app-repository.json` | `Settings.resolved_json_repository_path`, `scripts/report_transcript_review_time.py` |
+| ไฟล์ `.local/lingualens-app-repository.json` (ข้อมูลของ web app เดิม) | `scripts/report_transcript_review_time.py` |
 
 ## สิ่งที่ไม่ได้แก้
 

@@ -208,8 +208,8 @@ packages/cha           CHAT parser and the Thai word list
 ```
 
 The desktop program calls `apps/api/app/services` in-process; it has no
-formulas of its own. `apps/api` still contains its FastAPI routes and tests
-because those tests exercise the same services.
+formulas of its own. `apps/api` holds only that service layer, its database
+models and repository, and their tests; the web API routes are gone.
 
 ## Building and releasing
 

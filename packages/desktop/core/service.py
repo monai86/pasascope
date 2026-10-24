@@ -62,7 +62,7 @@ class DesktopService(
 
     @property
     def user(self):
-        from app.core.security import CurrentUser
+        from app.core.user import CurrentUser
 
         return CurrentUser(
             user_id=LOCAL_USER_ID,

@@ -56,7 +56,3 @@ jobs:
       - name: Run unit tests
         run: |
           PYTHONPATH=apps/api:src pytest -m "not audio"
-
-      - name: Run database migration smoke check
-        run: |
-          PYTHONPATH=apps/api:src python scripts/check_api_migrations.py

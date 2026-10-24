@@ -1,9 +1,6 @@
 import json
 import pytest
-from fastapi.testclient import TestClient
 
-from app.main import app
-from app.api.v1.dependencies import get_repository_singleton
 from app.schemas.clinical import (
     AiReview,
     MLResult,
@@ -25,11 +22,8 @@ from app.services.providers.report_registry import report_provider_registry
 from app.services.report_service import draft_report, export_report, previous_session_feature_set, sign_off_report, patch_report
 from app.services.transcript_service import patch_transcript
 from app.services.feature_service import extract_features
-from app.services.ai_review_service import create_ai_review
 from app.services.ml_review_service import check_ml_readiness, get_current_ml_review, get_ml_result
-from app.schemas.clinical import TranscriptPatch
-
-client = TestClient(app)
+from app.schemas.clinical import ReportPatch, TranscriptPatch
 
 
 def _setup_mock_repo():
@@ -411,8 +405,6 @@ def test_stale_findings_are_rejected_until_feature_regeneration_replaces_them():
 
     readiness = check_ml_readiness(repo, transcript_id)
     assert "features_stale" in readiness.reason_codes
-    with pytest.raises(ValueError, match="stale"):
-        create_ai_review(repo, session_id)
 
     transcript = repo.transcripts[transcript_id]
     transcript.qa_status = QaStatus.pass_
@@ -449,11 +441,11 @@ def test_stale_report_export_is_explicitly_blocked_and_regeneration_creates_a_ne
 
 
 def test_report_draft_includes_reference_comparison_band(tmp_path, monkeypatch):
-    from tests.test_dashboard_summary import _write_reference_artifact
+    from tests.service_helpers import write_reference_artifact
 
     monkeypatch.setenv(
         "THERAPIST_APP_V2_REFERENCE_ARTIFACT_DIR",
-        str(_write_reference_artifact(tmp_path)),
+        str(write_reference_artifact(tmp_path)),
     )
     repo, case_id, session_id, transcript_id = _setup_mock_repo()
     repo.cases[case_id].age_months = 62
@@ -558,9 +550,8 @@ def patch_report_payload(markdown: str):
     return ReportPatch(markdown=markdown)
 
 
-def test_endpoints_via_client():
-    # Setup test session in DB repo
-    repo = get_repository_singleton()
+def test_draft_edit_and_sign_off_through_the_services():
+    repo = MockRepository()
     
     case_id = new_id("case")
     repo.cases[case_id] = repo.clone(repo.cases["case_demo_001"])
@@ -600,36 +591,19 @@ def test_endpoints_via_client():
     )
     repo.sessions[session_id].feature_set_id = feature_set_id
     
-    # 1. Post draft generation endpoint
-    resp1 = client.post(f"/api/v1/sessions/{session_id}/reports/draft", json={
-        "provider_id": "template",
-        "allow_fallback_to_template": True
-    })
-    assert resp1.status_code == 200
-    report_id = resp1.json()["report_id"]
-    
-    # 2. Get report providers endpoint
-    resp2 = client.get("/api/v1/reports/providers")
-    assert resp2.status_code == 200
-    providers = resp2.json()
-    assert any(p["provider_id"] == "template" for p in providers)
-    assert any(p["provider_id"] == "local_llm" for p in providers)
-    
-    # 3. Patch report to safe custom content
+    report = draft_report(
+        repo, session_id, ReportGenerationRequest(provider_id="template", allow_fallback_to_template=True)
+    )
+
+    providers = {item.provider_id for item in report_provider_registry.list_available()}
+    assert {"template", "local_llm"} <= providers
+
     safe_markdown = (
         "# Safe report\n"
         "Decision-support only. Not diagnostic. Therapist review required.\n"
         "## Limitations\nNo limitations."
     )
-    resp3 = client.patch(f"/api/v1/reports/{report_id}", json={
-        "markdown": safe_markdown
-    })
-    assert resp3.status_code == 200
-    
-    # 4. Post sign-off endpoint with confirmation
-    resp4 = client.post(f"/api/v1/reports/{report_id}/sign-off", json={
-        "therapist_name": "Demo Therapist",
-        "confirmation_checked": True
-    })
-    assert resp4.status_code == 200
-    assert resp4.json()["status"] == "Signed Off"
+    patch_report(repo, report.report_id, ReportPatch(markdown=safe_markdown))
+
+    signed = sign_off_report(repo, report.report_id, "Demo Therapist", signed_by_user_id="therapist-demo")
+    assert signed.status == ReviewStatus.signed_off

@@ -1,53 +1,34 @@
-# PasaScope (ภาษา-สโคป) API and service layer
+# PasaScope (ภาษา-สโคป) service layer
 
-`app/services/` is the shared service layer the desktop program
-(`packages/desktop`) calls in-process: transcripts, features, review cues,
-reports, consent and audit rules. The FastAPI app around it (`app/main.py`,
-`app/api/`) was the backend of the paused web app, which was removed on
-2026-10-23 (git tag `web-app-final`). Its routes stay because `tests/` exercise
-the services through them; do not add new web endpoints.
+The clinical logic the desktop program (`packages/desktop`) calls in-process.
+It was once the backend of the web app; the web server parts (FastAPI routes,
+Supabase sign-in, queues, PostgreSQL migrations) were removed on 2026-10-25
+and are kept at git tag `web-app-final`.
 
-The notes below describe running the API on its own.
+| Path | What it holds |
+|---|---|
+| `app/services/` | Transcripts and QA, attestation, features, review cues, report drafting and the report safety check, consent, audio jobs, storage |
+| `app/repositories/` | `MockRepository` (in memory, used by tests) and `SqlAlchemyRepository` (the desktop's SQLite file) |
+| `app/db/models.py` | Database tables. Keep them compatible with existing desktop databases. |
+| `app/schemas/clinical.py` | Pydantic records passed between the services and the desktop |
+| `app/core/config.py` | `PASASCOPE_*` settings (storage, ASR strategy, optional recording backup, AI drafting) |
+| `app/core/user.py` | `CurrentUser`, the acting therapist |
 
-Local development defaults to a durable JSON repository at
-`.local/pasascope-app-repository.json`. Set
-`PASASCOPE_REPOSITORY_MODE=memory` for isolated test/demo runs, or
-`PASASCOPE_REPOSITORY_MODE=sql` with
-`PASASCOPE_DATABASE_URL` for the SQLAlchemy-backed repository.
+Rules that live here (see `docs/PROJECT_SOURCE_OF_TRUTH.md`):
 
-Legacy v2 env names remain supported temporarily for backward compatibility.
+- Measures and cues are computed only from an attested transcript; editing or
+  replacing a transcript marks its features, cues and report draft `stale`.
+- Signed reports keep an immutable snapshot with a SHA-256 hash.
+- Consent withdrawal unlinks outputs, deletes stored recordings and blocks
+  further work on the case.
+- `PASASCOPE_DEBUG_FEATURE_OVERRIDE=false` (the default) keeps failed-QA or
+  unattested transcripts out of feature extraction.
 
-- `json`: default local usable-prototype persistence; survives API restarts.
-- `memory`: isolated tests and intentional demo resets only.
-- `sql`: PostgreSQL-ready SQLAlchemy scaffold; not pilot-hardened yet.
-
-Case creation validates bounded de-identified fields server-side and defaults
-new records to pending consent. Session workflows remain consent-gated.
-
-Transcript and report creation are retry-safe. If a session already has an
-active transcript or editable report draft, creation returns that record.
-Intentional transcript replacement requires `replace_existing: true`.
-
-Run locally:
+Tests, from the repository root:
 
 ```bash
-cd apps/api
-PYTHONPATH=.:../..:../../src uvicorn app.main:app --reload --port 8000
+PYTHONPATH=apps/api:src pytest apps/api/tests -m "not audio" -q
 ```
 
-Run tests:
-
-```bash
-cd apps/api
-PYTHONPATH=.:../..:../../src pytest -q
-```
-
-Repository-root invocation is also supported:
-
-```bash
-PYTHONPATH=apps/api:src pytest apps/api/tests -q
-```
-
-`PASASCOPE_DEBUG_FEATURE_OVERRIDE=false` is the default and keeps failed-QA
-or unattested transcripts blocked from feature extraction. Engineering-only runs
-may set it to `true` when they also provide an explicit override reason.
+`tests/test_service_rules.py` covers the workflow rules the old HTTP tests
+used to check, calling the services the way `DesktopService` does.

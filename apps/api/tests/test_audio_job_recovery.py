@@ -6,9 +6,25 @@ from app.services.audio_job_service import (
     _ensure_no_active_job_for_audio_artifact,
     recover_interrupted_jobs,
 )
-from app.tasks.job_queue import MemoryJobQueue
-
 SESSION_ID = "session_demo_001"
+
+
+class MemoryJobQueue:
+    """Stand-in for a job queue: recovery only enqueues, and a job is queued once."""
+
+    def __init__(self) -> None:
+        self._ids: list[str] = []
+
+    def enqueue(self, job_id: str) -> None:
+        if job_id not in self._ids:
+            self._ids.append(job_id)
+
+    def size(self) -> int:
+        return len(self._ids)
+
+    def dequeue(self):
+        job_id = self._ids.pop(0)
+        return type("QueuedJob", (), {"job_id": job_id})()
 
 
 def _job(repo: MockRepository, job_id: str, status: JobStatus, *, transcription: bool = True) -> ProcessingJob:

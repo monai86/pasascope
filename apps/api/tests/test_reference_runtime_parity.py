@@ -9,14 +9,12 @@ runtime provider that actually produces the values shown to therapists.
 from __future__ import annotations
 
 import pytest
-from fastapi.testclient import TestClient
 
-from app.api.v1.dependencies import get_repository
-from app.main import app
 from app.repositories.mock_repository import MockRepository
+from app.schemas.clinical import AttestationRequest, FeatureExtractionRequest, TranscriptManualCreate
+from app.services import transcript_service
+from app.services.feature_service import extract_features
 from app.services.ml_providers.reference_feature_adapter import RUNTIME_TO_CANONICAL
-
-HEADERS = {"X-User-Id": "therapist-demo", "X-Mock-Role": "therapist"}
 UTTERANCES = [
     ("THE", "what do you want ?"),
     ("CHI", "I want juice ."),
@@ -29,20 +27,15 @@ UTTERANCES = [
 
 def _runtime_features() -> dict[str, float]:
     repo = MockRepository()
-    app.dependency_overrides[get_repository] = lambda: repo
-    try:
-        client = TestClient(app, headers=HEADERS)
-        text = "\n".join(f"*{'THER' if speaker == 'THE' else speaker}:\t{words}" for speaker, words in UTTERANCES)
-        transcript = client.post(
-            "/api/v1/sessions/session_demo_001/transcripts/manual", json={"text": text}
-        ).json()
-        transcript_id = transcript["transcript_id"]
-        client.post(f"/api/v1/transcripts/{transcript_id}/qa")
-        client.post(f"/api/v1/transcripts/{transcript_id}/attest", json={"override_qa_failure": True})
-        feature_set = client.post(f"/api/v1/transcripts/{transcript_id}/extract-features").json()
-    finally:
-        app.dependency_overrides.clear()
-    return {item["name"]: item["value"] for item in feature_set["features"]}
+    text = "\n".join(f"*{'THER' if speaker == 'THE' else speaker}:\t{words}" for speaker, words in UTTERANCES)
+    transcript = transcript_service.create_from_manual(
+        repo, "session_demo_001", TranscriptManualCreate(text=text)
+    )
+    transcript_id = transcript.transcript_id
+    transcript_service.run_qa(repo, transcript_id)
+    transcript_service.attest(repo, transcript_id, AttestationRequest(override_qa_failure=True))
+    feature_set = extract_features(repo, transcript_id, FeatureExtractionRequest())
+    return {item.name: item.value for item in feature_set.features}
 
 
 def _reference_features(tmp_path) -> dict[str, float]:

@@ -4,17 +4,11 @@ pandas>=2.0
 numpy>=1.24
 scipy>=1.11
 scikit-learn==1.9.0
-matplotlib>=3.7
-seaborn>=0.12
+matplotlib>=3.7               # term paper figures
 torch>=2.0
 markdown2>=2.4
-weasyprint>=61.0
 reportlab>=4.0
 fastapi>=0.115.0
-python-multipart>=0.0.9
-uvicorn[standard]>=0.30.0
-psycopg[binary]>=3.2.0
-supabase>=2.0.0
 
 # Audio pipeline (Whisper -> diarization -> CHAT)
 faster-whisper>=1.0.0        # Fast ASR (4x faster than openai-whisper)
@@ -37,4 +31,3 @@ pytest-cov>=4.0.0
 
 openai>=1.0.0
 pythainlp>=4.0.0
-rich>=13.0.0

@@ -21,7 +21,6 @@
 |---|---|---|
 | Desktop app (term paper deliverable) | `packages/desktop/` | Active |
 | Shared service layer | `apps/api/app/services` (เรียกในโปรแกรมเดสก์ท็อปโดยตรง) | Active |
-| FastAPI routes ของ web app เดิม | `apps/api/app/api`, `apps/api/app/auth` | คงไว้เพราะเทสต์ของ service layer ใช้ ไม่พัฒนาต่อ |
 | Audio pipeline และกฎภาษาไทย | `src/audio_pipeline/`, `src/clinical_speech/`, `packages/features/`, `packages/cha/` | Active |
 | Evaluation และงานวิจัย ML | `scripts/evaluate_*.py`, `reports/metrics/`, `packages/ml/`, `scripts/ml/`, `reports/ml/` | Active research tooling |
 | หน้าดาวน์โหลด | `site/` (GitHub Pages) | Active |
@@ -39,6 +38,12 @@
   `speech_therapist_assistant.py`, `progress_tracking.py`, `eda.py`) (2026-10-23)
 - `packages/analysis_contract/`, `packages/clinical_speech_artifacts/`, `packages/reports/`
   ซึ่งไม่มีส่วนใดของโปรแกรมเรียกใช้ (2026-10-23)
+- ส่วนของ `apps/api` ที่ใช้เฉพาะ web server: FastAPI routes (`app/main.py`, `app/api/`),
+  การ sign-in ด้วย Supabase (`app/auth/`, `app/core/security.py`), rate limit, worker/queue
+  (`app/tasks/`), Alembic migrations ของ PostgreSQL, service ของบัญชี เป้าหมายการบำบัด
+  privacy operation, AI review และ observability รวมถึงค่าตั้งของ web server ใน
+  `app/core/config.py` (2026-10-25); ตารางในฐานข้อมูลยังคงเดิมเพื่อให้ไฟล์ SQLite
+  ของผู้ใช้เปิดได้
 - ก่อนหน้านั้น: `therapist-clinician-app/` (Vite/Capacitor), `public-screening/`,
   `presentation-dashboard/`, legacy benchmark pipeline
 - `dist/`, `.local/`, `node_modules/`, `__pycache__/` เป็นไฟล์ที่สร้างขึ้นหรือข้อมูลในเครื่อง
@@ -58,9 +63,8 @@
    findings ห้ามใช้เป็น current input และ stale report ห้ามแก้, sign off หรือ
    export จนกว่าจะ regenerate จาก transcript version ปัจจุบัน ส่วน signed
    snapshot เดิมต้อง immutable
-4. Structured request logs ต้องใช้ route template หรือ sanitized path เท่านั้น
-    และต้องไม่บันทึก child identifier, transcript text, audio content, storage key,
-    raw file name หรือ raw URL ที่มี clinical identifiers
+4. Log ต้องไม่บันทึก child identifier, transcript text, audio content, storage key,
+   ชื่อไฟล์เสียงเดิม หรือ path ที่มี clinical identifiers
 5. Audit events ต้องมี actor, action, target, outcome, timestamp และ correlation
     ID และต้องไม่บันทึก child identifiers, transcript text, audio content, storage
     keys, raw filenames, report excerpts หรือ clinical content

@@ -33,8 +33,8 @@ flowchart TB
 - **Service layer** (`apps/api/app/services`): transcripts and attestation,
   feature extraction, review cues, report drafting (`template_th`,
   `template_clinic_en`), the report safety check, consent and audit rules. The
-  same code once served the web app; its FastAPI routes remain in `apps/api`
-  and are covered by `apps/api/tests`.
+  same code once served the web app through FastAPI routes, which were
+  removed; `apps/api/tests` tests the services directly.
 - **Engine**: Whisper transcription, voice activity detection, child/adult
   speaker split, utterance boundaries, CHAT output (`src/audio_pipeline`);
   Thai language-sample rules (`src/clinical_speech/thai_lsa.py`); measures

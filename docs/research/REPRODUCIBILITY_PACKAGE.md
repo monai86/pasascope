@@ -63,8 +63,7 @@ All data models are version-controlled with immutable JSON schema representation
 | **Audio Preprocessing** | `librosa` / `soundfile` | `0.10.2` / `0.12.1` | Resampled to 16 kHz mono; silent regions detected using threshold $-35$ dBFS. |
 | **Thai Tokenization** | `pythainlp` | `5.0.4` | Engine: `newmm` (maximal matching dictionary-based segmenter). |
 | **CHAT Transcript Parser** | `pylangacq` | `0.19.2` | Cleaned tier extraction (`*CHI:`); punctuation and non-verbal tokens normalized. |
-| **PDF Rendering** | `reportlab` | `4.2.5` | Native TrueType Thai font registration: `Ayuthaya.ttf` with fallback to `Thonburi.ttc`. |
-| **Database Migrations** | `alembic` | `1.14.0` | Transactional DDL on PostgreSQL; strict migration length $\le 32$ characters. |
+| **PDF Rendering** | Qt (`PySide6`) | see `scripts/desktop_bundle/constraints.txt` | `packages/desktop/ui/pdf.py`, TH Sarabun New and Sarabun bundled in `packages/desktop/ui/assets/fonts/`. |
 | **Hashing Engine** | Python `hashlib` | Built-in | Deterministic canonical JSON (`separators=(',', ':')`, `sort_keys=True`) hashed with SHA-256. |
 
 ---
@@ -74,8 +73,7 @@ All data models are version-controlled with immutable JSON schema representation
 All automated tests rely strictly on deterministic synthetic test fixtures. Zero patient data, identifiable names, or clinical audio bytes are contained in the repository.
 
 ```bash
-# Verify complete reproducible suite
-PYTHONPATH=apps/api:src pytest apps/api/tests/assessment_v2 -m "not assessment_postgres" -q
+# Verify the suite (Qt tests in their own process on macOS)
+bash scripts/check_project.sh
 ```
-- **Total Test Cases:** 432 passed (including C1/C2 clinical review & reports contracts).
-- **Zero Flakiness:** All tests execute deterministically in $< 15$ seconds without external network calls.
+- Tests run without external network calls.

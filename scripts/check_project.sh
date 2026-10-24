@@ -41,14 +41,14 @@ NC='\033[0;0m' # No Color
 
 echo -e "${BLUE}=== Starting Focused Local Project Verification ===${NC}"
 
-echo -e "${BLUE}[0/5] Checking repository source-of-truth consistency...${NC}"
+echo -e "${BLUE}[0/4] Checking repository source-of-truth consistency...${NC}"
 find . -name ".DS_Store" -not -path "./.venv*" -delete 2>/dev/null || true
 "$PYTHON_BIN" scripts/check_repo_consistency.py
 
-echo -e "${BLUE}[1/5] Running local secret scan...${NC}"
+echo -e "${BLUE}[1/4] Running local secret scan...${NC}"
 "$PYTHON_BIN" scripts/security_scan.py
 
-echo -e "${BLUE}[2/5] Checking that the core modules import (Python: $PYTHON_BIN)...${NC}"
+echo -e "${BLUE}[2/4] Checking that the core modules import (Python: $PYTHON_BIN)...${NC}"
 python_imports=(
     "app.services.report_service"
     "app.services.transcript_service"
@@ -71,7 +71,7 @@ for mod in "${python_imports[@]}"; do
     fi
 done
 
-echo -e "${BLUE}[3/5] Running Python tests (excluding heavy audio)...${NC}"
+echo -e "${BLUE}[3/4] Running Python tests (excluding heavy audio)...${NC}"
 if "$PYTHON_BIN" -c "import pytest" >/dev/null 2>&1; then
     # Qt tests run in their own process; mixing them with the rest has hung on macOS.
     PYTHONPATH=apps/api:src "$PYTHON_BIN" -m pytest apps/api/tests -m "not audio" -q
@@ -82,9 +82,6 @@ else
     echo -e "${RED}Error: pytest is not installed in the current Python environment.${NC}"
     exit 1
 fi
-
-echo -e "${BLUE}[4/5] Running database migration smoke check...${NC}"
-PYTHONPATH=apps/api:src "$PYTHON_BIN" scripts/check_api_migrations.py
 
 echo -e "\n${GREEN}=== Focused local project verification passed. ===${NC}"
 echo -e "${YELLOW}This check does not run dependency audits, the Python version matrix or audio tests. CI runs the version matrix and the audit.${NC}"

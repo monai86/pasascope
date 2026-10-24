@@ -52,6 +52,10 @@ def main() -> int:
         "packages/tui",
         "src/therapist_backend",
         "src/clinical_workflow",
+        "apps/api/app/main.py",
+        "apps/api/app/api",
+        "apps/api/app/auth",
+        "apps/api/app/db/migrations",
     ):
         surface_path = ROOT / retired_surface
         if surface_path.exists():
