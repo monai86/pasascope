@@ -6,11 +6,12 @@ What has been measured about the desktop app, with the numbers for the term pape
 |---|---|---|---|
 | Does the app compute the measures the way CLAN does? | 1,961 English TalkBank child transcripts | MLU-w, NDW-100, MATTR-50 and VOCD-D: ICC(A,1) ≥ 0.9997; 94–96% identical values | [`core_measures_clan.md`](./core_measures_clan.md) |
 | How accurate is Thai transcription? | 30 FLEURS Thai clips, adult read speech | Character error rate 6.5% in accurate mode, 19.2% in fast mode | [`thai_asr_public.md`](./thai_asr_public.md) |
+| ...on Thai speech the model never saw? | 150 LOTUSDIS utterances, adult conversation | Character error rate 18.3% (accurate, near microphone), 25.2% at 2 m | [`thai_asr_lotusdis.md`](./thai_asr_lotusdis.md) |
 | Does it tell the child from the adults? | 16 recordings of children aged 2;6–5;6 | 87.0% of utterances right; child F1 0.81 | [`speaker_attribution_real_children.md`](./speaker_attribution_real_children.md) |
 | How far is an uncorrected draft from the truth? | Real child recordings, English and Thai | Usable as a draft from about 2;6 in English; not for Thai toddlers | [`end_to_end_summary.md`](./end_to_end_summary.md) |
 | Does the echolalia cue find echoes? | 40 scripted Thai adult/child turn pairs | Recall 100%, precision 83% | [`echolalia_cue_check.md`](./echolalia_cue_check.md) |
 | What do the turn-taking measures look like? | 1,120 toy-play transcripts (TD, LT, ASD) | Reference values by age and group | [`turn_taking_reference.md`](./turn_taking_reference.md) |
-| Can therapists use it? | Not run yet | Protocol ready | [`docs/PILOT_USABILITY_PROTOCOL.md`](../../docs/PILOT_USABILITY_PROTOCOL.md) |
+| Can therapists use it, and does it save time? | Not run yet | Protocols ready | [`docs/PILOT_USABILITY_PROTOCOL.md`](../../docs/PILOT_USABILITY_PROTOCOL.md), [`docs/TIMING_PILOT_PROTOCOL_TH.md`](../../docs/TIMING_PILOT_PROTOCOL_TH.md) |
 
 ## 1. Measures agree with CLAN
 
@@ -38,6 +39,17 @@ On the first 30 clips of the FLEURS Thai test set (5.4 minutes of adults reading
 | (not used) | Whisper small, multilingual | 27.1% | 3% | 0.5 |
 
 This is read adult speech in quiet conditions: the best case. Children's play is harder (section 4). Script: `scripts/evaluate_thai_asr_public.py`.
+
+The Thai model was fine-tuned on data that include FLEURS, so the figures above may be optimistic. LOTUSDIS (NECTEC, 2025) was released after the model's last update: 150 single-speaker utterances of unscripted three-person Thai conversation, recorded at once by a microphone near the speaker and a device 2 m away.
+
+| App mode | Microphone | Character error rate (mean) | Thai-script utterances only |
+|---|---|---|---|
+| Accurate (default) | near (12–15 cm) | **18.3%** | 13.6% |
+| Accurate (default) | 2 m | 25.2% | 20.4% |
+| Fast | near | 28.8% | 24.7% |
+| Fast | 2 m | 32.6% | 28.1% |
+
+Casual conversation roughly triples the error rate of read speech, and the accurate mode stays well ahead of the fast mode. "Thai-script utterances" leaves out the 39 utterances where the corpus writes English loanwords in Latin letters, which the models write in Thai. The fast mode returned nothing for 11 of the 150 short clips (the hallucination filter judged them silence); the accurate mode for 1. Script: `scripts/evaluate_thai_asr_lotusdis.py`.
 
 ## 3. Child or adult
 
