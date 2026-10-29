@@ -471,6 +471,8 @@ class SqlAlchemyRepository(MockRepository):
             ):
                 raise ValueError("Findings changed during report generation; discard the stale draft and retry.")
             session_row.report_id = report.report_id
+            # The draft was built from the current transcript and findings (checked above).
+            session_row.report_stale = False
             session_row.updated_at = _utc_now()
             case_row.latest_report_status = report.status.value if hasattr(report.status, "value") else str(report.status)
             case_row.updated_at = _utc_now()
@@ -682,6 +684,8 @@ class SqlAlchemyRepository(MockRepository):
                 raise ValueError("Transcript changed during feature extraction; discard the stale result and retry.")
             session_row.feature_set_id = feature_set.feature_set_id
             session_row.ml_result_id = None
+            # The new findings come from the current transcript version, so they are no longer out of date.
+            session_row.findings_stale = False
             session_row.updated_at = _utc_now()
             db.add(self._feature_to_record(feature_set))
             db.add(self._audit_to_record(audit.as_dict()))

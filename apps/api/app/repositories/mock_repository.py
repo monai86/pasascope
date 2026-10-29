@@ -559,6 +559,7 @@ class MockRepository:
         report.organization_id = self.cases[report.case_id].organization_id
         self.reports[report.report_id] = report
         self.sessions[report.session_id].report_id = report.report_id
+        self.sessions[report.session_id].report_stale = False
         self.cases[report.case_id].latest_report_status = report.status
         self.add_audit(audit_action, report.report_id, audit_message, actor_id=actor_id)
         return self.clone(report)
@@ -659,6 +660,7 @@ class MockRepository:
         self.features[feature_set.feature_set_id] = feature_set
         session.feature_set_id = feature_set.feature_set_id
         session.ml_result_id = None
+        session.findings_stale = False
         self.add_audit(audit_action, feature_set.feature_set_id, audit_message, actor_id=actor_id)
         return self.clone(feature_set)
 

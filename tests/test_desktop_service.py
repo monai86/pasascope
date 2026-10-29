@@ -76,6 +76,38 @@ def test_full_workflow_persists_across_restart(service, tmp_path):
     assert {"case.create", "report.export"} <= actions
 
 
+def test_reanalysing_an_edited_transcript_clears_out_of_date(service):
+    case = _case_with_consent(service)
+    session = service.create_session(case.case_id, date(2026, 10, 16))
+    transcript = service.import_transcript_text(session.session_id, CHAT)
+    service.attest(transcript.transcript_id, override_reason="ตรวจกับเสียงแล้ว")
+    service.analyze(session.session_id)
+    service.draft_report(session.session_id)
+    assert service.session_step(service.get_session(session.session_id)) == 3
+
+    # Edit after analysis: findings and report go out of date.
+    transcript = service.get_transcript(session.session_id)
+    edited = [u.model_copy() for u in transcript.utterances]
+    edited[1] = edited[1].model_copy(update={"text": "ชอบกินขนมครับ"})
+    service.save_utterances(transcript.transcript_id, edited, note="แก้คำตามเสียง")
+    stale = service.get_session(session.session_id)
+    assert stale.findings_stale and stale.report_stale
+
+    # Attest and analyse again: the new findings are current.
+    service.attest(transcript.transcript_id, override_reason="ตรวจกับเสียงแล้ว")
+    service.analyze(session.session_id)
+    fresh = service.get_session(session.session_id)
+    assert not fresh.findings_stale
+    assert service.session_step(fresh) == 3
+
+    # Redraft the report: it is current too, and the state survives a restart.
+    service.draft_report(session.session_id)
+    assert not service.get_session(session.session_id).report_stale
+    reopened = DesktopService(open_workspace(service.workspace.root))
+    again = reopened.get_session(session.session_id)
+    assert not again.findings_stale and not again.report_stale
+
+
 def test_session_needs_consent(service):
     case = service.create_case("TH-002", 40)
     with pytest.raises(WorkflowError, match="บันทึกความยินยอม"):
