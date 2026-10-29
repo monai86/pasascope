@@ -2,6 +2,13 @@
 
 ## [Unreleased]
 
+## [v1.8.1] - 2026-10-29
+
+Desktop app fix release.
+
+### Fixed
+- **"Out of date" no longer sticks after redoing the work.** Editing an analysed transcript marks the session's findings and report out of date. After re-attesting and pressing Analyse, the Findings tab kept saying "The transcript changed after the last analysis", and the Report tab kept showing "Out of date" after a redraft, because nothing cleared the marks. Saving new findings now clears the findings mark, and saving a new report draft clears the report mark; both are saved only when they match the current transcript (`apps/api/app/repositories/sqlalchemy_repository.py`, `mock_repository.py`; test `tests/test_desktop_service.py::test_reanalysing_an_edited_transcript_clears_out_of_date`).
+
 ### Removed
 - **Repository cleanup (2026-10-23).** The working tree now holds only what the desktop program and the term paper need. Removed: the paused Next.js web app (`apps/pasascope-app`), `shared/`, its deploy setup (`Dockerfile`, `docker-compose*.yml`, `render.yaml`, `deploy/`, `.env.example`), the Supabase, staging and SaaS scripts and documents, the Tkinter GUI (`packages/gui`, `./run_gui.sh --legacy`), the TUI (`packages/tui`, `run_tui.sh`), the legacy research API (`src/therapist_backend`, `src/clinical_workflow` and the modules only it used), `packages/analysis_contract`, `packages/clinical_speech_artifacts`, `packages/reports`, `clinical-guidelines/`, old plans, handoffs and progress reports, and the tests of all of these. Everything is kept at git tag `web-app-final`. AI agent tool folders (`.agents/`, `.windsurf/`) are no longer tracked. The desktop program, the service layer in `apps/api`, the evaluation scripts and `reports/metrics` are unchanged.
 - **Web server parts of `apps/api` (2026-10-25).** Removed the FastAPI app and routes, Supabase sign-in and `core/security.py`, rate limiting and request logging, the job queue and worker, the PostgreSQL Alembic migrations (`alembic.ini`, `scripts/check_api_migrations.py`), and the account, therapy-goal, privacy-operation, AI-review, observability, ML-baseline and ASR-evaluation services. `config.py` keeps only the settings the services read (storage, ASR, optional recording backup, AI drafting, reference artifacts, debug override). `CurrentUser` moved to `app/core/user.py`. Database tables are unchanged, so existing desktop databases open as before. The desktop bundle no longer installs PyJWT, cryptography, python-multipart or rich.

@@ -1,6 +1,6 @@
 # PasaScope Architecture
 
-Status: v1.8.0, desktop program.
+Status: v1.8.1, desktop program.
 
 PasaScope is one program on one computer. It has four layers that run in the
 same process (term paper Figure 4.1):
