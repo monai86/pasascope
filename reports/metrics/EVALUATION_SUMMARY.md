@@ -10,6 +10,7 @@ What has been measured about the desktop app, with the numbers for the term pape
 | Does it tell the child from the adults? | 16 recordings of children aged 2;6–5;6 | 87.0% of utterances right; child F1 0.81 | [`speaker_attribution_real_children.md`](./speaker_attribution_real_children.md) |
 | How far is an uncorrected draft from the truth? | Real child recordings, English and Thai | Usable as a draft from about 2;6 in English; not for Thai toddlers | [`end_to_end_summary.md`](./end_to_end_summary.md) |
 | Does the echolalia cue find echoes? | 40 scripted Thai adult/child turn pairs | Recall 100%, precision 83% | [`echolalia_cue_check.md`](./echolalia_cue_check.md) |
+| Can transcript measures flag autism without labels, or by age-referenced zones? | 627 toy-play children (62 autistic), one session each | No: clusters follow corpus and age (AMI with ASD ≤ 0.10); a below-10th-percentile zone also catches late talkers and is miscalibrated across corpora | [`asd_unsupervised_zones.md`](./asd_unsupervised_zones.md) |
 | What do the turn-taking measures look like? | 1,120 toy-play transcripts (TD, LT, ASD) | Reference values by age and group | [`turn_taking_reference.md`](./turn_taking_reference.md) |
 | Can therapists use it, and does it save time? | Not run yet | Protocols ready | [`docs/PILOT_USABILITY_PROTOCOL.md`](../../docs/PILOT_USABILITY_PROTOCOL.md), [`docs/TIMING_PILOT_PROTOCOL_TH.md`](../../docs/TIMING_PILOT_PROTOCOL_TH.md) |
 

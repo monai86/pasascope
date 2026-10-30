@@ -1,0 +1,25 @@
+table,setting,children,asd,method,k,ami_asd,ami_diagnosis,ami_corpus,ami_age_band,max_asd_share_in_a_cluster,asd_share_overall
+clusters,"all toy-play corpora, raw measures",627,62,k-means,2,-0.002,0.225,0.283,0.234,0.104,0.099
+clusters,"all toy-play corpora, raw measures",627,62,gaussian mixture,2,0.018,0.024,0.024,0.017,0.109,0.099
+clusters,"all toy-play corpora, raw measures",627,62,ward,2,0.001,0.233,0.286,0.267,0.106,0.099
+clusters,"all toy-play corpora, raw measures",627,62,k-means,3,0.007,0.203,0.26,0.212,0.108,0.099
+clusters,"all toy-play corpora, raw measures",627,62,gaussian mixture,3,0.014,0.233,0.288,0.233,0.121,0.099
+clusters,"all toy-play corpora, raw measures",627,62,ward,3,0.011,0.207,0.264,0.239,0.117,0.099
+clusters,"all toy-play corpora, age removed",627,62,k-means,2,-0.0,0.108,0.172,0.204,0.112,0.099
+clusters,"all toy-play corpora, age removed",627,62,gaussian mixture,2,0.004,0.111,0.148,0.114,0.12,0.099
+clusters,"all toy-play corpora, age removed",627,62,ward,2,0.023,0.032,0.044,0.008,0.112,0.099
+clusters,"all toy-play corpora, age removed",627,62,k-means,3,0.007,0.109,0.175,0.2,0.112,0.099
+clusters,"all toy-play corpora, age removed",627,62,gaussian mixture,3,0.02,0.107,0.168,0.181,0.156,0.099
+clusters,"all toy-play corpora, age removed",627,62,ward,3,0.045,0.145,0.22,0.289,0.15,0.099
+clusters,"Eigsti only, age removed",48,16,k-means,2,0.066,0.038,0.0,-0.033,0.5,0.333
+clusters,"Eigsti only, age removed",48,16,gaussian mixture,2,0.069,0.032,0.0,-0.039,0.372,0.333
+clusters,"Eigsti only, age removed",48,16,ward,2,-0.007,-0.017,0.0,-0.032,0.5,0.333
+clusters,"Eigsti only, age removed",48,16,k-means,3,0.041,0.01,0.0,-0.062,0.467,0.333
+clusters,"Eigsti only, age removed",48,16,gaussian mixture,3,0.022,0.042,0.0,-0.039,0.375,0.333
+clusters,"Eigsti only, age removed",48,16,ward,3,0.005,-0.002,0.0,-0.038,0.5,0.333
+clusters,"Eigsti and Nadig, age removed",80,25,k-means,2,0.061,0.037,-0.009,-0.024,0.342,0.312
+clusters,"Eigsti and Nadig, age removed",80,25,gaussian mixture,2,0.071,0.041,-0.014,-0.022,0.347,0.312
+clusters,"Eigsti and Nadig, age removed",80,25,ward,2,0.061,0.037,-0.009,-0.024,0.342,0.312
+clusters,"Eigsti and Nadig, age removed",80,25,k-means,3,0.102,0.07,-0.012,0.048,0.591,0.312
+clusters,"Eigsti and Nadig, age removed",80,25,gaussian mixture,3,0.065,0.052,0.025,0.063,0.625,0.312
+clusters,"Eigsti and Nadig, age removed",80,25,ward,3,0.066,0.04,0.0,0.076,0.583,0.312
