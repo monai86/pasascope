@@ -67,6 +67,8 @@ def _merge_segments(a: UtteranceSegment, b: UtteranceSegment) -> UtteranceSegmen
         speaker_basis=_merged_basis(a, b),
         language=a.language or b.language,
         speaker_reason=a.speaker_reason or b.speaker_reason,
+        # Words from a flagged piece may be noise, so the whole line is flagged.
+        speech_reason=a.speech_reason or b.speech_reason,
     )
 
 
@@ -173,6 +175,7 @@ def _split_at_long_silences(
             speaker_basis=seg.speaker_basis,
             language=seg.language,
             speaker_reason=seg.speaker_reason,
+            speech_reason=seg.speech_reason,
         ))
     return out
 

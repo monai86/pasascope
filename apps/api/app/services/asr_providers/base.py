@@ -44,6 +44,8 @@ class TranscriptLine:
     boundary_reason: str = ""
     # Why the clinic's speaker model chose child or adult, shown to the therapist.
     speaker_reason: str = ""
+    # Why the filter thinks nobody may have spoken here; the line is kept for the therapist to check.
+    speech_reason: str = ""
 
 
 @dataclass

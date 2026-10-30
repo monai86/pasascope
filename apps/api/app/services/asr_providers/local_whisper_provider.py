@@ -165,6 +165,7 @@ class LocalWhisperProvider(BaseTranscriptionProvider):
                     speaker_uncertain=getattr(segment, "speaker_basis", None) not in ("voice", "frame"),
                     boundary_reason=getattr(segment, "boundary_reason", None) or "",
                     speaker_reason=getattr(segment, "speaker_reason", None) or "",
+                    speech_reason=getattr(segment, "speech_reason", None) or "",
                 )
             )
 

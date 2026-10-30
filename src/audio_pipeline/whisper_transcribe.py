@@ -232,6 +232,28 @@ def _hallucination_reason(text: str, avg_logprob: float, no_speech_prob: float) 
     return None
 
 
+# Rules that rest only on the model's scores. A segment caught by one of these
+# alone may still be a short real utterance (LOTUSDIS: 11 of 150 fast-mode
+# lines), so it is kept and flagged for the therapist instead of deleted.
+# Empty text, repeated n-grams and text too fast to be speech are still dropped.
+UNCERTAIN_SPEECH_RULES = ("no_speech", "low_logprob")
+SPEECH_MARKS = ("อาจไม่มีเสียงพูด", "Possibly no speech")
+
+
+def describe_uncertain_speech(reason: str, avg_logprob: float, no_speech_prob: float) -> str:
+    """Why a kept line may have no speech behind it, in the app's language."""
+    import os
+
+    english = os.environ.get("PASASCOPE_LANGUAGE", "th") == "en"
+    if reason == "no_speech":
+        if english:
+            return f"Possibly no speech: the model gives a {no_speech_prob:.0%} chance that nobody spoke here."
+        return f"อาจไม่มีเสียงพูด: โมเดลให้โอกาส {no_speech_prob:.0%} ว่าช่วงนี้ไม่มีคนพูด"
+    if english:
+        return f"Possibly no speech: the model was unsure of the words it wrote (mean log-probability {avg_logprob:.2f})."
+    return f"อาจไม่มีเสียงพูด: โมเดลไม่มั่นใจคำที่ถอดได้ (log-probability เฉลี่ย {avg_logprob:.2f})"
+
+
 def _looks_hallucinated(text: str, avg_logprob: float, no_speech_prob: float) -> bool:
     """Heuristic to drop common Whisper hallucinations on silence / noise."""
     return _hallucination_reason(text, avg_logprob, no_speech_prob) is not None
@@ -328,6 +350,9 @@ class UtteranceSegment:
     boundary_reason: Optional[str] = None
     # Why the clinic's own speaker model chose child or adult (clinic_speaker_model).
     speaker_reason: Optional[str] = None
+    # Set when the filter's scores say nobody may have spoken here, but the text
+    # looks like speech: the line is kept for the therapist to listen to.
+    speech_reason: Optional[str] = None
 
 
 class WhisperTranscriber:
@@ -365,6 +390,8 @@ class WhisperTranscriber:
     # recorded with its scores and what the filters did with it
     # (scripts/evaluate_segment_filter.py). None in the app.
     segment_log: Optional[list] = None
+    # Keep lines dropped only by UNCERTAIN_SPEECH_RULES, flagged (speech_reason).
+    flag_uncertain_speech: bool = True
 
     def __init__(
         self,
@@ -528,6 +555,12 @@ class WhisperTranscriber:
 
             trimmed = False
             reason = _hallucination_reason(text, avg_logprob, no_speech_prob)
+            speech_reason = None
+            if (reason in UNCERTAIN_SPEECH_RULES and self.flag_uncertain_speech
+                    and _hallucination_reason(text, 0.0, 0.0) is None):
+                # Only the scores are against it: keep the line, flagged for the therapist.
+                speech_reason = describe_uncertain_speech(reason, avg_logprob, no_speech_prob)
+                reason = None
             if reason:
                 # A correct turn followed by a decoding loop: keep the turn.
                 shorter = _trim_repetition_loop(text)
@@ -560,6 +593,7 @@ class WhisperTranscriber:
                 continue
             if entry is not None:
                 entry["kept"] = True
+                entry["flagged"] = speech_reason is not None
             out.append(UtteranceSegment(
                 start=float(seg.start),
                 end=seg_end,
@@ -568,6 +602,7 @@ class WhisperTranscriber:
                 avg_logprob=avg_logprob,
                 no_speech_prob=no_speech_prob,
                 language=seg_lang,
+                speech_reason=speech_reason,
             ))
         return out
 
@@ -633,7 +668,9 @@ class WhisperTranscriber:
         temperature: float | list[float] = 0.0,
     ) -> List[UtteranceSegment]:
         """Retry without VAD only when the first pass found virtually no speech."""
-        if primary and (len(primary) >= 2 or self._recognized_word_count(primary) >= 4):
+        # Flagged lines may be noise, so they do not count as having found speech.
+        sure = [seg for seg in primary if not seg.speech_reason]
+        if sure and (len(sure) >= 2 or self._recognized_word_count(sure) >= 4):
             return primary
 
         fallback = self._run_single(

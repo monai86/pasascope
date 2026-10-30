@@ -111,9 +111,11 @@ def word_cell(utt) -> tuple[str, str, bool]:
     return str(len(analysis.words)), "\n".join(lines), True
 
 
-# How the pipeline's explanations begin, in either language (utterance_boundaries, clinic_speaker_model).
+# How the pipeline's explanations begin, in either language
+# (utterance_boundaries, clinic_speaker_model, whisper_transcribe.SPEECH_MARKS).
 BOUNDARY_MARKS = ("ขึ้นประโยคใหม่", "New utterance")
 SPEAKER_MARKS = ("โมเดลประจำคลินิก", "Clinic model")
+SPEECH_MARKS = ("อาจไม่มีเสียงพูด", "Possibly no speech")
 
 
 def _from_mark(notes: str, marks: tuple[str, ...]) -> str:
@@ -129,6 +131,15 @@ def note_parts(notes: str | None) -> tuple[str, str]:
     return boundary, speaker
 
 
+def speech_note(utt) -> str:
+    """Why the draft may have no speech behind this line, until the therapist has reviewed it."""
+    if getattr(utt, "review_status", "") == "reviewed":
+        return ""
+    note = _from_mark(utt.notes or "", SPEECH_MARKS)
+    later = [note.index(mark) for mark in BOUNDARY_MARKS + SPEAKER_MARKS if mark in note]
+    return note[:min(later)].strip() if later else note
+
+
 def explain_utterance(utt) -> list[tuple[str, str]]:
     """What the inspector shows for one utterance: (heading, text) pairs a therapist can check."""
     boundary, speaker_note = note_parts(utt.notes)
@@ -142,7 +153,13 @@ def explain_utterance(utt) -> list[tuple[str, str]]:
         speaker_why = tr("ระบบมั่นใจจากโมเดลแยกเสียงเด็ก/ผู้ใหญ่", "Labelled with confidence by the child/adult voice model")
     else:
         speaker_why = tr("มาจาก transcript ที่นำเข้าหรือพิมพ์เอง", "From an imported or typed transcript")
-    rows = [(tr("ผู้พูด", "Speaker"), f"{speaker} · {speaker_why}")]
+    rows = []
+    no_speech = speech_note(utt)
+    if no_speech:
+        rows.append((tr("เสียงพูด", "Speech"), no_speech + "\n" + tr(
+            "ระบบไม่แน่ใจว่าช่วงนี้มีคนพูด ฟังก่อน ถ้ามีคนพูดจริงให้ยืนยันผู้พูด (Ctrl+1 หรือ Ctrl+2) ถ้าไม่มีให้ลบบรรทัดนี้",
+            "The system is unsure anyone spoke here. Listen first: if someone did, confirm the speaker (Ctrl+1 or Ctrl+2); if not, delete the line.")))
+    rows.append((tr("ผู้พูด", "Speaker"), f"{speaker} · {speaker_why}"))
     if speaker_note:
         rows.append((tr("เหตุผลของโมเดลประจำคลินิก", "Clinic model"), speaker_note))
     if boundary:
@@ -461,12 +478,15 @@ class ReviewPage(SessionPage):
         if speaker_tip:
             speaker_item.setToolTip("\n".join(speaker_tip))
         text_item = QTableWidgetItem(utt.text)
+        no_speech = speech_note(utt)
+        if no_speech:
+            text_item.setToolTip(no_speech)
         conf = utt.confidence
         conf_item = QTableWidgetItem("—" if conf is None else f"{conf * 100:.0f}%")
         conf_item.setFlags(conf_item.flags() & ~Qt.ItemFlag.ItemIsEditable)
         low = conf is not None and conf < LOW_CONFIDENCE
         for item in (time_item, speaker_item, text_item, conf_item):
-            if low or utt.unintelligible:
+            if low or utt.unintelligible or no_speech:
                 item.setBackground(QBrush(QColor(theme.ATTENTION_SOFT)))
         self.table.setItem(row, COL_TIME, time_item)
         self.table.setItem(row, COL_SPEAKER, speaker_item)
@@ -531,6 +551,7 @@ class ReviewPage(SessionPage):
         n_unknown = sum(1 for u in self.utterances if str(u.speaker) == "UNK")
         n_low = sum(1 for u in self.utterances if u.confidence is not None and u.confidence < LOW_CONFIDENCE)
         n_guessed = sum(1 for u in self.utterances if getattr(u, "speaker_uncertain", False))
+        n_no_speech = sum(1 for u in self.utterances if speech_note(u))
         parts = [tr(f"{len(self.utterances)} ประโยค", f"{len(self.utterances)} lines"), tr(f"เด็ก {n_child}", f"child {n_child}")]
         analyses: list[MainTierAnalysis] = [
             analyze_main_tier(u.text) for u in self.utterances if str(u.speaker) == "CHI"
@@ -546,6 +567,8 @@ class ReviewPage(SessionPage):
             parts.append(tr(f"ไม่มั่นใจ {n_low}", f"low confidence {n_low}"))
         if n_guessed:
             parts.append(tr(f"ผู้พูดที่ควรเช็ก {n_guessed}", f"speakers to check {n_guessed}"))
+        if n_no_speech:
+            parts.append(tr(f"อาจไม่มีคนพูด {n_no_speech}", f"maybe no speech {n_no_speech}"))
         self.summary.setText(" · ".join(parts))
         if self.dirty:
             set_chip(self.status_chip, tr("มีการแก้ไขที่ยังไม่บันทึก", "Unsaved changes"), "attention")
@@ -560,6 +583,8 @@ class ReviewPage(SessionPage):
         n_bad_codes = sum(1 for u in self.utterances if chat_code_problems(u.text))
         if n_bad_codes:
             notes.append(tr(f"มี {n_bad_codes} ประโยคที่รหัส CHAT อาจเขียนผิด (ดูช่อง \"คำที่นับ\" ที่ขึ้น ⚠) ระบบจะนับคำของประโยคนั้นผิด", f"{n_bad_codes} lines may have malformed CHAT codes (marked ⚠ under Counted); their words will be miscounted."))
+        if n_no_speech:
+            notes.append(tr(f"มี {n_no_speech} ประโยคที่ระบบไม่แน่ใจว่ามีคนพูด ฟังแล้วยืนยันผู้พูดถ้ามีคนพูดจริง หรือลบถ้าเป็นเสียงอื่น", f"{n_no_speech} lines may have no speech behind them. Listen, then confirm the speaker if someone spoke, or delete the line."))
         if n_unknown:
             notes.append(tr(f"มี {n_unknown} ประโยคที่ยังไม่ระบุผู้พูด ระบุให้ครบก่อนรับรอง", f"{n_unknown} lines have no speaker. Set them before attesting."))
         if self.transcript and self.transcript.therapist_attested and self.dirty:

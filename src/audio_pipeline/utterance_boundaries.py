@@ -292,6 +292,7 @@ def segment_by_model(utterances, model: BoundaryModel):
             avg_logprob=float(np.mean([s.avg_logprob for s in sources])), no_speech_prob=max(s.no_speech_prob for s in sources),
             speaker=sources[0].speaker, speaker_basis=basis, language=sources[0].language, boundary_reason=reason,
             speaker_reason=next((source.speaker_reason for source in sources if source.speaker_reason), None),
+            speech_reason=next((source.speech_reason for source in sources if source.speech_reason), None),
         ))
         group, sources, reason = [], [], next_reason
 

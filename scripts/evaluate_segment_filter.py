@@ -167,9 +167,21 @@ def current(segment: dict) -> bool:
     return segment["kept"]
 
 
+def would_flag(segment: dict) -> bool:
+    """Dropped on a probability rule alone: its text is not empty, not a repeat loop and not too fast to be speech.
+
+    Mirrors WhisperTranscriber._run_single with flag_uncertain_speech on.
+    """
+    from src.audio_pipeline.whisper_transcribe import _hallucination_reason, _too_fast_to_be_speech
+
+    return (not segment["kept"] and segment["reason"] in PROBABILITY_RULES
+            and _hallucination_reason(segment["text"], 0.0, 0.0) is None
+            and not _too_fast_to_be_speech(segment["text"], segment["start"], segment["end"]))
+
+
 def flagged(segment: dict) -> bool:
     """The candidate: segments dropped only on a probability rule are kept (and flagged)."""
-    return segment["kept"] or segment["reason"] in PROBABILITY_RULES
+    return segment["kept"] or would_flag(segment)
 
 
 def summarize(records: list[dict]) -> dict:
@@ -190,7 +202,7 @@ def summarize(records: list[dict]) -> dict:
             if not seg["kept"] and kind in ("speech", "no_speech"):
                 by = out[f"{kind}_dropped_by"]
                 by[seg["reason"]] = by.get(seg["reason"], 0) + 1
-            if not seg["kept"] and seg["reason"] in PROBABILITY_RULES:
+            if would_flag(seg):
                 out[f"flag_{kind}"] += 1
         out["lost_now"] += lost_child_utterances(rec, current)
         out["lost_flagged"] += lost_child_utterances(rec, flagged)
