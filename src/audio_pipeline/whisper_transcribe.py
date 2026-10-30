@@ -208,14 +208,18 @@ def _too_fast_to_be_speech(text: str, start: float, end: float) -> bool:
     return duration < _MIN_SEGMENT_SECONDS or letters / duration > _MAX_LETTERS_PER_SECOND
 
 
-def _looks_hallucinated(text: str, avg_logprob: float, no_speech_prob: float) -> bool:
-    """Heuristic to drop common Whisper hallucinations on silence / noise."""
+def _hallucination_reason(text: str, avg_logprob: float, no_speech_prob: float) -> Optional[str]:
+    """Why a segment looks like a Whisper hallucination on silence or noise, or None.
+
+    "empty", "no_speech" (the model thinks nobody spoke), "low_logprob" (it was
+    unsure of its own words) or "repeat" (the same 4-gram three times).
+    """
     if not text or not text.strip():
-        return True
+        return "empty"
     if no_speech_prob > _HALLUCINATION_NO_SPEECH_PROB:
-        return True
+        return "no_speech"
     if avg_logprob < _HALLUCINATION_AVG_LOGPROB:
-        return True
+        return "low_logprob"
     # Detect repeated n-grams ("thank you. thank you. thank you. ...")
     tokens = re.findall(r"\w+", text.lower())
     if len(tokens) >= _HALLUCINATION_REPEAT_NGRAM * 3:
@@ -224,8 +228,13 @@ def _looks_hallucinated(text: str, avg_logprob: float, no_speech_prob: float) ->
         if ngrams:
             top = max(ngrams.count(g) for g in set(ngrams))
             if top >= 3:
-                return True
-    return False
+                return "repeat"
+    return None
+
+
+def _looks_hallucinated(text: str, avg_logprob: float, no_speech_prob: float) -> bool:
+    """Heuristic to drop common Whisper hallucinations on silence / noise."""
+    return _hallucination_reason(text, avg_logprob, no_speech_prob) is not None
 
 
 # A run of the same phrase three or more times (spaces optional, as Thai output
@@ -351,6 +360,11 @@ class WhisperTranscriber:
     """
 
     DEFAULT_MODEL = "small"   # was "base" — small is markedly better on child speech and Thai
+
+    # Evaluation hook: when a list is set here, every segment Whisper returns is
+    # recorded with its scores and what the filters did with it
+    # (scripts/evaluate_segment_filter.py). None in the app.
+    segment_log: Optional[list] = None
 
     def __init__(
         self,
@@ -501,11 +515,25 @@ class WhisperTranscriber:
                 cur_prog = min(0.70, 0.20 + (float(seg.end) / total_duration) * 0.50)
                 progress_callback(cur_prog, f"ASR Transcribing: {float(seg.start):.1f}s - {float(seg.end):.1f}s...")
 
+            log = self.segment_log
+            entry = None
+            if log is not None:
+                entry = {
+                    "start": float(seg.start), "end": float(seg.end), "text": text,
+                    "avg_logprob": avg_logprob, "no_speech_prob": no_speech_prob,
+                    "compression_ratio": float(getattr(seg, "compression_ratio", 0.0) or 0.0),
+                    "kept": False, "reason": None,
+                }
+                log.append(entry)
+
             trimmed = False
-            if _looks_hallucinated(text, avg_logprob, no_speech_prob):
+            reason = _hallucination_reason(text, avg_logprob, no_speech_prob)
+            if reason:
                 # A correct turn followed by a decoding loop: keep the turn.
                 shorter = _trim_repetition_loop(text)
                 if shorter == text or _looks_hallucinated(shorter, avg_logprob, no_speech_prob):
+                    if entry is not None:
+                        entry["reason"] = reason
                     continue
                 text, trimmed = shorter, True
             collapsed = _collapse_doubled_sentence(text)
@@ -527,7 +555,11 @@ class WhisperTranscriber:
                 words = _keep_words_for(text, words) or words[:1]
                 seg_end = words[-1].end
             if _too_fast_to_be_speech(text, float(seg.start), seg_end):
+                if entry is not None:
+                    entry["reason"] = "too_fast"
                 continue
+            if entry is not None:
+                entry["kept"] = True
             out.append(UtteranceSegment(
                 start=float(seg.start),
                 end=seg_end,
