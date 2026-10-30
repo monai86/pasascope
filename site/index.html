@@ -1,5 +1,5 @@
 <!doctype html>
-<html lang="en" data-lang="en">
+<html lang="th" data-lang="th">
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
@@ -9,10 +9,10 @@
   <meta property="og:description" content="Transcribe a child's language sample and count every word, on your own computer.">
   <meta property="og:image" content="https://monai86.github.io/pasascope/assets/og.png">
   <meta property="og:type" content="website">
-  <meta name="theme-color" content="#f4f8fd">
+  <meta name="theme-color" content="#f3f7fd">
   <meta name="color-scheme" content="light">
   <link rel="icon" href="assets/logo.png">
-  <link rel="preload" href="fonts/Prompt-600-latin.woff2" as="font" type="font/woff2" crossorigin>
+  <link rel="preload" href="fonts/Prompt-600-thai.woff2" as="font" type="font/woff2" crossorigin>
   <link rel="preload" href="fonts/NotoSansThai-400-thai.woff2" as="font" type="font/woff2" crossorigin>
   <link rel="stylesheet" href="fonts.css">
   <link rel="stylesheet" href="styles.css">
@@ -32,12 +32,12 @@
       <button class="lang-toggle" type="button" data-lang-toggle aria-label="ภาษาไทย / English">
         <span lang="en">ไทย</span><span lang="th">EN</span>
       </button>
-      <a class="pill pill-small" href="#download"><span lang="en">Download</span><span lang="th">ดาวน์โหลด</span></a>
+      <a class="btn btn-small" href="#download"><span lang="en">Download</span><span lang="th">ดาวน์โหลด</span></a>
     </div>
   </header>
 
   <main>
-    <!-- First view: what it does, and a sheet marked the way it counts -->
+    <!-- First view: the recording turns into a counted transcript -->
     <section class="hero">
       <div class="wrap hero-grid">
         <div class="hero-text">
@@ -50,89 +50,96 @@
             <span lang="th">PasaScope ถอดเสียงภาษาไทยจากไฟล์เสียงให้ก่อน คุณตรวจทีละบรรทัด แล้วโปรแกรมนับ MLU-w, NDW และตัวชี้วัดอื่นตามกติกาของ CLAN และร่างรายงาน A4 ให้ เสียงไม่ออกจากเครื่อง</span>
           </p>
           <div class="ctas">
-            <a class="pill" data-download="primary" href="https://github.com/monai86/pasascope/releases/latest">
+            <a class="btn" data-download="primary" href="https://github.com/monai86/pasascope/releases/latest">
+              <svg viewBox="0 0 20 20" aria-hidden="true"><path d="M10 3v9m0 0-3.5-3.5M10 12l3.5-3.5M4 15.5h12" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
               <span data-label-mac><span lang="en">Download for Mac</span><span lang="th">ดาวน์โหลดสำหรับ Mac</span></span>
               <span data-label-win hidden><span lang="en">Download for Windows</span><span lang="th">ดาวน์โหลดสำหรับ Windows</span></span>
             </a>
-            <a class="quiet-link" data-download="secondary" href="#download">
+            <a class="text-link" data-download="secondary" href="#download">
               <span data-label-mac><span lang="en">Also for Windows</span><span lang="th">มีสำหรับ Windows ด้วย</span></span>
               <span data-label-win hidden><span lang="en">Also for Mac</span><span lang="th">มีสำหรับ Mac ด้วย</span></span>
             </a>
           </div>
-          <p class="release-meta" data-release-meta>
-            <span lang="en">Free · Mac with Apple silicon, macOS 12+ · Windows 10 or 11, 64-bit</span>
-            <span lang="th">ไม่มีค่าใช้จ่าย · Mac ชิป Apple, macOS 12 ขึ้นไป · Windows 10 หรือ 11 แบบ 64 บิต</span>
+          <p class="release-meta">
+            <span class="version-chip"><span lang="en">Version</span><span lang="th">รุ่น</span> <b data-release-version>1.8.1</b></span>
+            <span lang="en"><span data-release-date="en-GB">29 October 2026</span> · Free · Mac with Apple silicon, macOS 12+ · Windows 10 or 11, 64-bit</span>
+            <span lang="th"><span data-release-date="th-TH">29 ตุลาคม 2569</span> · ไม่มีค่าใช้จ่าย · Mac ชิป Apple, macOS 12 ขึ้นไป · Windows 10 หรือ 11 แบบ 64 บิต</span>
           </p>
         </div>
 
-        <figure class="sheet" aria-labelledby="sheet-title">
-          <header class="sheet-head">
-            <p class="sheet-title" id="sheet-title">
-              <span lang="en">A sample, marked the way PasaScope counts it</span>
-              <span lang="th">ตัวอย่างที่ขีดตามวิธีที่ PasaScope นับ</span>
+        <figure class="scope" aria-labelledby="scope-title">
+          <figcaption class="scope-head">
+            <p class="scope-title" id="scope-title">
+              <span lang="en">A recording, transcribed and counted the way PasaScope does it</span>
+              <span lang="th">เสียงหนึ่งช่วง ถอดและนับแบบที่ PasaScope ทำ</span>
             </p>
             <ul class="legend">
               <li><i class="key key-word" aria-hidden="true"></i><span lang="en">counted word</span><span lang="th">คำที่นับ</span></li>
               <li><i class="key key-rep" aria-hidden="true"></i><span lang="en">said before</span><span lang="th">คำที่พูดไปแล้ว</span></li>
               <li><i class="key key-check" aria-hidden="true"></i><span lang="en">to check</span><span lang="th">ควรตรวจ</span></li>
             </ul>
-          </header>
+          </figcaption>
+
+          <div class="signal" aria-hidden="true">
+            <canvas class="wave" width="720" height="128"></canvas>
+            <div class="ruler"><span>0s</span><span>4s</span><span>8s</span><span>12s</span><span>16s</span></div>
+          </div>
 
           <ol class="lines">
-            <li class="line adult">
+            <li class="line adult" data-turn="0">
               <span class="no">1</span><span class="who">*INV</span>
               <p class="say"><span lang="th" data-keep>หนูชอบกินอะไร</span><span class="gloss" lang="en">What do you like to eat?</span></p>
             </li>
-            <li class="line child">
+            <li class="line child" data-turn="1">
               <span class="no">2</span><span class="who">*CHI</span>
-              <p class="say"><span lang="th" data-keep><span class="w" style="--i:0">ชอบ</span><span class="w" style="--i:1">กิน</span><span class="w" style="--i:2">ขนม</span></span><span class="gloss" lang="en">Like eating sweets.</span>
-                <span class="note" style="--i:3"><span lang="en">Reuses two words of line 1. A fair answer; you decide.</span><span lang="th">ใช้คำ 2 คำจากบรรทัด 1 เป็นคำตอบที่สมเหตุสมผล คุณเป็นผู้ตัดสิน</span></span></p>
-              <span class="tally" style="--i:3"><svg viewBox="0 0 44 34" aria-hidden="true"><path pathLength="1" d="M24 4C33 4 41 9 40 17s-9 14-19 13S3 24 4 16 13 3 26 5"/></svg><b>3</b></span>
+              <p class="say"><span lang="th" data-keep><span class="w">ชอบ</span><span class="w">กิน</span><span class="w">ขนม</span></span><span class="gloss" lang="en">Like eating sweets.</span>
+                <span class="note"><span lang="en">Reuses two words of line 1. A fair answer; you decide.</span><span lang="th">ใช้คำ 2 คำจากบรรทัด 1 เป็นคำตอบที่สมเหตุสมผล คุณเป็นผู้ตัดสิน</span></span></p>
+              <span class="count">3</span>
             </li>
-            <li class="line adult">
+            <li class="line adult" data-turn="2">
               <span class="no">3</span><span class="who">*INV</span>
               <p class="say"><span lang="th" data-keep>ขนมอะไรครับ</span><span class="gloss" lang="en">What sweets?</span></p>
             </li>
-            <li class="line child echo">
+            <li class="line child echo" data-turn="3">
               <span class="no">4</span><span class="who">*CHI</span>
-              <p class="say"><span lang="th" data-keep class="mark" style="--i:4"><span class="w rep" style="--i:4">ขนม</span><span class="w" style="--i:5">อะไร</span><span class="w" style="--i:6">ครับ</span></span><span class="gloss" lang="en">What sweets?</span>
-                <span class="note" style="--i:7"><span lang="en">Repeats line 3 word for word. Flagged for you to check.</span><span lang="th">ซ้ำบรรทัด 3 ทุกคำ ระบบชี้ให้คุณกลับไปฟัง</span></span></p>
-              <span class="tally" style="--i:7"><svg viewBox="0 0 44 34" aria-hidden="true"><path pathLength="1" d="M20 4C30 3 40 8 40 16s-8 15-19 14S4 25 4 17 12 4 24 5"/></svg><b>3</b></span>
+              <p class="say"><span lang="th" data-keep class="mark"><span class="w rep">ขนม</span><span class="w">อะไร</span><span class="w">ครับ</span></span><span class="gloss" lang="en">What sweets?</span>
+                <span class="note"><span lang="en">Repeats line 3 word for word. Flagged for you to check.</span><span lang="th">ซ้ำบรรทัด 3 ทุกคำ ระบบชี้ให้คุณกลับไปฟัง</span></span></p>
+              <span class="count">3</span>
             </li>
-            <li class="line adult">
+            <li class="line adult" data-turn="4">
               <span class="no">5</span><span class="who">*INV</span>
               <p class="say"><span lang="th" data-keep>เล่นรถกันไหม</span><span class="gloss" lang="en">Shall we play with the car?</span></p>
             </li>
-            <li class="line child">
+            <li class="line child" data-turn="5">
               <span class="no">6</span><span class="who">*CHI</span>
-              <p class="say"><span lang="th" data-keep><span class="w" style="--i:8">เล่น</span><span class="w" style="--i:9">รถ</span> <span class="w" style="--i:10">สีแดง</span></span><span class="gloss" lang="en">Play car. Red.</span>
-                <span class="note" style="--i:11"><span lang="en">Reuses two words of line 5.</span><span lang="th">ใช้คำ 2 คำจากบรรทัด 5</span></span></p>
-              <span class="tally" style="--i:11"><svg viewBox="0 0 44 34" aria-hidden="true"><path pathLength="1" d="M23 5C32 3 41 9 40 17s-10 14-20 13S3 23 5 15 14 4 27 6"/></svg><b>3</b></span>
+              <p class="say"><span lang="th" data-keep><span class="w">เล่น</span><span class="w">รถ</span> <span class="w">สีแดง</span></span><span class="gloss" lang="en">Play car. Red.</span>
+                <span class="note"><span lang="en">Reuses two words of line 5.</span><span lang="th">ใช้คำ 2 คำจากบรรทัด 5</span></span></p>
+              <span class="count">3</span>
             </li>
-            <li class="line adult">
+            <li class="line adult" data-turn="6">
               <span class="no">7</span><span class="who">*INV</span>
               <p class="say"><span lang="th" data-keep>รถคันนี้สีอะไร</span><span class="gloss" lang="en">What colour is this car?</span></p>
             </li>
-            <li class="line child">
+            <li class="line child" data-turn="7">
               <span class="no">8</span><span class="who">*CHI</span>
-              <p class="say"><span lang="th" data-keep><span class="w rep" style="--i:12">สีแดง</span> <span class="w" style="--i:13">ไม่</span><span class="w" style="--i:14">เอา</span> <span class="w" style="--i:15">สี</span><span class="w" style="--i:16">ฟ้า</span></span><span class="gloss" lang="en">Red. Don't want. Blue.</span></p>
-              <span class="tally" style="--i:16"><svg viewBox="0 0 44 34" aria-hidden="true"><path pathLength="1" d="M21 4C31 3 41 9 40 17s-9 14-20 13S3 24 4 16 12 4 25 5"/></svg><b>5</b></span>
+              <p class="say"><span lang="th" data-keep><span class="w rep">สีแดง</span> <span class="w">ไม่</span><span class="w">เอา</span> <span class="w">สี</span><span class="w">ฟ้า</span></span><span class="gloss" lang="en">Red. Don't want. Blue.</span></p>
+              <span class="count">5</span>
             </li>
           </ol>
 
-          <footer class="sheet-foot">
+          <div class="readout">
             <dl class="totals">
-              <div><dt><span lang="en">Child utterances</span><span lang="th">ประโยคของเด็ก</span></dt><dd>4</dd></div>
-              <div><dt><span lang="en">Words</span><span lang="th">คำ</span></dt><dd>14</dd></div>
-              <div><dt>MLU-w</dt><dd>3.50</dd></div>
-              <div><dt>NDW</dt><dd>12</dd></div>
-              <div><dt><span lang="en">Echo cues</span><span lang="th">cue พูดตาม</span></dt><dd>3</dd></div>
+              <div><dt><span lang="en">Child utterances</span><span lang="th">ประโยคของเด็ก</span></dt><dd data-total="utt">4</dd></div>
+              <div><dt><span lang="en">Words</span><span lang="th">คำ</span></dt><dd data-total="words">14</dd></div>
+              <div><dt>MLU-w</dt><dd data-total="mlu">3.50</dd></div>
+              <div><dt>NDW</dt><dd data-total="ndw">12</dd></div>
+              <div><dt><span lang="en">Echo cues</span><span lang="th">cue พูดตาม</span></dt><dd data-total="echo">3</dd></div>
             </dl>
-            <p class="sheet-caveat">
-              <span lang="en">A short sample: CLAN recommends 50 or more child utterances, and PasaScope says so on the findings screen. Written for this page; not a real child.</span>
-              <span lang="th">ตัวอย่างสั้น: CLAN แนะนำอย่างน้อย 50 ประโยค ซึ่ง PasaScope เตือนไว้ในหน้าตัวชี้วัดด้วย บทสนทนานี้เขียนขึ้นเพื่อหน้านี้ ไม่ใช่เด็กจริง</span>
+            <p class="scope-caveat">
+              <span lang="en">A short sample: CLAN recommends 50 or more child utterances, and PasaScope says so on the findings screen. Written and voiced for this page; not a real child.</span>
+              <span lang="th">ตัวอย่างสั้น: CLAN แนะนำอย่างน้อย 50 ประโยค ซึ่ง PasaScope เตือนไว้ในหน้าตัวชี้วัดด้วย บทสนทนาและคลื่นเสียงนี้สร้างขึ้นเพื่อหน้านี้ ไม่ใช่เด็กจริง</span>
             </p>
-          </footer>
+          </div>
         </figure>
       </div>
     </section>
@@ -140,58 +147,58 @@
     <!-- The four steps, and the transcript screen they happen on -->
     <section class="section" id="how">
       <div class="wrap">
-        <h2>
-          <span lang="en">From a recording to that sheet</span>
-          <span lang="th">จากไฟล์เสียง ถึงแผ่นนี้</span>
-        </h2>
-        <div class="how-grid">
-          <ol class="steps">
-            <li>
-              <h3><span lang="en">Record or open</span><span lang="th">อัดเสียงหรือเปิดไฟล์</span></h3>
-              <p><span lang="en">Record in the app, open an audio file or import a <code>.cha</code>. Whisper drafts a CHAT transcript on this computer and separates the child's turns from the adults'.</span>
-                 <span lang="th">อัดเสียงในโปรแกรม เปิดไฟล์เสียง หรือนำเข้าไฟล์ <code>.cha</code> Whisper ถอดเป็น transcript รูปแบบ CHAT บนเครื่องนี้ และแยกบรรทัดของเด็กกับผู้ใหญ่ให้ก่อน</span></p>
-            </li>
-            <li>
-              <h3><span lang="en">Check and attest</span><span lang="th">ตรวจและรับรอง</span></h3>
-              <p><span lang="en">Listen line by line; the line being spoken stays highlighted. Fix the words and speakers, add CHAT codes, then attest the transcript in your name. Nothing is counted before that.</span>
-                 <span lang="th">ฟังทีละบรรทัด บรรทัดที่กำลังเล่นจะถูกไฮไลต์ตามเสียง แก้คำและผู้พูด ใส่รหัส CHAT แล้วรับรองในชื่อของคุณ ก่อนรับรองยังไม่มีการนับใด ๆ</span></p>
-            </li>
-            <li>
-              <h3><span lang="en">Read the findings</span><span lang="th">ดูตัวชี้วัด</span></h3>
-              <p><span lang="en">The measures, each with what it means, and the lines worth a second listen, each with its reason.</span>
-                 <span lang="th">ตัวชี้วัดพร้อมความหมายของแต่ละตัว และบรรทัดที่ควรกลับไปฟังอีกครั้ง พร้อมเหตุผล</span></p>
-            </li>
-            <li>
-              <h3><span lang="en">Sign the report</span><span lang="th">ลงนามรายงาน</span></h3>
-              <p><span lang="en">Write the interpretation and goals; the A4 page fills in as you type. Sign it and export a PDF.</span>
-                 <span lang="th">เขียนการแปลผลและเป้าหมาย หน้า A4 เปลี่ยนตามที่พิมพ์ ลงนามแล้ว export เป็น PDF</span></p>
-            </li>
-          </ol>
-
-          <figure class="shot shot-annotated">
-            <div class="frame">
-              <img lang="en" src="assets/transcript-en.webp" width="1600" height="1130" loading="lazy"
-                   alt="The transcript screen: the waveform, the lines with their speakers and counted words, and the details of the selected line">
-              <img lang="th" src="assets/transcript-th.webp" width="1600" height="1130" loading="lazy"
-                   alt="หน้า transcript: คลื่นเสียง บรรทัดพร้อมผู้พูดและจำนวนคำที่นับ และรายละเอียดของบรรทัดที่เลือก">
-              <span class="pin" style="--x:50%;--y:17%" aria-hidden="true">a</span>
-              <span class="pin" style="--x:56.5%;--y:94%" aria-hidden="true">b</span>
-              <span class="pin" style="--x:96%;--y:38%" aria-hidden="true">c</span>
-            </div>
-            <figcaption>
-              <ol class="pins-key">
-                <li><span lang="en">Click the waveform to play from there.</span><span lang="th">คลิกที่คลื่นเสียงเพื่อเล่นจากตรงนั้น</span></li>
-                <li><span lang="en">How many words of each child line go into the measures.</span><span lang="th">จำนวนคำของแต่ละบรรทัดของเด็กที่นำไปคำนวณ</span></li>
-                <li><span lang="en">Why a line starts where it does, and how sure the speaker label is.</span><span lang="th">เหตุผลที่ประโยคเริ่มตรงนี้ และความมั่นใจของการระบุผู้พูด</span></li>
-              </ol>
-            </figcaption>
-          </figure>
+        <div class="section-intro">
+          <h2>
+            <span lang="en">From a recording to a signed report</span>
+            <span lang="th">จากไฟล์เสียง ถึงรายงานที่ลงนาม</span>
+          </h2>
         </div>
+        <ol class="chain">
+          <li>
+            <h3><span lang="en">Record or open</span><span lang="th">อัดเสียงหรือเปิดไฟล์</span></h3>
+            <p><span lang="en">Record in the app, open an audio file or import a <code>.cha</code>. Whisper drafts a CHAT transcript on this computer and separates the child's turns from the adults'.</span>
+               <span lang="th">อัดเสียงในโปรแกรม เปิดไฟล์เสียง หรือนำเข้าไฟล์ <code>.cha</code> Whisper ถอดเป็น transcript รูปแบบ CHAT บนเครื่องนี้ และแยกบรรทัดของเด็กกับผู้ใหญ่ให้ก่อน</span></p>
+          </li>
+          <li>
+            <h3><span lang="en">Check and attest</span><span lang="th">ตรวจและรับรอง</span></h3>
+            <p><span lang="en">Listen line by line; the line being spoken stays highlighted. Fix the words and speakers, add CHAT codes, then attest the transcript in your name. Nothing is counted before that.</span>
+               <span lang="th">ฟังทีละบรรทัด บรรทัดที่กำลังเล่นจะถูกไฮไลต์ตามเสียง แก้คำและผู้พูด ใส่รหัส CHAT แล้วรับรองในชื่อของคุณ ก่อนรับรองยังไม่มีการนับใด ๆ</span></p>
+          </li>
+          <li>
+            <h3><span lang="en">Read the findings</span><span lang="th">ดูตัวชี้วัด</span></h3>
+            <p><span lang="en">The measures, each with what it means, and the lines worth a second listen, each with its reason.</span>
+               <span lang="th">ตัวชี้วัดพร้อมความหมายของแต่ละตัว และบรรทัดที่ควรกลับไปฟังอีกครั้ง พร้อมเหตุผล</span></p>
+          </li>
+          <li>
+            <h3><span lang="en">Sign the report</span><span lang="th">ลงนามรายงาน</span></h3>
+            <p><span lang="en">Write the interpretation and goals; the A4 page fills in as you type. Sign it and export a PDF.</span>
+               <span lang="th">เขียนการแปลผลและเป้าหมาย หน้า A4 เปลี่ยนตามที่พิมพ์ ลงนามแล้ว export เป็น PDF</span></p>
+          </li>
+        </ol>
+
+        <figure class="shot shot-wide">
+          <div class="frame">
+            <img lang="en" src="assets/transcript-en.webp" width="1600" height="1130" loading="lazy"
+                 alt="The transcript screen: the waveform, the lines with their speakers and counted words, and the details of the selected line">
+            <img lang="th" src="assets/transcript-th.webp" width="1600" height="1130" loading="lazy"
+                 alt="หน้า transcript: คลื่นเสียง บรรทัดพร้อมผู้พูดและจำนวนคำที่นับ และรายละเอียดของบรรทัดที่เลือก">
+            <span class="pin" style="--x:50%;--y:17%" aria-hidden="true">a</span>
+            <span class="pin" style="--x:56.5%;--y:94%" aria-hidden="true">b</span>
+            <span class="pin" style="--x:96%;--y:38%" aria-hidden="true">c</span>
+          </div>
+          <figcaption>
+            <ol class="pins-key">
+              <li><span lang="en">Click the waveform to play from there.</span><span lang="th">คลิกที่คลื่นเสียงเพื่อเล่นจากตรงนั้น</span></li>
+              <li><span lang="en">How many words of each child line go into the measures.</span><span lang="th">จำนวนคำของแต่ละบรรทัดของเด็กที่นำไปคำนวณ</span></li>
+              <li><span lang="en">Why a line starts where it does, and how sure the speaker label is.</span><span lang="th">เหตุผลที่ประโยคเริ่มตรงนี้ และความมั่นใจของการระบุผู้พูด</span></li>
+            </ol>
+          </figcaption>
+        </figure>
       </div>
     </section>
 
-    <!-- The measures, worked on the sheet above -->
-    <section class="section section-paper" id="measures">
+    <!-- The measures, worked on the sample above -->
+    <section class="section section-tint" id="measures">
       <div class="wrap">
         <div class="section-intro">
           <h2>
@@ -199,40 +206,40 @@
             <span lang="th">ทุกตัวเลข<br>บอกที่มาของตัวเอง</span>
           </h2>
           <p>
-            <span lang="en">Each measure in the app carries three lines: what it is, why it matters and where it falls short. Here are four of them, worked on the sheet above.</span>
-            <span lang="th">ตัวชี้วัดทุกตัวในโปรแกรมมีคำอธิบาย 3 บรรทัด: คืออะไร ใช้ทำอะไร และข้อควรระวัง ตัวอย่าง 4 ตัวนี้คำนวณจากแผ่นด้านบน</span>
+            <span lang="en">Each measure in the app carries three lines: what it is, why it matters and where it falls short. Here are four of them, worked on the sample above.</span>
+            <span lang="th">ตัวชี้วัดทุกตัวในโปรแกรมมีคำอธิบาย 3 บรรทัด: คืออะไร ใช้ทำอะไร และข้อควรระวัง ตัวอย่าง 4 ตัวนี้คำนวณจากตัวอย่างด้านบน</span>
           </p>
         </div>
 
         <dl class="measures">
           <div class="measure">
-            <dt><span class="m-name">MLU-w</span><span class="m-value">3.50</span></dt>
+            <dt><span class="m-value">3.50</span><span class="m-name">MLU-w</span></dt>
             <dd class="m-worked"><span lang="en">14 words over 4 utterances.</span><span lang="th">14 คำ จาก 4 ประโยค</span></dd>
-            <dd><span lang="en">Mean length of utterance in words, by CLAN's rules. Shows the child's language level and tracks progress; TalkBank medians at age 4 are TD 4.5, LT 3.4, ASD 2.1.</span>
+            <dd class="m-what"><span lang="en">Mean length of utterance in words, by CLAN's rules. Shows the child's language level and tracks progress; TalkBank medians at age 4 are TD 4.5, LT 3.4, ASD 2.1.</span>
                 <span lang="th">ความยาวประโยคเฉลี่ยเป็นคำ ตามกติกา CLAN บอกระดับภาษาและใช้ติดตามพัฒนาการ ข้อมูล TalkBank อายุ 4 ปี ค่ามัธยฐาน TD 4.5, LT 3.4, ASD 2.1</span></dd>
             <dd class="m-caution"><span lang="en">Thai values depend on word segmentation and cannot be compared with English norms; best for change in one child.</span>
                 <span lang="th">ภาษาไทยขึ้นกับการตัดคำ เทียบกับเกณฑ์ภาษาอังกฤษตรง ๆ ไม่ได้ ใช้ดูการเปลี่ยนของเด็กคนเดียวกันดีที่สุด</span></dd>
           </div>
           <div class="measure">
-            <dt><span class="m-name">NDW</span><span class="m-value">12</span></dt>
+            <dt><span class="m-value">12</span><span class="m-name">NDW</span></dt>
             <dd class="m-worked"><span lang="en">14 words, two of them said before: <span lang="th" data-keep>ขนม</span> and <span lang="th" data-keep>สีแดง</span>.</span><span lang="th">14 คำ มี 2 คำที่พูดไปแล้ว คือ ขนม และ สีแดง</span></dd>
-            <dd><span lang="en">Different words the child used. Shows the breadth of vocabulary.</span>
+            <dd class="m-what"><span lang="en">Different words the child used. Shows the breadth of vocabulary.</span>
                 <span lang="th">จำนวนคำที่ไม่ซ้ำกันที่เด็กใช้ บอกความกว้างของคลังคำ</span></dd>
             <dd class="m-caution"><span lang="en">Grows with sample length; to compare sessions use NDW-100 or MATTR.</span>
                 <span lang="th">ขึ้นกับความยาวตัวอย่าง เทียบข้าม session ให้ใช้ NDW-100 หรือ MATTR</span></dd>
           </div>
           <div class="measure">
-            <dt><span class="m-name"><span lang="en">Response rate</span><span lang="th">อัตราการตอบต่อ</span></span><span class="m-value">1.00</span></dt>
+            <dt><span class="m-value">1.00</span><span class="m-name"><span lang="en">Response rate</span><span lang="th">อัตราการตอบต่อ</span></span></dt>
             <dd class="m-worked"><span lang="en">The child spoke after all four adult lines.</span><span lang="th">เด็กพูดต่อหลังผู้ใหญ่ครบทั้ง 4 ครั้ง</span></dd>
-            <dd><span lang="en">Share of adult utterances the child follows straight away. Measures turn-taking, which MLU does not show (ρ = 0.18 with MLU); typical children aged 3–5 in TalkBank sit around 0.55–0.57.</span>
+            <dd class="m-what"><span lang="en">Share of adult utterances the child follows straight away. Measures turn-taking, which MLU does not show (ρ = 0.18 with MLU); typical children aged 3–5 in TalkBank sit around 0.55–0.57.</span>
                 <span lang="th">สัดส่วนประโยคของผู้ใหญ่ที่เด็กพูดต่อทันที วัดการผลัดกันพูด ให้ข้อมูลที่ MLU ไม่ได้บอก (สัมพันธ์กับ MLU เพียง ρ = 0.18) ใน TalkBank เด็ก TD 3–5 ปีอยู่ราว 0.55–0.57</span></dd>
             <dd class="m-caution"><span lang="en">Counts only that the child spoke next, not whether it answered; depends on the activity.</span>
                 <span lang="th">นับแค่ว่าเด็กพูดต่อ ไม่ได้ดูว่าตอบตรงคำถาม และขึ้นกับกิจกรรม</span></dd>
           </div>
           <div class="measure">
-            <dt><span class="m-name"><span lang="en">Echo cues</span><span lang="th">cue พูดตาม</span></span><span class="m-value">3</span></dt>
+            <dt><span class="m-value">3</span><span class="m-name"><span lang="en">Echo cues</span><span lang="th">cue พูดตาม</span></span></dt>
             <dd class="m-worked"><span lang="en">Line 4 word for word; lines 2 and 6 in part.</span><span lang="th">บรรทัด 4 ทุกคำ บรรทัด 2 และ 6 บางส่วน</span></dd>
-            <dd><span lang="en">Child utterances that repeat what an adult has just said, as a cue to review. Echoing is common in autistic children; in TalkBank it falls with age in typical children and rises in autistic children aged 4–6.</span>
+            <dd class="m-what"><span lang="en">Child utterances that repeat what an adult has just said, as a cue to review. Echoing is common in autistic children; in TalkBank it falls with age in typical children and rises in autistic children aged 4–6.</span>
                 <span lang="th">ประโยคของเด็กที่พูดซ้ำคำของผู้ใหญ่ที่เพิ่งพูด เป็น cue ให้ตรวจ การพูดตามพบบ่อยในเด็กออทิสติก ใน TalkBank สัดส่วนนี้ลดลงตามอายุในเด็ก TD แต่สูงขึ้นในเด็ก ASD 4–6 ปี</span></dd>
             <dd class="m-caution"><span lang="en">An answer that reuses the question's words can be caught, as line 2 shows. You confirm or dismiss each one.</span>
                 <span lang="th">คำตอบที่ใช้คำเดียวกับคำถามอาจถูกจับได้ อย่างบรรทัด 2 คุณยืนยันหรือปัดตกได้ทีละข้อ</span></dd>
@@ -276,7 +283,7 @@
     </section>
 
     <!-- Privacy and limits -->
-    <section class="section section-paper" id="privacy">
+    <section class="section section-ink" id="privacy">
       <div class="wrap two-col">
         <div>
           <h2><span lang="en">Stays on this computer</span><span lang="th">อยู่ในเครื่องนี้</span></h2>
@@ -324,9 +331,10 @@
           <article class="download-card" data-platform="mac">
             <h3>Mac <span class="rec"><span lang="en">For this computer</span><span lang="th">สำหรับเครื่องนี้</span></span></h3>
             <p class="requirement"><span lang="en">Apple silicon (M1 or later) · macOS 12+ · about 5 GB free</span><span lang="th">ชิป Apple (M1 ขึ้นไป) · macOS 12 ขึ้นไป · พื้นที่ว่างประมาณ 5 GB</span></p>
-            <a class="pill" data-asset="dmg" href="https://github.com/monai86/pasascope/releases/latest">
+            <a class="btn" data-asset="dmg" href="https://github.com/monai86/pasascope/releases/latest">
+              <svg viewBox="0 0 20 20" aria-hidden="true"><path d="M10 3v9m0 0-3.5-3.5M10 12l3.5-3.5M4 15.5h12" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
               <span lang="en">Download .dmg</span><span lang="th">ดาวน์โหลด .dmg</span></a>
-            <p class="asset-meta" data-asset-meta="dmg"></p>
+            <p class="asset-meta" data-asset-meta="dmg">1.8.1</p>
             <details>
               <summary><span lang="en">How to install</span><span lang="th">วิธีติดตั้ง</span></summary>
               <ol>
@@ -341,9 +349,10 @@
           <article class="download-card" data-platform="windows">
             <h3>Windows <span class="rec"><span lang="en">For this computer</span><span lang="th">สำหรับเครื่องนี้</span></span></h3>
             <p class="requirement"><span lang="en">Windows 10 or 11 · 64-bit</span><span lang="th">Windows 10 หรือ 11 · 64 บิต</span></p>
-            <a class="pill" data-asset="exe" href="https://github.com/monai86/pasascope/releases/latest">
+            <a class="btn" data-asset="exe" href="https://github.com/monai86/pasascope/releases/latest">
+              <svg viewBox="0 0 20 20" aria-hidden="true"><path d="M10 3v9m0 0-3.5-3.5M10 12l3.5-3.5M4 15.5h12" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
               <span lang="en">Download installer</span><span lang="th">ดาวน์โหลดตัวติดตั้ง</span></a>
-            <p class="asset-meta" data-asset-meta="exe"></p>
+            <p class="asset-meta" data-asset-meta="exe">1.8.1</p>
             <details>
               <summary><span lang="en">How to install</span><span lang="th">วิธีติดตั้ง</span></summary>
               <ol>
@@ -363,7 +372,7 @@
     </section>
 
     <!-- FAQ -->
-    <section class="section section-paper" id="faq">
+    <section class="section section-tint" id="faq">
       <div class="wrap narrow">
         <h2><span lang="en">Questions</span><span lang="th">คำถามที่พบบ่อย</span></h2>
         <div class="faq">
@@ -384,8 +393,8 @@
           </details>
           <details>
             <summary><span lang="en">How accurate is the transcription?</span><span lang="th">ถอดเสียงแม่นแค่ไหน</span></summary>
-            <p><span lang="en">Children's voices, noise and overlapping talk cause errors, so every line is checked before attesting; measures come only from an attested transcript. Accurate mode takes about five times the recording's length; fast mode about its length, with more errors.</span>
-               <span lang="th">เสียงเด็ก เสียงรบกวน และการพูดซ้อนกันทำให้ถอดผิดได้ จึงต้องตรวจทุกประโยคก่อนรับรอง ตัวชี้วัดคำนวณจาก transcript ที่นักบำบัดรับรองแล้วเท่านั้น โหมดแม่นยำใช้เวลาประมาณ 5 เท่าของความยาวเสียง โหมดเร็วประมาณเท่าความยาวเสียงแต่ผิดมากกว่า</span></p>
+            <p><span lang="en">Children's voices, noise and overlapping talk cause errors, so every line is checked before attesting; measures come only from an attested transcript. On an M2 Mac, accurate mode takes about three times the recording's length; fast mode about 0.8 times, with more errors.</span>
+               <span lang="th">เสียงเด็ก เสียงรบกวน และการพูดซ้อนกันทำให้ถอดผิดได้ จึงต้องตรวจทุกประโยคก่อนรับรอง ตัวชี้วัดคำนวณจาก transcript ที่นักบำบัดรับรองแล้วเท่านั้น บน Mac ชิป M2 โหมดแม่นยำใช้เวลาประมาณ 3 เท่าของความยาวเสียง โหมดเร็วประมาณ 0.8 เท่าแต่ผิดมากกว่า</span></p>
           </details>
           <details>
             <summary><span lang="en">Who makes it, and where do I report a problem?</span><span lang="th">ใครพัฒนา และแจ้งปัญหาได้ที่ไหน</span></summary>
