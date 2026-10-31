@@ -18,11 +18,11 @@ Real speech dropped, by rule:
 - ellisweismer accurate: {'too_fast': 5}; non-speech dropped: {'too_fast': 3}
 - lotusdis accurate: {'too_fast': 83, 'repeat': 2}; non-speech dropped: none
 - lotusdis fast: {'no_speech': 20, 'too_fast': 2}; non-speech dropped: none
-- enni accurate: {'too_fast': 3}; non-speech dropped: none; child utterances lost now, by rule: {'repeat': 1}
-- crslp accurate: {'too_fast': 1, 'repeat': 1}; non-speech dropped: {'too_fast': 3}; child utterances lost now, by rule: {'repeat': 26}
-- crslp fast: {'too_fast': 4, 'no_speech': 14}; non-speech dropped: {'too_fast': 10, 'no_speech': 22}; child utterances lost now, by rule: {'no_speech': 16, 'too_fast': 1}
+- enni accurate: {'too_fast': 3}; non-speech dropped: none; child utterances lost now, by rule: {'repeat': 1} (segments of 13–13 s)
+- crslp accurate: {'too_fast': 1, 'repeat': 1}; non-speech dropped: {'too_fast': 3}; child utterances lost now, by rule: {'repeat': 26} (segments of 33–162 s)
+- crslp fast: {'too_fast': 4, 'no_speech': 14}; non-speech dropped: {'too_fast': 10, 'no_speech': 22}; child utterances lost now, by rule: {'no_speech': 16, 'too_fast': 1} (segments of 2–90 s)
 
 Held-out corpora: 14 real speech segments recovered, 0.60 flagged non-speech lines per 5 minutes. Decision: **adopt**.
 
-Check by text: Whisper gives one no-speech probability per 30 s decoding window, so every segment in a window shares it, and CRSLP's gold timings are rough. A flagged "no speech" segment whose letter pairs mostly appear in gold text within 5 s was said after all. Flagged non-speech lines whose text matches nothing nearby, per 5 minutes: crslp fast 0.94 (9 of 21).
+Check by text: Whisper gives one no-speech probability per 30 s decoding window, so every segment in a window shares it, and CRSLP's gold timings are rough. A flagged "no speech" segment whose letter pairs mostly appear in gold text within 5 s was said after all. Flagged non-speech lines whose text matches nothing nearby, per 5 minutes: crslp fast 0.94 (9 of 21; 12 match gold text).
 

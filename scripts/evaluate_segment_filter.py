@@ -206,6 +206,7 @@ def lost_by_rule(record: dict) -> dict:
             continue
         best = max(dropped, key=lambda s: min(s["end"], utt["end"]) - max(s["start"], utt["start"]))
         out[best["reason"]] = out.get(best["reason"], 0) + 1
+        out.setdefault("_seconds", set()).add(round(best["end"] - best["start"]))
     return out
 
 
@@ -241,6 +242,9 @@ def summarize(records: list[dict]) -> dict:
         out["lost_now"] += lost_child_utterances(rec, current)
         out["lost_flagged"] += lost_child_utterances(rec, flagged)
         for rule, n in lost_by_rule(rec).items():
+            if rule == "_seconds":
+                out.setdefault("lost_segment_seconds", set()).update(n)
+                continue
             out["lost_by"][rule] = out["lost_by"].get(rule, 0) + n
     five_minute_blocks = max(1e-6, out["minutes"] / 5)
     out["junk_flags_per_5min"] = round(out["flag_no_speech"] / five_minute_blocks, 2)
@@ -310,7 +314,8 @@ def report(report_dir: Path) -> int:
     for r in rows:
         lines.append(f"- {r['corpus']} {r['mode']}: {r['speech_dropped_by'] or 'none'}; "
                      f"non-speech dropped: {r['no_speech_dropped_by'] or 'none'}"
-                     + (f"; child utterances lost now, by rule: {r['lost_by']}" if r["lost_by"] else ""))
+                     + (f"; child utterances lost now, by rule: {r['lost_by']} (segments of "
+                        f"{min(r['lost_segment_seconds'])}–{max(r['lost_segment_seconds'])} s)" if r["lost_by"] else ""))
     held = [r for r in rows if r["corpus"] not in tuning]
     if held:
         recovered = sum(r["flag_speech"] for r in held)
@@ -324,7 +329,8 @@ def report(report_dir: Path) -> int:
             "segment whose letter pairs mostly appear in gold text within 5 s was said after all. Flagged "
             "non-speech lines whose text matches nothing nearby, per 5 minutes: "
             + ", ".join(f"{r['corpus']} {r['mode']} {r['unmatched_flags_per_5min']} "
-                        f"({r['flag_nonspeech_unmatched']} of {r['flag_no_speech']})" for r in rows if r["flag_no_speech"])
+                        f"({r['flag_nonspeech_unmatched']} of {r['flag_no_speech']}; "
+                        f"{r['flag_no_speech'] - r['flag_nonspeech_unmatched']} match gold text)" for r in rows if r["flag_no_speech"])
             + ".", ""]
     (report_dir / "segment_filter.md").write_text("\n".join(lines) + "\n", encoding="utf-8")
     print("\n".join(lines))
