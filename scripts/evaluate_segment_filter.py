@@ -337,6 +337,98 @@ def report(report_dir: Path) -> int:
     return 0
 
 
+def _letter_pairs(text: str):
+    from collections import Counter
+
+    letters = "".join(ch for ch in text if ch.isalpha())
+    return Counter(letters[i:i + 2] for i in range(len(letters) - 1))
+
+
+def compare(before_dir: Path, after_dir: Path, report_dir: Path) -> int:
+    """Before/after report for re-decoding looped segments (version 1.8.3)."""
+    from collections import Counter
+
+    def load(directory, name):
+        path = directory / f"{name}.jsonl"
+        return [json.loads(line) for line in path.read_text(encoding="utf-8").splitlines() if line.strip()] if path.exists() else []
+
+    def gold_text(record, start, end):
+        return " ".join(u.get("text", "").split(" . ")[0] for u in record["gold"] if u["start"] < end and u["end"] > start)
+
+    rows = []
+    for name in ("crslp_accurate", "enni_accurate", "lotusdis_accurate", "ellisweismer_accurate"):
+        before, after = load(before_dir, name), load(after_dir, name)
+        if not before or not after:
+            continue
+        row = {"set": name.replace("_", " "), "recordings": len(after),
+               "redecoded_recordings": sum(any(s.get("redecoded") for s in r["segments"]) for r in after)}
+        for tag, records in (("before", before), ("after", after)):
+            if name.startswith("lotusdis"):
+                row[f"lost_{tag}"] = sum(not any(s["kept"] for s in r["segments"]) for r in records)
+            else:
+                row[f"lost_{tag}"] = sum(lost_child_utterances(r, current) for r in records)
+            row[f"nospeech_kept_{tag}"] = sum(s["kept"] and label(s, r["gold"]) == "no_speech"
+                                              for r in records for s in r["segments"]) if not name.startswith("lotusdis") else 0
+            row[f"seconds_{tag}"] = round(sum(r.get("processing_seconds", 0) for r in records))
+        gold = kept = hit = 0
+        for r in after:
+            for s in r["segments"]:
+                if s["kept"] or s["reason"] != "repeat" or s.get("redecoded"):
+                    continue
+                g = _letter_pairs(gold_text(r, s["start"], s["end"]))
+                k = sum((_letter_pairs(x["text"]) for x in r["segments"] if x.get("redecoded") and x["kept"]
+                         and x["start"] >= s["start"] - 0.5 and x["end"] <= s["end"] + 0.5), Counter())
+                gold += sum(g.values()); kept += sum(k.values()); hit += sum((g & k).values())
+        row["span_recall"] = round(hit / gold, 2) if gold else None
+        row["span_precision"] = round(hit / kept, 2) if kept else None
+        if name.startswith("crslp"):
+            g_all = k_all = h_all = 0
+            for r in after:
+                for s in r["segments"]:
+                    if s["kept"] and not s.get("redecoded"):
+                        g = _letter_pairs(gold_text(r, s["start"], s["end"])); k = _letter_pairs(s["text"])
+                        g_all += sum(g.values()); k_all += sum(k.values()); h_all += sum((g & k).values())
+            row["ordinary_recall"], row["ordinary_precision"] = round(h_all / g_all, 2), round(h_all / k_all, 2)
+        rows.append(row)
+    lines = [
+        "# Decoding looped segments again (version 1.8.3)",
+        "",
+        "When Whisper repeats one phrase for a whole window, the repeat rule drops the window and the speech "
+        "in it. Since 1.8.3 such a span is decoded once more on its own (same model and settings, temperature 0); "
+        "the result is filtered like the first attempt, except that lines doubted only by their scores are dropped "
+        "rather than flagged, and a span that loops again is not tried a third time. Recordings without a looped "
+        "segment decode exactly as before, so only those were run again; the rest of each log is copied from "
+        "[`segment_filter.md`](./segment_filter.md). The setting was chosen on the CRSLP looped spans, among "
+        "temperature fallback 0-0.4, a repetition penalty of 1.3 and no repeated 3-grams.",
+        "",
+        "Decision rule, set before this run: adopt if at least 5 of the 26 CRSLP child utterances lost to the "
+        "repeat rule come back, kept no-speech lines rise by at most one per 5 minutes, nothing gets worse on "
+        "ENNI and LOTUSDIS, and the FLEURS character error rate of the accurate mode rises by at most 0.5 points.",
+        "",
+        "| Set | Recordings (re-decoded) | Child utterances lost (LOTUSDIS: empty clips), before / after | "
+        "Kept no-speech segments, before / after | Processing seconds, before / after | Looped spans: gold text "
+        "recovered / precision |",
+        "|---|---|---|---|---|---|",
+    ]
+    for r in rows:
+        span = "–" if r["span_recall"] is None else f"{r['span_recall']:.2f} / {r['span_precision']:.2f}" if r["span_precision"] is not None else f"{r['span_recall']:.2f} / –"
+        seconds = f"{r['seconds_before']} / {r['seconds_after']}" if r["seconds_after"] else "–"
+        lines.append(f"| {r['set']} | {r['recordings']} ({r['redecoded_recordings']}) | {r['lost_before']} / {r['lost_after']} | "
+                     f"{r['nospeech_kept_before']} / {r['nospeech_kept_after']} | {seconds} | {span} |")
+    crslp = next((r for r in rows if r["set"] == "crslp accurate"), None)
+    if crslp:
+        lines += ["", f"Recall and precision count letter pairs of the gold text inside each looped span against the "
+                      f"re-decoded text. For comparison, ordinary kept segments of the same CRSLP recordings score "
+                      f"{crslp['ordinary_recall']:.2f} / {crslp['ordinary_precision']:.2f}: the recovered text is as "
+                      f"good as the rest of these toddler drafts, which is poor (`end_to_end_summary.md`)."]
+    lines += ["", "FLEURS (30 clips, accurate mode): no segment looped, so nothing was re-decoded; character error "
+                  "rate 6.54%, as before (`scripts/evaluate_thai_asr_public.py`).", ""]
+    report_dir.mkdir(parents=True, exist_ok=True)
+    (report_dir / "segment_redecode.md").write_text("\n".join(lines), encoding="utf-8")
+    print("\n".join(lines))
+    return 0
+
+
 def main(argv=None) -> int:
     parser = argparse.ArgumentParser(description=__doc__.split("\n")[0])
     sub = parser.add_subparsers(dest="command", required=True)
@@ -344,15 +436,26 @@ def main(argv=None) -> int:
     r.add_argument("--corpus", required=True, choices=[*CORPORA, "lotusdis"])
     r.add_argument("--mode", default="accurate", choices=["accurate", "fast"])
     r.add_argument("--limit", type=int, default=0)
+    c = sub.add_parser("compare")
+    c.add_argument("before", type=Path)
+    c.add_argument("after", type=Path)
+    c.add_argument("--report-dir", type=Path, default=PROJECT_ROOT / "reports" / "metrics")
     p = sub.add_parser("report")
     p.add_argument("--report-dir", type=Path, default=PROJECT_ROOT / "reports" / "metrics")
+    parser.add_argument("--log-dir", type=Path, default=None,
+                        help="where the segment logs go (default .local/evaluation/segment_filter)")
     args = parser.parse_args(argv)
+    if args.log_dir:
+        global OUT
+        OUT = args.log_dir
     if args.command == "run":
         if args.corpus == "lotusdis":
             run_lotusdis(args.mode)
         else:
             run_sessions(args.corpus, args.mode, args.limit)
         return 0
+    if args.command == "compare":
+        return compare(args.before, args.after, args.report_dir)
     return report(args.report_dir)
 
 

@@ -201,6 +201,21 @@ def _level_normalized(audio_path: str):
     return np.clip(audio * (_LOUD_FRAME_LEVEL / loud), -1.0, 1.0).astype("float32")
 
 
+def _shifted(seg, offset: float):
+    """A faster-whisper segment with its times moved by ``offset`` seconds."""
+    import copy
+
+    def moved(item):
+        item = copy.copy(item)
+        item.start = None if item.start is None else item.start + offset
+        item.end = None if item.end is None else item.end + offset
+        return item
+
+    seg = moved(seg)
+    seg.words = [moved(w) for w in seg.words] if seg.words else seg.words
+    return seg
+
+
 def _too_fast_to_be_speech(text: str, start: float, end: float) -> bool:
     """True when a segment has (almost) no audio behind its text."""
     duration = end - start
@@ -501,7 +516,7 @@ class WhisperTranscriber:
     def _run_single(
         self,
         model,
-        audio_path: str,
+        audio_path,
         *,
         language: Optional[str],
         vad_filter: bool,
@@ -509,14 +524,22 @@ class WhisperTranscriber:
         prompt: Optional[str],
         temperature: float | list[float] = 0.0,
         progress_callback: Optional[Any] = None,
+        offset: float = 0.0,
+        redecode: bool = True,
     ) -> List[UtteranceSegment]:
         """Run one Whisper pass and return parsed UtteranceSegments.
 
         Applies hallucination filtering, Silero VAD acceleration, and per-segment language tagging.
+        ``audio_path`` may also be 16 kHz samples already level-normalized (a re-decoded span);
+        ``offset`` is then where they start in the recording.
         """
+        import numpy as np
+
+        is_samples = isinstance(audio_path, np.ndarray)
+        source = audio_path if is_samples else (_level_normalized(audio_path) if vad_filter else audio_path)
         vad_params = dict(_VAD_PARAMETERS) if vad_filter else None
         segments, info = model.transcribe(
-            _level_normalized(audio_path) if vad_filter else audio_path,
+            source,
             language=language,
             beam_size=beam_size,
             best_of=1,
@@ -534,7 +557,10 @@ class WhisperTranscriber:
         total_duration = getattr(info, "duration", 0.0)
 
         out: List[UtteranceSegment] = []
+        looped: list[tuple[float, float]] = []  # spans dropped as decoding loops, to decode again
         for seg in segments:
+            if offset:
+                seg = _shifted(seg, offset)
             avg_logprob = float(getattr(seg, "avg_logprob", 0.0))
             no_speech_prob = float(getattr(seg, "no_speech_prob", 0.0))
             text = (seg.text or "").strip()
@@ -551,12 +577,14 @@ class WhisperTranscriber:
                     "compression_ratio": float(getattr(seg, "compression_ratio", 0.0) or 0.0),
                     "kept": False, "reason": None,
                 }
+                if not redecode:
+                    entry["redecoded"] = True
                 log.append(entry)
 
             trimmed = False
             reason = _hallucination_reason(text, avg_logprob, no_speech_prob)
             speech_reason = None
-            if (reason in UNCERTAIN_SPEECH_RULES and self.flag_uncertain_speech
+            if (reason in UNCERTAIN_SPEECH_RULES and self.flag_uncertain_speech and redecode
                     and _hallucination_reason(text, 0.0, 0.0) is None):
                 # Only the scores are against it: keep the line, flagged for the therapist.
                 speech_reason = describe_uncertain_speech(reason, avg_logprob, no_speech_prob)
@@ -567,6 +595,8 @@ class WhisperTranscriber:
                 if shorter == text or _looks_hallucinated(shorter, avg_logprob, no_speech_prob):
                     if entry is not None:
                         entry["reason"] = reason
+                    if reason == "repeat" and redecode:
+                        looped.append((float(seg.start), float(seg.end)))
                     continue
                 text, trimmed = shorter, True
             collapsed = _collapse_doubled_sentence(text)
@@ -604,7 +634,36 @@ class WhisperTranscriber:
                 language=seg_lang,
                 speech_reason=speech_reason,
             ))
+        if looped:
+            out = self._redecode_loops(model, source, looped, out, language=language, vad_filter=vad_filter,
+                                       beam_size=beam_size, prompt=prompt, temperature=temperature)
         return out
+
+    def _redecode_loops(self, model, source, spans, out, *, language, vad_filter, beam_size, prompt, temperature):
+        """Decode each span that came back as a loop again, on its own.
+
+        Whisper can lock into repeating one phrase for a whole 30 s window, and the
+        repeat rule then drops the window with the real speech in it (26 of 196 CRSLP
+        child utterances in the Thai accurate mode). Decoded alone, the span falls into
+        different windows and usually decodes normally. The second attempt is filtered
+        like the first, but lines doubted only by their scores are dropped rather than
+        flagged, and a span that loops again is not tried a third time.
+        """
+        import numpy as np
+
+        if not isinstance(source, np.ndarray):
+            from faster_whisper.audio import decode_audio
+
+            source = decode_audio(source, sampling_rate=16000)
+        for start, end in spans:
+            piece = source[int(start * 16000): int(end * 16000)]
+            if len(piece) < 16000 * _MIN_SEGMENT_SECONDS:
+                continue
+            out.extend(self._run_single(
+                model, piece, language=language, vad_filter=vad_filter, beam_size=beam_size,
+                prompt=prompt, temperature=temperature, offset=start, redecode=False,
+            ))
+        return sorted(out, key=lambda seg: seg.start)
 
     @staticmethod
     def _merge_dual_pass(
