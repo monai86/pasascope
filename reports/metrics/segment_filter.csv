@@ -1,0 +1,7 @@
+corpus,mode,recordings,minutes,segments,speech_kept,speech_dropped,no_speech_kept,no_speech_dropped,unclear_kept,unclear_dropped,child_gold,lost_now,lost_flagged,flag_speech,flag_no_speech,flag_unclear,junk_flags_per_5min,flag_nonspeech_unmatched,unmatched_flags_per_5min,speech_dropped_by,no_speech_dropped_by,lost_by
+ellisweismer,accurate,16,80.0,995,774,5,114,3,98,1,468,0,0,0,0,0,0.0,0,0.0,"{""too_fast"": 5}","{""too_fast"": 3}",{}
+lotusdis,accurate,150,6.8,234,149,85,0,0,0,0,0,0,0,0,0,0,0.0,0,0.0,"{""too_fast"": 83, ""repeat"": 2}",{},{}
+lotusdis,fast,150,6.8,168,146,22,0,0,0,0,0,0,0,18,0,0,0.0,0,0.0,"{""no_speech"": 20, ""too_fast"": 2}",{},{}
+enni,accurate,16,80.0,590,509,3,24,0,53,1,726,1,1,0,0,0,0.0,0,0.0,"{""too_fast"": 3}",{},"{""repeat"": 1}"
+crslp,accurate,16,48.0,61,13,2,2,3,36,5,196,26,26,0,0,0,0.0,0,0.0,"{""too_fast"": 1, ""repeat"": 1}","{""too_fast"": 3}","{""repeat"": 26}"
+crslp,fast,16,48.0,657,207,18,232,32,151,17,196,17,6,14,21,15,2.19,9,0.94,"{""too_fast"": 4, ""no_speech"": 14}","{""too_fast"": 10, ""no_speech"": 22}","{""no_speech"": 16, ""too_fast"": 1}"

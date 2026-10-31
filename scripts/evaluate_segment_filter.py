@@ -179,6 +179,36 @@ def would_flag(segment: dict) -> bool:
             and not _too_fast_to_be_speech(segment["text"], segment["start"], segment["end"]))
 
 
+def _bigrams(text: str) -> set:
+    letters = "".join(ch for ch in text if ch.isalpha())
+    return {letters[i:i + 2] for i in range(len(letters) - 1)}
+
+
+def matches_gold_text(segment: dict, gold: list[dict], slack: float = 5.0) -> bool:
+    """At least half of the segment's letter pairs appear in gold text within ``slack`` seconds.
+
+    Gold timings in CRSLP are rough (some sentences are given 0.3 s), so time overlap
+    alone can call real talk "no speech"; the words say whether it was said.
+    """
+    near = " ".join(u.get("text", "") for u in gold
+                    if u["start"] < segment["end"] + slack and u["end"] > segment["start"] - slack)
+    pairs = _bigrams(segment["text"])
+    return bool(pairs) and len(pairs & _bigrams(near)) / len(pairs) >= 0.5
+
+
+def lost_by_rule(record: dict) -> dict:
+    """For child utterances lost now, the rule that dropped the segment covering most of each."""
+    out: dict = {}
+    dropped = [s for s in record["segments"] if not s["kept"]]
+    for utt in record["gold"]:
+        if not utt["child"] or not (inside(utt, dropped) >= SPEECH
+                                    and inside(utt, [s for s in record["segments"] if s["kept"]]) < 0.2):
+            continue
+        best = max(dropped, key=lambda s: min(s["end"], utt["end"]) - max(s["start"], utt["start"]))
+        out[best["reason"]] = out.get(best["reason"], 0) + 1
+    return out
+
+
 def flagged(segment: dict) -> bool:
     """The candidate: segments dropped only on a probability rule are kept (and flagged)."""
     return segment["kept"] or would_flag(segment)
@@ -193,6 +223,8 @@ def summarize(records: list[dict]) -> dict:
     out["no_speech_dropped_by"] = {}
     out["flag_speech"] = out["flag_no_speech"] = out["flag_unclear"] = 0
     out["lost_now"] = out["lost_flagged"] = 0
+    out["flag_nonspeech_unmatched"] = 0
+    out["lost_by"] = {}
     for rec in records:
         out["child_gold"] += sum(u["child"] for u in rec["gold"])
         for seg in rec["segments"]:
@@ -204,10 +236,15 @@ def summarize(records: list[dict]) -> dict:
                 by[seg["reason"]] = by.get(seg["reason"], 0) + 1
             if would_flag(seg):
                 out[f"flag_{kind}"] += 1
+                if kind == "no_speech" and not matches_gold_text(seg, rec["gold"]):
+                    out["flag_nonspeech_unmatched"] += 1
         out["lost_now"] += lost_child_utterances(rec, current)
         out["lost_flagged"] += lost_child_utterances(rec, flagged)
+        for rule, n in lost_by_rule(rec).items():
+            out["lost_by"][rule] = out["lost_by"].get(rule, 0) + n
     five_minute_blocks = max(1e-6, out["minutes"] / 5)
     out["junk_flags_per_5min"] = round(out["flag_no_speech"] / five_minute_blocks, 2)
+    out["unmatched_flags_per_5min"] = round(out["flag_nonspeech_unmatched"] / five_minute_blocks, 2)
     return out
 
 
@@ -229,14 +266,16 @@ def report(report_dir: Path) -> int:
     report_dir.mkdir(parents=True, exist_ok=True)
     flat_keys = ["corpus", "mode", "recordings", "minutes", "segments", "speech_kept", "speech_dropped",
                  "no_speech_kept", "no_speech_dropped", "unclear_kept", "unclear_dropped", "child_gold",
-                 "lost_now", "lost_flagged", "flag_speech", "flag_no_speech", "flag_unclear", "junk_flags_per_5min"]
+                 "lost_now", "lost_flagged", "flag_speech", "flag_no_speech", "flag_unclear", "junk_flags_per_5min",
+                 "flag_nonspeech_unmatched", "unmatched_flags_per_5min"]
     with (report_dir / "segment_filter.csv").open("w", newline="", encoding="utf-8") as handle:
-        writer = csv.DictWriter(handle, fieldnames=flat_keys + ["speech_dropped_by", "no_speech_dropped_by"])
+        writer = csv.DictWriter(handle, fieldnames=flat_keys + ["speech_dropped_by", "no_speech_dropped_by", "lost_by"])
         writer.writeheader()
         for r in rows:
             writer.writerow({**{k: r[k] for k in flat_keys},
                              "speech_dropped_by": json.dumps(r["speech_dropped_by"]),
-                             "no_speech_dropped_by": json.dumps(r["no_speech_dropped_by"])})
+                             "no_speech_dropped_by": json.dumps(r["no_speech_dropped_by"]),
+                             "lost_by": json.dumps(r["lost_by"])})
     tuning = {"ellisweismer", "lotusdis"}
     lines = [
         "# Does the hallucination filter drop real speech?",
@@ -270,7 +309,8 @@ def report(report_dir: Path) -> int:
     lines += ["", "Real speech dropped, by rule:", ""]
     for r in rows:
         lines.append(f"- {r['corpus']} {r['mode']}: {r['speech_dropped_by'] or 'none'}; "
-                     f"non-speech dropped: {r['no_speech_dropped_by'] or 'none'}")
+                     f"non-speech dropped: {r['no_speech_dropped_by'] or 'none'}"
+                     + (f"; child utterances lost now, by rule: {r['lost_by']}" if r["lost_by"] else ""))
     held = [r for r in rows if r["corpus"] not in tuning]
     if held:
         recovered = sum(r["flag_speech"] for r in held)
@@ -278,6 +318,14 @@ def report(report_dir: Path) -> int:
         verdict = "adopt" if recovered >= 1 and junk <= 1.0 else "do not adopt"
         lines += ["", f"Held-out corpora: {recovered} real speech segments recovered, "
                       f"{junk:.2f} flagged non-speech lines per 5 minutes. Decision: **{verdict}**.", ""]
+        lines += [
+            "Check by text: Whisper gives one no-speech probability per 30 s decoding window, so every "
+            "segment in a window shares it, and CRSLP's gold timings are rough. A flagged \"no speech\" "
+            "segment whose letter pairs mostly appear in gold text within 5 s was said after all. Flagged "
+            "non-speech lines whose text matches nothing nearby, per 5 minutes: "
+            + ", ".join(f"{r['corpus']} {r['mode']} {r['unmatched_flags_per_5min']} "
+                        f"({r['flag_nonspeech_unmatched']} of {r['flag_no_speech']})" for r in rows if r["flag_no_speech"])
+            + ".", ""]
     (report_dir / "segment_filter.md").write_text("\n".join(lines) + "\n", encoding="utf-8")
     print("\n".join(lines))
     return 0
