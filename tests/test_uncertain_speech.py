@@ -101,6 +101,7 @@ def test_reason_reaches_the_stored_notes():
 
 
 def test_review_page_explains_the_flag_until_the_line_is_reviewed():
+    pytest.importorskip("PySide6")
     from app.schemas.clinical import Utterance
 
     from packages.desktop.ui.pages.review import explain_utterance, note_parts, speech_note
