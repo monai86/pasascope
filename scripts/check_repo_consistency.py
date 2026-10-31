@@ -12,7 +12,7 @@ from release_scope import consistency_violations
 
 
 ROOT = Path(__file__).resolve().parents[1]
-PROJECT_VERSION = "v1.8.1"
+PROJECT_VERSION = "v1.8.2"
 
 
 def require_path(relative: str, errors: list[str]) -> None:

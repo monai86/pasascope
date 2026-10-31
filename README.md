@@ -173,7 +173,7 @@ transcripts of children's speech into descriptive language-sample measures and
 a draft report for a speech-language therapist to review. It is
 **not a diagnostic tool** and has no Thai clinical validation.
 
-- Project version: `v1.8.1`
+- Project version: `v1.8.2`
 - Main deliverable (and the term paper's subject): the PySide6 desktop program
   in `packages/desktop/`. It runs on one computer with SQLite and no server.
 - Rules every change must follow: [`docs/PROJECT_SOURCE_OF_TRUTH.md`](./docs/PROJECT_SOURCE_OF_TRUTH.md).

@@ -1,12 +1,13 @@
 # PasaScope Evaluation Summary
 
-What has been measured about the desktop app, with the numbers for the term paper and links to the full reports. Version: 1.7.5 (feature schema `features-basic-v3`). Each section names the script that reproduces it.
+What has been measured about the desktop app, with the numbers for the term paper and links to the full reports. Version: 1.7.5 (feature schema `features-basic-v3`); the hallucination filter check, 1.8.2. Each section names the script that reproduces it.
 
 | Question | Data | Headline | Report |
 |---|---|---|---|
 | Does the app compute the measures the way CLAN does? | 1,961 English TalkBank child transcripts | MLU-w, NDW-100, MATTR-50 and VOCD-D: ICC(A,1) ≥ 0.9997; 94–96% identical values | [`core_measures_clan.md`](./core_measures_clan.md) |
 | How accurate is Thai transcription? | 30 FLEURS Thai clips, adult read speech | Character error rate 6.5% in accurate mode, 19.2% in fast mode | [`thai_asr_public.md`](./thai_asr_public.md) |
 | ...on Thai speech the model never saw? | 150 LOTUSDIS utterances, adult conversation | Character error rate 18.3% (accurate, near microphone), 25.2% at 2 m | [`thai_asr_lotusdis.md`](./thai_asr_lotusdis.md) |
+| Does the hallucination filter drop real speech? | Every Whisper segment of 48 session windows (EllisWeismer 16, ENNI 16, CRSLP 16 in both Thai modes) and the 150 LOTUSDIS clips | Only in Thai fast mode: 16 of 196 CRSLP child utterances lost to the no-speech rule. Kept and flagged since 1.8.2: 11 of them come back, at 0.60 flagged non-speech lines per 5 minutes on the held-out corpora | [`segment_filter.md`](./segment_filter.md) |
 | Does it tell the child from the adults? | 16 recordings of children aged 2;6–5;6 | 87.0% of utterances right; child F1 0.81 | [`speaker_attribution_real_children.md`](./speaker_attribution_real_children.md) |
 | How far is an uncorrected draft from the truth? | Real child recordings, English and Thai | Usable as a draft from about 2;6 in English; not for Thai toddlers | [`end_to_end_summary.md`](./end_to_end_summary.md) |
 | Does the echolalia cue find echoes? | 40 scripted Thai adult/child turn pairs | Recall 100%, precision 83% | [`echolalia_cue_check.md`](./echolalia_cue_check.md) |
@@ -50,7 +51,7 @@ The Thai model was fine-tuned on data that include FLEURS, so the figures above 
 | Fast | near | 28.8% | 24.7% |
 | Fast | 2 m | 32.6% | 28.1% |
 
-Casual conversation roughly triples the error rate of read speech, and the accurate mode stays well ahead of the fast mode. "Thai-script utterances" leaves out the 39 utterances where the corpus writes English loanwords in Latin letters, which the models write in Thai. The fast mode returned nothing for 11 of the 150 short clips (the hallucination filter judged them silence); the accurate mode for 1. Script: `scripts/evaluate_thai_asr_lotusdis.py`.
+Casual conversation roughly triples the error rate of read speech, and the accurate mode stays well ahead of the fast mode. "Thai-script utterances" leaves out the 39 utterances where the corpus writes English loanwords in Latin letters, which the models write in Thai. The fast mode returned nothing for 11 of the 150 short clips (the hallucination filter judged them silence); the accurate mode for 1. Script: `scripts/evaluate_thai_asr_lotusdis.py`. Since 1.8.2 such lines are kept and flagged for the therapist instead (section 4), which leaves the fast mode with 2 empty clips; the error rates above were measured with version 1.7.5.
 
 ## 3. Child or adult
 
@@ -74,6 +75,8 @@ The whole pipeline on real recordings, nothing corrected by hand, against the co
 | Child MLU-w, correlation with gold | 0.94 | −0.36 | 0.65 |
 
 For preschool English the uncorrected child MLU already ranks children almost as the gold does, and keeps the late-talker effect size (Cohen's d −0.69 against −0.68). For Thai toddlers under two most of the speech is not transcribed correctly (CER 75%). This is why the app will not compute any measure until the therapist has corrected and attested the transcript. Script: `scripts/evaluate_end_to_end.py`.
+
+**What the hallucination filter drops.** Logging every Whisper segment of these windows (`scripts/evaluate_segment_filter.py`, [`segment_filter.md`](./segment_filter.md)) shows that in English and in the Thai accurate mode the two score-only rules (no-speech probability above 0.85, mean log-probability below -1.25) never removed anything; the figures above therefore hold for 1.8.2 as well. In the Thai fast mode the no-speech rule removed whole 30 s windows of conversation, because Whisper gives one no-speech probability per window: 16 of 196 CRSLP child utterances were lost. Since 1.8.2 these segments are kept and flagged ("Possibly no speech") for the therapist to listen to; empty text, repeat loops and text too fast to be speech are still dropped. By the rule fixed before the results, on the held-out corpora (ENNI, CRSLP) the change recovered 14 real speech segments and added 0.60 flagged non-speech lines per 5 minutes (at most 0.94 in the Thai fast mode alone, counting only lines whose text matches no nearby gold line). The same logs show a separate loss: in the Thai accurate mode the repeat rule dropped whole 30–160 s segments in which the decoder looped, losing 26 of 196 CRSLP child utterances; 1.8.2 does not change that.
 
 ## 5. Echolalia cue
 

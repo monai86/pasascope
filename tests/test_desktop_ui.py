@@ -229,6 +229,30 @@ def test_guessed_speakers_are_marked_until_the_therapist_sets_them(window):
     assert not review.table.item(0, COL_SPEAKER).text().endswith("?")
 
 
+def test_lines_that_may_have_no_speech_are_marked_until_reviewed(window):
+    from packages.desktop.ui import theme
+    from packages.desktop.ui.pages.review import COL_TEXT
+
+    _case_with_session(window)
+    capture = window.pages[0]
+    capture.paste.setPlainText(CHAT)
+    capture.paste_btn.click()
+    review = window.pages[1]
+    note = "อาจไม่มีเสียงพูด: โมเดลให้โอกาส 86% ว่าช่วงนี้ไม่มีคนพูด"
+    review.utterances[0] = review.utterances[0].model_copy(update={"notes": note, "review_status": "draft"})
+    review._fill_table()
+    review._update_status()
+    item = review.table.item(0, COL_TEXT)
+    assert item.toolTip() == note
+    assert item.background().color().name().lower() == theme.ATTENTION_SOFT.lower()
+    assert "อาจไม่มีคนพูด 1" in review.summary.text()
+    assert "ไม่แน่ใจว่ามีคนพูด" in review.notice.text()
+    review.table.selectRow(0)
+    review.set_speaker("CHI")
+    assert "อาจไม่มีคนพูด" not in review.summary.text()
+    assert review.table.item(0, COL_TEXT).toolTip() == ""
+
+
 def test_clinic_speaker_dialog_says_what_is_missing_and_what_is_in_use(window, qtbot):
     from packages.desktop.ui import dialogs, labels
 
