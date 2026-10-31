@@ -2,6 +2,13 @@
 
 ## [Unreleased]
 
+## [v1.8.3] - 2026-11-01
+
+Desktop app fix release.
+
+### Fixed
+- **Speech is no longer lost when Whisper gets stuck repeating a phrase.** Whisper sometimes writes one phrase over and over for a whole window ("สีแดง สีแดง สีแดง …"), and the repeat rule then dropped the window together with the real speech in it. In the Thai accurate mode this lost 26 of 196 child utterances in 16 CRSLP recordings. Such a span is now decoded once more on its own, with the same model and settings; the result is filtered like the first attempt, except that lines doubted only by their scores are dropped rather than flagged, and a span that loops again is not tried a third time (`src/audio_pipeline/whisper_transcribe.py`, `WhisperTranscriber._redecode_loops`). Measured against a rule set before the run: lost child utterances 26 → 5, kept no-speech segments 2 → 5 in 48 minutes, ENNI, LOTUSDIS, EllisWeismer and FLEURS unchanged; recordings that loop take longer to transcribe (12% more on CRSLP overall) (`scripts/evaluate_segment_filter.py compare`, `reports/metrics/segment_redecode.md`; test `tests/test_redecode_loops.py`).
+
 ## [v1.8.2] - 2026-11-01
 
 Desktop app fix release.
@@ -10,7 +17,7 @@ Desktop app fix release.
 - **Short lines are no longer deleted without a trace when Whisper doubts there was speech.** The hallucination filter dropped any segment with a no-speech probability above 0.85 or a mean log-probability below -1.25. Whisper gives one no-speech probability per 30 s window, so in the Thai fast mode it removed whole stretches of conversation: 16 of 196 child utterances in 16 CRSLP recordings, and 11 of 150 LOTUSDIS clips came back empty. Such segments are now kept with the reason (`UtteranceSegment.speech_reason`, `TranscriptLine.speech_reason`, the utterance notes and the CHAT `%exp` tier). Empty text, repeat loops and text too fast to be speech are still dropped (`src/audio_pipeline/whisper_transcribe.py`). The Transcript tab highlights these lines, counts them ("maybe no speech"), explains them in the side panel, and clears the mark once the therapist confirms the speaker or edits the line (`packages/desktop/ui/pages/review.py`). Measured before the change, with the decision rule fixed in advance: on the held-out corpora it recovered 14 real speech segments at 0.60 flagged non-speech lines per 5 minutes; English and the Thai accurate mode are unchanged, because these rules never fired there (`scripts/evaluate_segment_filter.py`, `reports/metrics/segment_filter.md`; tests `tests/test_uncertain_speech.py`, `tests/test_desktop_ui.py::test_lines_that_may_have_no_speech_are_marked_until_reviewed`).
 
 ### Known issue
-- In the Thai accurate mode the repeat rule still drops a whole segment (33–162 s) when the decoder loops partway through it: 26 of 196 CRSLP child utterances were lost this way. Not changed in this release.
+- In the Thai accurate mode the repeat rule still drops a whole segment (33–162 s) when the decoder loops partway through it: 26 of 196 CRSLP child utterances were lost this way. Not changed in this release (fixed in 1.8.3).
 
 ## [v1.8.1] - 2026-10-29
 

@@ -1,6 +1,6 @@
 # Project Status
 
-Current maintained version: `v1.8.2`.
+Current maintained version: `v1.8.3`.
 
 PasaScope is a research prototype that helps a speech-language therapist turn a
 recording or transcript of a child's speech into a reviewed transcript,
@@ -11,7 +11,7 @@ children.
 ## Deliverable
 
 - **Desktop program** (`packages/desktop/`): the term paper's main deliverable.
-  Released as v1.8.2 for macOS (`.dmg`) and Windows (installer), with in-app
+  Released as v1.8.3 for macOS (`.dmg`) and Windows (installer), with in-app
   updates from GitHub Releases. One computer, SQLite, no server.
 - **Shared service layer** (`apps/api/app/services`): consent checks, measures,
   review cues, report drafting, report safety check and audit events, called

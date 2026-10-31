@@ -285,8 +285,10 @@ def report(report_dir: Path) -> int:
         "# Does the hallucination filter drop real speech?",
         "",
         "Every segment Whisper returned was logged with what the app's filter did with it "
-        "(`scripts/evaluate_segment_filter.py`), on the end-to-end evaluation windows of whole session "
-        "recordings (EllisWeismer, ENNI 5 minutes each; CRSLP 3 minutes each) and on the 150 LOTUSDIS clips "
+        "(`scripts/evaluate_segment_filter.py`), on windows of whole session recordings chosen as in the "
+        "end-to-end test, from just before the first transcribed utterance (EllisWeismer 16 and ENNI 16, "
+        "5 minutes each; all 16 CRSLP recordings, 3 minutes each, where the end-to-end test used the first 8) "
+        "and on the 150 LOTUSDIS clips "
         "(near microphone). A segment counts as speech when at least half of it lies inside gold utterances "
         "and as no speech when under a tenth does; the rest are unclear and left out of both counts. Gold "
         "transcripts do not mark every sound, so a few \"no speech\" segments may be untranscribed talk.",
