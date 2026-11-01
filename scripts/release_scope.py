@@ -47,6 +47,8 @@ LOCAL_ONLY_ROOTS = {
     "data/curated",
     "docs/release_artifacts",
     "releases",
+    # Term paper drafts live beside the code but are git-excluded (the repo is public).
+    "TermPaper",
 }
 LOCAL_RUNTIME_DIR_NAMES = {
     ".freebuff",
