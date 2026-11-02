@@ -31,6 +31,7 @@ from packages.desktop.ui.pages.base import SessionPage
 from packages.desktop.ui.pdf import ReportMeta, a4_layout, ensure_fonts, paint_report, write_report_pdf
 from packages.desktop.ui.report_form import FIELDS, GOALS, INTERPRETATION, RECOMMENDATIONS, read_field, write_field
 from packages.desktop.ui.widgets import EmptyState, button, chip, label, notice, set_chip
+from packages.desktop.ui import message
 
 REPORT_LANGUAGES = [("en", "English"), ("th", "ไทย")]
 
@@ -437,7 +438,7 @@ class ReportPage(SessionPage):
         code = self.language_box.currentData()
         if self.report is None or code == self.service.report_language(self.report):
             return
-        answer = QMessageBox.question(
+        answer = message.question(
             self, tr("เปลี่ยนภาษาของรายงาน", "Change report language"),
             tr("ระบบจะสร้างร่างใหม่ในภาษาที่เลือก ข้อความที่แก้ไว้ในรายงานนี้จะถูกแทนที่ ดำเนินการต่อ?",
                "The report will be redrafted in the chosen language, replacing your edits. Continue?"),
@@ -482,7 +483,7 @@ class ReportPage(SessionPage):
             self.changed.emit()
 
     def _redraft(self) -> None:
-        answer = QMessageBox.question(
+        answer = message.question(
             self, tr("สร้างร่างใหม่", "Redraft"), tr("ร่างใหม่จะแทนที่ข้อความที่แก้ไว้ในรายงานนี้ ดำเนินการต่อ?", "Redrafting replaces your edits to this report. Continue?")
         )
         if answer == QMessageBox.StandardButton.Yes:
@@ -507,7 +508,7 @@ class ReportPage(SessionPage):
             self.ask_name.emit()
             if not self.service.therapist_name:
                 return
-        answer = QMessageBox.question(
+        answer = message.question(
             self, tr("ลงนามรายงาน", "Sign report"),
             tr(f"ลงนามในชื่อ {self.service.therapist_name}\n\n"
             "ยืนยันว่าได้อ่านและแก้ไขรายงานแล้ว ข้อความเป็นการบรรยายสิ่งที่สังเกต ไม่ใช่การวินิจฉัย "
@@ -561,9 +562,9 @@ class ReportPage(SessionPage):
         self._exported(Path(path))
 
     def _exported(self, path: Path) -> None:
-        box = QMessageBox(QMessageBox.Icon.Information, tr("Export แล้ว", "Exported"), tr(f"บันทึกไฟล์ที่\n{path}", f"Saved to\n{path}"), parent=self)
-        open_btn = box.addButton(tr("เปิดไฟล์", "Open"), QMessageBox.ButtonRole.AcceptRole)
-        box.addButton(tr("ปิด", "Close"), QMessageBox.ButtonRole.RejectRole)
+        box = message.MessageBox("info", tr("Export แล้ว", "Exported"), tr(f"บันทึกไฟล์ที่\n{path}", f"Saved to\n{path}"), self)
+        box.add_button(tr("ปิด", "Close"), escape=True)
+        open_btn = box.add_button(tr("เปิดไฟล์", "Open"), "primary", default=True)
         box.exec()
-        if box.clickedButton() is open_btn:
+        if box.clicked is open_btn:
             QDesktopServices.openUrl(QUrl.fromLocalFile(str(path)))

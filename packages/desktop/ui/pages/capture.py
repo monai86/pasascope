@@ -26,6 +26,7 @@ from packages.desktop.ui import labels
 from packages.desktop.ui.audio import Recorder
 from packages.desktop.ui.pages.base import SessionPage
 from packages.desktop.ui.widgets import button, card, chip, label, set_chip
+from packages.desktop.ui import message
 
 AUDIO_FILTER = tr("ไฟล์เสียง (*.wav *.mp3 *.m4a *.mp4 *.webm *.ogg)", "Audio (*.wav *.mp3 *.m4a *.mp4 *.webm *.ogg)")
 TEXT_FILTER = "Transcript (*.cha *.txt)"
@@ -220,7 +221,7 @@ class CapturePage(SessionPage):
     def _confirm_replace(self) -> bool:
         if self.service.get_transcript(self.session.session_id) is None:
             return True
-        answer = QMessageBox.question(
+        answer = message.question(
             self, tr("แทนที่ transcript เดิม?", "Replace the transcript?"),
             tr("session นี้มี transcript อยู่แล้ว ข้อมูลใหม่จะแทนที่ transcript, ตัวชี้วัด และร่างรายงานเดิม ดำเนินการต่อ?", "This session already has a transcript. The new one replaces it, its findings and the report draft. Continue?"),
         )
@@ -263,7 +264,7 @@ class CapturePage(SessionPage):
         path = self.recorder.stop(target)
         self._reset_recorder_ui()
         if path is None:
-            QMessageBox.information(self, tr("ไม่มีเสียง", "No audio"), tr("ไม่ได้รับเสียงจากไมโครโฟน", "Nothing was heard from the microphone."))
+            message.information(self, tr("ไม่มีเสียง", "No audio"), tr("ไม่ได้รับเสียงจากไมโครโฟน", "Nothing was heard from the microphone."))
             return
         self._store_and_transcribe(path, delete_after=True)
 
@@ -291,7 +292,7 @@ class CapturePage(SessionPage):
 
     def _import_text(self, text: str, filename: str) -> None:
         if not text.strip():
-            QMessageBox.information(self, tr("ไม่มีข้อความ", "No text"), tr("วางหรือเปิด transcript ก่อน", "Paste or open a transcript first."))
+            message.information(self, tr("ไม่มีข้อความ", "No text"), tr("วางหรือเปิด transcript ก่อน", "Paste or open a transcript first."))
             return
         if not self._confirm_replace():
             return
@@ -329,7 +330,7 @@ class CapturePage(SessionPage):
         available, reason = self.service.transcription_availability()
         if not available:
             self._end_work()
-            QMessageBox.warning(self, tr("ถอดเสียงไม่ได้", "Cannot transcribe"), tr(f"เก็บไฟล์เสียงแล้ว แต่ถอดเสียงบนเครื่องยังไม่พร้อม: {reason}", f"The recording was saved, but transcription is unavailable: {reason}"))
+            message.warning(self, tr("ถอดเสียงไม่ได้", "Cannot transcribe"), tr(f"เก็บไฟล์เสียงแล้ว แต่ถอดเสียงบนเครื่องยังไม่พร้อม: {reason}", f"The recording was saved, but transcription is unavailable: {reason}"))
             self.refresh()
             return
         session_id = self.session.session_id

@@ -14,6 +14,8 @@ pytest.importorskip("pytestqt")
 from PySide6.QtCore import Qt  # noqa: E402
 from PySide6.QtWidgets import QMessageBox  # noqa: E402
 
+from packages.desktop.ui import message  # noqa: E402
+
 from packages.desktop.core import DesktopService, open_workspace  # noqa: E402
 from packages.desktop.ui.main_window import MainWindow  # noqa: E402
 from tests.test_desktop_service import CHAT  # noqa: E402
@@ -21,9 +23,9 @@ from tests.test_desktop_service import CHAT  # noqa: E402
 
 @pytest.fixture
 def window(qtbot, tmp_path, monkeypatch):
-    monkeypatch.setattr(QMessageBox, "question", lambda *a, **k: QMessageBox.StandardButton.Yes)
-    monkeypatch.setattr(QMessageBox, "warning", lambda *a, **k: None)
-    monkeypatch.setattr(QMessageBox, "information", lambda *a, **k: None)
+    monkeypatch.setattr(message, "question", lambda *a, **k: QMessageBox.StandardButton.Yes)
+    monkeypatch.setattr(message, "warning", lambda *a, **k: None)
+    monkeypatch.setattr(message, "information", lambda *a, **k: None)
     service = DesktopService(open_workspace(tmp_path / "ws"))
     service.set_therapist_name("นักบำบัด ทดสอบ")
     win = MainWindow(service)
@@ -606,7 +608,7 @@ def test_cases_and_sessions_can_be_edited_and_deleted_from_their_menus(window, q
     assert "ภูมิใจ" in window.case_list.topLevelItem(0).text(0)
 
     # Deleting a session asks first; its tab closes.
-    monkeypatch.setattr(QMessageBox, "warning", lambda *a, **k: QMessageBox.StandardButton.Yes)
+    monkeypatch.setattr(message, "warning", lambda *a, **k: QMessageBox.StandardButton.Yes)
     window.delete_session(session.session_id)
     assert window.session is None and window.service.list_sessions(case.case_id) == []
     assert f"session:{session.session_id}" not in window.editor_area.keys()
@@ -622,3 +624,71 @@ def test_cases_and_sessions_can_be_edited_and_deleted_from_their_menus(window, q
     window.delete_case(case.case_id)
     assert window.case is None and window.case_list.topLevelItemCount() == 0
     assert window.editor_area.current_key() == "home"
+
+
+def _answer_next_box(act):
+    """Run ``act(box)`` on the message box that opens next."""
+    from PySide6.QtCore import QTimer
+    from PySide6.QtWidgets import QApplication
+
+    seen = {}
+
+    def run():
+        box = QApplication.activeModalWidget()
+        if not isinstance(box, message.MessageBox):
+            QTimer.singleShot(10, run)
+            return
+        seen["box"] = box
+        act(box)
+
+    QTimer.singleShot(0, run)
+    return seen
+
+
+def _buttons(box):
+    from PySide6.QtWidgets import QPushButton
+
+    return box.findChildren(QPushButton, "MessageButton")
+
+
+def test_message_box_is_the_apps_own_card(qtbot):
+    from PySide6.QtCore import Qt
+
+    seen = _answer_next_box(lambda box: [b for b in _buttons(box) if b.property("role") == "primary"][0].click())
+    assert message.question(None, "Approve", "Is the transcript right?") == QMessageBox.StandardButton.Yes
+    box = seen["box"]
+    assert box.windowFlags() & Qt.WindowType.FramelessWindowHint
+    assert box.heading.text() == "Approve" and box.message.text() == "Is the transcript right?"
+    assert [b.property("role") for b in _buttons(box)] == [None, "primary"]  # No, then Yes on the right
+
+
+def test_message_box_escape_answers_no_and_cancel(qtbot):
+    _answer_next_box(lambda box: box.reject())
+    assert message.question(None, "t", "x") == QMessageBox.StandardButton.No
+    _answer_next_box(lambda box: box.reject())
+    buttons = QMessageBox.StandardButton.Save | QMessageBox.StandardButton.Discard | QMessageBox.StandardButton.Cancel
+    assert message.question(None, "t", "x", buttons) == QMessageBox.StandardButton.Cancel
+
+
+def test_message_box_delete_is_red_and_not_the_default(qtbot):
+    def act(box):
+        seen["defaults"] = [b.isDefault() for b in _buttons(box)]
+        box.reject()
+
+    seen = _answer_next_box(act)
+    answer = message.warning(
+        None, "Delete session", "This cannot be undone.",
+        QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.Cancel, QMessageBox.StandardButton.Cancel,
+    )
+    assert answer == QMessageBox.StandardButton.Cancel
+    cancel, delete = _buttons(seen["box"])
+    assert delete.property("role") == "destructive"
+    assert seen["defaults"] == [True, False]  # Enter keeps the session
+
+
+def test_message_box_ok_and_details(qtbot):
+    seen = _answer_next_box(lambda box: _buttons(box)[0].click())
+    assert message.critical(None, "Failed", "Boom", detail="Traceback ...") == QMessageBox.StandardButton.Ok
+    box = seen["box"]
+    assert box.details.toPlainText() == "Traceback ..." and not box.details.isVisible()
+    assert _buttons(box)[0].property("role") == "primary"

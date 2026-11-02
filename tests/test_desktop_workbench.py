@@ -13,6 +13,8 @@ pytest.importorskip("pytestqt")
 
 from PySide6.QtWidgets import QMessageBox  # noqa: E402
 
+from packages.desktop.ui import message  # noqa: E402
+
 from packages.desktop.ui import main_window, theme  # noqa: E402
 from packages.desktop.ui.editors import SessionEditor  # noqa: E402
 from packages.desktop.ui.workbench import match_score  # noqa: E402
@@ -50,11 +52,11 @@ def test_unsaved_edits_mark_the_tab_and_are_asked_about_on_close(window, monkeyp
     window._poll_dirty()
     assert window.editor_area.bar.tabText(window.editor_area.index_of(key)).startswith("● ")
 
-    monkeypatch.setattr(QMessageBox, "question", lambda *a, **k: QMessageBox.StandardButton.Cancel)
+    monkeypatch.setattr(message, "question", lambda *a, **k: QMessageBox.StandardButton.Cancel)
     assert not window.close_tab(key)
     assert key in window.editor_area.keys()
 
-    monkeypatch.setattr(QMessageBox, "question", lambda *a, **k: QMessageBox.StandardButton.Discard)
+    monkeypatch.setattr(message, "question", lambda *a, **k: QMessageBox.StandardButton.Discard)
     assert window.close_tab(key)
     assert key not in window.editor_area.keys()
 

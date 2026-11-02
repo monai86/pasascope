@@ -2,6 +2,9 @@
 
 ## [Unreleased]
 
+### Changed
+- **Alerts and confirmations now look like PasaScope instead of the operating system.** Every message box (about 60 of them: confirmations, warnings, errors, update offers, export done) was a standard `QMessageBox`, which on macOS showed a separate window with a title bar and the system's icons and buttons. They are now a frameless rounded card in the app's light or dark colours, with a tinted icon badge (blue for information and questions, amber for warnings, red for errors), the title as a heading, the app's buttons with the main one in blue, and the window behind dimmed. A button that deletes something is red and is not the default, so Enter cancels; the delete-session and attest confirmations name their button ("ลบ session", "รับรอง") instead of "Yes". Error details open under a "แสดงรายละเอียด" toggle (`packages/desktop/ui/message.py`, styles in `theme.py`; tests `tests/test_desktop_ui.py::test_message_box_*`).
+
 ## [v1.8.3] - 2026-11-01
 
 Desktop app fix release.

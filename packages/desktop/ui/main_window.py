@@ -45,6 +45,7 @@ from packages.desktop.ui.window.updates import UpdatesMixin
 from packages.desktop.ui.window.appearance import AppearanceMixin
 from packages.desktop.ui.window.backup import BackupMixin
 from packages.desktop.ui.workbench import ActivityBar, EditorArea, SideBarHeader
+from packages.desktop.ui import message
 
 SIDE_WIDTH = 260
 
@@ -537,7 +538,7 @@ class MainWindow(
             event.accept()
             return
         if self.busy or self.runner.busy:
-            answer = QMessageBox.question(
+            answer = message.question(
                 self, tr("กำลังทำงานอยู่", "Still working"),
                 tr("ยังถอดเสียงหรือบันทึกเสียงอยู่ ปิดโปรแกรมแล้วงานนี้จะหยุด ปิดเลยไหม?",
                    "A transcription or recording is still running and will stop if you quit. Quit anyway?"),

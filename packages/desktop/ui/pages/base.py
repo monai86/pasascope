@@ -5,10 +5,11 @@ from packages.desktop.core.i18n import tr
 from typing import Any
 
 from PySide6.QtCore import Signal
-from PySide6.QtWidgets import QMessageBox, QWidget
+from PySide6.QtWidgets import QWidget
 
 from packages.desktop.core import DesktopService, WorkflowError
 from packages.desktop.ui.tasks import TaskRunner
+from packages.desktop.ui import message
 
 
 class SessionPage(QWidget):
@@ -45,13 +46,10 @@ class SessionPage(QWidget):
 
     def report_error(self, exc: Exception, title: str = tr("ทำรายการไม่สำเร็จ", "Something went wrong")) -> None:
         if isinstance(exc, WorkflowError):
-            QMessageBox.warning(self, title, str(exc))
+            message.warning(self, title, str(exc))
             return
         detail = getattr(exc, "__traceback_text__", "")
-        box = QMessageBox(QMessageBox.Icon.Critical, title, tr(f"เกิดข้อผิดพลาดที่ไม่คาดไว้: {type(exc).__name__}: {exc}", f"Unexpected error: {type(exc).__name__}: {exc}"), parent=self)
-        if detail:
-            box.setDetailedText(detail)
-        box.exec()
+        message.critical(self, title, tr(f"เกิดข้อผิดพลาดที่ไม่คาดไว้: {type(exc).__name__}: {exc}", f"Unexpected error: {type(exc).__name__}: {exc}"), detail=detail)
 
     def attempt(self, fn, *args, title: str = tr("ทำรายการไม่สำเร็จ", "Something went wrong"), **kwargs):
         """Run a quick service call on the UI thread; show the error and return None on failure."""

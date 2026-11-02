@@ -43,6 +43,7 @@ from packages.desktop.ui import labels, theme
 from packages.desktop.ui.audio import SegmentPlayer, waveform_peaks
 from packages.desktop.ui.pages.base import SessionPage
 from packages.desktop.ui.widgets import EmptyState, WaveformView, button, chip, filling, label, notice, set_chip
+from packages.desktop.ui import message
 from packages.features.language_sample import compute_language_sample_measures
 
 COL_TIME, COL_SPEAKER, COL_TEXT, COL_WORDS, COL_CONF = range(5)
@@ -717,7 +718,7 @@ class ReviewPage(SessionPage):
         rows = self._selected_rows()
         if not rows:
             return
-        answer = QMessageBox.question(self, tr("ลบประโยค", "Delete lines"), tr(f"ลบ {len(rows)} ประโยคที่เลือก?", f"Delete {len(rows)} selected lines?"))
+        answer = message.question(self, tr("ลบประโยค", "Delete lines"), tr(f"ลบ {len(rows)} ประโยคที่เลือก?", f"Delete {len(rows)} selected lines?"))
         if answer != QMessageBox.StandardButton.Yes:
             return
         for row in reversed(rows):
@@ -731,7 +732,7 @@ class ReviewPage(SessionPage):
             return True
         empty = [i + 1 for i, u in enumerate(self.utterances) if not u.text.strip()]
         if empty:
-            QMessageBox.warning(self, tr("มีประโยคว่าง", "Empty lines"), tr(f"ใส่ข้อความหรือลบแถวที่ {', '.join(map(str, empty[:10]))} ก่อนบันทึก", f"Fill in or delete line {', '.join(map(str, empty[:10]))} before saving."))
+            message.warning(self, tr("มีประโยคว่าง", "Empty lines"), tr(f"ใส่ข้อความหรือลบแถวที่ {', '.join(map(str, empty[:10]))} ก่อนบันทึก", f"Fill in or delete line {', '.join(map(str, empty[:10]))} before saving."))
             return False
         saved = self.attempt(self.service.save_utterances, self.transcript.transcript_id, self.utterances, title=tr("บันทึกไม่สำเร็จ", "Not saved"))
         if saved is None:
@@ -748,15 +749,16 @@ class ReviewPage(SessionPage):
         if not self.save():
             return
         if any(str(u.speaker) == "UNK" for u in self.utterances):
-            QMessageBox.warning(self, tr("ยังรับรองไม่ได้", "Cannot attest yet"), tr("ระบุผู้พูดให้ครบทุกประโยคก่อน (แถวที่เป็น ‘ยังไม่ระบุ’)", "Set a speaker on every line first (lines marked Not set)."))
+            message.warning(self, tr("ยังรับรองไม่ได้", "Cannot attest yet"), tr("ระบุผู้พูดให้ครบทุกประโยคก่อน (แถวที่เป็น ‘ยังไม่ระบุ’)", "Set a speaker on every line first (lines marked Not set)."))
             return
         if not self.service.therapist_name:
             self.ask_name.emit()
             if not self.service.therapist_name:
                 return
-        answer = QMessageBox.question(
+        answer = message.question(
             self, tr("รับรอง transcript", "Attest"),
             tr(f"ยืนยันว่า {self.service.therapist_name} ตรวจ transcript นี้กับเสียงแล้ว และผู้พูดถูกต้อง?", f"Confirm that {self.service.therapist_name} has checked this transcript against the recording and the speakers are right?"),
+            labels={QMessageBox.StandardButton.Yes: tr("รับรอง", "Attest"), QMessageBox.StandardButton.No: tr("ยังไม่รับรอง", "Not yet")},
         )
         if answer != QMessageBox.StandardButton.Yes:
             return

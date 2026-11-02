@@ -19,6 +19,7 @@ from PySide6.QtWidgets import QMessageBox, QTreeWidgetItem
 from packages.desktop.core.i18n import tr
 from packages.desktop.ui import labels, theme
 from packages.desktop.ui.editors import CaseEditor, SessionEditor, case_key, case_name, session_day, session_key
+from packages.desktop.ui import message
 
 ROLE = Qt.ItemDataRole.UserRole  # ("case" | "session", id) on each tree item
 
@@ -245,7 +246,7 @@ class CaseViewMixin:
         editor = self.editor_area.editors.get(key)
         if isinstance(editor, SessionEditor):
             if editor.busy:
-                QMessageBox.information(self, tr("รอสักครู่", "Please wait"),
+                message.information(self, tr("รอสักครู่", "Please wait"),
                                         tr("session นี้ยังบันทึกเสียงหรือถอดเสียงอยู่ ปิดได้เมื่อเสร็จแล้ว",
                                            "This session is still recording or transcribing; close it when that finishes."))
                 return False
@@ -279,7 +280,7 @@ class CaseViewMixin:
         dirty = [page for editor in editors for page in editor.dirty_pages()]
         if not dirty:
             return True
-        answer = QMessageBox.question(
+        answer = message.question(
             self, tr("มีการแก้ไขที่ยังไม่บันทึก", "Unsaved changes"),
             tr("บันทึกการแก้ไขก่อน?", "Save your changes first?"),
             QMessageBox.StandardButton.Save | QMessageBox.StandardButton.Discard | QMessageBox.StandardButton.Cancel,

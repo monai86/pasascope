@@ -108,7 +108,7 @@ def main(argv: list[str] | None = None) -> int:
     import threading
 
     from PySide6.QtCore import QCoreApplication, QTimer
-    from PySide6.QtWidgets import QApplication, QMessageBox
+    from PySide6.QtWidgets import QApplication
 
     QCoreApplication.setOrganizationName("PasaScope")
     QCoreApplication.setApplicationName("PasaScope")
@@ -124,6 +124,8 @@ def main(argv: list[str] | None = None) -> int:
 
     apply_theme(app)
 
+    from packages.desktop.ui import message
+
     from packages.desktop.core.i18n import set_language, tr
     from packages.desktop.core.workspace import default_home, demo_home
 
@@ -131,7 +133,7 @@ def main(argv: list[str] | None = None) -> int:
     if args.demo and home is None:
         home = demo_home()
         if not home.exists():
-            QMessageBox.information(
+            message.information(
                 None, "No demonstration data",
                 "Create it first with\n.venv312/bin/python scripts/seed_desktop_demo.py",
             )
@@ -159,7 +161,7 @@ def main(argv: list[str] | None = None) -> int:
         service = DesktopService(open_workspace(home))
     except Exception as exc:  # noqa: BLE001 - nothing else can run without the workspace
         splash.finish()
-        QMessageBox.critical(None, "Cannot open data", f"The data folder could not be opened.\n{type(exc).__name__}: {exc}")
+        message.critical(None, "Cannot open data", f"The data folder could not be opened.\n{type(exc).__name__}: {exc}")
         return 1
 
     first_start = None

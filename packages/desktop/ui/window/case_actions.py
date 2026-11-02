@@ -12,6 +12,7 @@ from PySide6.QtWidgets import QMenu, QMessageBox
 from packages.desktop.core.i18n import tr
 from packages.desktop.ui import dialogs, labels
 from packages.desktop.ui.window.case_view import ROLE
+from packages.desktop.ui import message
 
 
 class CaseActionsMixin:
@@ -64,7 +65,7 @@ class CaseActionsMixin:
         if case is None:
             return
         if self.busy:
-            QMessageBox.information(self, tr("รอสักครู่", "Please wait"),
+            message.information(self, tr("รอสักครู่", "Please wait"),
                                     tr("รอให้การถอดเสียงหรือการบันทึกเสียงเสร็จก่อน", "Wait for the transcription or recording to finish."))
             return
         if not self._confirm_leave(self.session_editors(case.case_id)):
@@ -165,7 +166,7 @@ class CaseActionsMixin:
 
     def _wait_for_work(self) -> bool:
         if self.busy or self.runner.busy:
-            QMessageBox.information(self, tr("รอสักครู่", "Please wait"),
+            message.information(self, tr("รอสักครู่", "Please wait"),
                                     tr("รอให้งานที่กำลังทำอยู่เสร็จก่อน", "Wait for the work in progress to finish."))
             return True
         return False
@@ -215,13 +216,14 @@ class CaseActionsMixin:
         summary = self.service.deletion_summary(session.case_id, session_id)
         day = labels.day_text(session.session_date)
         signed = tr(" รวมรายงานที่ลงนามแล้ว", ", including a signed report") if summary["signed_reports"] else ""
-        answer = QMessageBox.warning(
+        answer = message.warning(
             self, tr("ลบ session", "Delete session"),
             tr(f"ลบ session วันที่ {day} พร้อมไฟล์เสียง {summary['recordings']} ไฟล์ "
                f"transcript ตัวชี้วัด และรายงาน{signed}? ย้อนกลับไม่ได้",
                f"Delete the session of {day} with its {summary['recordings']} recording(s), "
                f"transcript, findings and report{signed}? This cannot be undone."),
             QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.Cancel, QMessageBox.StandardButton.Cancel,
+            labels={QMessageBox.StandardButton.Yes: tr("ลบ session", "Delete session")},
         )
         if answer != QMessageBox.StandardButton.Yes:
             return

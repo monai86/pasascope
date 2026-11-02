@@ -8,6 +8,7 @@ from PySide6.QtWidgets import QInputDialog, QMessageBox
 
 from packages.desktop.core.i18n import tr
 from packages.desktop.ui import dialogs, labels
+from packages.desktop.ui import message
 
 
 class SettingsActionsMixin:
@@ -36,7 +37,7 @@ class SettingsActionsMixin:
         try:
             self.service.set_organization(name)
         except Exception as exc:  # noqa: BLE001
-            QMessageBox.warning(self, tr("ตั้งค่าไม่สำเร็จ", "Setting not saved"), str(exc))
+            message.warning(self, tr("ตั้งค่าไม่สำเร็จ", "Setting not saved"), str(exc))
             return
         for editor in self.session_editors():
             if not editor.has_unsaved_changes():
@@ -46,7 +47,7 @@ class SettingsActionsMixin:
         try:
             self.service.set_transcription_mode(mode)
         except Exception as exc:  # noqa: BLE001
-            QMessageBox.warning(self, tr("ตั้งค่าไม่สำเร็จ", "Setting not saved"), str(exc))
+            message.warning(self, tr("ตั้งค่าไม่สำเร็จ", "Setting not saved"), str(exc))
         for key, action in self.mode_actions.items():
             action.setChecked(key == self.service.transcription_mode)
         self._update_status_bar()
@@ -55,7 +56,7 @@ class SettingsActionsMixin:
         if code == self.service.language:
             return
         self.service.set_language(code)
-        QMessageBox.information(
+        message.information(
             self, "PasaScope",
             "Restart PasaScope to switch the language.\nเปิดโปรแกรมใหม่เพื่อเปลี่ยนภาษา",
         )
@@ -68,7 +69,7 @@ class SettingsActionsMixin:
         if dialog.choice == "train":
             self.learn_speakers_in_background(force=True)
         elif dialog.choice == "reset":
-            answer = QMessageBox.question(
+            answer = message.question(
                 self, tr("ล้างโมเดลประจำคลินิก", "Clear the clinic model"),
                 tr("ล้างสิ่งที่โปรแกรมเรียนไว้ แล้วกลับไปใช้โมเดลพื้นฐาน? โปรแกรมจะเริ่มเรียนใหม่เมื่อรับรอง transcript ครั้งต่อไป",
                    "Clear what PasaScope has learned and go back to the base model? It learns again after the next attested transcript."),
@@ -109,7 +110,7 @@ class SettingsActionsMixin:
         dialogs.AuditLogDialog(self.service.audit_events(500), self).exec()
 
     def show_about(self) -> None:
-        QMessageBox.about(
+        message.about(
             self,
             tr("เกี่ยวกับ PasaScope", "About PasaScope"),
             f"<b>PasaScope</b> {self.version}<br><br>"

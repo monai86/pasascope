@@ -13,13 +13,14 @@ from PySide6.QtWidgets import QFileDialog, QProgressDialog, QMessageBox
 
 from packages.desktop.core.backup import BackupCancelled, BackupError, read_backup, restore_backup
 from packages.desktop.core.i18n import tr
+from packages.desktop.ui import message
 
 
 class BackupMixin:
     def backup(self) -> None:
         title = tr("สำรองข้อมูล", "Back up")
         if self.busy or self.runner.busy:
-            QMessageBox.information(self, title, tr("รอให้งานที่ทำอยู่เสร็จก่อน แล้วค่อยสำรองข้อมูล", "Wait for the current task to finish, then back up."))
+            message.information(self, title, tr("รอให้งานที่ทำอยู่เสร็จก่อน แล้วค่อยสำรองข้อมูล", "Wait for the current task to finish, then back up."))
             return
         if not self._confirm_leave():
             return
@@ -31,7 +32,7 @@ class BackupMixin:
             return
         target = Path(path) if path.lower().endswith(".zip") else Path(path + ".zip")
         if target.resolve().is_relative_to(self.service.workspace.root):
-            QMessageBox.warning(self, title, tr("เลือกที่เก็บนอกโฟลเดอร์ข้อมูลของโปรแกรม เช่น ไดรฟ์ภายนอก",
+            message.warning(self, title, tr("เลือกที่เก็บนอกโฟลเดอร์ข้อมูลของโปรแกรม เช่น ไดรฟ์ภายนอก",
                                                 "Choose a place outside PasaScope's data folder, such as an external drive."))
             return
         QSettings().setValue("backup/folder", str(target.parent))
@@ -49,7 +50,7 @@ class BackupMixin:
             dialog.close()
             self._update_backup_label()
             counts = info.counts
-            QMessageBox.information(
+            message.information(
                 self, tr("สำรองข้อมูลแล้ว", "Backup saved"),
                 tr(
                     f"บันทึกที่ {info.path}\n{counts.get('cases', 0)} เคส, {counts.get('sessions', 0)} session, "
@@ -68,7 +69,7 @@ class BackupMixin:
             if isinstance(exc, BackupCancelled):
                 self.notify(tr("ยกเลิกการสำรองข้อมูลแล้ว ไม่มีไฟล์ถูกบันทึก", "Backup cancelled; no file was saved."))
                 return
-            QMessageBox.critical(self, tr("สำรองข้อมูลไม่สำเร็จ", "Backup failed"), f"{type(exc).__name__}: {exc}")
+            message.critical(self, tr("สำรองข้อมูลไม่สำเร็จ", "Backup failed"), f"{type(exc).__name__}: {exc}")
 
         self.runner.run(
             lambda report: self.service.create_backup(target, self.version, progress=report, cancelled=cancel.is_set),
@@ -90,7 +91,7 @@ class BackupMixin:
     def restore(self) -> None:
         title = tr("กู้คืนข้อมูล", "Restore")
         if self.busy or self.runner.busy:
-            QMessageBox.information(self, title, tr("รอให้งานที่ทำอยู่เสร็จก่อน", "Wait for the current task to finish."))
+            message.information(self, title, tr("รอให้งานที่ทำอยู่เสร็จก่อน", "Wait for the current task to finish."))
             return
         if not self._confirm_leave():
             return
@@ -102,12 +103,12 @@ class BackupMixin:
         try:
             info = read_backup(Path(path))
         except BackupError as exc:
-            QMessageBox.warning(self, title, str(exc))
+            message.warning(self, title, str(exc))
             return
         counts = info.counts
         when = info.created_at[:16].replace("T", " ")
         demo = tr("\n\nไฟล์นี้สำรองมาจากข้อมูลสาธิต", "\n\nThis backup was made from demonstration data.") if info.demo else ""
-        answer = QMessageBox.question(
+        answer = message.question(
             self, title,
             tr(
                 f"ไฟล์สำรองเมื่อ {when}\n{counts.get('cases', 0)} เคส, {counts.get('sessions', 0)} session, "
@@ -134,7 +135,7 @@ class BackupMixin:
         def done(previous) -> None:
             self._set_busy(False)
             dialog.close()
-            QMessageBox.information(
+            message.information(
                 self, tr("กู้คืนแล้ว", "Restored"),
                 tr(f"ข้อมูลเดิมย้ายไปที่ {previous}\nโปรแกรมจะปิดตอนนี้ เปิดใหม่เพื่อใช้ข้อมูลที่กู้คืน",
                    f"The previous data was moved to {previous}\nPasaScope will close now; open it again to use the restored data."),
@@ -146,7 +147,7 @@ class BackupMixin:
             self._set_busy(False)
             dialog.close()
             detail = str(exc) if isinstance(exc, (BackupError, OSError)) else f"{type(exc).__name__}: {exc}"
-            QMessageBox.critical(self, tr("กู้คืนไม่สำเร็จ", "Restore failed"),
+            message.critical(self, tr("กู้คืนไม่สำเร็จ", "Restore failed"),
                                  tr(f"ข้อมูลปัจจุบันยังอยู่ครบ ไม่ได้เปลี่ยนแปลง\n\n{detail}", f"Your current data is unchanged.\n\n{detail}"))
 
         self.runner.run(lambda report: restore_backup(root, info.path, progress=report),

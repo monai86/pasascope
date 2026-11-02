@@ -21,6 +21,7 @@ from packages.desktop.core.updates import (
     start_macos_swap,
     start_windows_install,
 )
+from packages.desktop.ui import message
 
 
 class UpdatesMixin:
@@ -28,7 +29,7 @@ class UpdatesMixin:
         """Ask GitHub for a newer release in the background; ``quiet`` says nothing when there is none."""
         if not self.version:
             if not quiet:
-                QMessageBox.information(self, tr("ตรวจหาอัปเดต", "Check for updates"),
+                message.information(self, tr("ตรวจหาอัปเดต", "Check for updates"),
                                         tr("ไม่ทราบรุ่นของโปรแกรมนี้", "This copy's version is unknown."))
             return
 
@@ -37,7 +38,7 @@ class UpdatesMixin:
             if release is None:
                 self.update_label.hide()
                 if not quiet:
-                    QMessageBox.information(self, tr("ตรวจหาอัปเดต", "Check for updates"),
+                    message.information(self, tr("ตรวจหาอัปเดต", "Check for updates"),
                                             tr(f"รุ่น {self.version} เป็นรุ่นล่าสุดแล้ว", f"Version {self.version} is the latest."))
                 return
             self._show_update(release)
@@ -46,7 +47,7 @@ class UpdatesMixin:
 
         def failed(exc: Exception) -> None:
             if not quiet:
-                QMessageBox.warning(self, tr("ตรวจหาอัปเดตไม่ได้", "Could not check for updates"),
+                message.warning(self, tr("ตรวจหาอัปเดตไม่ได้", "Could not check for updates"),
                                     tr(f"เชื่อมต่อ GitHub ไม่ได้ ลองใหม่เมื่อมีอินเทอร์เน็ต\n\n{exc}",
                                        f"GitHub could not be reached; try again when online.\n\n{exc}"))
 
@@ -61,23 +62,22 @@ class UpdatesMixin:
         if release is None or self.busy or self.runner.busy:
             return
         notes = release.notes[:1200] + ("…" if len(release.notes) > 1200 else "")
-        box = QMessageBox(self)
-        box.setIcon(QMessageBox.Icon.Information)
-        box.setWindowTitle(tr("มีรุ่นใหม่", "New version"))
-        box.setText(tr(f"PasaScope {release.version} พร้อมให้ติดตั้ง (รุ่นที่ใช้อยู่ {self.version})",
-                       f"PasaScope {release.version} is available (this is {self.version})."))
-        box.setInformativeText(tr(
+        box = message.MessageBox(
+            "info", tr("มีรุ่นใหม่", "New version"),
+            tr(f"PasaScope {release.version} พร้อมให้ติดตั้ง (รุ่นที่ใช้อยู่ {self.version})",
+               f"PasaScope {release.version} is available (this is {self.version})."),
+            self, detail=notes,
+            informative=tr(
             f"ขนาด {release.size / 1_000_000:.0f} MB ระบบจะสำรองข้อมูลก่อน แล้วดาวน์โหลดไปที่โฟลเดอร์ Downloads "
             "และตรวจ SHA-256 ก่อนเปิด ข้อมูลเคสอยู่แยกจากตัวโปรแกรม การอัปเดตจึงไม่ลบข้อมูล",
             f"{release.size / 1_000_000:.0f} MB. PasaScope backs up your data first, downloads to the Downloads folder "
             "and checks the SHA-256 before opening it. Your cases are kept apart from the app, so updating does not remove them.",
-        ))
-        if notes:
-            box.setDetailedText(notes)
-        install = box.addButton(tr("สำรองข้อมูลแล้วดาวน์โหลด", "Back up and download"), QMessageBox.ButtonRole.AcceptRole)
-        box.addButton(tr("ไว้ทีหลัง", "Later"), QMessageBox.ButtonRole.RejectRole)
+            ),
+        )
+        box.add_button(tr("ไว้ทีหลัง", "Later"), escape=True)
+        install = box.add_button(tr("สำรองข้อมูลแล้วดาวน์โหลด", "Back up and download"), "primary", default=True)
         box.exec()
-        if box.clickedButton() is install:
+        if box.clicked is install:
             self._backup_then_download(release)
 
     def _backup_then_download(self, release) -> None:
@@ -121,7 +121,7 @@ class UpdatesMixin:
                 return
             if sys.platform == "win32":
                 # The installer replaces the program files without its wizard, then starts PasaScope again.
-                QMessageBox.information(self, tr("พร้อมติดตั้ง", "Ready to install"), checked + kept + "\n\n" + tr(
+                message.information(self, tr("พร้อมติดตั้ง", "Ready to install"), checked + kept + "\n\n" + tr(
                     "เมื่อกด OK PasaScope จะปิด ติดตั้งรุ่นใหม่ทับรุ่นเดิม แล้วเปิดขึ้นใหม่เอง",
                     "When you click OK PasaScope closes, installs the new version over this one and opens again.",
                 ))
@@ -129,7 +129,7 @@ class UpdatesMixin:
                 self.close()
                 return
             QDesktopServices.openUrl(QUrl.fromLocalFile(str(path)))
-            QMessageBox.information(self, tr("พร้อมติดตั้ง", "Ready to install"), checked + tr(
+            message.information(self, tr("พร้อมติดตั้ง", "Ready to install"), checked + tr(
                 "ขั้นต่อไป: ปิด PasaScope แล้วลากไอคอน PasaScope ในหน้าต่างที่เปิดขึ้นไปที่ Applications "
                 "เลือก 'แทนที่' แล้วเปิดโปรแกรมใหม่",
                 "Next: quit PasaScope, drag PasaScope from the window that opened onto Applications, "
@@ -139,25 +139,25 @@ class UpdatesMixin:
         def failed(exc: Exception) -> None:
             self._set_busy(False)
             dialog.close()
-            QMessageBox.warning(self, tr("อัปเดตไม่สำเร็จ", "Update failed"), f"{exc}")
+            message.warning(self, tr("อัปเดตไม่สำเร็จ", "Update failed"), f"{exc}")
 
         self.runner.run(work, on_done=done, on_error=failed, on_progress=progress)
 
     def _offer_restart(self, release, bundle: Path, staged: Path, detail: str) -> None:
         """The new app is ready beside this one: restart into it now, or when PasaScope next quits."""
-        box = QMessageBox(self)
-        box.setIcon(QMessageBox.Icon.Information)
-        box.setWindowTitle(tr("พร้อมอัปเดต", "Ready to update"))
-        box.setText(tr(f"PasaScope {release.version} พร้อมใช้งาน", f"PasaScope {release.version} is ready"))
-        box.setInformativeText(detail + "\n\n" + tr(
+        box = message.MessageBox(
+            "info", tr("พร้อมอัปเดต", "Ready to update"),
+            tr(f"PasaScope {release.version} พร้อมใช้งาน", f"PasaScope {release.version} is ready"), self,
+            informative=detail + "\n\n" + tr(
             "เปิดใหม่ตอนนี้: PasaScope จะปิดแล้วเปิดขึ้นเป็นรุ่นใหม่ภายในไม่กี่วินาที\nไว้ทีหลัง: ติดตั้งให้ตอนปิดโปรแกรมครั้งถัดไป",
             "Restart now: PasaScope closes and opens again as the new version in a few seconds.\n"
             "Later: it is installed the next time you quit PasaScope.",
-        ))
-        restart = box.addButton(tr("เปิดใหม่ตอนนี้", "Restart now"), QMessageBox.ButtonRole.AcceptRole)
-        box.addButton(tr("ไว้ทีหลัง", "Later"), QMessageBox.ButtonRole.RejectRole)
+            ),
+        )
+        box.add_button(tr("ไว้ทีหลัง", "Later"), escape=True)
+        restart = box.add_button(tr("เปิดใหม่ตอนนี้", "Restart now"), "primary", default=True)
         box.exec()
-        relaunch = box.clickedButton() is restart
+        relaunch = box.clicked is restart
         self._pending_update = ("macos", bundle, staged, relaunch)
         if relaunch:
             self.close()
@@ -176,7 +176,7 @@ class UpdatesMixin:
             else:
                 start_windows_install(pending[1])
         except Exception as exc:  # noqa: BLE001 - the current version keeps working
-            QMessageBox.warning(self, tr("อัปเดตไม่สำเร็จ", "Update failed"),
+            message.warning(self, tr("อัปเดตไม่สำเร็จ", "Update failed"),
                                 tr(f"ยังใช้รุ่นเดิมได้ตามปกติ\n\n{exc}", f"This version still works as before.\n\n{exc}"))
 
     def download_models(self, confirm: bool = True) -> None:
@@ -196,7 +196,7 @@ class UpdatesMixin:
                       "ระบบตรวจทุกไฟล์ด้วย SHA-256 ก่อนใช้ ไม่ส่งข้อมูลของเด็กออกจากเครื่อง ดำเนินการต่อ?",
                       f"Download the Thai speech model, about {size_gb:.1f} GB, from Hugging Face? Every file is checked "
                       "against its SHA-256 before use. No children's data leaves this computer.")
-        if confirm and QMessageBox.question(self, tr("ดาวน์โหลดโมเดลถอดเสียง", "Download speech models"), text) != QMessageBox.StandardButton.Yes:
+        if confirm and message.question(self, tr("ดาวน์โหลดโมเดลถอดเสียง", "Download speech models"), text) != QMessageBox.StandardButton.Yes:
             return
         dialog = QProgressDialog(tr("กำลังดาวน์โหลด…", "Downloading…"), tr("ยกเลิก", "Cancel"), 0, 1000, self)
         dialog.setWindowTitle(tr("ดาวน์โหลดโมเดลถอดเสียง", "Download speech models"))
@@ -214,13 +214,13 @@ class UpdatesMixin:
             dialog.close()
             self.dashboard.refresh()
             self._update_status_bar()
-            QMessageBox.information(self, tr("พร้อมถอดเสียง", "Ready to transcribe"),
+            message.information(self, tr("พร้อมถอดเสียง", "Ready to transcribe"),
                                     tr("ดาวน์โหลดและตรวจโมเดลครบแล้ว", "The models are downloaded and checked."))
 
         def failed(exc: Exception) -> None:
             self._set_busy(False)
             dialog.close()
-            QMessageBox.warning(self, tr("ดาวน์โหลดไม่สำเร็จ", "Download failed"),
+            message.warning(self, tr("ดาวน์โหลดไม่สำเร็จ", "Download failed"),
                                 tr(f"{exc}\n\nลองใหม่ได้ ส่วนที่ดาวน์โหลดครบแล้วจะไม่ต้องโหลดซ้ำ",
                                    f"{exc}\n\nYou can try again; files already downloaded are kept."))
 

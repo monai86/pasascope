@@ -50,6 +50,8 @@ LIGHT = {
     "ATTENTION_SOFT": "#fbecdc",
     "DANGER": "#c4314b",
     "DANGER_SOFT": "#fbe9ec",
+    "DANGER_FILL": "#c4314b",  # a red button that removes something
+    "DANGER_FILL_HOVER": "#a92840",
     "OK": "#0062bf",
     "OK_SOFT": "#e3eefa",
     "ADULT": "#7b4fb0",
@@ -83,6 +85,8 @@ DARK = {
     "ATTENTION_SOFT": "#3a2a1b",
     "DANGER": "#ef7470",
     "DANGER_SOFT": "#3c2324",
+    "DANGER_FILL": "#b83a3a",
+    "DANGER_FILL_HOVER": "#c94848",
     "OK": "#5ea6e6",
     "OK_SOFT": "#16304a",
     "ADULT": "#b48ce0",
@@ -100,7 +104,7 @@ SETTINGS_KEY = "appearance/theme"
 INK = INK_SOFT = MUTED = FAINT = LINE = LINE_STRONG = SURFACE = CANVAS = SIDEBAR = ""
 HOVER = PRESSED = ROW_ALT = PRIMARY = PRIMARY_DARK = PRIMARY_TEXT = PRIMARY_SOFT = ""
 PRIMARY_DISABLED = PRIMARY_DISABLED_TEXT = ON_PRIMARY = LINK = ""
-ATTENTION = ATTENTION_SOFT = DANGER = DANGER_SOFT = OK = OK_SOFT = ADULT = TOOLTIP = TOOLTIP_TEXT = TOAST_BORDER = ""
+ATTENTION = ATTENTION_SOFT = DANGER = DANGER_SOFT = DANGER_FILL = DANGER_FILL_HOVER = OK = OK_SOFT = ADULT = TOOLTIP = TOOLTIP_TEXT = TOAST_BORDER = ""
 SPEAKER_COLORS: dict[str, str] = {}
 STYLE = ""
 _dark = False
@@ -296,6 +300,18 @@ QStatusBar QLabel {{ padding: 0 8px; color: {MUTED}; font-size: 12px; }}
     background: {TOOLTIP}; color: {TOOLTIP_TEXT}; border: 1px solid {TOAST_BORDER}; border-radius: 8px;
     padding: 9px 16px; font-size: 13px;
 }}
+/* Alerts and confirmations (message.py): a frameless card over a dimmed window */
+QDialog#MessageBox {{ background: transparent; }}
+#MessageCard {{ background: {SURFACE}; border: 1px solid {LINE_STRONG}; border-radius: 12px; }}
+#MessageTitle {{ font-size: 15px; font-weight: 600; color: {INK}; }}
+#MessageText {{ color: {INK_SOFT}; }}
+#MessageInfo {{ color: {MUTED}; font-size: 13px; }}
+QPlainTextEdit#MessageDetails {{ background: {SIDEBAR}; border: 1px solid {LINE}; font-size: 12px; }}
+QPushButton#MessageButton {{ padding: 6px 16px; border-radius: 6px; }}
+QPushButton#MessageButton:focus {{ border-color: {PRIMARY}; }}
+QPushButton[role="primary"]#MessageButton:focus {{ border-color: {PRIMARY_DARK}; }}
+QPushButton[role="destructive"] {{ background: {DANGER_FILL}; color: {ON_PRIMARY}; border: 1px solid {DANGER_FILL}; font-weight: 500; }}
+QPushButton[role="destructive"]:hover {{ background: {DANGER_FILL_HOVER}; border-color: {DANGER_FILL_HOVER}; }}
 QToolTip {{ background: {TOOLTIP}; color: {TOOLTIP_TEXT}; border: none; padding: 6px 8px; }}
 """
 
