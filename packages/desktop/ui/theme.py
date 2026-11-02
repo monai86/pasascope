@@ -262,6 +262,7 @@ QToolButton#HeaderAction:hover {{ background: {HOVER}; }}
 QTreeWidget#CaseTree, QListWidget#TopicList {{ background: transparent; border: none; outline: none; }}
 QTreeWidget#CaseTree::item, QListWidget#TopicList::item {{ height: 24px; padding: 0 4px; color: {INK}; border: none; }}
 QListWidget#TopicList::item {{ padding-left: 20px; }}
+QListWidget#TopicList::item:disabled, QListWidget#TopicList::item:disabled:hover {{ color: {MUTED}; background: transparent; }}
 QTreeWidget#CaseTree::item:hover, QListWidget#TopicList::item:hover {{ background: {HOVER}; }}
 QTreeWidget#CaseTree::item:selected, QListWidget#TopicList::item:selected {{ background: {PRESSED}; color: {INK}; }}
 #SideBarFooter {{ border-top: 1px solid {LINE}; }}

@@ -692,3 +692,32 @@ def test_message_box_ok_and_details(qtbot):
     box = seen["box"]
     assert box.details.toPlainText() == "Traceback ..." and not box.details.isVisible()
     assert _buttons(box)[0].property("role") == "primary"
+
+
+def test_knowledge_topics_are_grouped_and_linked(window):
+    from PySide6.QtCore import QUrl
+
+    from packages.desktop.ui import feature_guide
+    from packages.desktop.ui.pages import knowledge
+
+    window.show_knowledge("session")
+    page = window.knowledge
+    keys = [page.topics.item(r).data(Qt.ItemDataRole.UserRole) for r in range(page.topics.count())]
+    headings = [r for r, key in enumerate(keys) if key is None]
+    assert len(headings) == 3 and headings[0] == 0
+    assert all(page.topics.item(r).flags() == Qt.ItemFlag.NoItemFlags for r in headings)
+    assert [k for k in keys if k] == [k for k, _ in knowledge._topics()]
+
+    # The foot of each article links to the next topic, and following it opens that topic.
+    assert "topic:review" in knowledge.article_html("session")
+    page.article.anchorClicked.emit(QUrl("topic:review"))
+    assert page.topics.currentItem().data(Qt.ItemDataRole.UserRole) == "review"
+
+    # Jump targets are never empty: an empty one splits the Thai letter after it from its vowel.
+    guide = feature_guide.guide_html()
+    assert '"></a>' not in guide and f'name="{feature_guide.anchor("ndw_100")}"' in guide
+
+    # Limits paragraphs become callouts; the text column stops widening.
+    assert 'class="note"' not in knowledge.article_html("mlu")
+    page.article.resize(2000, 600)
+    assert page.article.viewportMargins().left() == (2000 - knowledge.READING_WIDTH) // 2

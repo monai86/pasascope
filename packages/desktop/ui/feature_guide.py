@@ -279,42 +279,109 @@ def anchor(name: str) -> str:
     return f"feature-{name}"
 
 
+# ----------------------------------------------------------------------
+# Pieces the Knowledge articles are built from (Qt rich text: no padding
+# or rounded corners on paragraphs, so boxes are one-cell tables)
+# ----------------------------------------------------------------------
+def chip(text: str, kind: str = "neutral") -> str:
+    """A small tinted tag, like ``widgets.chip``."""
+    fill, ink = {
+        "primary": (theme.PRIMARY_SOFT, theme.PRIMARY_TEXT),
+        "attention": (theme.ATTENTION_SOFT, theme.ATTENTION),
+        "neutral": (theme.HOVER, theme.INK_SOFT),
+    }[kind]
+    return (f'<span style="background-color: {fill}; color: {ink}; font-size: 12px; font-weight: 600;">'
+            f"&nbsp;{html.escape(text)}&nbsp;</span>")
+
+
+def callout(body: str, kind: str = "primary") -> str:
+    """A shaded box with a coloured bar on the left, for a note the reader should not miss."""
+    fill, bar = {
+        "primary": (theme.PRIMARY_SOFT, theme.PRIMARY),
+        "attention": (theme.ATTENTION_SOFT, theme.ATTENTION),
+    }[kind]
+    return (
+        f'<table width="100%" cellspacing="0" cellpadding="0" style="margin: 6px 0 14px 0;"><tr>'
+        f'<td width="4" bgcolor="{bar}"></td>'
+        f'<td bgcolor="{fill}" style="padding: 12px 16px;">{body}</td></tr></table>'
+    )
+
+
+TIER_KIND = {MAIN: "primary", SUPPORT: "neutral", BACKGROUND: "neutral"}
+
+
+def target(name: str) -> str:
+    """A place a ``#name`` link scrolls to.
+
+    It holds a space: Qt carries an empty ``<a name>`` over onto the next letter written, and
+    when that is a Thai consonant its vowel is split off and drawn on a dotted circle (ค◌ือ, จ◌ำ).
+    """
+    return f'<a name="{name}">&nbsp;</a>'
+
+
+def _entry(name: str) -> str:
+    tier, thai, english = GUIDE[name]
+    what, helps, caution = thai if tr("th", "en") == "th" else english
+    title = labels.FEATURES[name][0]
+    rows = [
+        (tr("คืออะไร", "What it is"), what, theme.MUTED),
+        (tr("ช่วยอย่างไร", "How it helps"), helps, theme.MUTED),
+        (tr("ข้อควรระวัง", "Watch for"), caution, theme.ATTENTION),
+    ]
+    body = "".join(
+        f'<tr><td width="118" style="padding: 3px 12px 3px 0; color: {colour}; font-size: 13px; font-weight: 600;">{key}</td>'
+        f'<td style="padding: 3px 0;">{html.escape(value)}</td></tr>'
+        for key, value, colour in rows
+    )
+    # Jump targets hold a space (see ``target``).
+    return (
+        f'<table width="100%" cellspacing="0" cellpadding="0" style="margin: 0;">'
+        f'<tr><td colspan="2" style="padding: 18px 0 6px 0; border-top: 1px solid {theme.LINE};">'
+        f'<span style="font-size: 16px; font-weight: 600;">{html.escape(title)}</span>&nbsp;&nbsp;'
+        f'{chip(tier_name(tier), TIER_KIND[tier])}{target(anchor(name))}</td></tr>{body}</table>'
+    )
+
+
 def guide_html() -> str:
     """The guide as one article, grouped as on the Findings tab, one anchored entry per measure."""
+    groups = [(group, [n for n in names if n in GUIDE and n in labels.FEATURES]) for group, names in labels.FEATURE_GROUPS]
+    groups = [(group, names) for group, names in groups if names]
+    jump = " &nbsp;·&nbsp; ".join(
+        f'<a href="#group-{i}">{html.escape(group)}</a>' for i, (group, _names) in enumerate(groups)
+    )
+    legend = "".join(
+        f'<tr><td style="padding: 3px 12px 3px 0;">{chip(tier_name(tier), TIER_KIND[tier])}</td>'
+        f'<td style="padding: 3px 0;">{text}</td></tr>'
+        for tier, text in (
+            (MAIN, tr("แสดงในหน้าตัวชี้วัดและในรายงาน", "On the Findings tab and in the report")),
+            (SUPPORT, tr("ช่วยอธิบายตัวหลักเพิ่ม", "Add detail to the main ones")),
+            (BACKGROUND, tr("ใช้ตรวจคุณภาพ หรือยังเป็นการทดลอง", "Check quality, or are experimental")),
+        )
+    )
     parts = [
         tr("<h1>ตัวชี้วัดแต่ละตัว</h1>", "<h1>Each measure</h1>"),
-        tr(
-            "<p>ตัวชี้วัดทุกตัวเป็นค่าเชิงบรรยายของตัวอย่างภาษาหนึ่งครั้ง ไม่มีตัวไหนบอกว่าเด็กเป็นหรือไม่เป็นออทิสติก "
+        tr('<p class="lead">แต่ละตัวนับอะไร บอกอะไร และต้องระวังอะไร เรียงตามกลุ่มเดียวกับหน้าตัวชี้วัด</p>',
+           '<p class="lead">What each number counts, what it tells you and what to watch for, in the same groups as the Findings tab.</p>'),
+        callout(tr(
+            "<b>ไม่มีตัวไหนบอกว่าเด็กเป็นหรือไม่เป็นออทิสติก</b><br>"
             "เมื่อทดลองกับข้อมูล TalkBank การใช้ MLU และความยาวรอบพูดอย่างเดียวแยกกลุ่มได้ใกล้การเดาสุ่ม (AUC 0.53–0.56) "
-            "ใช้ตัวชี้วัดเพื่อบอกระดับภาษา ติดตามความเปลี่ยนแปลงของเด็กคนเดียวกัน และหาจุดที่ควรกลับไปฟัง</p>"
-            "<p><b>ตัวหลัก</b> แสดงในหน้าตัวชี้วัดและรายงาน <b>ตัวเสริม</b> ช่วยอธิบายเพิ่ม "
-            "<b>ข้อมูลเบื้องหลัง</b> ใช้ตรวจคุณภาพหรือยังเป็นการทดลอง ติ๊ก 'แสดงตัวชี้วัดทั้งหมด' เพื่อดูทุกตัว</p>",
-            "<p>Every measure describes one language sample. None says whether a child is autistic: on TalkBank data, MLU "
-            "and turn length alone separated the groups at about chance (AUC 0.53–0.56). Use them to see the child's language "
-            "level, follow change in the same child, and find places worth listening to again.</p>"
-            "<p><b>Main</b> measures are on the Findings tab and in the report, <b>supporting</b> ones add detail, and "
-            "<b>background</b> ones check quality or are experimental. Tick 'Show all measures' to see every one.</p>",
-        ),
+            "ใช้ตัวชี้วัดเพื่อบอกระดับภาษา ติดตามความเปลี่ยนแปลงของเด็กคนเดียวกัน และหาจุดที่ควรกลับไปฟัง",
+            "<b>None of these says whether a child is autistic.</b><br>"
+            "On TalkBank data, MLU and turn length alone separated the groups at about chance (AUC 0.53–0.56). "
+            "Use them to see the child's language level, follow change in the same child, and find places worth listening to again.",
+        ), "attention"),
+        f'<table cellspacing="0" cellpadding="0" style="margin: 4px 0 4px 0;">{legend}</table>',
+        tr("<p class=\"hint\">ติ๊ก 'แสดงตัวชี้วัดทั้งหมด' ในหน้าตัวชี้วัดเพื่อดูทุกตัว</p>",
+           "<p class=\"hint\">Tick 'Show all measures' on the Findings tab to see every one.</p>"),
+        f'<p class="jump"><b>{tr("ไปที่", "Jump to")}</b>&nbsp;&nbsp;{jump}</p>',
     ]
-    for group, names in labels.FEATURE_GROUPS:
-        parts.append(f"<h2>{html.escape(group)}</h2>")
-        for name in names:
-            if name not in GUIDE or name not in labels.FEATURES:
-                continue
-            tier, thai, english = GUIDE[name]
-            what, helps, caution = thai if tr("th", "en") == "th" else english
-            title = labels.FEATURES[name][0]
-            parts.append(
-                f'<a name="{anchor(name)}"></a><h3>{html.escape(title)} '
-                f'<span style="font-weight: 400; color: {theme.MUTED};">· {tier_name(tier)}</span></h3>'
-                f"<p><b>{tr('คืออะไร', 'What it is')}</b> {html.escape(what)}<br>"
-                f"<b>{tr('ช่วยอย่างไร', 'How it helps')}</b> {html.escape(helps)}<br>"
-                f"<b>{tr('ข้อควรระวัง', 'Watch for')}</b> {html.escape(caution)}</p>"
-            )
+    for i, (group, names) in enumerate(groups):
+        parts.append(f'<h2>{html.escape(group)}{target(f"group-{i}")}</h2>')
+        parts.extend(_entry(name) for name in names)
     parts.append(tr(
-        "<p>แหล่งอ้างอิง: ภัทธาลดา จตุรวิธวงศ์ ภาษาและการพูดในเด็กที่มีภาวะออทิสติก ศิริราชเวชสาร 2566; "
+        "<p class=\"hint\" style=\"margin-top: 24px;\">แหล่งอ้างอิง: ภัทธาลดา จตุรวิธวงศ์ ภาษาและการพูดในเด็กที่มีภาวะออทิสติก ศิริราชเวชสาร 2566; "
         "Assaf et al. 2025, Scientific Reports 15:34134; ผลตรวจของโครงการใน reports/metrics</p>",
-        "<p>Sources: Speech and language in children with autism spectrum disorders, Siriraj Medical Bulletin 16(1), 2023; "
+        "<p class=\"hint\" style=\"margin-top: 24px;\">Sources: Speech and language in children with autism spectrum disorders, Siriraj Medical Bulletin 16(1), 2023; "
         "Assaf et al. 2025, Scientific Reports 15:34134; the project's own checks in reports/metrics.</p>",
     ))
     return "\n".join(parts)

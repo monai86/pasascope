@@ -12,9 +12,10 @@ from __future__ import annotations
 
 import json
 from pathlib import Path
+import re
 
-from PySide6.QtCore import QPointF, QRectF, Qt, QUrl
-from PySide6.QtGui import QColor, QFont, QImage, QPainter, QPainterPath, QPen, QTextDocument
+from PySide6.QtCore import QPointF, QRectF, QSize, Qt, QUrl, Signal
+from PySide6.QtGui import QColor, QDesktopServices, QFont, QImage, QPainter, QPainterPath, QPen, QTextDocument
 from PySide6.QtWidgets import QHBoxLayout, QListWidget, QListWidgetItem, QTextBrowser, QVBoxLayout, QWidget
 
 from packages.desktop.core.i18n import tr
@@ -199,21 +200,33 @@ def boundary_weights_chart() -> QImage:
 # ----------------------------------------------------------------------
 # Articles
 # ----------------------------------------------------------------------
-def _topics() -> list[tuple[str, str]]:
+def _topic_groups() -> list[tuple[str, list[tuple[str, str]]]]:
+    """Topics under the headings the side bar shows."""
     return [
-        ("session", tr("ขั้นตอนของ session", "Working through a session")),
-        ("measures", tr("ตัวชี้วัดแต่ละตัว คืออะไร ช่วยอย่างไร", "Each measure: what it is, how it helps")),
-        ("review", tr("ตรวจร่าง transcript", "Checking the draft transcript")),
-        ("codes", tr("รหัส CHAT", "CHAT codes")),
-        ("mlu", tr("ความยาวประโยค (MLU)", "Utterance length (MLU)")),
-        ("vocabulary", tr("คลังคำ (NDW, TTR)", "Vocabulary (NDW, TTR)")),
-        ("sample", tr("ขนาดตัวอย่าง", "Sample size")),
-        ("echolalia", tr("การพูดตาม (echolalia)", "Echolalia")),
-        ("pronouns", tr("การใช้สรรพนามสลับ", "Pronoun reversal")),
-        ("autism", tr("ตัวชี้วัดบอกอะไรเรื่องออทิสติกได้บ้าง", "What these measures say about autism")),
-        ("decisions", tr("ระบบตัดสินใจอย่างไร", "How PasaScope decides")),
-        ("privacy", tr("ข้อมูลและความเป็นส่วนตัว", "Data and privacy")),
+        (tr("ใช้งานโปรแกรม", "Using PasaScope"), [
+            ("session", tr("ขั้นตอนของ session", "Working through a session")),
+            ("review", tr("ตรวจร่าง transcript", "Checking the draft transcript")),
+            ("codes", tr("รหัส CHAT", "CHAT codes")),
+        ]),
+        (tr("ตัวชี้วัด", "Measures"), [
+            ("measures", tr("ตัวชี้วัดแต่ละตัว", "Each measure")),
+            ("sample", tr("ขนาดตัวอย่าง", "Sample size")),
+            ("mlu", tr("ความยาวประโยค (MLU)", "Utterance length (MLU)")),
+            ("vocabulary", tr("คลังคำ (NDW, TTR)", "Vocabulary (NDW, TTR)")),
+            ("echolalia", tr("การพูดตาม (echolalia)", "Echolalia")),
+            ("pronouns", tr("การใช้สรรพนามสลับ", "Pronoun reversal")),
+        ]),
+        (tr("หลักฐานและเบื้องหลัง", "Evidence and background"), [
+            ("autism", tr("ตัวชี้วัดบอกอะไรเรื่องออทิสติกได้บ้าง", "What the measures say about autism")),
+            ("decisions", tr("ระบบตัดสินใจอย่างไร", "How PasaScope decides")),
+            ("privacy", tr("ข้อมูลและความเป็นส่วนตัว", "Data and privacy")),
+        ]),
     ]
+
+
+def _topics() -> list[tuple[str, str]]:
+    """Every topic, in reading order."""
+    return [topic for _heading, topics in _topic_groups() for topic in topics]
 
 
 def _article(topic: str) -> str:
@@ -270,21 +283,21 @@ def _article(topic: str) -> str:
             ("word [*]", tr("คำที่ใช้ผิด นับใน word errors", "Word error; counted under word errors")),
             ("[+ exc]", tr("ตัดประโยคนี้ออกจากตัวชี้วัดทั้งหมด", "Leave the utterance out of every measure")),
         ]
-        table = "".join(f"<tr><td><code>{code}</code></td><td>{meaning}</td></tr>" for code, meaning in rows)
+        table = "".join(f'<tr><td class="code" width="210"><code>{code}</code></td><td class="code">{meaning}</td></tr>' for code, meaning in rows)
         return tr("<h1>รหัส CHAT</h1><p>รหัสเหล่านี้กำหนดว่าคำไหนถูกนับ ตามกติกาของ CLAN</p>",
-                  "<h1>CHAT codes</h1><p>These codes decide which words are counted, following CLAN's rules.</p>") + f"<table>{table}</table>"
+                  "<h1>CHAT codes</h1><p>These codes decide which words are counted, following CLAN's rules.</p>") + f'<table width="100%" cellspacing="0">{table}</table>'
     if topic == "mlu":
         return tr(
             """<h1>ความยาวประโยค (MLU)</h1>
 <p><b>MLU-w</b> คือจำนวนคำเฉลี่ยต่อประโยคของเด็ก นับตามกติกา CLAN: ไม่นับส่วนที่พูดซ้ำหรือพูดแก้ คำเติม และไม่ใช้ประโยคที่มี xxx/yyy/www</p>
 <div><img src="chart://mlu" width="{WIDTH}" height="{HEIGHT}"></div>
 <p>กราฟจาก transcript TalkBank ภาษาอังกฤษตอนเล่นของเล่น (เส้นคือค่ากลาง แถบคือช่วงครึ่งกลางของเด็ก) MLU เพิ่มตามอายุ เด็กพูดช้าที่ไม่ใช่ออทิสติกก็มีค่าต่ำได้ และกลุ่มต่าง ๆ ซ้อนทับกันมาก กลุ่มเด็กแต่ละกลุ่มมาจากคนละคลังข้อมูล ซึ่งเก็บต่างกัน</p>
-<p><b>ข้อจำกัด</b> ยังไม่มีค่าอ้างอิงของเด็กไทย และค่านี้ขึ้นกับตำแหน่งที่ตัดประโยค ใช้เทียบเด็กคนเดียวกันข้าม session ด้วยกิจกรรมแบบเดียวกัน</p>""",
+<p class="note"><b>ข้อจำกัด</b> ยังไม่มีค่าอ้างอิงของเด็กไทย และค่านี้ขึ้นกับตำแหน่งที่ตัดประโยค ใช้เทียบเด็กคนเดียวกันข้าม session ด้วยกิจกรรมแบบเดียวกัน</p>""",
             """<h1>Utterance length (MLU)</h1>
 <p><b>MLU-w</b> is the child's average number of words per utterance, counted with CLAN's rules: repetitions, retracings and fillers are not counted, and utterances containing xxx, yyy or www are left out.</p>
 <div><img src="chart://mlu" width="{WIDTH}" height="{HEIGHT}"></div>
 <p>English TalkBank toy-play transcripts (line: median; band: the middle half of children). MLU rises with age. Late talkers who are not autistic can be just as low, and the groups overlap widely. Each group comes from different corpora, collected in different ways.</p>
-<p><b>Limits.</b> There are no Thai reference values yet, and MLU depends on where utterances are cut. Compare the same child across sessions with the same kind of activity.</p>""",
+<p class="note"><b>Limits.</b> There are no Thai reference values yet, and MLU depends on where utterances are cut. Compare the same child across sessions with the same kind of activity.</p>""",
         )
     if topic == "vocabulary":
         return tr(
@@ -310,12 +323,12 @@ def _article(topic: str) -> str:
 <p>เด็กพูดซ้ำคำของผู้ใหญ่ที่เพิ่งพูด ทั้งหมด (ทันทีทุกคำ) หรือบางส่วน DSM-5-TR ยกการพูดตามเป็นตัวอย่างของการพูดซ้ำแบบเฉพาะในเกณฑ์ข้อ B1 การพูดตามก็พบในพัฒนาการปกติช่วงอายุน้อยด้วย</p>
 <div><img src="chart://echolalia" width="{WIDTH}" height="{HEIGHT}"></div>
 <p>สัดส่วนประโยคที่เป็นการพูดตาม ตามกฎของ PasaScope ใน transcript ชุดเดียวกับหน้า MLU ค่าของกลุ่มออทิสติกสูงกว่าตั้งแต่อายุ 4 ปี แต่กลุ่มซ้อนทับกัน และกลุ่มมาจากคนละคลังข้อมูล</p>
-<p><b>กฎนี้จับอะไรได้</b> คู่ประโยคผู้ใหญ่กับเด็กที่ใช้คำซ้ำกัน คำตอบปกติที่ใช้คำเดียวกับคำถามก็ถูกจับด้วย จึงต้องยืนยันทีละคู่ ในชุดทดสอบ 40 คู่ จับ echo ได้ครบ 20 คู่ และจับผิด 4 จาก 20 คำตอบปกติ</p>""",
+<p class="note"><b>กฎนี้จับอะไรได้</b> คู่ประโยคผู้ใหญ่กับเด็กที่ใช้คำซ้ำกัน คำตอบปกติที่ใช้คำเดียวกับคำถามก็ถูกจับด้วย จึงต้องยืนยันทีละคู่ ในชุดทดสอบ 40 คู่ จับ echo ได้ครบ 20 คู่ และจับผิด 4 จาก 20 คำตอบปกติ</p>""",
             """<h1>Echolalia</h1>
 <p>The child repeats what an adult has just said, word for word (immediate) or in part. DSM-5-TR names echolalia as an example of stereotyped or repetitive speech under criterion B1. Young typically developing children echo too.</p>
 <div><img src="chart://echolalia" width="{WIDTH}" height="{HEIGHT}"></div>
 <p>The share of utterances PasaScope's rule flags as echoes, in the same transcripts as the MLU page. From age 4 the autistic group is higher, but the groups overlap and come from different corpora.</p>
-<p><b>What the rule catches.</b> Adult-child pairs that share words, including ordinary answers that reuse the question's words, so each pair must be confirmed. On 40 test pairs it caught all 20 echoes and wrongly flagged 4 of 20 ordinary answers.</p>""",
+<p class="note"><b>What the rule catches.</b> Adult-child pairs that share words, including ordinary answers that reuse the question's words, so each pair must be confirmed. On 40 test pairs it caught all 20 echoes and wrongly flagged 4 of 20 ordinary answers.</p>""",
         )
     if topic == "pronouns":
         return tr(
@@ -378,14 +391,94 @@ def _article(topic: str) -> str:
 
 def article_style() -> str:
     return f"""
-body {{ color: {theme.INK}; font-size: 14px; }}
-h1 {{ font-size: 24px; font-weight: 700; margin: 4px 0 12px 0; }}
-h2 {{ font-size: 16px; font-weight: 600; margin: 18px 0 6px 0; }}
-h3 {{ font-size: 14px; font-weight: 600; margin: 12px 0 2px 0; }}
+body {{ color: {theme.INK}; font-size: 15px; }}
+h1 {{ font-size: 26px; font-weight: 700; margin: 0 0 8px 0; }}
+h2 {{ font-size: 19px; font-weight: 600; margin: 30px 0 8px 0; }}
+h3 {{ font-size: 15px; font-weight: 600; margin: 14px 0 2px 0; }}
 p, li {{ line-height: 150%; }}
-td {{ padding: 6px 14px 6px 0; border-bottom: 1px solid {theme.LINE}; }}
-code {{ background: {theme.HOVER}; }}
+p {{ margin: 0 0 12px 0; }}
+li {{ margin: 0 0 6px 0; }}
+.lead {{ color: {theme.INK_SOFT}; font-size: 16px; margin-bottom: 16px; }}
+.hint {{ color: {theme.MUTED}; font-size: 13px; }}
+.jump {{ font-size: 13px; color: {theme.MUTED}; margin: 6px 0 4px 0; }}
+.nav {{ font-size: 14px; }}
+td.code {{ padding: 8px 16px 8px 0; border-bottom: 1px solid {theme.LINE}; }}
+code {{ background-color: {theme.HOVER}; font-family: 'Menlo', 'Consolas', monospace; font-size: 13px; }}
+a {{ color: {theme.LINK}; text-decoration: none; }}
 """
+
+
+READING_WIDTH = 820  # widest the text column grows: about 90 characters a line, and room for a 720 px chart
+
+
+class ReadingView(QTextBrowser):
+    """An article in a centred column that stops widening at a comfortable line length.
+
+    Links to another topic (``topic:mlu``) ask the page to open it; ``#anchor``
+    links scroll within the article.
+    """
+
+    topic_link = Signal(str)
+
+    def __init__(self, parent: QWidget | None = None) -> None:
+        super().__init__(parent)
+        self.setOpenLinks(False)
+        self.anchorClicked.connect(self._follow)
+
+    def _follow(self, url: QUrl) -> None:
+        if url.scheme() == "topic":
+            self.topic_link.emit(url.path())
+        elif url.hasFragment() and not url.scheme():
+            self.scrollToAnchor(url.fragment())
+        else:
+            QDesktopServices.openUrl(url)
+
+    def resizeEvent(self, event) -> None:  # noqa: N802 - Qt name
+        # Qt sends the viewport's own resizes here too, so measure the whole widget, not the event.
+        side = max(0, (self.width() - READING_WIDTH) // 2)
+        if self.viewportMargins().left() != side:
+            self.setViewportMargins(side, 0, side, 0)
+        super().resizeEvent(event)
+
+
+def _with_callouts(body: str) -> str:
+    """``<p class="note">`` paragraphs as shaded callouts."""
+    from packages.desktop.ui.feature_guide import callout
+
+    return re.sub(r'<p class="note">(.*?)</p>', lambda m: callout(m.group(1)), body, flags=re.S)
+
+
+def _with_lead(body: str) -> str:
+    """The paragraph right under the title, set a little larger as the article's summary."""
+    return re.sub(r"(</h1>\s*)<p>", r'\1<p class="lead">', body, count=1)
+
+
+def _navigation(topic: str) -> str:
+    """Previous and next topic at the foot of the article."""
+    keys = [key for key, _title in _topics()]
+    titles = dict(_topics())
+    if topic not in keys:
+        return ""
+    index = keys.index(topic)
+    before = keys[index - 1] if index > 0 else None
+    after = keys[index + 1] if index + 1 < len(keys) else None
+
+    def link(key: str | None, text: str) -> str:
+        return f'<a href="topic:{key}">{text}</a>' if key else ""
+
+    return (
+        f'<table width="100%" cellspacing="0" cellpadding="0" style="margin-top: 36px;"><tr>'
+        f'<td class="nav" style="padding-top: 14px; border-top: 1px solid {theme.LINE};">'
+        f'{link(before, "← " + titles[before]) if before else ""}</td>'
+        f'<td class="nav" align="right" style="padding-top: 14px; border-top: 1px solid {theme.LINE};">'
+        f'{link(after, titles[after] + " →") if after else ""}</td></tr></table>'
+    )
+
+
+def article_html(topic: str) -> str:
+    """The article for ``topic`` as the page shows it: callouts, summary line and the links to the next topic."""
+    body = _article(topic).replace("{WIDTH}", str(WIDTH)).replace("{HEIGHT}", str(HEIGHT))
+    return _with_lead(_with_callouts(body)) + _navigation(topic)
 
 
 class KnowledgePage(QWidget):
@@ -405,24 +498,39 @@ class KnowledgePage(QWidget):
         self.topics.setFixedWidth(280)
         self.topics.setWordWrap(True)
         self.topics.setHorizontalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAlwaysOff)
-        for key, title in _topics():
-            item = QListWidgetItem(title)
-            item.setData(Qt.ItemDataRole.UserRole, key)
-            self.topics.addItem(item)
+        for number, (heading, topics) in enumerate(_topic_groups()):
+            self.topics.addItem(self._heading_item(heading, first=number == 0))
+            for key, title in topics:
+                item = QListWidgetItem(title)
+                item.setData(Qt.ItemDataRole.UserRole, key)
+                self.topics.addItem(item)
         self.topics.currentItemChanged.connect(lambda item, _: item and self._show(item.data(Qt.ItemDataRole.UserRole)))
         side_layout.addWidget(self.topics, 1)
         layout.addWidget(side)
         self.side = side  # the main window moves the topic list into its side bar
 
-        self.article = QTextBrowser()
-        self.article.setOpenExternalLinks(False)
+        self.article = ReadingView()
         self.article.setFrameShape(QTextBrowser.Shape.NoFrame)
         self.article.setObjectName("Article")
-        self.article.document().setDocumentMargin(28)
+        self.article.document().setDocumentMargin(32)
         self.article.document().setDefaultStyleSheet(article_style())
+        self.article.topic_link.connect(self.open_topic)
         layout.addWidget(self.article, 1)
         self._charts_ready = False
-        self.topics.setCurrentRow(0)
+        self.open_topic(_topics()[0][0])
+
+    @staticmethod
+    def _heading_item(text: str, first: bool) -> QListWidgetItem:
+        """A group heading in the topic list: not selectable, small and grey (``#TopicList::item:disabled``)."""
+        item = QListWidgetItem(text)
+        item.setFlags(Qt.ItemFlag.NoItemFlags)
+        font = QFont()
+        font.setPixelSize(11)
+        font.setBold(True)
+        item.setFont(font)
+        item.setSizeHint(QSize(0, 24 if first else 36))
+        item.setTextAlignment(Qt.AlignmentFlag.AlignLeft | Qt.AlignmentFlag.AlignBottom)
+        return item
 
     def _add_charts(self) -> None:
         if self._charts_ready:
@@ -437,10 +545,12 @@ class KnowledgePage(QWidget):
             document.addResource(QTextDocument.ResourceType.ImageResource, QUrl(f"chart://{name}"), image)
         self._charts_ready = True
 
-    def _show(self, topic: str) -> None:
+    def _show(self, topic: str | None) -> None:
+        if not topic:
+            return  # a group heading
         if topic in ("mlu", "echolalia", "autism", "decisions"):
             self._add_charts()
-        self.article.setHtml(_article(topic).replace("{WIDTH}", str(WIDTH)).replace("{HEIGHT}", str(HEIGHT)))
+        self.article.setHtml(article_html(topic))
         motion.fade_in(self.article)
 
     def open_feature(self, name: str) -> None:

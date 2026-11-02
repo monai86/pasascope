@@ -70,6 +70,8 @@ class CommandsMixin:
         for row in range(self.knowledge.topics.count()):
             item = self.knowledge.topics.item(row)
             key = item.data(Qt.ItemDataRole.UserRole)
+            if not key:
+                continue  # a group heading
             commands.append(Command(item.text(), lambda k=key: self.show_knowledge(k), group=topic_group))
         return commands + self._open_commands()
 
