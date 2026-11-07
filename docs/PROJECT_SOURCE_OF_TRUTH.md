@@ -176,7 +176,7 @@ cues แบบ fail-closed และไม่ใส่ผลลงรายง�
 
 ## Version policy
 
-- รุ่นผลิตภัณฑ์ใช้สาย `v1.8.x`
+- รุ่นผลิตภัณฑ์ใช้สาย `v1.9.x`
 - `README.md`, `PROJECT_STATUS.md`, `pyproject.toml`, `packages/desktop` และหัวบนสุดของ
   `CHANGELOG.md` ต้องตรงกัน (`scripts/check_repo_consistency.py` ตรวจ)
 
