@@ -1,5 +1,5 @@
-// PasaScope download page: language, the right download for this computer, the latest
-// release's version and files, and the hero's signal-to-text playback.
+// PasaScope download page: language, OS detection, live GitHub release metadata,
+// and the hero's signal-to-text waveform playback.
 (function () {
   "use strict";
   const REPO = "monai86/pasascope";
@@ -16,13 +16,12 @@
   let saved = null;
   try { saved = localStorage.getItem("pasascope-lang"); } catch (_) { /* private mode */ }
   const wanted = new URLSearchParams(location.search).get("lang");
-  // ?lang= first, then the visitor's earlier choice, then Thai (English is one click away).
   const choice = [wanted, saved].find((code) => code === "th" || code === "en");
   setLanguage(choice || "th");
   document.querySelectorAll("[data-lang-toggle]").forEach((button) =>
     button.addEventListener("click", () => setLanguage(root.dataset.lang === "th" ? "en" : "th")));
 
-  // ----------------------------------------------- which computer is this?
+  // ----------------------------------------------- platform recommendation
   const windows = /Windows/i.test(navigator.userAgent);
   if (windows) {
     document.querySelectorAll("[data-label-mac]").forEach((el) => (el.hidden = true));
@@ -31,9 +30,7 @@
   const recommended = document.querySelector(`.download-card[data-platform="${windows ? "windows" : "mac"}"]`);
   if (recommended) recommended.classList.add("is-recommended");
 
-  // ------------------------------------------- the latest release's files
-  // The page ships with the current version written in; this replaces it with whatever
-  // GitHub says is latest, so a new release needs no edit here.
+  // ------------------------------------------- latest GitHub release files
   function megabytes(bytes) {
     return bytes >= 1e9 ? `${(bytes / 1e9).toFixed(2)} GB` : `${Math.round(bytes / 1e6)} MB`;
   }
@@ -76,7 +73,6 @@
   const canvas = scope && scope.querySelector(".wave");
   if (!scope || !canvas || !canvas.getContext) return;
 
-  // The synthetic recording behind the sample: when each line is spoken, in seconds.
   const TOTAL = 16;
   const turns = [
     { s: 0.4, e: 1.8, child: false, syl: 6 },
@@ -88,7 +84,6 @@
     { s: 11.6, e: 13.0, child: false, syl: 6 },
     { s: 13.5, e: 15.4, child: true, syl: 5 },
   ];
-  // What the readout shows after each child line is counted (CLAN rules, as in the app).
   const tallies = {
     1: { utt: 1, words: 3, mlu: 3.0, ndw: 3, echo: 1 },
     3: { utt: 2, words: 6, mlu: 3.0, ndw: 5, echo: 2 },
@@ -99,11 +94,10 @@
   const totals = {};
   scope.querySelectorAll("[data-total]").forEach((el) => (totals[el.dataset.total] = el));
 
-  // A fixed seed, so the same waveform draws every time.
   let seed = 7;
   const random = () => ((seed = (seed * 16807) % 2147483647) / 2147483647);
-  const BAR = 4;   // CSS px per bar, gap included
-  let bars = [];   // amplitude 0..1 per bar, rebuilt on resize
+  const BAR = 4;
+  let bars = [];
   function buildBars(count) {
     seed = 7;
     const out = new Array(count).fill(0);
@@ -121,12 +115,13 @@
     }
     return out.map((a) => Math.min(1, a * (0.86 + random() * 0.28) + 0.035 + random() * 0.025));
   }
+
   const css = getComputedStyle(root);
   const colour = {
-    idle: "#c9d5ec",
-    adult: "#8796b8",
-    child: css.getPropertyValue("--azure").trim() || "#1c4fff",
-    head: css.getPropertyValue("--azure-deep").trim() || "#1238d4",
+    idle: "#cbd5e1",
+    adult: "#7a88a1",
+    child: css.getPropertyValue("--accent").trim() || "#005fd1",
+    head: css.getPropertyValue("--accent-hover").trim() || "#004cb0",
   };
   function turnAt(t) { return turns.find((turn) => t >= turn.s - 0.15 && t <= turn.e + 0.15); }
   function draw(played) {
@@ -146,7 +141,7 @@
     const mid = height / 2;
     for (let i = 0; i < count; i++) {
       const t = (i / count) * TOTAL;
-      const half = Math.max(1, bars[i] * (mid - 4));
+      const half = Math.max(1.2, bars[i] * (mid - 4));
       const turn = turnAt(t);
       ctx.fillStyle = t > played ? colour.idle : turn ? (turn.child ? colour.child : colour.adult) : colour.idle;
       const x = i * BAR + 0.5;
@@ -160,7 +155,7 @@
       ctx.fillStyle = colour.head;
       ctx.fillRect(Math.round(x) - 0.75, 0, 1.5, height);
       ctx.beginPath();
-      ctx.arc(x, 4, 3.5, 0, Math.PI * 2);
+      ctx.arc(x, 4, 3.2, 0, Math.PI * 2);
       ctx.fill();
     }
   }
@@ -176,7 +171,7 @@
       const from = parseFloat(el.textContent) || 0;
       const start = performance.now();
       const step = (now) => {
-        const k = Math.min(1, (now - start) / 420);
+        const k = Math.min(1, (now - start) / 400);
         const value = from + (target - from) * (1 - (1 - k) ** 3);
         el.textContent = key === "mlu" ? value.toFixed(2) : String(Math.round(value));
         if (k < 1) requestAnimationFrame(step);
@@ -194,7 +189,7 @@
   else window.addEventListener("resize", redraw);
 
   if (reduce || !("IntersectionObserver" in window)) {
-    redraw(); // the finished state: every line counted, numbers as written in the page
+    redraw();
     return;
   }
 
@@ -217,7 +212,7 @@
     running = true;
     replay.hidden = true;
     arm();
-    const SPEED = 2.1; // recording seconds per screen second
+    const SPEED = 2.1;
     let last = performance.now();
     const counted = new Set();
     const frame = (now) => {
@@ -241,7 +236,6 @@
   }
   replay.addEventListener("click", run);
 
-  // Start once the panel is on screen and the fonts have settled, but not wait for long.
   const fonts = Promise.race([
     document.fonts && document.fonts.ready ? document.fonts.ready : Promise.resolve(),
     new Promise((resolve) => setTimeout(resolve, 1500)),
@@ -250,8 +244,8 @@
   const observer = new IntersectionObserver((entries) => {
     if (entries.some((entry) => entry.isIntersecting)) {
       observer.disconnect();
-      fonts.then(() => setTimeout(run, 350));
+      fonts.then(run);
     }
-  }, { threshold: 0.35 });
+  }, { threshold: 0.25 });
   observer.observe(scope);
 })();
