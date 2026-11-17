@@ -9,10 +9,10 @@ from contextlib import contextmanager
 
 import numpy as np
 from PySide6.QtCore import QPointF, QRectF, Qt, Signal
-from PySide6.QtGui import QColor, QFont, QPainter, QPainterPath, QPen
+from PySide6.QtGui import QColor, QFont, QFontMetrics, QPainter, QPainterPath, QPen
 from PySide6.QtWidgets import QFrame, QHeaderView, QLabel, QPushButton, QSizePolicy, QTableWidget, QVBoxLayout, QWidget
 
-from packages.desktop.ui import theme
+from packages.desktop.ui import motion, theme
 
 
 def repolish(widget: QWidget) -> None:
@@ -174,10 +174,77 @@ class EmptyState(QWidget):
             rows.addWidget(row)
 
 
-class WaveformView(QWidget):
-    """Peaks of a recording with utterance regions and a playhead.
+class LiveLevelMeter(QWidget):
+    """Smooth rolling microphone level bars used while recording."""
 
-    Clicking sends ``seek(seconds)``.
+    BARS = 36
+
+    def __init__(self, parent: QWidget | None = None) -> None:
+        super().__init__(parent)
+        self.setMinimumHeight(34)
+        self.setMaximumHeight(42)
+        self._history: list[float] = [0.0] * self.BARS
+        self._smoothed = 0.0
+        self._active = False
+
+    def set_active(self, active: bool) -> None:
+        self._active = active
+        if not active:
+            self._smoothed = 0.0
+        self.update()
+
+    def push(self, level: float) -> None:
+        raw = max(0.0, min(1.0, float(level)))
+        if motion.enabled():
+            alpha = 0.7 if raw >= self._smoothed else 0.35
+            self._smoothed = alpha * raw + (1.0 - alpha) * self._smoothed
+        else:
+            self._smoothed = raw
+        self._history.pop(0)
+        self._history.append(self._smoothed)
+        self.update()
+
+    def reset(self) -> None:
+        self._active = False
+        self._smoothed = 0.0
+        self._history = [0.0] * self.BARS
+        self.update()
+
+    def paintEvent(self, event) -> None:  # noqa: N802 - Qt override
+        painter = QPainter(self)
+        painter.setRenderHint(QPainter.RenderHint.Antialiasing)
+        rect = QRectF(self.rect())
+        painter.setPen(QPen(QColor(theme.LINE), 1.0))
+        painter.setBrush(QColor(theme.SIDEBAR))
+        painter.drawRoundedRect(rect.adjusted(0.5, 0.5, -0.5, -0.5), 6.0, 6.0)
+
+        inner = rect.adjusted(8.0, 5.0, -8.0, -5.0)
+        if inner.width() <= 0 or inner.height() <= 0:
+            return
+        mid = inner.center().y()
+        max_half = inner.height() / 2.0
+        step = inner.width() / len(self._history)
+        bar_w = min(4.0, max(2.0, step * 0.58))
+        offset = (step - bar_w) / 2.0
+
+        painter.setPen(Qt.PenStyle.NoPen)
+        for index, value in enumerate(self._history):
+            x = inner.left() + index * step + offset
+            if self._active and value > 0.02:
+                color = QColor(theme.DANGER if value > 0.9 else theme.PRIMARY)
+                half = max(2.0, value * max_half)
+            else:
+                color = QColor(theme.LINE_STRONG)
+                half = 1.5
+            painter.setBrush(color)
+            radius = min(1.5, bar_w / 2.0, half)
+            painter.drawRoundedRect(QRectF(x, mid - half, bar_w, half * 2.0), radius, radius)
+
+
+class WaveformView(QWidget):
+    """Peaks of a recording with utterance regions, hover scrubbing, and a playhead.
+
+    Clicking or dragging sends ``seek(seconds)``.
     """
 
     seek = Signal(float)
@@ -185,12 +252,15 @@ class WaveformView(QWidget):
     def __init__(self, parent: QWidget | None = None) -> None:
         super().__init__(parent)
         self.setMinimumHeight(84)
+        self.setMouseTracking(True)
         self.setCursor(Qt.CursorShape.PointingHandCursor)
         self._peaks = np.zeros(0, dtype="float32")
         self._duration = 0.0
         self._regions: list[tuple[float, float, str]] = []
         self._selected: tuple[float, float] | None = None
         self._playhead: float | None = None
+        self._hover_x: float | None = None
+        self._scrubbing = False
         self._message = tr("ยังไม่มีไฟล์เสียง", "No recording")
 
     def set_message(self, text: str) -> None:
@@ -224,45 +294,162 @@ class WaveformView(QWidget):
     def _x(self, seconds: float) -> float:
         return 0.0 if self._duration <= 0 else seconds / self._duration * self.width()
 
+    def _seconds_at(self, x: float) -> float:
+        if self._duration <= 0:
+            return 0.0
+        return max(0.0, min(self._duration, x / max(1, self.width()) * self._duration))
+
+    @staticmethod
+    def _format_time(seconds: float) -> str:
+        total_tenths = int(round(max(0.0, seconds) * 10))
+        mins, rem = divmod(total_tenths, 600)
+        secs, tenths = divmod(rem, 10)
+        return f"{mins:02d}:{secs:02d}.{tenths}"
+
+    def enterEvent(self, event) -> None:  # noqa: N802 - Qt override
+        self._hover_x = float(event.position().x())
+        self.update()
+
+    def leaveEvent(self, event) -> None:  # noqa: N802 - Qt override
+        self._hover_x = None
+        self.update()
+
     def mousePressEvent(self, event) -> None:  # noqa: N802 - Qt override
         if self._duration > 0 and event.button() == Qt.MouseButton.LeftButton:
-            self.seek.emit(max(0.0, min(self._duration, event.position().x() / max(1, self.width()) * self._duration)))
+            self._scrubbing = True
+            self._hover_x = float(event.position().x())
+            seconds = self._seconds_at(self._hover_x)
+            self._playhead = seconds
+            self.seek.emit(seconds)
+            self.update()
+
+    def mouseMoveEvent(self, event) -> None:  # noqa: N802 - Qt override
+        self._hover_x = float(event.position().x())
+        if self._duration > 0 and (event.buttons() & Qt.MouseButton.LeftButton):
+            seconds = self._seconds_at(self._hover_x)
+            self._playhead = seconds
+            self.seek.emit(seconds)
+        self.update()
+
+    def mouseReleaseEvent(self, event) -> None:  # noqa: N802 - Qt override
+        if event.button() == Qt.MouseButton.LeftButton:
+            self._scrubbing = False
+            self.update()
 
     def paintEvent(self, event) -> None:  # noqa: N802 - Qt override
         painter = QPainter(self)
         painter.setRenderHint(QPainter.RenderHint.Antialiasing)
         rect = self.rect()
-        painter.fillRect(rect, QColor(theme.SURFACE))
-        painter.setPen(QPen(QColor(theme.LINE)))
-        painter.drawRoundedRect(QRectF(rect).adjusted(0.5, 0.5, -0.5, -0.5), 8, 8)
+        outer = QRectF(rect).adjusted(0.5, 0.5, -0.5, -0.5)
+        painter.setPen(Qt.PenStyle.NoPen)
+        painter.setBrush(QColor(theme.SURFACE))
+        painter.drawRoundedRect(outer, 8.0, 8.0)
+
         if self._duration <= 0 or not self._peaks.size:
+            painter.setPen(QPen(QColor(theme.LINE), 1.0))
+            painter.setBrush(Qt.BrushStyle.NoBrush)
+            painter.drawRoundedRect(outer, 8.0, 8.0)
             painter.setPen(QColor(theme.MUTED))
             painter.drawText(rect, Qt.AlignmentFlag.AlignCenter, self._message)
             return
 
-        h = rect.height()
+        w = max(1.0, float(rect.width()))
+        h = max(1.0, float(rect.height()))
+        clip = QPainterPath()
+        clip.addRoundedRect(QRectF(rect).adjusted(1.0, 1.0, -1.0, -1.0), 7.0, 7.0)
+        painter.save()
+        painter.setClipPath(clip)
+
         for start, end, speaker in self._regions:
             color = QColor(theme.SPEAKER_COLORS.get(speaker, theme.MUTED))
-            color.setAlpha(28)
-            painter.fillRect(QRectF(self._x(start), 0, max(1.0, self._x(end) - self._x(start)), h), color)
+            color.setAlpha(24)
+            painter.fillRect(QRectF(self._x(start), 0.0, max(1.0, self._x(end) - self._x(start)), h), color)
         if self._selected:
             start, end = self._selected
             color = QColor(theme.PRIMARY)
-            color.setAlpha(60)
-            painter.fillRect(QRectF(self._x(start), 0, max(2.0, self._x(end) - self._x(start)), h), color)
+            color.setAlpha(42)
+            painter.fillRect(QRectF(self._x(start), 0.0, max(2.0, self._x(end) - self._x(start)), h), color)
 
-        mid = h / 2
-        step = self.width() / len(self._peaks)
-        painter.setPen(QPen(QColor(theme.INK_SOFT), max(1.0, step * 0.7)))
-        for i, peak in enumerate(self._peaks):
-            x = i * step + step / 2
-            half = max(0.5, float(peak) * (mid - 6))
-            painter.drawLine(QPointF(x, mid - half), QPointF(x, mid + half))
+        mid = h / 2.0
+        painter.setPen(QPen(QColor(theme.LINE), 1.0))
+        painter.drawLine(QPointF(0.0, mid), QPointF(w, mid))
+
+        # Mirrored rounded waveform bars
+        n_peaks = len(self._peaks)
+        n_bars = max(1, int(w // 4.5))
+        if n_peaks > n_bars:
+            bars = [
+                float(self._peaks[int(i * n_peaks / n_bars):max(int(i * n_peaks / n_bars) + 1, int((i + 1) * n_peaks / n_bars))].max())
+                for i in range(n_bars)
+            ]
+            step = w / n_bars
+            bar_w = min(3.0, max(2.0, step * 0.65))
+        else:
+            bars = [float(p) for p in self._peaks]
+            step = w / max(1, len(bars))
+            bar_w = min(4.0, max(2.0, step * 0.68))
+        offset = (step - bar_w) / 2.0
+
+        painter.setPen(Qt.PenStyle.NoPen)
+        for i, peak in enumerate(bars):
+            x = i * step + offset
+            t_bar = ((x + bar_w / 2.0) / w) * self._duration
+            if self._selected and self._selected[0] <= t_bar <= self._selected[1]:
+                bar_color = QColor(theme.PRIMARY)
+            elif self._playhead is not None and t_bar <= self._playhead:
+                bar_color = QColor(theme.INK_SOFT)
+                bar_color.setAlpha(210)
+            else:
+                bar_color = QColor(theme.MUTED)
+                bar_color.setAlpha(150)
+            painter.setBrush(bar_color)
+            half = max(1.5, min(1.0, max(0.0, peak)) * (mid - 10.0))
+            radius = min(1.5, bar_w / 2.0, half)
+            painter.drawRoundedRect(QRectF(x, mid - half, bar_w, half * 2.0), radius, radius)
+
+        if self._hover_x is not None and 0.0 <= self._hover_x <= w:
+            hx = max(1.0, min(w - 1.0, self._hover_x))
+            hover_color = QColor(theme.INK_SOFT)
+            hover_color.setAlpha(130)
+            painter.setPen(QPen(hover_color, 1.0, Qt.PenStyle.DashLine))
+            painter.drawLine(QPointF(hx, 2.0), QPointF(hx, h - 2.0))
+
+            pill_text = self._format_time(self._seconds_at(hx))
+            pill_font = QFont(self.font())
+            pill_font.setPointSize(11)
+            pill_font.setWeight(QFont.Weight.DemiBold)
+            painter.setFont(pill_font)
+            fm = QFontMetrics(pill_font)
+            pill_w = float(fm.horizontalAdvance(pill_text) + 12)
+            pill_h = float(fm.height() + 4)
+            pill_x = max(4.0, min(w - pill_w - 4.0, hx - pill_w / 2.0))
+            pill_rect = QRectF(pill_x, 4.0, pill_w, pill_h)
+            painter.setPen(Qt.PenStyle.NoPen)
+            painter.setBrush(QColor(theme.TOOLTIP))
+            painter.drawRoundedRect(pill_rect, 4.0, 4.0)
+            painter.setPen(QColor(theme.TOOLTIP_TEXT))
+            painter.drawText(pill_rect, Qt.AlignmentFlag.AlignCenter, pill_text)
 
         if self._playhead is not None:
-            painter.setPen(QPen(QColor(theme.DANGER), 2))
-            x = self._x(self._playhead)
-            painter.drawLine(QPointF(x, 0), QPointF(x, h))
+            px = max(1.0, min(w - 1.0, self._x(self._playhead)))
+            primary = QColor(theme.PRIMARY)
+            painter.setPen(QPen(primary, 2.0))
+            painter.drawLine(QPointF(px, 6.0), QPointF(px, h - 1.0))
+            cap = QPainterPath()
+            cap.moveTo(px - 5.0, 1.0)
+            cap.lineTo(px + 5.0, 1.0)
+            cap.lineTo(px + 5.0, 5.0)
+            cap.lineTo(px, 9.5)
+            cap.lineTo(px - 5.0, 5.0)
+            cap.closeSubpath()
+            painter.setPen(Qt.PenStyle.NoPen)
+            painter.setBrush(primary)
+            painter.drawPath(cap)
+
+        painter.restore()
+        painter.setPen(QPen(QColor(theme.LINE), 1.0))
+        painter.setBrush(Qt.BrushStyle.NoBrush)
+        painter.drawRoundedRect(outer, 8.0, 8.0)
 
 
 def _nice_ceiling(value: float) -> float:

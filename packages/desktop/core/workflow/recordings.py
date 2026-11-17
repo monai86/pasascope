@@ -25,6 +25,9 @@ from packages.desktop.core.workflow.common import (
 )
 
 
+_WARMUP_LOCK = threading.Lock()
+
+
 class RecordingsMixin:
     def transcription_availability(self) -> tuple[bool, str]:
         """Whether on-device Whisper can run, and why not when it cannot."""
@@ -187,3 +190,30 @@ class RecordingsMixin:
             raise WorkflowError(tr(f"ถอดเสียงไม่สำเร็จ: {job.message}", f"Transcription failed: {job.message}"))
         self._save()
         return self.get_transcript(session_id)
+
+    def warm_up_asr(self) -> None:
+        """Pre-load the active Whisper model into memory when ready, without raising."""
+        with _WARMUP_LOCK:
+            try:
+                available, _ = self.transcription_availability()
+                if not available:
+                    return
+                from app.core.config import get_settings
+                from src.audio_pipeline.whisper_transcribe import (
+                    WhisperTranscriber,
+                    thai_specialized_model_ready,
+                )
+
+                settings = get_settings()
+                strategy = settings.asr_language_strategy
+                transcriber = WhisperTranscriber(
+                    model_size=settings.asr_whisper_model_size,
+                    strategy=strategy,
+                )
+                transcriber._load_detector()
+                if strategy == "thai_specialized" and thai_specialized_model_ready():
+                    transcriber._load_thai_specialized()
+                else:
+                    transcriber._load()
+            except Exception:  # noqa: BLE001 - background pre-warming is best-effort
+                return

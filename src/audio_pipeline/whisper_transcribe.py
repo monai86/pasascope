@@ -186,12 +186,16 @@ _LOUD_FRAME_LEVEL = 0.1  # RMS the 95th-percentile 25 ms frame is scaled to
 _FRAME_SAMPLES = 400
 
 
-def _level_normalized(audio_path: str):
+def _level_normalized(audio_path_or_samples: str | Path | Any):
     """16 kHz mono samples with the loud frames at a fixed level."""
     import numpy as np
-    from faster_whisper.audio import decode_audio
 
-    audio = decode_audio(audio_path, sampling_rate=16000)
+    if isinstance(audio_path_or_samples, np.ndarray):
+        audio = np.asarray(audio_path_or_samples, dtype="float32").copy()
+    else:
+        from faster_whisper.audio import decode_audio
+
+        audio = decode_audio(str(audio_path_or_samples), sampling_rate=16000)
     frames = audio[: len(audio) // _FRAME_SAMPLES * _FRAME_SAMPLES].reshape(-1, _FRAME_SAMPLES)
     if not len(frames):
         return audio
@@ -494,17 +498,25 @@ class WhisperTranscriber:
         )
         return self._model_th
 
-    def _detect_language(self, audio_path: str) -> Optional[str]:
+    def _detect_language(self, audio_path_or_samples: str | Path | Any) -> Optional[str]:
         """Spoken language of the recording, from the multilingual model.
 
         The Thai fine-tuned model writes everything as Thai, so it is only
         given recordings the multilingual model hears as Thai.
         """
-        from faster_whisper import decode_audio
+        import numpy as np
 
-        audio = decode_audio(audio_path, sampling_rate=16000)
+        if isinstance(audio_path_or_samples, np.ndarray):
+            audio = np.asarray(audio_path_or_samples, dtype="float32")
+        else:
+            from faster_whisper import decode_audio
+
+            audio = decode_audio(str(audio_path_or_samples), sampling_rate=16000)
         if not len(audio):
             return None
+        # Only up to 3 segments are inspected, so cap to the first 90 s to avoid
+        # running Silero VAD across a long recording just for language detection.
+        audio = audio[: 90 * 16000]
         language, _probability, _all = self._load_detector().detect_language(
             audio=audio, vad_filter=True, language_detection_segments=3,
         )
@@ -750,12 +762,13 @@ class WhisperTranscriber:
     # ------------------------------------------------------------------
     def transcribe(
         self,
-        audio_path: str | Path,
+        audio_path: str | Path | Any,
         *,
         vad_filter: bool = True,
         beam_size: int = 1,
         temperature: float | list[float] = 0.0,
         progress_callback: Optional[Any] = None,
+        audio_samples: Optional[Any] = None,
     ) -> List[UtteranceSegment]:
         """Transcribe audio into a list of utterance segments.
 
@@ -764,8 +777,9 @@ class WhisperTranscriber:
 
         Parameters
         ----------
-        audio_path : Path-like
-            Any format supported by ffmpeg (wav, mp3, m4a, ...).
+        audio_path : Path-like or 16 kHz float32 ndarray
+            Any format supported by ffmpeg (wav, mp3, m4a, ...), or a
+            pre-decoded 16 kHz mono float32 numpy array.
         vad_filter : bool
             Use Whisper's built-in voice-activity-detector to skip
             non-speech chunks.  Greatly reduces hallucinations during
@@ -776,20 +790,27 @@ class WhisperTranscriber:
             Sampling temperature. Defaults to 0.0 for deterministic fast decoding.
         progress_callback : Callable[[float, str], None] | None
             Optional callback to report real-time fraction (0.0 - 1.0) and status message.
+        audio_samples : np.ndarray | None
+            Optional pre-decoded 16 kHz mono float32 samples matching ``audio_path``.
         """
-        audio_path = str(audio_path)
+        import numpy as np
+
+        if audio_samples is None and isinstance(audio_path, np.ndarray):
+            audio_samples = audio_path
+        else:
+            audio_path = str(audio_path)
 
         if self.strategy == "api_openai":
             api_key = os.environ.get("OPENAI_API_KEY")
             if not api_key:
                 print("[ASR] OPENAI_API_KEY missing, falling back to local model.")
                 self.strategy = "auto"
-                return self.transcribe(audio_path, vad_filter=vad_filter, beam_size=beam_size, temperature=temperature, progress_callback=progress_callback)
+                return self.transcribe(audio_path, vad_filter=vad_filter, beam_size=beam_size, temperature=temperature, progress_callback=progress_callback, audio_samples=audio_samples)
 
             if _OpenAIClient is None:
                 print("[ASR] OpenAI SDK unavailable, falling back to local model.")
                 self.strategy = "auto"
-                return self.transcribe(audio_path, vad_filter=vad_filter, beam_size=beam_size, temperature=temperature, progress_callback=progress_callback)
+                return self.transcribe(audio_path, vad_filter=vad_filter, beam_size=beam_size, temperature=temperature, progress_callback=progress_callback, audio_samples=audio_samples)
 
             try:
                 client = _OpenAIClient(api_key=api_key)
@@ -805,7 +826,7 @@ class WhisperTranscriber:
             except Exception as e:
                 print(f"[ASR] OpenAI API error: {e}, falling back to local model.")
                 self.strategy = "auto"
-                return self.transcribe(audio_path, vad_filter=vad_filter, beam_size=beam_size, temperature=temperature, progress_callback=progress_callback)
+                return self.transcribe(audio_path, vad_filter=vad_filter, beam_size=beam_size, temperature=temperature, progress_callback=progress_callback, audio_samples=audio_samples)
             
             out: List[UtteranceSegment] = []
             segments = getattr(response, "segments", []) or []
@@ -851,34 +872,41 @@ class WhisperTranscriber:
         else:
             prompt = PROMPT_BILINGUAL
 
+        raw_source = np.asarray(audio_samples, dtype="float32") if audio_samples is not None else audio_path
+        vad_source = (
+            _level_normalized(raw_source)
+            if (vad_filter and isinstance(raw_source, np.ndarray))
+            else raw_source
+        )
+
         if self.strategy == "dual_pass":
             model = self._load()
             self.last_model_id = self.model_size
             en = self._run_single(
-                model, audio_path, language="en",
+                model, vad_source, language="en",
                 vad_filter=vad_filter, beam_size=beam_size, prompt=PROMPT_EN,
                 temperature=temperature, progress_callback=progress_callback,
             )
             if vad_filter:
                 en = self._fallback_if_sparse(
-                    en, model, audio_path,
+                    en, model, raw_source,
                     language="en", beam_size=beam_size, prompt=PROMPT_EN,
                     temperature=temperature,
                 )
             th = self._run_single(
-                model, audio_path, language="th",
+                model, vad_source, language="th",
                 vad_filter=vad_filter, beam_size=beam_size, prompt=PROMPT_TH,
                 temperature=temperature, progress_callback=progress_callback,
             )
             if vad_filter:
                 th = self._fallback_if_sparse(
-                    th, model, audio_path,
+                    th, model, raw_source,
                     language="th", beam_size=beam_size, prompt=PROMPT_TH,
                     temperature=temperature,
                 )
             return self._merge_dual_pass(en, th)
 
-        if self.strategy == "thai_specialized" and self._detect_language(audio_path) in (None, "th"):
+        if self.strategy == "thai_specialized" and self._detect_language(raw_source) in (None, "th"):
             model = self._load_thai_specialized()
             self.last_model_id = THAI_SPECIALIZED_SOURCE_MODEL
             # Thonburian Whisper was fine-tuned without prompts: with PROMPT_TH
@@ -887,13 +915,13 @@ class WhisperTranscriber:
             # caller prompt is passed.
             th_prompt = self._initial_prompt
             primary = self._run_single(
-                model, audio_path, language="th",
+                model, vad_source, language="th",
                 vad_filter=vad_filter, beam_size=beam_size, prompt=th_prompt,
                 temperature=temperature, progress_callback=progress_callback,
             )
             if vad_filter:
                 return self._fallback_if_sparse(
-                    primary, model, audio_path,
+                    primary, model, raw_source,
                     language="th", beam_size=beam_size, prompt=th_prompt,
                     temperature=temperature,
                 )
@@ -904,13 +932,13 @@ class WhisperTranscriber:
         model = self._load()
         self.last_model_id = self.model_size
         primary = self._run_single(
-            model, audio_path, language=self._explicit_language,
+            model, vad_source, language=self._explicit_language,
             vad_filter=vad_filter, beam_size=beam_size, prompt=prompt,
             temperature=temperature, progress_callback=progress_callback,
         )
         if vad_filter:
             return self._fallback_if_sparse(
-                primary, model, audio_path,
+                primary, model, raw_source,
                 language=self._explicit_language, beam_size=beam_size, prompt=prompt,
                 temperature=temperature,
             )

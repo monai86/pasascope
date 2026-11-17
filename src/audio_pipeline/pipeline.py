@@ -17,6 +17,7 @@ dashboard + CLI can call.
 
 from __future__ import annotations
 
+import inspect
 import tempfile
 from dataclasses import dataclass
 from functools import wraps
@@ -55,6 +56,43 @@ def decode_to_wav(source: Path, destination: Path) -> None:
     from faster_whisper.audio import decode_audio
 
     soundfile.write(str(destination), decode_audio(str(source), sampling_rate=PIPELINE_SAMPLE_RATE), PIPELINE_SAMPLE_RATE)
+
+
+def _load_16k_mono(audio_path: Path) -> Optional[Any]:
+    """Decode audio once to 16 kHz mono float32 for ASR, diarization, and F0."""
+    try:
+        import numpy as np
+        import soundfile as sf
+
+        info = sf.info(str(audio_path))
+        if (
+            audio_path.suffix.lower() == ".wav"
+            and info.samplerate == PIPELINE_SAMPLE_RATE
+            and info.channels == 1
+            and info.subtype == "PCM_16"
+        ):
+            y, _ = sf.read(str(audio_path), dtype="float32")
+            return np.asarray(y, dtype="float32")
+    except Exception:
+        pass
+    try:
+        from faster_whisper.audio import decode_audio
+
+        return decode_audio(str(audio_path), sampling_rate=PIPELINE_SAMPLE_RATE)
+    except Exception:
+        return None
+
+
+def _accepts_kwarg(fn: Any, name: str) -> bool:
+    """True when ``fn`` accepts ``name`` as a keyword argument."""
+    try:
+        params = inspect.signature(fn).parameters.values()
+    except (TypeError, ValueError):
+        return False
+    return any(
+        p.name == name or p.kind == inspect.Parameter.VAR_KEYWORD
+        for p in params
+    )
 
 
 def _decoded_to_wav_first(pipeline):
@@ -147,6 +185,8 @@ def audio_to_cha(
     if progress_callback:
         progress_callback(0.08, "Loading audio file & initializing model...")
 
+    y_16k = _load_16k_mono(audio_path)
+
     # ---- 1. ASR ------------------------------------------------------------
     transcriber = WhisperTranscriber(
         model_size=model_size, device=device,
@@ -154,7 +194,12 @@ def audio_to_cha(
     )
     if progress_callback:
         progress_callback(0.18, "Running Whisper speech transcription...")
-    utterances = transcriber.transcribe(audio_path, progress_callback=progress_callback)
+    if y_16k is not None and _accepts_kwarg(transcriber.transcribe, "audio_samples"):
+        utterances = transcriber.transcribe(
+            audio_path, progress_callback=progress_callback, audio_samples=y_16k
+        )
+    else:
+        utterances = transcriber.transcribe(audio_path, progress_callback=progress_callback)
     utterances = spell_out_thai_numbers(utterances)
 
     # ---- 2. Diarization ---------------------------------------------------
@@ -167,6 +212,13 @@ def audio_to_cha(
             child_age_months=child_age_months,
             enrollment_audio_path=enrollment_audio_path,
         )
+    if y_16k is not None:
+        try:
+            diarizer.last_audio = (y_16k, PIPELINE_SAMPLE_RATE)
+            diarizer._last_audio_path = str(audio_path)
+            diarizer.last_f0_cache = None
+        except Exception:
+            pass
     # Cut at pauses first: a recogniser segment that spans a whole exchange
     # would otherwise receive a single speaker label.
     utterances = split_at_pauses(drop_short_segments(utterances))
@@ -220,8 +272,8 @@ def audio_to_cha(
     # Re-use pre-computed audio and F0 contour from diarization stage to cut pipeline latency by >50%
     cached_audio = getattr(diarizer, "last_audio", None)
     cached_f0 = getattr(diarizer, "last_f0_cache", None)
-    y_cached = cached_audio[0] if cached_audio else None
-    sr_cached = cached_audio[1] if cached_audio else 16000
+    y_cached = cached_audio[0] if cached_audio else y_16k
+    sr_cached = cached_audio[1] if cached_audio else PIPELINE_SAMPLE_RATE
 
     acoustic_profile = compute_acoustic_profile(
         audio_path,

@@ -143,6 +143,10 @@ QMainWindow, QDialog {{ background: {CANVAS}; }}
 #Step[state="done"] {{ color: {FAINT}; text-decoration: line-through; }}
 #Step[state="current"] {{ color: {INK}; font-weight: 600; }}
 #Step[state="todo"] {{ color: {MUTED}; }}
+#ProgressSteps #Step {{ padding: 4px 10px; border-radius: 4px; font-size: 12px; background: {SIDEBAR}; color: {MUTED}; }}
+#ProgressSteps #Step[state="done"] {{ background: {PRIMARY_SOFT}; color: {PRIMARY_TEXT}; text-decoration: none; font-weight: 500; }}
+#ProgressSteps #Step[state="current"] {{ background: {PRIMARY}; color: {ON_PRIMARY}; font-weight: 600; }}
+#ProgressSteps #Step[state="todo"] {{ background: {SIDEBAR}; color: {MUTED}; }}
 #Evidence {{ background: {SIDEBAR}; border-radius: 4px; }}
 #EvidenceChild {{ color: {PRIMARY_TEXT}; font-weight: 600; }}
 #RecordTime {{ font-size: 28px; font-weight: 700; color: {INK}; }}

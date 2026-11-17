@@ -29,6 +29,7 @@ import hashlib
 import math
 import os
 from pathlib import Path
+import threading
 from typing import List, Optional, Sequence
 
 import numpy as np
@@ -39,6 +40,8 @@ from .whisper_transcribe import UtteranceSegment
 MODEL_URL = "https://huggingface.co/AlexXu811/whisper-child-adult/resolve/main/whisper-base_rank8_pretrained_50k.pt"
 MODEL_SHA256 = "02075ccf2ee56c1ea13481264552525a2d812b39ca5c9027dfd66d2ace7d6a2b"
 MODEL_PATH_ENV = "PASASCOPE_CHILD_ADULT_MODEL"
+TORCH_DEVICE_ENV = "PASASCOPE_TORCH_DEVICE"
+FRAME_BATCH_SIZE = 16
 SAMPLE_RATE = 16000
 FRAME_SECONDS = 0.02
 WINDOW_SECONDS = 10.0
@@ -177,14 +180,55 @@ def _build_network(state: dict):
     return net.eval()
 
 
+def default_torch_device() -> str:
+    """Return the preferred PyTorch device ('mps', 'cuda', or 'cpu')."""
+    configured = os.environ.get(TORCH_DEVICE_ENV, "").strip().lower()
+    if configured:
+        return configured
+    import torch
+
+    if getattr(torch.backends, "mps", None) is not None and torch.backends.mps.is_available():
+        return "mps"
+    if torch.cuda.is_available():
+        return "cuda"
+    return "cpu"
+
+
+_FRAME_MODEL_CACHE: dict[tuple[str, str], "ChildAdultFrameModel"] = {}
+_FRAME_MODEL_LOCK = threading.Lock()
+
+
+def get_cached_frame_model(
+    model_path: Optional[Path] = None,
+    device: Optional[str] = None,
+) -> "ChildAdultFrameModel":
+    """Return a cached ChildAdultFrameModel instance for (model_path, device)."""
+    resolved_path = str(Path(model_path or default_model_path()))
+    resolved_device = device or default_torch_device()
+    key = (resolved_path, resolved_device)
+    with _FRAME_MODEL_LOCK:
+        cached = _FRAME_MODEL_CACHE.get(key)
+        if cached is None:
+            cached = ChildAdultFrameModel(model_path=model_path, device=resolved_device)
+            _FRAME_MODEL_CACHE[key] = cached
+        return cached
+
+
 class ChildAdultFrameModel:
     """Labels each 20 ms frame of 16 kHz audio as silence, child, adult or overlap."""
 
-    def __init__(self, model_path: Optional[Path] = None) -> None:
+    def __init__(self, model_path: Optional[Path] = None, device: Optional[str] = None) -> None:
         import torch
 
         state = torch.load(str(ensure_model(model_path)), map_location="cpu", weights_only=True)
         self.net = _build_network(state)
+        self.device = device or default_torch_device()
+        if self.device != "cpu":
+            try:
+                self.net = self.net.to(self.device)
+            except Exception:
+                self.device = "cpu"
+                self.net = self.net.to("cpu")
         from faster_whisper.feature_extractor import FeatureExtractor
 
         self._mel = FeatureExtractor(feature_size=80)
@@ -212,20 +256,48 @@ class ChildAdultFrameModel:
         starts = list(range(0, max(1, len(audio) - window) + 1, hop))
         if starts[-1] + window < len(audio):
             starts.append(len(audio) - window)
+
+        window_mels: list[tuple[int, np.ndarray]] = []
+        for start in starts:
+            chunk = audio[start:start + window]
+            if len(chunk) < SAMPLE_RATE // 2:
+                continue
+            mel = self._mel(chunk, padding=0)
+            mel = mel[:, : 2 * (mel.shape[1] // 2)]
+            window_mels.append((start, mel))
+
+        device = getattr(self, "device", "cpu")
         with torch.inference_mode():
-            for start in starts:
-                chunk = audio[start:start + window]
-                if len(chunk) < SAMPLE_RATE // 2:
-                    continue
-                mel = self._mel(chunk, padding=0)
-                mel = mel[:, : 2 * (mel.shape[1] // 2)]
-                hidden, logits = self.net.features_and_logits(torch.from_numpy(mel).unsqueeze(0))
-                probs = torch.softmax(logits[0], dim=-1).numpy()
-                first = int(round(start / SAMPLE_RATE / FRAME_SECONDS))
-                last = min(first + len(probs), len(totals))
-                totals[first:last] += probs[: last - first]
-                features[first:last] += hidden[0, : last - first].numpy()
-                counts[first:last] += 1
+            idx = 0
+            while idx < len(window_mels):
+                batch_shape = window_mels[idx][1].shape
+                end = idx + 1
+                while (
+                    end < len(window_mels)
+                    and end - idx < FRAME_BATCH_SIZE
+                    and window_mels[end][1].shape == batch_shape
+                ):
+                    end += 1
+                batch = window_mels[idx:end]
+                idx = end
+                batch_tensor = torch.from_numpy(np.stack([m for _, m in batch]))
+                try:
+                    hidden, logits = self.net.features_and_logits(batch_tensor.to(device))
+                except Exception:
+                    if device == "cpu":
+                        raise
+                    device = "cpu"
+                    self.device = "cpu"
+                    self.net = self.net.to("cpu")
+                    hidden, logits = self.net.features_and_logits(batch_tensor)
+                probs_batch = torch.softmax(logits, dim=-1).cpu().numpy()
+                hidden_batch = hidden.cpu().numpy()
+                for (start, _), probs, hid in zip(batch, probs_batch, hidden_batch):
+                    first = int(round(start / SAMPLE_RATE / FRAME_SECONDS))
+                    last = min(first + len(probs), len(totals))
+                    totals[first:last] += probs[: last - first]
+                    features[first:last] += hid[: last - first]
+                    counts[first:last] += 1
         counts[counts == 0] = 1
         return features / counts[:, None].astype("float32"), totals / counts[:, None]
 
@@ -287,14 +359,21 @@ class FrameRoleDiarizer(BaseDiarizer):
         self, model: Optional[ChildAdultFrameModel] = None, child_age_months: Optional[float] = None, clinic_head=_FROM_ENVIRONMENT,
     ) -> None:
         super().__init__()
-        self.model = model or ChildAdultFrameModel()
+        self.model = model or get_cached_frame_model()
         self.child_age_months = child_age_months
         self.clinic_head = _clinic_head(clinic_head)
 
-    def assign(self, audio_path, utterances: Sequence[UtteranceSegment]) -> List[UtteranceSegment]:
-        import librosa
-
-        audio, _ = librosa.load(str(audio_path), sr=SAMPLE_RATE, mono=True)
+    def assign(
+        self,
+        audio_path,
+        utterances: Sequence[UtteranceSegment],
+        *,
+        y_audio: Optional[np.ndarray] = None,
+        sr_audio: int = SAMPLE_RATE,
+    ) -> List[UtteranceSegment]:
+        audio, _ = self._resolve_audio(
+            audio_path, y_audio=y_audio, sr_audio=sr_audio, target_sr=SAMPLE_RATE
+        )
         margins = speaker_margins(self.model, audio, utterances, self.clinic_head)
         for utt, margin in zip(utterances, margins):
             utt.speaker = CHILD_LABEL if margin > 0 else ADULT_LABEL
@@ -325,15 +404,24 @@ class HybridChildAdultDiarizer:
         class _Hybrid(EmbeddingDiarizer):
             def __init__(self, config=None, model: Optional[ChildAdultFrameModel] = None, clinic_head=_FROM_ENVIRONMENT) -> None:
                 super().__init__(config or hybrid_config())
-                self.frame_model = model or ChildAdultFrameModel()
+                self.frame_model = model or get_cached_frame_model()
                 self.clinic_head = _clinic_head(clinic_head)
 
-            def assign(self, audio_path, utterances):
-                import librosa
-
-                audio, _ = librosa.load(str(audio_path), sr=SAMPLE_RATE, mono=True)
+            def assign(
+                self,
+                audio_path,
+                utterances,
+                *,
+                y_audio: Optional[np.ndarray] = None,
+                sr_audio: int = SAMPLE_RATE,
+            ):
+                audio, _ = self._resolve_audio(
+                    audio_path, y_audio=y_audio, sr_audio=sr_audio, target_sr=SAMPLE_RATE
+                )
                 margins = speaker_margins(self.frame_model, audio, utterances, self.clinic_head)
                 try:
+                    self.last_audio = (audio, SAMPLE_RATE)
+                    self._last_audio_path = str(audio_path)
                     labelled = super().assign(audio_path, utterances)
                 except Exception as exc:  # noqa: BLE001 - adults just stay unnamed
                     print(f"[diarization] adult naming by voice failed: {exc}")

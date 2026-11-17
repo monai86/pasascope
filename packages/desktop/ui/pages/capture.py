@@ -25,11 +25,18 @@ from PySide6.QtWidgets import (
 from packages.desktop.ui import labels
 from packages.desktop.ui.audio import Recorder
 from packages.desktop.ui.pages.base import SessionPage
-from packages.desktop.ui.widgets import button, card, chip, label, set_chip
+from packages.desktop.ui.widgets import LiveLevelMeter, button, card, chip, label, set_chip, set_style_property
 from packages.desktop.ui import message
 
 AUDIO_FILTER = tr("ไฟล์เสียง (*.wav *.mp3 *.m4a *.mp4 *.webm *.ogg)", "Audio (*.wav *.mp3 *.m4a *.mp4 *.webm *.ogg)")
 TEXT_FILTER = "Transcript (*.cha *.txt)"
+
+PROGRESS_STEPS = (
+    tr("1. เตรียมเสียง", "1. Prepare audio"),
+    tr("2. ถอดเสียง Whisper", "2. Transcribe"),
+    tr("3. แยกเสียงเด็ก-ผู้ใหญ่", "3. Separate speakers"),
+    tr("4. จัดรูปแบบ CHAT", "4. Format CHAT"),
+)
 
 STAGES = [
     ("Loading", tr("กำลังโหลดโมเดลถอดเสียง (ครั้งแรกใช้เวลานานกว่า)", "Loading the speech model (slower the first time)")),
@@ -49,6 +56,19 @@ def stage_text(stage: str) -> str:
     return stage
 
 
+def stage_step(stage: str) -> int:
+    lower = stage.lower()
+    if "complete" in lower:
+        return 4
+    if "formatting" in lower or "acoustic" in lower:
+        return 3
+    if "diarization" in lower:
+        return 2
+    if "running whisper" in lower or "asr transcribing" in lower:
+        return 1
+    return 0
+
+
 class CapturePage(SessionPage):
     def __init__(self, service, runner, parent=None) -> None:
         super().__init__(service, runner, parent)
@@ -56,6 +76,8 @@ class CapturePage(SessionPage):
         self.cancel_event: threading.Event | None = None
         self.started_at = 0.0
         self.working = False
+        self._progress_fraction = 0.0
+        self._asr_warmed = False
 
         scroll = QScrollArea(self)
         scroll.setWidgetResizable(True)
@@ -95,6 +117,19 @@ class CapturePage(SessionPage):
         self.progress_card, progress = card()
         self.progress_title = label(tr("กำลังถอดเสียง", "Transcribing"), "SectionTitle")
         progress.addWidget(self.progress_title)
+        steps_row_host = QWidget()
+        steps_row_host.setObjectName("ProgressSteps")
+        steps_row = QHBoxLayout(steps_row_host)
+        steps_row.setContentsMargins(0, 2, 0, 2)
+        steps_row.setSpacing(8)
+        self.progress_steps = []
+        for step_name in PROGRESS_STEPS:
+            step_lbl = label(step_name, "Step")
+            step_lbl.setProperty("state", "todo")
+            steps_row.addWidget(step_lbl)
+            self.progress_steps.append(step_lbl)
+        steps_row.addStretch(1)
+        progress.addWidget(steps_row_host)
         self.progress_stage = label("", "Hint")
         progress.addWidget(self.progress_stage)
         self.progress_bar = QProgressBar()
@@ -118,10 +153,17 @@ class CapturePage(SessionPage):
         grid.setSpacing(14)
 
         rec_card, rec = card()
-        rec.addWidget(label(tr("บันทึกเสียงจากไมโครโฟน", "Record"), "SectionTitle"))
+        rec_head = QHBoxLayout()
+        rec_head.addWidget(label(tr("บันทึกเสียงจากไมโครโฟน", "Record"), "SectionTitle"))
+        rec_head.addStretch(1)
+        self.rec_badge = chip(tr("พร้อมบันทึก", "Ready"), "neutral")
+        rec_head.addWidget(self.rec_badge)
+        rec.addLayout(rec_head)
         rec.addWidget(label(tr("วางไมโครโฟนให้ใกล้เด็ก ลดเสียงรบกวน แล้วกดเริ่ม", "Place the microphone near the child and keep background noise down."), "Muted", wrap=True))
         self.rec_time = label("00:00", "RecordTime")
         rec.addWidget(self.rec_time)
+        self.rec_wave = LiveLevelMeter()
+        rec.addWidget(self.rec_wave)
         self.level = QProgressBar()
         self.level.setRange(0, 100)
         self.level.setTextVisible(False)
@@ -212,6 +254,13 @@ class CapturePage(SessionPage):
             self.state_body.setText(tr("บันทึกเสียง นำเข้าไฟล์เสียง หรือนำเข้า transcript ที่ถอดไว้แล้ว", "Record, import audio, or import a transcript you already have."))
             set_chip(self.state_chip, tr("ยังไม่มีข้อมูล", "Empty"), "neutral")
         self._set_inputs_enabled(not self.working)
+        if not self._asr_warmed and transcript is None and hasattr(self.service, "warm_up_asr"):
+            self._asr_warmed = True
+            threading.Thread(
+                target=self.service.warm_up_asr,
+                name="pasascope-asr-warmup",
+                daemon=True,
+            ).start()
 
     def _set_inputs_enabled(self, enabled: bool) -> None:
         for widget in (self.file_btn, self.text_file_btn, self.paste_btn, self.retranscribe_btn):
@@ -243,6 +292,8 @@ class CapturePage(SessionPage):
             return
         self.rec_btn.setText(tr("■ หยุดและถอดเสียง", "■ Stop and transcribe"))
         self.rec_discard.show()
+        set_chip(self.rec_badge, tr("● กำลังบันทึก", "● Recording"), "danger")
+        self.rec_wave.set_active(True)
         self.timer.start()
         self.busy_changed.emit(True)
 
@@ -254,6 +305,8 @@ class CapturePage(SessionPage):
         self.timer.stop()
         self.rec_btn.setText(tr("● เริ่มบันทึก", "● Record"))
         self.rec_discard.hide()
+        set_chip(self.rec_badge, tr("พร้อมบันทึก", "Ready"), "neutral")
+        self.rec_wave.reset()
         self.rec_time.setText("00:00")
         self.level.setValue(0)
         self.busy_changed.emit(False)
@@ -357,11 +410,36 @@ class CapturePage(SessionPage):
     # ------------------------------------------------------------------
     # Progress
     # ------------------------------------------------------------------
+    def _set_progress_step(self, current_step: int) -> None:
+        for idx, step_lbl in enumerate(self.progress_steps):
+            state = "done" if idx < current_step else "current" if idx == current_step else "todo"
+            set_style_property(step_lbl, "state", state)
+
+    def _update_progress_time(self) -> None:
+        elapsed = max(0.0, time.monotonic() - self.started_at)
+        secs = int(elapsed)
+        pct = int(round(self._progress_fraction * 100))
+        if 0.05 <= self._progress_fraction < 0.99 and elapsed >= 2.0:
+            eta_secs = max(0, int(elapsed * (1.0 - self._progress_fraction) / self._progress_fraction))
+            self.progress_time.setText(
+                tr(
+                    f"{pct}% · ผ่านไป {secs // 60}:{secs % 60:02d} นาที · เหลือราว {eta_secs // 60}:{eta_secs % 60:02d} นาที",
+                    f"{pct}% · {secs // 60}:{secs % 60:02d} elapsed · ~{eta_secs // 60}:{eta_secs % 60:02d} left",
+                )
+            )
+            return
+        self.progress_time.setText(
+            tr(f"{pct}% · ผ่านไป {secs // 60}:{secs % 60:02d} นาที", f"{pct}% · {secs // 60}:{secs % 60:02d} elapsed")
+        )
+
     def _begin_work(self, stage: str) -> None:
         self.working = True
         self.started_at = time.monotonic()
+        self._progress_fraction = 0.0
         self.progress_stage.setText(stage)
         self.progress_bar.setValue(0)
+        self._set_progress_step(0)
+        self._update_progress_time()
         self.progress_card.show()
         self.timer.start()
         self._set_inputs_enabled(False)
@@ -382,8 +460,12 @@ class CapturePage(SessionPage):
         self.report_error(exc, tr("ถอดเสียงไม่สำเร็จ", "Transcription failed"))
 
     def _on_progress(self, fraction: float, stage: str) -> None:
-        self.progress_bar.setValue(int(max(0.0, min(1.0, fraction)) * 1000))
+        clamped = max(0.0, min(1.0, fraction))
+        self._progress_fraction = clamped
+        self.progress_bar.setValue(int(clamped * 1000))
         self.progress_stage.setText(stage_text(stage))
+        self._set_progress_step(stage_step(stage))
+        self._update_progress_time()
 
     def _cancel(self) -> None:
         if self.cancel_event is not None:
@@ -395,10 +477,11 @@ class CapturePage(SessionPage):
         if self.recorder.recording:
             secs = int(self.recorder.elapsed())
             self.rec_time.setText(f"{secs // 60:02d}:{secs % 60:02d}")
-            self.level.setValue(min(100, int(self.recorder.level * 400)))
+            normalized = min(1.0, max(0.0, self.recorder.level * 4.0))
+            self.level.setValue(min(100, int(normalized * 100)))
+            self.rec_wave.push(normalized)
         if self.working:
-            secs = int(time.monotonic() - self.started_at)
-            self.progress_time.setText(tr(f"ผ่านไป {secs // 60}:{secs % 60:02d} นาที", f"{secs // 60}:{secs % 60:02d} elapsed"))
+            self._update_progress_time()
 
     def shutdown(self) -> None:
         if self.recorder.recording:

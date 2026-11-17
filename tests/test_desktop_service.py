@@ -468,3 +468,67 @@ def test_player_resamples_to_the_output_device():
 
     data, rate = _for_output_device(Device(), np.zeros((16000, 1), dtype="float32"), 16000)
     assert rate == 48000 and data.shape == (48000, 1) and data.dtype == np.float32
+
+
+def test_warm_up_asr_loads_active_models_and_never_raises(service, monkeypatch):
+    from types import SimpleNamespace
+
+    from app.core import config
+    from src.audio_pipeline import whisper_transcribe
+
+    calls: list[tuple] = []
+
+    class FakeTranscriber:
+        def __init__(self, model_size: str, strategy: str) -> None:
+            calls.append(("init", model_size, strategy))
+
+        def _load_detector(self) -> None:
+            calls.append(("detector",))
+
+        def _load_thai_specialized(self) -> None:
+            calls.append(("thai_specialized",))
+
+        def _load(self) -> None:
+            calls.append(("load",))
+
+    monkeypatch.setattr(whisper_transcribe, "WhisperTranscriber", FakeTranscriber)
+
+    # Unavailable -> no-op
+    monkeypatch.setattr(service, "transcription_availability", lambda: (False, "disabled"))
+    service.warm_up_asr()
+    assert calls == []
+
+    # Available with thai_specialized ready
+    monkeypatch.setattr(service, "transcription_availability", lambda: (True, ""))
+    monkeypatch.setattr(config, "get_settings", lambda: SimpleNamespace(
+        asr_whisper_model_size="small",
+        asr_language_strategy="thai_specialized",
+    ))
+    monkeypatch.setattr(whisper_transcribe, "thai_specialized_model_ready", lambda: True)
+    service.warm_up_asr()
+    assert calls == [
+        ("init", "small", "thai_specialized"),
+        ("detector",),
+        ("thai_specialized",),
+    ]
+
+    # Available with fast/multilingual fallback
+    calls.clear()
+    monkeypatch.setattr(config, "get_settings", lambda: SimpleNamespace(
+        asr_whisper_model_size="small",
+        asr_language_strategy="thai",
+    ))
+    monkeypatch.setattr(whisper_transcribe, "thai_specialized_model_ready", lambda: False)
+    service.warm_up_asr()
+    assert calls == [
+        ("init", "small", "thai"),
+        ("detector",),
+        ("load",),
+    ]
+
+    # Errors while loading are swallowed so pre-warming never fails
+    def boom(*_args, **_kwargs):
+        raise RuntimeError("model missing")
+
+    monkeypatch.setattr(whisper_transcribe, "WhisperTranscriber", boom)
+    service.warm_up_asr()

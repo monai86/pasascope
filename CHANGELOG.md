@@ -2,6 +2,10 @@
 
 ## [Unreleased]
 
+### Changed
+- **Faster on-device audio pipeline without changing Whisper outputs.** Recordings are now decoded once to a 16 kHz mono array and shared across language detection (first 90 s), level normalization, diarization, and acoustic profiling instead of being re-decoded from disk at each stage (`src/audio_pipeline/pipeline.py`, `whisper_transcribe.py`, `diarization.py`). The child/adult frame model (`src/audio_pipeline/child_adult_frames.py`) now caches weights per process, runs on Apple Metal (`mps`) or `cuda` with automatic CPU fallback, and batches 10 s windows (`FRAME_BATCH_SIZE = 16`). `EmbeddingDiarizer` caches the SpeechBrain ECAPA classifier and computes global F0 once per recording (`last_audio`, `last_f0_cache`) so `compute_acoustic_profile` reuses it (`tests/test_pipeline_speed.py`).
+- **Modernized desktop capture workflow and interactive waveform.** `CapturePage` (`packages/desktop/ui/pages/capture.py`) warms up the active Whisper model in a background thread via `RecordingsMixin.warm_up_asr` (`packages/desktop/core/workflow/recordings.py`), displays a 4-step progress stepper with ETA while transcribing, and adds a live level waveform (`LiveLevelMeter`) and status chip while recording. `WaveformView` (`packages/desktop/ui/widgets.py`) now renders mirrored rounded bars, supports drag-to-scrub seeking, and shows a hover cursor with a floating `mm:ss.d` time pill (`tests/test_desktop_service.py`, `tests/test_desktop_ui.py`).
+
 ## [v1.9.0] - 2026-11-02
 
 Desktop app release: the app's own look for message boxes, and an easier Knowledge page.

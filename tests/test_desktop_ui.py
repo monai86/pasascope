@@ -721,3 +721,103 @@ def test_knowledge_topics_are_grouped_and_linked(window):
     assert 'class="note"' not in knowledge.article_html("mlu")
     page.article.resize(2000, 600)
     assert page.article.viewportMargins().left() == (2000 - knowledge.READING_WIDTH) // 2
+
+
+def test_capture_page_warms_up_asr_once_without_blocking(window, qtbot, monkeypatch):
+    import threading
+
+    calls: list[str] = []
+    done = threading.Event()
+
+    def fake_warm_up() -> None:
+        calls.append(threading.current_thread().name)
+        done.set()
+
+    monkeypatch.setattr(window.service, "warm_up_asr", fake_warm_up)
+    _, session = _case_with_session(window)
+    assert done.wait(timeout=2.0)
+    assert len(calls) == 1
+    assert not window.busy
+
+    # Refreshing again does not re-trigger warm-up, and tab stays closable.
+    window.pages[0].refresh()
+    assert len(calls) == 1
+    assert window.close_tab(f"session:{session.session_id}")
+
+
+def test_capture_progress_stepper_and_recording_meter(window):
+    _case_with_session(window)
+    capture = window.pages[0]
+
+    assert len(capture.progress_steps) == 4
+    assert all(lbl.objectName() == "Step" for lbl in capture.progress_steps)
+
+    capture._begin_work("กำลังเตรียมถอดเสียง")
+    assert [lbl.property("state") for lbl in capture.progress_steps] == ["current", "todo", "todo", "todo"]
+
+    capture._on_progress(0.45, "ASR Transcribing: 1.0s - 3.0s...")
+    assert [lbl.property("state") for lbl in capture.progress_steps] == ["done", "current", "todo", "todo"]
+    assert capture.progress_bar.value() == 450
+    assert "45%" in capture.progress_time.text()
+
+    capture._on_progress(0.72, "Running speaker diarization (Child vs Adult)...")
+    assert [lbl.property("state") for lbl in capture.progress_steps] == ["done", "done", "current", "todo"]
+
+    capture._on_progress(0.85, "Formatting TalkBank CHAT & %mor POS tier...")
+    assert [lbl.property("state") for lbl in capture.progress_steps] == ["done", "done", "done", "current"]
+
+    capture._on_progress(1.0, "Audio processing complete!")
+    assert [lbl.property("state") for lbl in capture.progress_steps] == ["done", "done", "done", "done"]
+    capture._end_work()
+
+    # Live recording badge & meter update cleanly on reset
+    capture.rec_wave.set_active(True)
+    capture.rec_wave.push(0.5)
+    assert capture.rec_wave._history[-1] > 0.0
+    capture._reset_recorder_ui()
+    assert capture.rec_badge.property("kind") == "neutral"
+    assert capture.rec_wave._history[-1] == 0.0
+
+
+def test_waveform_view_supports_hover_and_drag_scrubbing(qtbot):
+    import numpy as np
+    from PySide6.QtCore import QPointF
+    from PySide6.QtTest import QTest
+
+    from packages.desktop.ui import theme
+    from packages.desktop.ui.widgets import WaveformView
+
+    wave = WaveformView()
+    qtbot.addWidget(wave)
+    wave.resize(400, 96)
+    wave.show()
+    peaks = np.linspace(0.1, 1.0, 200, dtype="float32")
+    wave.set_audio(peaks, 10.0)
+    wave.set_regions([(1.0, 3.0, "CHI"), (4.0, 6.0, "INV")])
+    wave.set_selected((1.0, 3.0))
+    wave.set_playhead(2.0)
+
+    assert wave.duration == 10.0
+    assert wave.hasMouseTracking()
+
+    seeks: list[float] = []
+    wave.seek.connect(seeks.append)
+
+    # Hover tracks x without seeking
+    QTest.mouseMove(wave, QPointF(100.0, 48.0).toPoint())
+    assert wave._hover_x is not None
+    assert seeks == []
+
+    # Left press + drag emits seek smoothly
+    QTest.mousePress(wave, Qt.MouseButton.LeftButton, pos=QPointF(100.0, 48.0).toPoint())
+    QTest.mouseMove(wave, QPointF(200.0, 48.0).toPoint())
+    QTest.mouseRelease(wave, Qt.MouseButton.LeftButton, pos=QPointF(200.0, 48.0).toPoint())
+    assert len(seeks) >= 2
+    assert seeks[0] == pytest.approx(2.5, abs=0.1)
+    assert seeks[-1] == pytest.approx(5.0, abs=0.1)
+
+    # Renders cleanly in light & dark themes
+    assert not wave.grab().isNull()
+    theme.apply_theme(qtbot._get_qapp() if hasattr(qtbot, "_get_qapp") else __import__("PySide6.QtWidgets").QtWidgets.QApplication.instance(), "dark")
+    assert not wave.grab().isNull()
+    theme.apply_theme(__import__("PySide6.QtWidgets").QtWidgets.QApplication.instance(), "light")

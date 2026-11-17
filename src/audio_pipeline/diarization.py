@@ -32,7 +32,8 @@ import os
 from dataclasses import dataclass, field
 import importlib.util
 from pathlib import Path
-from typing import List, Optional, Sequence
+import threading
+from typing import Any, List, Optional, Sequence
 
 import numpy as np
 
@@ -42,6 +43,9 @@ from .whisper_transcribe import UtteranceSegment
 CHILD_LABEL = "CHI"
 ADULT_LABEL = "MOT"   # generic adult; could be INV/FAT/etc.
 ADULT_LABELS = ["MOT", "INV", "FAT"]   # used when >2 clusters are detected
+
+_ECAPA_CACHE: dict[str, Any] = {}
+_ECAPA_LOCK = threading.Lock()
 
 
 @dataclass(frozen=True)
@@ -90,11 +94,77 @@ class BaseDiarizer:
     def __init__(self) -> None:
         self.last_f0_cache: Optional[tuple[np.ndarray, np.ndarray, float]] = None
         self.last_audio: Optional[tuple[np.ndarray, int]] = None
+        self._last_audio_path: Optional[str] = None
+
+    def _resolve_audio(
+        self,
+        audio_path: str | Path,
+        *,
+        y_audio: Optional[np.ndarray] = None,
+        sr_audio: int = 16000,
+        target_sr: Optional[int] = 16000,
+    ) -> tuple[np.ndarray, int]:
+        """Return mono audio samples without re-decoding when already in memory."""
+        import librosa
+
+        path_key = str(audio_path)
+        if y_audio is not None and len(y_audio) > 0:
+            y = np.asarray(y_audio, dtype="float32")
+            sr = int(sr_audio)
+            if y.ndim > 1:
+                y = np.mean(y, axis=1)
+            if target_sr is not None and sr != target_sr:
+                y = librosa.resample(y, orig_sr=sr, target_sr=target_sr)
+                sr = target_sr
+            if self._last_audio_path != path_key:
+                self.last_f0_cache = None
+            self.last_audio = (y, sr)
+            self._last_audio_path = path_key
+            return y, sr
+
+        cached_path = getattr(self, "_last_audio_path", None)
+        if (
+            self.last_audio is not None
+            and len(self.last_audio[0]) > 0
+            and (cached_path is None or cached_path == path_key)
+        ):
+            y, sr = self.last_audio
+            y = np.asarray(y, dtype="float32")
+            if y.ndim > 1:
+                y = np.mean(y, axis=1)
+            if target_sr is not None and sr != target_sr:
+                y = librosa.resample(y, orig_sr=sr, target_sr=target_sr)
+                sr = target_sr
+                self.last_audio = (y, sr)
+                self.last_f0_cache = None
+            self._last_audio_path = path_key
+            return y, sr
+
+        try:
+            import soundfile as sf
+
+            y, sr = sf.read(path_key, dtype="float32")
+            if y.ndim > 1:
+                y = np.mean(y, axis=1)
+            if target_sr is not None and sr != target_sr:
+                y = librosa.resample(y, orig_sr=sr, target_sr=target_sr)
+                sr = target_sr
+        except Exception:
+            y, sr = librosa.load(path_key, sr=target_sr, mono=True)
+            y = np.asarray(y, dtype="float32")
+
+        self.last_audio = (y, int(sr))
+        self._last_audio_path = path_key
+        self.last_f0_cache = None
+        return y, int(sr)
 
     def assign(
         self,
         audio_path: str | Path,
         utterances: Sequence[UtteranceSegment],
+        *,
+        y_audio: Optional[np.ndarray] = None,
+        sr_audio: int = 16000,
     ) -> List[UtteranceSegment]:
         raise NotImplementedError
 
@@ -314,27 +384,29 @@ class PitchHeuristicDiarizer(BaseDiarizer):
         self,
         audio_path: str | Path,
         utterances: Sequence[UtteranceSegment],
+        *,
+        y_audio: Optional[np.ndarray] = None,
+        sr_audio: int = 16000,
     ) -> List[UtteranceSegment]:
-        import librosa
         if not utterances:
             return []
 
-        try:
-            import soundfile as sf
-            y_full, sr = sf.read(str(audio_path), dtype="float32")
-            if y_full.ndim > 1:
-                y_full = np.mean(y_full, axis=1)
-            if sr != 16000:
-                y_full = librosa.resample(y_full, orig_sr=sr, target_sr=16000)
-                sr = 16000
-        except Exception:
-            y_full, sr = librosa.load(str(audio_path), sr=16000, mono=True)
-
-        f0_contour, voiced_mask, hop_sec = self._compute_global_f0_contour(
-            y_full, sr=sr, fmin=self.config.fmin, fmax=self.config.fmax
+        y_full, sr = self._resolve_audio(
+            audio_path, y_audio=y_audio, sr_audio=sr_audio, target_sr=16000
         )
-        self.last_audio = (y_full, sr)
-        self.last_f0_cache = (f0_contour, voiced_mask, hop_sec)
+
+        if (
+            self.last_f0_cache is not None
+            and len(self.last_f0_cache) == 3
+            and len(self.last_f0_cache[0]) > 0
+        ):
+            f0_contour, voiced_mask, hop_sec = self.last_f0_cache
+        else:
+            f0_contour, voiced_mask, hop_sec = self._compute_global_f0_contour(
+                y_full, sr=sr, fmin=self.config.fmin, fmax=self.config.fmax
+            )
+            self.last_audio = (y_full, sr)
+            self.last_f0_cache = (f0_contour, voiced_mask, hop_sec)
 
         # 1. First pass: extract median F0 for each utterance
         utterance_medians: list[float | None] = []
@@ -421,6 +493,7 @@ class PyannoteDiarizer(BaseDiarizer):
                 "https://huggingface.co/pyannote/speaker-diarization-3.1"
             )
 
+        super().__init__()
         self._pipeline = Pipeline.from_pretrained(
             "pyannote/speaker-diarization-3.1",
             use_auth_token=token,
@@ -431,13 +504,16 @@ class PyannoteDiarizer(BaseDiarizer):
         self,
         audio_path: str | Path,
         utterances: Sequence[UtteranceSegment],
+        *,
+        y_audio: Optional[np.ndarray] = None,
+        sr_audio: int = 16000,
     ) -> List[UtteranceSegment]:
-        import librosa
-
         diarization = self._pipeline(str(audio_path))
 
         # Collect per-cluster audio snippets to estimate F0 later
-        y_full, sr = librosa.load(str(audio_path), sr=None, mono=True)
+        y_full, sr = self._resolve_audio(
+            audio_path, y_audio=y_audio, sr_audio=sr_audio, target_sr=None
+        )
         cluster_f0: dict[str, list[float]] = {}
         for turn, _, label in diarization.itertracks(yield_label=True):
             s = max(0, int(turn.start * sr))
@@ -527,6 +603,7 @@ class EmbeddingDiarizer(BaseDiarizer):
         config: Optional[EmbeddingDiarizerConfig] = None,
         enrollment_audio_path: Optional[str | Path] = None,
     ) -> None:
+        super().__init__()
         self.config = config or EmbeddingDiarizerConfig()
         self._classifier = None
         self._pitch = PitchHeuristicDiarizer(
@@ -553,11 +630,18 @@ class EmbeddingDiarizer(BaseDiarizer):
                 "speechbrain is required for EmbeddingDiarizer.\n"
                 "  pip install speechbrain"
             ) from e
-        self._classifier = EncoderClassifier.from_hparams(
-            source="speechbrain/spkrec-ecapa-voxceleb",
-            savedir=os.path.expanduser("~/.cache/speechbrain/ecapa"),
-            run_opts={"device": "cpu"},
-        )
+        savedir = os.path.expanduser("~/.cache/speechbrain/ecapa")
+        cache_key = f"speechbrain/spkrec-ecapa-voxceleb|{savedir}|cpu"
+        with _ECAPA_LOCK:
+            clf = _ECAPA_CACHE.get(cache_key)
+            if clf is None:
+                clf = EncoderClassifier.from_hparams(
+                    source="speechbrain/spkrec-ecapa-voxceleb",
+                    savedir=savedir,
+                    run_opts={"device": "cpu"},
+                )
+                _ECAPA_CACHE[cache_key] = clf
+        self._classifier = clf
         return self._classifier
 
     def _embed_clip(self, clip: np.ndarray, sr: int) -> Optional[np.ndarray]:
@@ -647,13 +731,32 @@ class EmbeddingDiarizer(BaseDiarizer):
         self,
         audio_path: str | Path,
         utterances: Sequence[UtteranceSegment],
+        *,
+        y_audio: Optional[np.ndarray] = None,
+        sr_audio: int = 16000,
     ) -> List[UtteranceSegment]:
-        import librosa
-
         if not utterances:
             return list(utterances)
 
-        y_full, sr = librosa.load(str(audio_path), sr=None, mono=True)
+        y_full, sr = self._resolve_audio(
+            audio_path, y_audio=y_audio, sr_audio=sr_audio, target_sr=16000
+        )
+
+        if (
+            self.last_f0_cache is not None
+            and len(self.last_f0_cache) == 3
+            and len(self.last_f0_cache[0]) > 0
+        ):
+            f0_contour, voiced_mask, hop_sec = self.last_f0_cache
+        else:
+            f0_contour, voiced_mask, hop_sec = PitchHeuristicDiarizer._compute_global_f0_contour(
+                y_full,
+                sr=sr,
+                fmin=self._pitch.config.fmin,
+                fmax=self._pitch.config.fmax,
+            )
+            self.last_audio = (y_full, sr)
+            self.last_f0_cache = (f0_contour, voiced_mask, hop_sec)
 
         # ---- 1. Compute embeddings + per-utt F0 -------------------------
         embeddings: List[Optional[np.ndarray]] = []
@@ -664,7 +767,21 @@ class EmbeddingDiarizer(BaseDiarizer):
             e = min(len(y_full), int(u.end * sr))
             clip = y_full[s:e]
             durations.append(max(0.0, u.end - u.start))
-            f0s.append(self._pitch._median_f0(clip, sr) if len(clip) else None)
+
+            med_f0: Optional[float] = None
+            if f0_contour.size and hop_sec > 0:
+                start_frame = max(0, int(u.start / hop_sec))
+                end_frame = min(len(f0_contour), int(u.end / hop_sec) + 1)
+                if end_frame > start_frame:
+                    u_f0 = f0_contour[start_frame:end_frame]
+                    u_mask = voiced_mask[start_frame:end_frame]
+                    voiced_f0 = u_f0[u_mask]
+                    if len(voiced_f0) >= self._pitch.config.min_voiced_frames:
+                        med_f0 = float(np.median(voiced_f0))
+            if med_f0 is None and len(clip):
+                med_f0 = self._pitch._median_f0(clip, sr)
+            f0s.append(med_f0)
+
             try:
                 emb = self._embed_clip(clip, sr)
             except Exception as exc:  # noqa: BLE001
